@@ -64,6 +64,9 @@ message SourceOrigin {
 // description, subject, language, publisher, identifier, date, rights), the same
 // vocabulary Tika's property model and XMP use. Narrower keys (page counts,
 // dimensions, format-specific keys) go to `extra` with their declared type.
+// A single-valued field (title, description, created, modified, rights) holds the
+// first value; when the document declares several, `extra` also carries the key
+// with all of them, so none is lost.
 // =========================================================================
 message DocumentMetadata {
   string title = 1;

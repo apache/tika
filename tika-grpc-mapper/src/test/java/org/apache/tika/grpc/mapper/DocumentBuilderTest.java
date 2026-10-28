@@ -288,4 +288,83 @@ class DocumentBuilderTest extends ParseFixtureSupport {
         assertEquals("PARSE_EXCEPTION_NO_EMIT", document.getStatus().getPipesStatus());
         assertFalse(document.getStatus().getErrorsList().isEmpty());
     }
+
+    /** The pipes error replaces the generic "no metadata" error, so a failure says why. */
+    @Test
+    void failureCarriesThePipesError() {
+        Document document = DocumentBuilder.build(null, "doc-1", "PARSE_EXCEPTION_NO_EMIT",
+                "org.apache.tika.exception.TikaException: bad xref\n\tat ...\n", 1L);
+
+        assertEquals(ParseStatus.Status.STATUS_FAILED, document.getStatus().getStatus());
+        assertEquals(List.of("org.apache.tika.exception.TikaException: bad xref\n\tat ..."),
+                document.getStatus().getErrorsList());
+    }
+
+    /**
+     * A parse that succeeded alongside an exception keeps its metadata and says what the
+     * exception was.
+     */
+    @Test
+    void partialSuccessCarriesTheContainerException() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        metadata.set(TikaCoreProperties.TITLE, "Half a PDF");
+
+        Document document = DocumentBuilder.build(metadata, "doc-1",
+                "PARSE_SUCCESS_WITH_EXCEPTION", "java.io.IOException: truncated", 1L);
+
+        assertEquals(ParseStatus.Status.STATUS_PARTIAL, document.getStatus().getStatus());
+        assertEquals("Half a PDF", document.getMetadata().getTitle());
+        assertEquals(List.of("java.io.IOException: truncated"),
+                document.getStatus().getErrorsList());
+    }
+
+    /** A blank error is no error: a clean success stays without errors. */
+    @Test
+    void blankErrorIsIgnored() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+
+        Document document = DocumentBuilder.build(metadata, "doc-1", "PARSE_SUCCESS", "  ", 1L);
+
+        assertTrue(document.getStatus().getErrorsList().isEmpty());
+        assertTrue(DocumentBuilder.build(null, "doc-1", "EMPTY_OUTPUT", "", 1L)
+                .getStatus().getErrorsList().isEmpty(), "EMPTY_OUTPUT is a clean success");
+    }
+
+    /**
+     * A document with two titles and two created dates keeps the first of each in the typed
+     * field, and both in the tagged tail, so the second is not lost.
+     */
+    @Test
+    void multiValuedSingleFieldsStayInTheTail() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html");
+        metadata.add(TikaCoreProperties.TITLE, "First");
+        metadata.add(TikaCoreProperties.TITLE, "Second");
+        // Through the key: a merged or deserialized list can hold values the Property refuses.
+        metadata.add(TikaCoreProperties.CREATED.getName(), "2020-01-01T00:00:00Z");
+        metadata.add(TikaCoreProperties.CREATED.getName(), "2021-01-01T00:00:00Z");
+        metadata.set(TikaCoreProperties.DESCRIPTION, "Only one");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+
+        assertEquals("First", document.getMetadata().getTitle());
+        assertEquals(1577836800L, document.getMetadata().getCreated().getSeconds());
+        MetadataValue titles = extra(document, TikaCoreProperties.TITLE.getName());
+        assertEquals(List.of("First", "Second"), titles.getStrings().getValuesList());
+        MetadataValue created = extra(document, TikaCoreProperties.CREATED.getName());
+        assertEquals(2, created.getTimestamps().getValuesCount());
+        assertTrue(document.getExtraList().stream()
+                        .noneMatch(f -> f.getKey().equals(TikaCoreProperties.DESCRIPTION.getName())),
+                "a single-valued key is consumed by its typed field");
+    }
+
+    private static MetadataValue extra(Document document, String key) {
+        return document.getExtraList().stream()
+                .filter(f -> f.getKey().equals(key))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(key + " missing from extra"))
+                .getValue();
+    }
 }

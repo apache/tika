@@ -455,7 +455,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         try {
             fetcher = fetcherManager.getFetcher(fetcherId);
         } catch (TikaException | IOException e) {
-            throw new RuntimeException("Could not find fetcher with name " + fetcherId, e);
+            throw new FetcherNotFoundException(fetcherId, e);
         }
 
         Metadata tikaMetadata = new Metadata();
@@ -463,40 +463,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         // inside the forked pipes worker, so this is fetch+parse latency, not parse-only.
         long fetchParseStart = System.nanoTime();
         try {
-            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(
+            return executeTuple(new FetchEmitTuple(
                     fetchKey,
                     new FetchKey(fetcher.getExtensionConfig().id(), fetchKey),
                     new EmitKey(),
                     tikaMetadata,
                     parseContext,
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            long fetchParseTimeMs = (System.nanoTime() - fetchParseStart) / 1_000_000L;
-            Map<String, String> fields = new LinkedHashMap<>();
-            Metadata primary = null;
-            if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
-                    for (String name : metadata.names()) {
-                        String value = metadata.get(name);
-                        if (value != null) {
-                            fields.put(name, value);
-                        }
-                    }
-                }
-                if (!pipesResult.emitData().getMetadataList().isEmpty()) {
-                    primary = pipesResult.emitData().getMetadataList().get(0);
-                }
-            }
-            String errorMessage = null;
-            if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
-                errorMessage = pipesResult.message();
-            }
-            return new FetchParseOutcome(
-                    fetchKey,
-                    pipesResult.status().name(),
-                    errorMessage,
-                    fields,
-                    primary,
-                    fetchParseTimeMs);
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP), fetchParseStart);
         } catch (IOException | PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -505,8 +478,73 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
     }
 
+    /** Runs one tuple through the pipes parser and folds the result into an outcome. */
+    FetchParseOutcome executeTuple(FetchEmitTuple tuple, long fetchParseStart)
+            throws PipesException, InterruptedException, IOException {
+        String fetchKey = tuple.getFetchKey().getFetchKey();
+        PipesResult pipesResult = pipesParser.parse(tuple);
+        long fetchParseTimeMs = (System.nanoTime() - fetchParseStart) / 1_000_000L;
+        Map<String, String> fields = new LinkedHashMap<>();
+        Metadata primary = null;
+        if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
+            for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
+                for (String name : metadata.names()) {
+                    String value = metadata.get(name);
+                    if (value != null) {
+                        fields.put(name, value);
+                    }
+                }
+            }
+            if (!pipesResult.emitData().getMetadataList().isEmpty()) {
+                primary = pipesResult.emitData().getMetadataList().get(0);
+            }
+        }
+        String errorMessage = null;
+        if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
+            errorMessage = pipesResult.message();
+        }
+        return new FetchParseOutcome(
+                fetchKey,
+                pipesResult.status().name(),
+                errorMessage,
+                diagnostic(pipesResult),
+                fields,
+                primary,
+                fetchParseTimeMs);
+    }
+
+    /**
+     * What went wrong with this tuple, for the v2 {@code ParseStatus.errors}: the pipes
+     * message (a fetch failure, a parse exception with no emit, a timeout or crash) or, when
+     * the parse succeeded alongside an exception, the container stack trace. The pipes
+     * worker already formatted either one under the configured exception reporting.
+     * {@code null} when there is nothing to report.
+     */
+    static String diagnostic(PipesResult pipesResult) {
+        if (StringUtils.isNotBlank(pipesResult.message())) {
+            return pipesResult.message();
+        }
+        if (pipesResult.emitData() != null
+                && StringUtils.isNotBlank(pipesResult.emitData().getContainerStackTrace())) {
+            return pipesResult.emitData().getContainerStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * The fetcher id names no fetcher the FetchAndParse RPCs may use. v1 lets it surface as
+     * {@code UNKNOWN}, as it always has; v2 answers {@code NOT_FOUND}.
+     */
+    static final class FetcherNotFoundException extends RuntimeException {
+        FetcherNotFoundException(String fetcherId, Throwable cause) {
+            super("Could not find fetcher with name " + fetcherId, cause);
+        }
+    }
+
     /**
      * Outcome of a single fetch+parse pipes round trip, shared by v1 and v2 reply builders.
+     * {@code errorMessage} is the v1 {@code error_message}, set for fetch failures only;
+     * {@code diagnostic} is what {@link #diagnostic(PipesResult)} found, for the v2 errors.
      * {@code null} means the calling thread was interrupted before a reply could be built;
      * callers answer that with {@link #closeInterrupted}.
      */
@@ -514,6 +552,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             String fetchKey,
             String status,
             String errorMessage,
+            String diagnostic,
             Map<String, String> fields,
             Metadata primary,
             long fetchParseTimeMs) {
