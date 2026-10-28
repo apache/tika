@@ -42,6 +42,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.ByteString;
@@ -736,10 +737,15 @@ class TikaGrpcV2ParseBytesUnitTest {
         return Files.exists(store) && Files.readString(store).contains(id);
     }
 
+    /**
+     * The spool fetcher's basePath in the config the server's forks load. Read from the
+     * effective config file, not through the fetcher manager, so the test holds no fetcher.
+     */
     private static String spoolBasePath(TikaGrpcServerImpl impl) throws Exception {
-        String json = impl.fetcherManager.getFetcher(impl.spool.fetcherId())
-                .getExtensionConfig().json();
-        return new ObjectMapper().readTree(json).get("basePath").asText();
+        JsonNode fetcher = new ObjectMapper().readTree(impl.spool.effectiveConfig().toFile())
+                .path("fetchers").path(impl.spool.fetcherId());
+        assertFalse(fetcher.isMissingNode(), "the spool fetcher must be in the effective config");
+        return fetcher.findValue("basePath").asText();
     }
 
     private static long spoolDirectories(Path tmpdir) throws IOException {

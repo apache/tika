@@ -379,7 +379,7 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         // carries: checked before additional_fetch_config_json, which also names the fetcher.
         if (StringUtils.isNotBlank(request.additionalFetchConfigJson())) {
             try {
-                v1.resolveFetcher(request.fetcherId());
+                v1.resolveFetcherId(request.fetcherId());
             } catch (RuntimeException e) {
                 if (fetcherFailure(e, request.fetcherId(), responseObserver)) {
                     return false;
