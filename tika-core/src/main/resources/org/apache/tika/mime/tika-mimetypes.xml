@@ -921,8 +921,9 @@
   <mime-type type="application/pkcs7-signature">
     <glob pattern="*.p7s"/>
     <magic priority="50">
-      <!-- PEM encoded -->
+      <!-- PEM encoded; Pkcs7Parser decodes the armor and refines as for DER -->
       <match value="-----BEGIN PKCS7" type="string" offset="0"/>
+      <match value="-----BEGIN CMS-----" type="string" offset="0"/>
       <!-- DER encoded: SEQUENCE then a CMS ContentInfo whose contentType is in the pkcs7 arc
            1.2.840.113549.1.7.x (signedData .2, envelopedData .3, digestedData .5, encryptedData .6,
            ... last OID byte masked) followed by the [0] content tag (a0). offset 2:6 spans the DER

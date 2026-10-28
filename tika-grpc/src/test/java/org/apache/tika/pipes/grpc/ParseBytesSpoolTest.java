@@ -77,6 +77,17 @@ class ParseBytesSpoolTest {
         assertEquals("{}", Files.readString(userConfig));
     }
 
+    /** An error message sent back to the caller does not name the spool directory. */
+    @Test
+    void scrubTakesTheSpoolDirectoryOutOfAMessage() {
+        String dir = spool.directory().toAbsolutePath().toString();
+
+        assertEquals("java.io.IOException: <content>/parse-bytes-1 is truncated",
+                spool.scrub("java.io.IOException: " + dir + "/parse-bytes-1 is truncated"));
+        assertEquals("no path here", spool.scrub("no path here"));
+        assertNull(spool.scrub(null));
+    }
+
     @Test
     void eachSpoolHasItsOwnFetcherAndDirectory() throws Exception {
         ParseBytesSpool other = ParseBytesSpool.create(userConfig, tmp, MAX_INLINE_BYTES);

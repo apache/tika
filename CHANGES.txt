@@ -1,5 +1,7 @@
 Release 4.2.1 - unreleased
 
+  SERVER, PIPES AND OPERATIONS
+
    * tika-grpc: experimental TikaV2Service on the same port as the existing
      one. Its FetchAndParse replies carry a typed Document with the content
      type, metadata, parse status and source origin, but not the extracted
@@ -11,7 +13,17 @@ Release 4.2.1 - unreleased
      fetching anything. New "grpc" settings: parseBytesMaxContentBytes (64 MiB
      by default) and maxInboundMessageBytes (TIKA-4795).
 
-Release 4.2.0 - 10/23/2026
+   * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
+     for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
+     module it needs (TIKA-5006).
+
+  OTHER CHANGES
+
+   * PEM-armored CMS/PKCS7 (-----BEGIN PKCS7----- or -----BEGIN CMS-----) is parsed like
+     DER: Pkcs7Parser and the opt-in pkcs-7-detector report the smime-type and extract
+     signed content; -----BEGIN CMS----- is now detected (TIKA-5002).
+
+Release 4.2.0 - 10/25/2026
 
   BREAKING CHANGES AND DEPRECATIONS
 
@@ -90,7 +102,11 @@ Release 4.2.0 - 10/23/2026
 
    * Pipes plugins load only from the zips in plugin-roots; a plugin on the classpath
      needs -Dtika.plugins.classpath=true, which PipesForkParser sets when it finds no
-     plugins directory holding tika-pipes-file-system (TIKA-4918, TIKA-4985).
+     plugins directory holding tika-pipes-file-system (TIKA-4918, TIKA-4985). A
+     plugin-roots naming a directory without the plugin zips, which the classpath used
+     to mask, now fails with "Unknown type: ... Available: []"; tika-app and
+     tika-server treat the docs' PLUGINS_PATHS placeholder as unset and use their
+     bundled plugins directory (TIKA-4984).
 
    * image/vnd.microsoft.icon moves from ImageParser to the new ICOParser, which also
      parses cursors (TIKA-4937); animated cursors (RIFF ACON) are

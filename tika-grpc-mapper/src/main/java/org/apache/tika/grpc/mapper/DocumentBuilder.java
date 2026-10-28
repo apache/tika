@@ -59,6 +59,18 @@ public final class DocumentBuilder {
      */
     public static Document build(Metadata primary, String docId, String pipesStatus,
                                   long fetchParseTimeMs) {
+        return build(primary, docId, pipesStatus, null, fetchParseTimeMs);
+    }
+
+    /**
+     * {@link #build(Metadata, String, String, long)} with the error the pipes runtime
+     * reported for this parse (its message, or the container stack trace of a parse that
+     * succeeded alongside an exception). A non-blank {@code error} is recorded in
+     * {@code ParseStatus.errors} whatever the status, so a failed or partial Document says
+     * why.
+     */
+    public static Document build(Metadata primary, String docId, String pipesStatus,
+                                  String error, long fetchParseTimeMs) {
         ParseStatus.Builder status = ParseStatus.newBuilder()
                 .setStatus(mapPipesStatus(pipesStatus))
                 .setFetchParseTimeMs(fetchParseTimeMs)
@@ -72,8 +84,13 @@ public final class DocumentBuilder {
             document.setId(docId);
         }
 
+        boolean hasError = error != null && !error.isBlank();
+        if (hasError) {
+            status.addErrors(error.strip());
+        }
+
         if (primary == null) {
-            if (status.getStatus() != ParseStatus.Status.STATUS_SUCCESS) {
+            if (!hasError && status.getStatus() != ParseStatus.Status.STATUS_SUCCESS) {
                 status.addErrors("No metadata returned from parse");
             }
             return document.setStatus(status.build()).build();

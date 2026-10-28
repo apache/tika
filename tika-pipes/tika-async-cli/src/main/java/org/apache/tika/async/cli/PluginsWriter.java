@@ -87,6 +87,9 @@ public class PluginsWriter {
                 Path userConfigPath = Paths.get(simpleAsyncConfig.getTikaConfig());
                 JsonNode userRoot = objectMapper.readTree(userConfigPath.toFile());
                 mergeUserConfig(root, (ObjectNode) userRoot);
+                if (DefaultPluginsDir.needsDefault(root.get("plugin-roots"))) {
+                    root.put("plugin-roots", pluginString);
+                }
             }
 
             // Resolve any unfilled placeholders left over from

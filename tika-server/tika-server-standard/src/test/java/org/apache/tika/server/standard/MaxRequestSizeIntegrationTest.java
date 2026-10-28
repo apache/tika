@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -43,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -130,6 +132,11 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
     /** Whatever a test did to the server, every request's share of the body budget comes back. */
     @AfterEach
     public void assertBudgetDrained() throws Exception {
+        awaitBudgetDrained();
+    }
+
+    // a request holds its share until Jetty completes it, which can lag the client seeing its status
+    private void awaitBudgetDrained() throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         long inFlight;
         do {
@@ -150,6 +157,7 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
             boolean anyTooLarge = false;
             List<String> statuses = new ArrayList<>();
             for (Map.Entry<String, byte[]> e : PREAMBLES.entrySet()) {
+                awaitBudgetDrained();
                 String status = sendChunked(endpoint, e.getKey(), e.getValue());
                 statuses.add(e.getKey() + "=" + status);
                 // fail fast: each further hang would cost another socket timeout
@@ -158,7 +166,8 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
                 if (status.startsWith("2")) {
                     failures.add(String.join(" ", endpoint) + " " + e.getKey() + " -> " + status);
                 }
-                anyTooLarge |= "413".equals(status);
+                // a reset may drop the 413 (Windows); it too proves the server stopped reading
+                anyTooLarge |= "413".equals(status) || "reset".equals(status);
             }
             if (!anyTooLarge) {
                 failures.add(String.join(" ", endpoint) + " never reached the limit: " + statuses);
@@ -554,14 +563,18 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
         return sb.toString();
     }
 
-    /** Status code, "closed" if the connection closed first, or null if nothing came in time. */
+    /**
+     * Status code, "closed" if the connection closed first, "reset" if it was reset before the
+     * whole body was sent, or null if nothing came in time or only after the whole body was read.
+     */
     private String sendChunked(String[] endpoint, String contentType, byte[] preamble)
-            throws IOException {
+            throws IOException, InterruptedException {
         byte[] filler = new byte[64 * 1024];
         Arrays.fill(filler, (byte) 'a');
         try (Socket socket = new Socket("localhost", integrationTestPort)) {
             socket.setSoTimeout(10_000);
             OutputStream out = socket.getOutputStream();
+            AtomicBoolean sentAll = new AtomicBoolean();
             Thread writer = new Thread(() -> {
                 try {
                     out.write(requestHead(endpoint, contentType)
@@ -571,6 +584,7 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
                         writeChunk(out, filler);
                     }
                     out.flush();
+                    sentAll.set(true);
                     // the terminating chunk is never sent
                 } catch (IOException e) {
                     // the server stopped reading and closed
@@ -578,7 +592,12 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
             });
             writer.setDaemon(true);
             writer.start();
-            return readStatus(socket);
+            try {
+                return readStatus(socket);
+            } catch (SocketException e) {
+                writer.join(10_000);
+                return sentAll.get() ? null : "reset";
+            }
         }
     }
 

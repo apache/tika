@@ -19,7 +19,9 @@ package org.apache.tika.pipes.core.config;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +50,9 @@ public final class DefaultPluginsDir {
      */
     public static final String PLUGINS_DIR_NAME = "plugins";
 
+    // tokens the example configs shown in the docs carry for plugin-roots
+    private static final Set<String> PLACEHOLDERS = Set.of("PLUGINS_PATHS", "PLUGIN_ROOTS");
+
     private DefaultPluginsDir() {
     }
 
@@ -71,6 +76,16 @@ public final class DefaultPluginsDir {
      */
     public static Optional<Path> find(Class<?> anchor) {
         return find(codeSourceDir(anchor), Path.of(""));
+    }
+
+    /**
+     * @param pluginRoots the configured {@code plugin-roots} node, or null
+     * @return true when it is absent or still a placeholder token copied from an example
+     * config, so the caller should install the default
+     */
+    public static boolean needsDefault(JsonNode pluginRoots) {
+        return pluginRoots == null || pluginRoots.isNull()
+                || (pluginRoots.isTextual() && PLACEHOLDERS.contains(pluginRoots.asText()));
     }
 
     private static Path codeSourceDir(Class<?> anchor) {

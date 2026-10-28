@@ -37,6 +37,8 @@
       end
       from containers c
     </sql>
+    <sql>create index pca_container_id on pipes_class_a (container_id)</sql>
+    <sql>create index if not exists eea_container_id on extract_exceptions_a (container_id)</sql>
     <!-- one classification per container; the crash-ledger reports and summary.md join on it -->
     <sql>drop table if exists pipes_class_b</sql>
     <sql>create table pipes_class_b (container_id integer, pipes_status varchar(64), classification varchar(64))
@@ -51,6 +53,8 @@
       end
       from containers c
     </sql>
+    <sql>create index pcb_container_id on pipes_class_b (container_id)</sql>
+    <sql>create index if not exists eeb_container_id on extract_exceptions_b (container_id)</sql>
     <sql>drop index if exists pa_mime_id</sql>
     <sql>drop index if exists pb_mime_id</sql>
     <sql>create index pa_mime_id on profiles_a (mime_id);</sql>

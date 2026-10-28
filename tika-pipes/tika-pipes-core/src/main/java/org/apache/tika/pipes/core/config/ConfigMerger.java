@@ -250,7 +250,7 @@ public class ConfigMerger {
         }
 
         // Apply plugin roots if not already set
-        if (overrides.getPluginRoots() != null && !root.has("plugin-roots")) {
+        if (overrides.getPluginRoots() != null && DefaultPluginsDir.needsDefault(root.get("plugin-roots"))) {
             root.put("plugin-roots", overrides.getPluginRoots());
             LOG.debug("Set plugin-roots: {}", overrides.getPluginRoots());
         }

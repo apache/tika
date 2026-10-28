@@ -31,6 +31,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
@@ -84,6 +85,9 @@ public class S3PipesIterator extends PipesIteratorBase {
             case "instance":
                 provider = InstanceProfileCredentialsProvider.builder().build();
                 break;
+            case "web_identity":
+                provider = WebIdentityTokenFileCredentialsProvider.builder().build();
+                break;
             case "profile":
                 provider = ProfileCredentialsProvider.builder().profileName(config.getProfile()).build();
                 break;
@@ -92,7 +96,7 @@ public class S3PipesIterator extends PipesIteratorBase {
                 provider = StaticCredentialsProvider.create(awsCreds);
                 break;
             default:
-                throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
+                throw new TikaConfigException("credentialsProvider must be set and must be either 'instance', 'web_identity', 'profile' or 'key_secret'");
         }
 
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(config.getMaxConnections()).build();

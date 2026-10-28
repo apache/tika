@@ -110,6 +110,18 @@ final class ParseBytesSpool {
     }
 
     /**
+     * Returns {@code message} with this spool's directory replaced by {@code <content>}, so a
+     * reply never tells the caller where the server keeps its temporary files. {@code null}
+     * stays {@code null}.
+     */
+    String scrub(String message) {
+        if (message == null) {
+            return null;
+        }
+        return message.replace(directory.toAbsolutePath().toString(), "<content>");
+    }
+
+    /**
      * Stages one request's bytes. Up to {@code maxInlineBytes} they are set on
      * {@code context} as {@link InlineBytes}; larger content is written to a spool file.
      * Closing the payload deletes the file.

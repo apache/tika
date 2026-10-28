@@ -59,11 +59,16 @@ public final class TransformSupport {
         setString(md, TikaCoreProperties.RIGHTS, meta::setRights, consumed);
     }
 
+    /**
+     * Sets a single-valued typed field from the first value of {@code key}. The key is
+     * consumed only when it holds exactly one value: a document with two titles keeps both
+     * in the tagged tail rather than silently losing the second.
+     */
     public static void setString(Metadata md, Property key, Consumer<String> setter, Set<String> consumed) {
         String v = md.get(key);
         if (v != null && !v.trim().isEmpty()) {
             setter.accept(v.trim());
-            consumed.add(key.getName());
+            consumeIfSingle(md, key, consumed);
         }
     }
 
@@ -81,10 +86,18 @@ public final class TransformSupport {
         }
     }
 
+    /** Like {@link #setString}: the key is consumed only when it holds exactly one value. */
     public static void setTimestamp(Metadata md, Property key, Consumer<Timestamp> setter, Set<String> consumed) {
         Date d = md.getDate(key);
         if (d != null) {
             setter.accept(MetadataTagger.toTimestamp(d));
+            consumeIfSingle(md, key, consumed);
+        }
+    }
+
+    private static void consumeIfSingle(Metadata md, Property key, Set<String> consumed) {
+        String[] values = md.getValues(key);
+        if (values == null || values.length <= 1) {
             consumed.add(key.getName());
         }
     }

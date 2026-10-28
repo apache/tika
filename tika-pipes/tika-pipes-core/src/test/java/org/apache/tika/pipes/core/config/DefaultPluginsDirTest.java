@@ -17,11 +17,13 @@
 package org.apache.tika.pipes.core.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -64,5 +66,16 @@ public class DefaultPluginsDirTest {
     public void missingPluginsDirStaysAbsolute(@TempDir Path cwd) {
         //the forked pipes server must not re-resolve the path against its own cwd
         assertTrue(DefaultPluginsDir.resolve(null, cwd).isAbsolute());
+    }
+
+    @Test
+    public void needsDefaultForAbsentOrPlaceholder() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        assertTrue(DefaultPluginsDir.needsDefault(null));
+        assertTrue(DefaultPluginsDir.needsDefault(mapper.readTree("null")));
+        assertTrue(DefaultPluginsDir.needsDefault(mapper.readTree("\"PLUGINS_PATHS\"")));
+        assertTrue(DefaultPluginsDir.needsDefault(mapper.readTree("\"PLUGIN_ROOTS\"")));
+        assertFalse(DefaultPluginsDir.needsDefault(mapper.readTree("\"/opt/tika/plugins\"")));
+        assertFalse(DefaultPluginsDir.needsDefault(mapper.readTree("[\"/opt/tika/plugins\"]")));
     }
 }

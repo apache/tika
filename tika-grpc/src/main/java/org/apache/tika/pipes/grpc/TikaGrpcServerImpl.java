@@ -468,7 +468,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     FetchParseOutcome runPublicFetchAndParse(String fetcherId, String fetchKey,
                                              ParseContext parseContext) {
         if (ComponentIds.isSystem(fetcherId)) {
-            throw new RuntimeException("Could not find fetcher with name " + fetcherId);
+            throw new FetcherNotFoundException(fetcherId, null);
         }
         return runFetchAndParse(fetcherId, fetchKey, parseContext);
     }
@@ -486,7 +486,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         try {
             fetcher = fetcherManager.getFetcher(fetcherId);
         } catch (TikaException | IOException e) {
-            throw new RuntimeException("Could not find fetcher with name " + fetcherId, e);
+            throw new FetcherNotFoundException(fetcherId, e);
         }
 
         Metadata tikaMetadata = new Metadata();
@@ -538,9 +538,28 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 fetchKey,
                 pipesResult.status().name(),
                 errorMessage,
+                diagnostic(pipesResult),
                 fields,
                 primary,
                 fetchParseTimeMs);
+    }
+
+    /**
+     * What went wrong with this tuple, for the v2 {@code ParseStatus.errors}: the pipes
+     * message (a fetch failure, a parse exception with no emit, a timeout or crash) or, when
+     * the parse succeeded alongside an exception, the container stack trace. The pipes
+     * worker already formatted either one under the configured exception reporting.
+     * {@code null} when there is nothing to report.
+     */
+    static String diagnostic(PipesResult pipesResult) {
+        if (StringUtils.isNotBlank(pipesResult.message())) {
+            return pipesResult.message();
+        }
+        if (pipesResult.emitData() != null
+                && StringUtils.isNotBlank(pipesResult.emitData().getContainerStackTrace())) {
+            return pipesResult.emitData().getContainerStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -584,12 +603,23 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             return new ParseBytesOutcome(
                     payload.scrub(outcome.primary()),
                     outcome.status(),
+                    spool.scrub(outcome.diagnostic()),
                     outcome.fetchParseTimeMs());
         } catch (PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
+        }
+    }
+
+    /**
+     * The fetcher id names no fetcher the FetchAndParse RPCs may use. v1 lets it surface as
+     * {@code UNKNOWN}, as it always has; v2 answers {@code NOT_FOUND}.
+     */
+    static final class FetcherNotFoundException extends RuntimeException {
+        FetcherNotFoundException(String fetcherId, Throwable cause) {
+            super("Could not find fetcher with name " + fetcherId, cause);
         }
     }
 
@@ -601,13 +631,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     /**
      * Result of one ParseBytes parse. {@code primary} is {@code null} when the forked pipes
-     * worker returned no metadata.
+     * worker returned no metadata. {@code diagnostic} is the outcome's diagnostic with the
+     * spool directory taken out, or {@code null}.
      */
-    record ParseBytesOutcome(Metadata primary, String status, long fetchParseTimeMs) {
+    record ParseBytesOutcome(Metadata primary, String status, String diagnostic,
+                             long fetchParseTimeMs) {
     }
 
     /**
      * Outcome of a single fetch+parse pipes round trip, shared by v1 and v2 reply builders.
+     * {@code errorMessage} is the v1 {@code error_message}, set for fetch failures only;
+     * {@code diagnostic} is what {@link #diagnostic(PipesResult)} found, for the v2 errors.
      * {@code null} means the calling thread was interrupted before a reply could be built;
      * callers answer that with {@link #closeInterrupted}.
      */
@@ -615,6 +649,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             String fetchKey,
             String status,
             String errorMessage,
+            String diagnostic,
             Map<String, String> fields,
             Metadata primary,
             long fetchParseTimeMs) {

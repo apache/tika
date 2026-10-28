@@ -53,7 +53,9 @@ message FetchAndParseRequest {
   string fetcher_id = 1;
   string fetch_key = 2;
   string additional_fetch_config_json = 3;
-  string emitter_id = 4;
+  // v2 returns the Document and never sends it to an emitter.
+  reserved 4;
+  reserved "emitter_id";
   // Optional JSON object to configure the ParseContext for this request.
   string parse_context_json = 5;
 }
@@ -68,7 +70,9 @@ message FetchAndParseServerSideStreamingRequest {
   string fetcher_id = 1;
   string fetch_key = 2;
   string additional_fetch_config_json = 3;
-  string emitter_id = 4;
+  // v2 returns the Document and never sends it to an emitter.
+  reserved 4;
+  reserved "emitter_id";
   // Optional JSON object to configure the ParseContext for this request.
   string parse_context_json = 5;
 }
@@ -83,7 +87,9 @@ message FetchAndParseBiDirectionalStreamingRequest {
   string fetcher_id = 1;
   string fetch_key = 2;
   string additional_fetch_config_json = 3;
-  string emitter_id = 4;
+  // v2 returns the Document and never sends it to an emitter.
+  reserved 4;
+  reserved "emitter_id";
   // Optional JSON object to configure the ParseContext for this request.
   string parse_context_json = 5;
 }

@@ -892,7 +892,13 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                             .formatRawCellContents(value, getFormatIndex(cell), formatString,
                                     false);
                 }
-                return super.formatNumberDateCell(cell);
+                try {
+                    return super.formatNumberDateCell(cell);
+                } catch (RuntimeException e) {
+                    // TODO: remove on POI 6.0.1, as in TikaExcelDataFormatter
+                    return tikaExcelDataFormatter.formatRawCellContents(value, 0, "General",
+                            false);
+                }
             }
         }
     }

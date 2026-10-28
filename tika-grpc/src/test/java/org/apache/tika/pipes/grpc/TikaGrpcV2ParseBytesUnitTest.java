@@ -107,7 +107,7 @@ class TikaGrpcV2ParseBytesUnitTest {
 
     private TikaGrpcServerImpl.ParseBytesOutcome outcome() {
         return new TikaGrpcServerImpl.ParseBytesOutcome(
-                htmlMetadata(), "PARSE_SUCCESS", 5L);
+                htmlMetadata(), "PARSE_SUCCESS", null, 5L);
     }
 
     private static InputStream bytes(String content) {

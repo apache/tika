@@ -52,5 +52,8 @@ public class Pkcs7DetectionTest {
         assertEquals("application/pkcs7-signature", detect("testPKCS7_enveloped_def.p7m"));
         // TIKA-2856: a short-form-length digestedData is now caught coarsely (routes to Pkcs7Parser)
         assertEquals("application/pkcs7-signature", detect("testPKCS7_digested.p7"));
+        // TIKA-5002: `openssl cms -outform PEM` armor routes to Pkcs7Parser
+        assertEquals("application/pkcs7-signature", tika.detect(PemFixtures.pem(
+                PemFixtures.resource("testPKCS7_certs_only_def.p7c"), "CMS", "\n")));
     }
 }
