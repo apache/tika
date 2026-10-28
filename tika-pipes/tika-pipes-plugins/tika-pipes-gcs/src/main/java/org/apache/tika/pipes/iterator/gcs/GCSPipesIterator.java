@@ -50,16 +50,12 @@ public class GCSPipesIterator extends PipesIteratorBase {
         if (StringUtils.isBlank(config.getBucket())) {
             throw new TikaConfigException("bucket must not be empty");
         }
-        if (StringUtils.isBlank(config.getProjectId())) {
-            throw new TikaConfigException("projectId must not be empty");
-        }
 
-        // Initialize the GCS client
-        this.storage = StorageOptions
-                .newBuilder()
-                .setProjectId(config.getProjectId())
-                .build()
-                .getService();
+        StorageOptions.Builder builder = StorageOptions.newBuilder();
+        if (!StringUtils.isBlank(config.getProjectId())) {
+            builder.setProjectId(config.getProjectId());
+        }
+        this.storage = builder.build().getService();
     }
 
     public static GCSPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {

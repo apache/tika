@@ -34,9 +34,6 @@ public record GCSEmitterConfig(
     }
 
     public void validate() throws TikaConfigException {
-        if (projectId == null || projectId.isBlank()) {
-            throw new TikaConfigException("'projectId' must not be empty");
-        }
         if (bucket == null || bucket.isBlank()) {
             throw new TikaConfigException("'bucket' must not be empty");
         }

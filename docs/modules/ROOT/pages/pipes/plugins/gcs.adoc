@@ -47,7 +47,7 @@ The GCS plugin relies on Google's Application Default Credentials chain — ther
 * Setting the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of a service-account JSON key.
 * Running `gcloud auth application-default login` for local development.
 
-The `projectId` field in each component selects which GCP project to bill the API calls against; the service account or user must have storage access to the named bucket.
+`projectId` is optional. Reading, writing and listing objects needs no project, and storage access is billed to the project that owns the bucket. When unset, the client resolves a project from the environment (`GOOGLE_CLOUD_PROJECT`, the credentials file, the gcloud config or the GCE metadata server). The service account or user must have storage access to the named bucket.
 
 [#gcs-fetcher]
 == GCS Fetcher (`gcs-fetcher`)
@@ -66,8 +66,8 @@ include::example$pipes-gcs-fetcher.json[]
 |Field |Default |Description
 
 |`projectId`
-|_required_
-|GCP project ID for billing/authentication.
+|_none_
+|Optional GCP project ID. See <<credentials>>.
 
 |`bucket`
 |_required_
@@ -99,8 +99,8 @@ include::example$pipes-gcs-emitter.json[]
 |Field |Default |Description
 
 |`projectId`
-|_required_
-|GCP project ID (validated non-blank).
+|_none_
+|Optional GCP project ID. See <<credentials>>.
 
 |`bucket`
 |_required_
@@ -138,8 +138,8 @@ In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.
 |GCS bucket to enumerate.
 
 |`projectId`
-|`""`
-|GCP project ID for the listing API call.
+|_none_
+|Optional GCP project ID. See <<credentials>>.
 
 |`prefix`
 |`""`
