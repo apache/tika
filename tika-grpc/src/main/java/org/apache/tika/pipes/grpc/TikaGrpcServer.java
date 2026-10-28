@@ -117,7 +117,7 @@ public class TikaGrpcServer {
             ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(port, creds);
             applyInboundLimit(serverBuilder, serviceImpl.tikaGrpcConfig);
             for (String warning : startupWarnings(
-                    serviceImpl.tikaGrpcConfig.getMaxInboundMessageBytes(),
+                    serviceImpl.tikaGrpcConfig.effectiveMaxInboundMessageBytes(),
                     serviceImpl.tikaGrpcConfig.effectiveParseBytesMaxContentBytes(),
                     Runtime.getRuntime().maxMemory())) {
                 LOGGER.warn(warning);
@@ -217,12 +217,12 @@ public class TikaGrpcServer {
         }
     }
 
-    /** Sets the configured inbound limit on the builder. Without one, gRPC's default applies. */
+    /**
+     * Sets the inbound limit on the builder: the configured one, or else one derived from the
+     * ParseBytes content limit (see {@link TikaGrpcConfig#effectiveMaxInboundMessageBytes()}).
+     */
     static void applyInboundLimit(ServerBuilder<?> builder, TikaGrpcConfig config) {
-        Integer maxInboundMessageBytes = config.getMaxInboundMessageBytes();
-        if (maxInboundMessageBytes != null) {
-            builder.maxInboundMessageSize(maxInboundMessageBytes);
-        }
+        builder.maxInboundMessageSize(config.effectiveMaxInboundMessageBytes());
     }
 
     /**

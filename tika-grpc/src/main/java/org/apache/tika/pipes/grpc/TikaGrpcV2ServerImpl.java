@@ -21,6 +21,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 
 import com.google.protobuf.ByteString;
 import io.grpc.Context;
@@ -177,20 +178,43 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         if (parseContext == null) {
             return;
         }
+        // The permit is held until the reply is sent: hashing and detection below still
+        // read the request's bytes, so parseBytesMaxConcurrent bounds them too.
+        TikaGrpcServerImpl.ParseBytesPermit permit;
+        try {
+            permit = v1.admitParseBytes(request.getContent().size());
+        } catch (TikaGrpcServerImpl.ParseBytesTooLargeException
+                 | TikaGrpcServerImpl.ParseBytesBusyException e) {
+            responseObserver.onError(Status.RESOURCE_EXHAUSTED
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+            return;
+        }
+        try (permit) {
+            parseBytes(request, responseObserver, cancellation, parseContext, permit);
+        }
+    }
+
+    private void parseBytes(ParseBytesRequest request,
+                            StreamObserver<ParseBytesResponse> responseObserver,
+                            Cancellation cancellation, ParseContext parseContext,
+                            TikaGrpcServerImpl.ParseBytesPermit permit) {
         TikaGrpcServerImpl.ParseBytesOutcome parseBytesOutcome;
         if (!cancellation.begin()) {
             return;
         }
         try {
             // newInput() reads the bytes protobuf already holds without copying them.
-            parseBytesOutcome = v1.runParseBytes(
+            parseBytesOutcome = v1.parseAdmitted(
                     request.getContent().newInput(),
                     request.getContent().size(),
                     request.getResourceName(),
                     parseContext,
-                    cancellation::dispatching);
-        } catch (TikaGrpcServerImpl.ParseBytesTooLargeException
-                 | TikaGrpcServerImpl.ParseBytesBusyException e) {
+                    cancellation::dispatching,
+                    permit);
+        } catch (TikaGrpcServerImpl.ParseBytesSpoolException e) {
+            // The server's disk, not the request: a full or unwritable spool directory.
+            LOG.warn("could not stage ParseBytes content", e.getCause());
             responseObserver.onError(Status.RESOURCE_EXHAUSTED
                     .withDescription(e.getMessage())
                     .asRuntimeException());
@@ -249,16 +273,20 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         // A parser can recover cut-off bytes without any sign of it (PDFBox rebuilds a PDF
         // whose trailer is gone and loses the Info dictionary, title included), so a
         // "success" on bytes the caller says are incomplete is a partial result.
-        if (request.getTruncated()
-                && document.getStatus().getStatus() == ParseStatus.Status.STATUS_SUCCESS) {
-            document.getStatusBuilder()
-                    .setStatus(ParseStatus.Status.STATUS_PARTIAL)
-                    .addErrors("content was truncated by the caller; metadata stored past the"
-                            + " cut, such as a PDF's document info, may be missing");
+        // Whatever the status, the Document says the bytes were cut; only a success
+        // changes, to PARTIAL. A FAILED parse stays FAILED.
+        if (request.getTruncated()) {
+            ParseStatus.Builder status = document.getStatusBuilder();
+            if (status.getStatus() == ParseStatus.Status.STATUS_SUCCESS) {
+                status.setStatus(ParseStatus.Status.STATUS_PARTIAL);
+            }
+            status.addErrors(TRUNCATED_BY_CALLER);
         }
         // The caller's bytes are here, so a parse that failed before recording its digest
-        // or content type (or a pipeline with no digester) still says what was sent.
-        if (origin.getSha256().isEmpty()) {
+        // or content type (or a pipeline with no digester) still says what was sent. A
+        // digest the pipeline recorded in another form (another algorithm, upper case,
+        // base32) is replaced: origin.sha256 is always lowercase hex SHA-256.
+        if (!isSha256Hex(origin.getSha256())) {
             origin.setSha256(sha256Hex(request.getContent()));
         }
         document.setOrigin(origin);
@@ -275,6 +303,15 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         }
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
+    }
+
+    static final String TRUNCATED_BY_CALLER = "content was truncated by the caller; metadata"
+            + " stored past the cut, such as a PDF's document info, may be missing";
+
+    private static final Pattern SHA256_HEX = Pattern.compile("[0-9a-f]{64}");
+
+    static boolean isSha256Hex(String digest) {
+        return digest != null && SHA256_HEX.matcher(digest).matches();
     }
 
     private static String sha256Hex(ByteString content) {

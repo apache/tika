@@ -167,8 +167,8 @@ class TikaGrpcV2ServerImplTest {
     /** ParseBytes reports the error of a failed parse too. */
     @Test
     void aFailedParseBytesReturnsThePipesError() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(),
-                        Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                        Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(null,
                         "PARSE_EXCEPTION_NO_EMIT", STACK, 4L));
         Recording<ParseBytesResponse> observer = new Recording<>();
@@ -200,8 +200,8 @@ class TikaGrpcV2ServerImplTest {
     void anUnexpectedFailureIsInternalWithoutTheCause() throws Exception {
         Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenThrow(new RuntimeException("secret /var/lib/tika path"));
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(),
-                        Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                        Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenThrow(new java.io.IOException("secret /var/lib/tika path"));
         Recording<FetchAndParseResponse> fetch = new Recording<>();
         Recording<ParseBytesResponse> bytes = new Recording<>();
@@ -525,7 +525,7 @@ class TikaGrpcV2ServerImplTest {
     /** A fetcher that exists but cannot be built is the server's fault: UNAVAILABLE. */
     @Test
     void aFetcherThatCannotBeLoadedIsUnavailable() {
-        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenThrow(new TikaGrpcServerImpl.FetcherUnavailableException("fs",
                         new java.io.IOException("secret store path")));
         Recording<FetchAndParseResponse> observer = new Recording<>();
@@ -539,7 +539,7 @@ class TikaGrpcV2ServerImplTest {
 
     @Test
     void aFetcherThatFailedToInitializeInTheWorkerIsUnavailable() {
-        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome("a", "FETCHER_INITIALIZATION_EXCEPTION", null, "boom"));
         Recording<FetchAndParseResponse> observer = new Recording<>();
 
@@ -569,7 +569,7 @@ class TikaGrpcV2ServerImplTest {
 
     @Test
     void serverStreamingClosesWithTheSameStatusCodes() {
-        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenThrow(new TikaGrpcServerImpl.FetcherNotFoundException("fs", null));
         Recording<FetchAndParseServerSideStreamingResponse> observer = new Recording<>();
 
@@ -582,7 +582,7 @@ class TikaGrpcV2ServerImplTest {
 
     @Test
     void aBidiStreamClosesWithTheFailuresStatusCode() {
-        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome("a", "CLIENT_UNAVAILABLE_WITHIN_MS", null, null));
         Recording<FetchAndParseBiDirectionalStreamingResponse> observer = new Recording<>();
 

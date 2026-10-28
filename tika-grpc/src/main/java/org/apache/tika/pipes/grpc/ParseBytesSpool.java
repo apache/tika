@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -209,6 +210,7 @@ final class ParseBytesSpool {
         private final PayloadRouter.Routed routed;
         private final FetchKey fetchKey;
         private final String resourceNameHint;
+        private final AtomicBoolean closed = new AtomicBoolean();
 
         private Payload(TikaInputStream tis, PayloadRouter.Routed routed, FetchKey fetchKey,
                         String resourceNameHint) {
@@ -249,8 +251,12 @@ final class ParseBytesSpool {
             return copy;
         }
 
+        /** Deletes the spool file, if any. Closing it again does nothing. */
         @Override
         public void close() throws IOException {
+            if (closed.getAndSet(true)) {
+                return;
+            }
             try {
                 routed.close();
             } finally {

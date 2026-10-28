@@ -37,7 +37,9 @@ import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -132,7 +134,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** The correlation id comes back unchanged, whitespace included. */
     @Test
     void whitespaceCorrelationEchoesVerbatim() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
 
@@ -148,7 +150,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** origin carries the caller's URIs and truncation flag, and the size of the content. */
     @Test
     void originCarriesTheCallersProvenanceAndTheByteCount() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
         ParseBytesRequest request = requestWithContent()
@@ -176,7 +178,7 @@ class TikaGrpcV2ParseBytesUnitTest {
      */
     @Test
     void aFailedParseStillCarriesTheDigestAndContentType() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
                         null, "PARSE_EXCEPTION_NO_EMIT", "boom", 5L));
         RecordingObserver observer = new RecordingObserver();
@@ -230,8 +232,8 @@ class TikaGrpcV2ParseBytesUnitTest {
     void theParsesDigestAndContentTypeAreKept() throws Exception {
         Metadata primary = htmlMetadata();
         primary.set(TikaCoreProperties.digestProperty(
-                DigestDef.Algorithm.SHA256.getJavaName()), "abc123");
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+                DigestDef.Algorithm.SHA256.getJavaName()), PIPELINE_DIGEST);
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
                         primary, "PARSE_SUCCESS", null, 5L));
         RecordingObserver observer = new RecordingObserver();
@@ -240,13 +242,173 @@ class TikaGrpcV2ParseBytesUnitTest {
 
         Document document = observer.replies.get(0).getDocument();
         assertEquals("text/html", document.getContentType());
-        assertEquals("abc123", document.getOrigin().getSha256());
+        assertEquals(PIPELINE_DIGEST, document.getOrigin().getSha256());
+    }
+
+    private static final String PIPELINE_DIGEST = "ab".repeat(32);
+
+    /**
+     * origin.sha256 is lowercase hex SHA-256: a pipeline digest in another form (upper case,
+     * base32, another length) is replaced by the server's own.
+     */
+    @Test
+    void aPipelineDigestInAnotherFormIsReplaced() throws Exception {
+        for (String recorded : List.of("abc123", "AB".repeat(32), "MFRGGZDFMZTWQ2LK")) {
+            Metadata primary = htmlMetadata();
+            primary.set(TikaCoreProperties.digestProperty(
+                    DigestDef.Algorithm.SHA256.getJavaName()), recorded);
+            Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                    .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
+                            primary, "PARSE_SUCCESS", null, 5L));
+            RecordingObserver observer = new RecordingObserver();
+            ParseBytesRequest request = requestWithContent().build();
+
+            v2.parseBytes(request, observer);
+
+            String sha256 = observer.replies.get(0).getDocument().getOrigin().getSha256();
+            assertEquals(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(request.getContent().toByteArray())), sha256, recorded);
+        }
+    }
+
+    /**
+     * Truncated content: whatever the status, the Document carries the truncation note; only
+     * SUCCESS becomes PARTIAL.
+     */
+    @Test
+    void truncationIsNotedForEveryStatus() throws Exception {
+        record Case(String pipes, ParseStatus.Status expected) { }
+        for (Case c : List.of(
+                new Case("PARSE_SUCCESS", ParseStatus.Status.STATUS_PARTIAL),
+                new Case("PARSE_SUCCESS_WITH_EXCEPTION", ParseStatus.Status.STATUS_PARTIAL),
+                new Case("PARSE_EXCEPTION_NO_EMIT", ParseStatus.Status.STATUS_FAILED),
+                new Case("TIMEOUT", ParseStatus.Status.STATUS_FAILED))) {
+            Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                    .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
+                            htmlMetadata(), c.pipes(), "boom", 5L));
+            RecordingObserver observer = new RecordingObserver();
+
+            v2.parseBytes(requestWithContent().setTruncated(true).build(), observer);
+
+            ParseStatus status = observer.replies.get(0).getDocument().getStatus();
+            assertEquals(c.expected(), status.getStatus(), c.pipes());
+            assertTrue(status.getErrorsList().contains(TikaGrpcV2ServerImpl.TRUNCATED_BY_CALLER),
+                    c.pipes() + ": " + status.getErrorsList());
+        }
+    }
+
+    /** A spool directory the server cannot write to is RESOURCE_EXHAUSTED, not INTERNAL. */
+    @Test
+    void aFullSpoolIsResourceExhausted() throws Exception {
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenThrow(new TikaGrpcServerImpl.ParseBytesSpoolException(
+                        new IOException("No space left on device")));
+        RecordingObserver observer = new RecordingObserver();
+
+        v2.parseBytes(requestWithContent().build(), observer);
+
+        Status status = Status.fromThrowable(observer.errors.get(0));
+        assertEquals(Status.Code.RESOURCE_EXHAUSTED, status.getCode());
+        assertFalse(status.getDescription().contains("No space"), status.getDescription());
+    }
+
+    /**
+     * The admission permit is held until the reply is sent, and released once, also when
+     * the call ends in an error.
+     */
+    @Test
+    void thePermitIsHeldThroughTheReplyAndReleasedOnce() throws Exception {
+        Semaphore admission = new Semaphore(1);
+        Mockito.when(v1.admitParseBytes(Mockito.anyLong())).thenAnswer(call -> {
+            assertTrue(admission.tryAcquire());
+            return new TikaGrpcServerImpl.ParseBytesPermit(admission);
+        });
+        List<Integer> freeAtReply = new ArrayList<>();
+        StreamObserver<ParseBytesResponse> observer = new StreamObserver<>() {
+            @Override
+            public void onNext(ParseBytesResponse value) {
+                freeAtReply.add(admission.availablePermits());
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                freeAtReply.add(admission.availablePermits());
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        };
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome())
+                .thenThrow(new RuntimeException("boom"));
+
+        v2.parseBytes(requestWithContent().build(), observer);
+        v2.parseBytes(requestWithContent().build(), observer);
+
+        assertEquals(List.of(0, 0), freeAtReply, "held while the reply or error is sent");
+        assertEquals(1, admission.availablePermits(), "released exactly once per call");
+    }
+
+    /** Many threads closing one permit release it once. */
+    @Test
+    void aPermitClosedConcurrentlyIsReleasedOnce() throws Exception {
+        for (int round = 0; round < 50; round++) {
+            Semaphore admission = new Semaphore(0);
+            TikaGrpcServerImpl.ParseBytesPermit permit =
+                    new TikaGrpcServerImpl.ParseBytesPermit(admission);
+            CountDownLatch go = new CountDownLatch(1);
+            List<Thread> threads = new ArrayList<>();
+            for (int i = 0; i < 8; i++) {
+                Thread t = new Thread(() -> {
+                    try {
+                        go.await();
+                        permit.close();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+                t.start();
+                threads.add(t);
+            }
+            go.countDown();
+            for (Thread t : threads) {
+                t.join();
+            }
+            assertEquals(1, admission.availablePermits());
+        }
+    }
+
+    /** Gzip edge cases for the fallback: an inflation bomb, a bare header, an ARC. */
+    @Test
+    void theGzipFallbackHandlesEdgeCases() throws Exception {
+        ByteArrayOutputStream bomb = new ByteArrayOutputStream();
+        try (GZIPOutputStream out = new GZIPOutputStream(bomb)) {
+            out.write(new byte[16 * 1024 * 1024]);
+        }
+        long start = System.nanoTime();
+        assertEquals("application/gzip", TikaGrpcV2ServerImpl.detectContentType(
+                ByteString.copyFrom(bomb.toByteArray()), "zeros.gz"));
+        assertTrue(System.nanoTime() - start < TimeUnit.SECONDS.toNanos(5),
+                "a highly compressed gzip is not inflated in full");
+
+        assertEquals("application/gzip", TikaGrpcV2ServerImpl.detectContentType(
+                ByteString.copyFrom(new byte[]{0x1f, (byte) 0x8b}), ""),
+                "a gzip header with no body");
+
+        ByteArrayOutputStream arc = new ByteArrayOutputStream();
+        try (GZIPOutputStream out = new GZIPOutputStream(arc)) {
+            out.write("filedesc://crawl.arc 0.0.0.0 20240101000000 text/plain 76\n"
+                    .getBytes(StandardCharsets.UTF_8));
+        }
+        assertEquals("application/arc+gz", TikaGrpcV2ServerImpl.detectContentType(
+                ByteString.copyFrom(arc.toByteArray()), ""));
     }
 
     /** A success on bytes the caller marked truncated is reported as partial. */
     @Test
     void aSuccessOnTruncatedContentIsPartial() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
 
@@ -261,7 +423,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** Without the truncated flag a clean parse stays a success. */
     @Test
     void aSuccessOnCompleteContentStaysSuccess() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
 
@@ -275,7 +437,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** An interrupted parse ends the call with UNAVAILABLE and no Document. */
     @Test
     void anInterruptedParseEndsTheCall() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(null);
         RecordingObserver observer = new RecordingObserver();
 
@@ -337,7 +499,7 @@ class TikaGrpcV2ParseBytesUnitTest {
 
     @Test
     void aBusyServerAnswersResourceExhausted() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.admitParseBytes(Mockito.anyLong()))
                 .thenThrow(new TikaGrpcServerImpl.ParseBytesBusyException());
         RecordingObserver observer = new RecordingObserver();
 
@@ -351,7 +513,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** No free pipes worker is RESOURCE_EXHAUSTED for ParseBytes too, not a failed Document. */
     @Test
     void noFreeWorkerAnswersResourceExhausted() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(null,
                         "CLIENT_UNAVAILABLE_WITHIN_MS", null, 1L));
         RecordingObserver observer = new RecordingObserver();
@@ -382,8 +544,7 @@ class TikaGrpcV2ParseBytesUnitTest {
 
     @Test
     void oversizeIsReportedAsResourceExhausted() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(),
-                        Mockito.any(), Mockito.any()))
+        Mockito.when(v1.admitParseBytes(Mockito.anyLong()))
                 .thenThrow(new TikaGrpcServerImpl.ParseBytesTooLargeException(
                         "content exceeds the ParseBytes limit of 1 bytes"));
         RecordingObserver observer = new RecordingObserver();

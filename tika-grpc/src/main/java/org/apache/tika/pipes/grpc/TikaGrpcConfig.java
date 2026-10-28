@@ -41,6 +41,13 @@ public class TikaGrpcConfig {
     /** The ParseBytes content limit when {@code parseBytesMaxContentBytes} is not set. */
     public static final long DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES = 64L * 1024 * 1024;
 
+    /**
+     * Room for a ParseBytes request's other fields (resource name, URIs, parse context JSON)
+     * on top of its content, in the inbound limit derived when
+     * {@code maxInboundMessageBytes} is not set.
+     */
+    public static final int INBOUND_OVERHEAD_BYTES = 1024 * 1024;
+
     private boolean allowPerRequestConfig = false;
 
     private boolean allowComponentManagement = false;
@@ -117,7 +124,9 @@ public class TikaGrpcConfig {
 
     /**
      * The largest message the server accepts on any RPC, in bytes, passed to gRPC's
-     * {@code maxInboundMessageSize}. When it is not set, gRPC's default of 4 MiB applies.
+     * {@code maxInboundMessageSize}. When it is not set, the server uses
+     * {@link #effectiveMaxInboundMessageBytes()}: the ParseBytes content limit plus
+     * {@link #INBOUND_OVERHEAD_BYTES}, so the default ParseBytes limit is reachable.
      * <p>
      * gRPC reads a whole unary request into memory before the handler runs, so each
      * request in flight takes at least this much heap.
@@ -129,8 +138,8 @@ public class TikaGrpcConfig {
     }
 
     /**
-     * @param maxInboundMessageBytes positive limit in bytes, or {@code null} for gRPC's
-     *                               default
+     * @param maxInboundMessageBytes positive limit in bytes, or {@code null} to derive it
+     *                               from the ParseBytes content limit
      * @throws IllegalArgumentException if the value is present and not positive
      */
     public void setMaxInboundMessageBytes(Integer maxInboundMessageBytes) {
@@ -164,6 +173,19 @@ public class TikaGrpcConfig {
                             + parseBytesMaxContentBytes);
         }
         this.parseBytesMaxContentBytes = parseBytesMaxContentBytes;
+    }
+
+    /**
+     * @return the configured {@link #getMaxInboundMessageBytes()}, or else
+     *         {@link #effectiveParseBytesMaxContentBytes()} plus
+     *         {@link #INBOUND_OVERHEAD_BYTES}, at most {@link Integer#MAX_VALUE}
+     */
+    public int effectiveMaxInboundMessageBytes() {
+        if (maxInboundMessageBytes != null) {
+            return maxInboundMessageBytes;
+        }
+        return (int) Math.min(Integer.MAX_VALUE,
+                effectiveParseBytesMaxContentBytes() + INBOUND_OVERHEAD_BYTES);
     }
 
     /**

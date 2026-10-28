@@ -65,6 +65,9 @@ public class GZipSpecializationDetector implements Detector {
         return detectSpecialization(tis, metadata);
     }
 
+    /** Enough inflated bytes for the longest prefix compared, "filedesc://". */
+    static final int MAX_INFLATED_BYTES = 64;
+
     private MediaType detectSpecialization(TikaInputStream input, Metadata metadata) throws IOException {
 
         int buffSize = 1024;
@@ -80,8 +83,10 @@ public class GZipSpecializationDetector implements Detector {
         try (InputStream is = new
                      GzipCompressorInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(gzippedBytes.toByteArray()).get())) {
             int c = is.read();
-            //read bytes one at a time to avoid premature EOF from buffering
-            while (c > -1) {
+            //read bytes one at a time to avoid premature EOF from buffering;
+            //only the first few are compared, so stop there: 1 KiB of
+            //compressed input can inflate to about 1 MiB
+            while (c > -1 && bytes.size() < MAX_INFLATED_BYTES) {
                 bytes.write(c);
                 c = is.read();
             }

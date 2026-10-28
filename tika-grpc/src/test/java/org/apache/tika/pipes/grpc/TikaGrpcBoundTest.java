@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.grpc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -207,16 +208,36 @@ public class TikaGrpcBoundTest {
         }
     }
 
+    /**
+     * Without a configured limit the inbound limit follows the content limit: content just
+     * over a 2 MiB content limit reaches ParseBytes, which refuses it, and a request well over
+     * the derived 3 MiB inbound limit is refused by gRPC.
+     */
     @Test
-    public void withoutALimitTheGrpcDefaultApplies() throws Exception {
-        try (RealServer s = new RealServer(configWithLimit(null))) {
-            StatusRuntimeException thrown = assertThrows(StatusRuntimeException.class, () ->
-                    s.v2.parseBytes(ParseBytesRequest.newBuilder()
+    public void withoutALimitTheInboundLimitFollowsTheContentLimit() throws Exception {
+        int contentLimit = 2 * 1024 * 1024;
+        try (RealServer s = new RealServer(configWithLimits(null, (long) contentLimit))) {
+            StatusRuntimeException overContent = assertThrows(StatusRuntimeException.class,
+                    () -> s.v2.parseBytes(ParseBytesRequest.newBuilder()
+                            .setContent(bigInputTinyOutput(contentLimit + 1))
+                            .build()));
+            assertEquals(Status.Code.RESOURCE_EXHAUSTED, overContent.getStatus().getCode());
+            assertTrue(overContent.getStatus().getDescription().contains("ParseBytes limit"),
+                    "ParseBytes, not gRPC, refuses content between the two limits: "
+                            + overContent.getStatus().getDescription());
+
+            StatusRuntimeException overInbound = assertThrows(StatusRuntimeException.class,
+                    () -> s.v2.parseBytes(ParseBytesRequest.newBuilder()
                             .setContent(bigInputTinyOutput(ABOVE_DEFAULT))
                             .build()));
-
-            assertEquals(Status.Code.RESOURCE_EXHAUSTED, thrown.getStatus().getCode());
+            assertEquals(Status.Code.RESOURCE_EXHAUSTED, overInbound.getStatus().getCode());
+            assertFalse(String.valueOf(overInbound.getStatus().getDescription())
+                    .contains("ParseBytes limit"), "gRPC refuses it first");
         }
+        assertEquals(TikaGrpcConfig.DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES
+                        + TikaGrpcConfig.INBOUND_OVERHEAD_BYTES,
+                new TikaGrpcConfig().effectiveMaxInboundMessageBytes(),
+                "the default inbound limit admits default-limit content");
     }
 
     /** A 2 MiB request is below gRPC's 4 MiB default, so only a 1 MiB limit refuses it. */

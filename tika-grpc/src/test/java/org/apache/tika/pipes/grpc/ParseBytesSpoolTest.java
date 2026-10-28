@@ -192,6 +192,25 @@ class ParseBytesSpoolTest {
         assertFalse(Files.exists(spool.directory()), "the last payload to close deletes the directory");
     }
 
+    /**
+     * Closing a payload twice counts once: the second close must not delete the directory
+     * while another payload still has a file in it.
+     */
+    @Test
+    void closingAPayloadTwiceCountsOnce() throws Exception {
+        ParseBytesSpool.Payload first = spool.stage(bytes("<x/>!"), "a.html", new ParseContext());
+        ParseBytesSpool.Payload second = spool.stage(bytes("<y/>!"), "b.html", new ParseContext());
+        spool.release(null);
+
+        first.close();
+        first.close();
+
+        assertTrue(Files.isDirectory(spool.directory()), "the second payload is still open");
+        assertEquals(1, spoolFiles());
+        second.close();
+        assertFalse(Files.exists(spool.directory()));
+    }
+
     private long spoolFiles() throws IOException {
         try (var files = Files.list(spool.directory())) {
             return files.count();

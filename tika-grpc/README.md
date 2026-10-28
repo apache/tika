@@ -115,8 +115,9 @@ they wait.
 
 ### Message size
 
-By default the server keeps gRPC's inbound message limit of 4 MiB. Raise it
-with `maxInboundMessageBytes` in the `grpc` section:
+By default the server's inbound message limit is the ParseBytes content limit plus
+1 MiB for the request's other fields (65 MiB with the defaults), instead of gRPC's
+4 MiB. Set it with `maxInboundMessageBytes` in the `grpc` section:
 
 ```json
 {
@@ -135,9 +136,8 @@ maximum heap is below three times the limit.
 
 `parseBytesMaxContentBytes` (64 MiB by default, must be positive) limits the
 `content` field of ParseBytes. gRPC applies the inbound limit to the whole request
-first, so with the default 4 MiB limit ParseBytes accepts less than 4 MiB of content.
-Set `maxInboundMessageBytes` above `parseBytesMaxContentBytes`; when it is set at or
-below it, the server logs a warning at startup. `dev-tika-config.json` sets a 100 MiB
+first. When `maxInboundMessageBytes` is set at or below `parseBytesMaxContentBytes`,
+the server logs a warning at startup. `dev-tika-config.json` sets a 100 MiB
 inbound limit.
 
 ## Distribution and Maven Artifact

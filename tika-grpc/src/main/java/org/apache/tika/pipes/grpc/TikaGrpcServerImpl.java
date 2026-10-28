@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,6 +38,7 @@ import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.pf4j.PluginManager;
 import org.slf4j.Logger;
@@ -681,7 +683,28 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     ParseBytesOutcome runParseBytes(InputStream content, long size, String resourceNameHint,
                                     ParseContext requestContext, Dispatch dispatch)
             throws IOException {
-        if (content == null || size <= 0) {
+        if (content == null) {
+            throw new IllegalArgumentException("content is required");
+        }
+        try (ParseBytesPermit permit = admitParseBytes(size)) {
+            return parseAdmitted(content, size, resourceNameHint, requestContext, dispatch,
+                    permit);
+        }
+    }
+
+    /**
+     * Admits one ParseBytes request: checks its size, then takes one of the
+     * {@code parseBytesMaxConcurrent} places. The caller holds the permit for as long as the
+     * request holds memory (the v2 server keeps it until its reply is built) and closes it.
+     * Taken before staging: a request turned away here never reaches the spool, and gives
+     * its bytes back to the heap now instead of after maxWaitForClientMillis.
+     *
+     * @throws IllegalArgumentException    for no content
+     * @throws ParseBytesTooLargeException over {@code parseBytesMaxContentBytes}
+     * @throws ParseBytesBusyException     when no place is free
+     */
+    ParseBytesPermit admitParseBytes(long size) {
+        if (size <= 0) {
             throw new IllegalArgumentException("content is required");
         }
         // Separate from maxInboundMessageBytes, which gRPC applies to the whole request.
@@ -690,15 +713,45 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     "content exceeds the ParseBytes limit of " + parseBytesMaxContentBytes
                             + " bytes");
         }
-        // Taken before staging: a request turned away here never reaches the spool, and
-        // gives its bytes back to the heap now instead of after maxWaitForClientMillis.
         if (!parseBytesAdmission.tryAcquire()) {
             throw new ParseBytesBusyException();
         }
-        try {
-            return stageAndParse(content, resourceNameHint, requestContext, dispatch);
-        } finally {
-            parseBytesAdmission.release();
+        return new ParseBytesPermit(parseBytesAdmission);
+    }
+
+    /**
+     * Parses {@code size} bytes of ParseBytes content for a request already admitted with
+     * {@code permit}. No more than {@code size} bytes are read from {@code content}, so the
+     * spool never holds more than the size that was admitted.
+     */
+    ParseBytesOutcome parseAdmitted(InputStream content, long size, String resourceNameHint,
+                                    ParseContext requestContext, Dispatch dispatch,
+                                    ParseBytesPermit permit) throws IOException {
+        if (content == null || permit == null) {
+            throw new IllegalArgumentException("content and an admission permit are required");
+        }
+        InputStream bounded = BoundedInputStream.builder()
+                .setInputStream(content)
+                .setMaxCount(size)
+                .setPropagateClose(true)
+                .get();
+        return stageAndParse(bounded, resourceNameHint, requestContext, dispatch);
+    }
+
+    /** One of the {@code parseBytesMaxConcurrent} places; closing it again does nothing. */
+    static final class ParseBytesPermit implements AutoCloseable {
+        private final Semaphore admission;
+        private final AtomicBoolean released = new AtomicBoolean();
+
+        ParseBytesPermit(Semaphore admission) {
+            this.admission = admission;
+        }
+
+        @Override
+        public void close() {
+            if (released.compareAndSet(false, true)) {
+                admission.release();
+            }
         }
     }
 
@@ -714,8 +767,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         // The reply is the only output of ParseBytes: no result goes to an emitter.
         parseContext.set(EmitStrategyConfig.class,
                 new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
-        try (ParseBytesSpool.Payload payload =
-                     spool.stage(content, resourceNameHint, parseContext)) {
+        ParseBytesSpool.Payload staged;
+        try {
+            staged = spool.stage(content, resourceNameHint, parseContext);
+        } catch (IOException e) {
+            throw new ParseBytesSpoolException(e);
+        }
+        try (ParseBytesSpool.Payload payload = staged) {
             FetchKey fetchKey = payload.fetchKey();
             FetchParseOutcome outcome = executeTuple(new FetchEmitTuple(
                     fetchKey.getFetchKey(),
@@ -771,6 +829,16 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     static final class ParseBytesTooLargeException extends RuntimeException {
         ParseBytesTooLargeException(String message) {
             super(message);
+        }
+    }
+
+    /**
+     * The content could not be written to the spool directory (a full or unwritable disk).
+     * The server's fault, not the request's: v2 answers {@code RESOURCE_EXHAUSTED}.
+     */
+    static final class ParseBytesSpoolException extends RuntimeException {
+        ParseBytesSpoolException(IOException cause) {
+            super("the server could not stage the content; retry later", cause);
         }
     }
 
