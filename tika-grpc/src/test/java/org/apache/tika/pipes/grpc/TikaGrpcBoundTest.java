@@ -475,7 +475,11 @@ public class TikaGrpcBoundTest {
         }
     }
 
-    /** stop() closes the embedded Ignite node after the spool fetcher leaves the config store. */
+    /**
+     * stop() releases the spool before it closes the embedded Ignite node. The spool fetcher
+     * comes from the config file, so it never reaches the store (TIKA-5001) and the release
+     * only looks it up.
+     */
     @Test
     public void stopClosesIgniteLast() throws Exception {
         TikaGrpcServer server = new TikaGrpcServer()
@@ -491,8 +495,9 @@ public class TikaGrpcBoundTest {
         server.stop();
 
         InOrder order = Mockito.inOrder(store, ignite);
-        order.verify(store).remove(impl.spool.fetcherId());
+        order.verify(store).containsKey(impl.spool.fetcherId());
         order.verify(ignite).close();
+        Mockito.verify(store, Mockito.never()).remove(Mockito.anyString());
     }
 
     private static long spoolDirectories(Path tmpdir) throws IOException {

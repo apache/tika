@@ -340,15 +340,15 @@ class TikaGrpcV2ParseBytesUnitTest {
     }
 
     /**
-     * postShutdown() removes the spool fetcher from the config store before it closes the
-     * embedded Ignite node, and closes the node even when the removal fails.
+     * postShutdown() releases the spool before it closes the embedded Ignite node, and closes
+     * the node even when the config store fails.
      */
     @Test
     void postShutdownClosesIgniteLast(@TempDir Path tmp) throws Exception {
         TikaGrpcServerImpl real = realImpl(tmp);
         ConfigStore store = Mockito.spy(real.configStore);
         Mockito.doThrow(new IllegalStateException("store unavailable"))
-                .when(store).remove(Mockito.anyString());
+                .when(store).containsKey(Mockito.anyString());
         real.configStore = store;
         AutoCloseable ignite = Mockito.mock(AutoCloseable.class);
         real.igniteStoreServer = ignite;
@@ -356,7 +356,7 @@ class TikaGrpcV2ParseBytesUnitTest {
         real.postShutdown();
 
         InOrder order = Mockito.inOrder(store, ignite);
-        order.verify(store).remove(real.spool.fetcherId());
+        order.verify(store).containsKey(real.spool.fetcherId());
         order.verify(ignite).close();
     }
 
@@ -377,8 +377,9 @@ class TikaGrpcV2ParseBytesUnitTest {
     }
 
     /**
-     * Two servers on one "file" config store each read their own spool directory, and each
-     * removes its own fetcher from the store when it shuts down.
+     * Two servers on one "file" config store each read their own spool directory. The spool
+     * fetchers come from each server's config file, so neither reaches the shared store
+     * (TIKA-5001) and one server shutting down cannot touch the other's.
      */
     @Test
     void twoServersOnOneStoreKeepTheirOwnSpool(@TempDir Path tmp) throws Exception {
@@ -391,38 +392,22 @@ class TikaGrpcV2ParseBytesUnitTest {
             assertEquals(second.spool.directory().toString(), spoolBasePath(second));
             assertNotEquals(first.spool.fetcherId(), second.spool.fetcherId(),
                     "each server must have its own spool fetcher");
+            assertFalse(storeHolds(store, first.spool.fetcherId()),
+                    "a spool fetcher must stay out of the store");
+            assertFalse(storeHolds(store, second.spool.fetcherId()));
         } finally {
             first.postShutdown();
         }
         try {
-            assertFalse(Files.readString(store).contains(first.spool.fetcherId()),
-                    "the first server must remove its fetcher from the store");
-            assertTrue(Files.readString(store).contains(second.spool.fetcherId()),
-                    "the second server's fetcher must stay in the store");
+            assertEquals(second.spool.directory().toString(), spoolBasePath(second),
+                    "the second server must keep its spool after the first one leaves");
         } finally {
             second.postShutdown();
         }
-        assertFalse(Files.readString(store).contains(second.spool.fetcherId()));
     }
 
-    /**
-     * A "file" store re-reads its file on lookups but not on remove, and remove writes this
-     * JVM's copy back. Unlike the test above, nothing looks the store up before the first
-     * server shuts down, so its copy predates the second server; removing its entry must not
-     * remove the second server's.
-     */
-    @Test
-    void aDepartingServerLeavesTheOthersEntriesAlone(@TempDir Path tmp) throws Exception {
-        Path store = tmp.resolve("shared-config-store.json");
-        TikaGrpcServerImpl first = realImpl(Files.createDirectories(tmp.resolve("first")), null, store);
-        TikaGrpcServerImpl second = realImpl(Files.createDirectories(tmp.resolve("second")), null, store);
-        try {
-            first.postShutdown();
-            assertTrue(Files.readString(store).contains(second.spool.fetcherId()),
-                    "the second server's fetcher must stay in the store");
-        } finally {
-            second.postShutdown();
-        }
+    private static boolean storeHolds(Path store, String id) throws IOException {
+        return Files.exists(store) && Files.readString(store).contains(id);
     }
 
     private static String spoolBasePath(TikaGrpcServerImpl impl) throws Exception {
