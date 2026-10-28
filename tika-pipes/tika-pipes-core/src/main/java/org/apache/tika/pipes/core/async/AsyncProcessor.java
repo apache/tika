@@ -87,6 +87,7 @@ public class AsyncProcessor implements Closeable {
     private volatile int numParserThreadsFinished = 0;
     private volatile int numEmitterThreadsFinished = 0;
     private boolean addedEmitterSemaphores = false;
+    private volatile EmitterManager emitterManager;
     boolean isShuttingDown = false;
 
     /**
@@ -188,7 +189,7 @@ public class AsyncProcessor implements Closeable {
                 }
             }
 
-            EmitterManager emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
+            emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
                 executorCompletionService.submit(
                         new AsyncEmitter(asyncConfig, emitDatumTuples, emitterManager));
@@ -392,6 +393,9 @@ public class AsyncProcessor implements Closeable {
     public void close() throws IOException {
         executorService.shutdownNow();
         closeServerManagers();
+        if (emitterManager != null) {
+            emitterManager.close();
+        }
         this.pipesReporter.close();
     }
 

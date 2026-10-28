@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.core.extractor;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -28,7 +27,6 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 
 public class EmittingUnpackHandler extends AbstractUnpackHandler {
@@ -39,23 +37,23 @@ public class EmittingUnpackHandler extends AbstractUnpackHandler {
     private static final Metadata METADATA = new Metadata();
     private static final ParseContext PARSE_CONTEXT = new ParseContext();
 
-    public EmittingUnpackHandler(FetchEmitTuple fetchEmitTuple,
-                                                EmitterManager emitterManager,
-                                                ParseContext parseContext) throws TikaException, IOException {
+    /**
+     * @param emitter the caller keeps it open (leased) until this handler is closed
+     */
+    public EmittingUnpackHandler(FetchEmitTuple fetchEmitTuple, Emitter emitter,
+                                 ParseContext parseContext) throws TikaException {
 
         this.containerEmitKey = fetchEmitTuple.getEmitKey();
         this.unpackConfig = parseContext.get(UnpackConfig.class);
         if (this.unpackConfig == null) {
             throw new TikaConfigException("UnpackConfig must not be null!");
         }
-        Emitter tmpEmitter =
-                emitterManager.getEmitter(unpackConfig.getEmitter());
-        if (! (tmpEmitter instanceof StreamEmitter)) {
+        if (! (emitter instanceof StreamEmitter)) {
             throw new TikaConfigException("Emitter " +
                     unpackConfig.getEmitter()
                     + " must implement a StreamEmitter");
         }
-        this.emitter = (StreamEmitter) tmpEmitter;
+        this.emitter = (StreamEmitter) emitter;
     }
 
     @Override
@@ -71,9 +69,7 @@ public class EmittingUnpackHandler extends AbstractUnpackHandler {
     }
 
     @Override
-    public void close() throws IOException {
-        if (emitter instanceof Closeable) {
-            ((Closeable) emitter).close();
-        }
+    public void close() {
+        // the emitter is leased by the task, not owned here
     }
 }

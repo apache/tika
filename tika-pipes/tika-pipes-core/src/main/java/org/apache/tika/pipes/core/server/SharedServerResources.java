@@ -222,9 +222,14 @@ public class SharedServerResources implements Closeable {
         return defaultMetadataFilter;
     }
 
-    /** Closes what the config loaded and holds open: the filter chain and the engines. */
+    /**
+     * Closes what the config loaded and holds open: fetchers, emitters, the filter chain and
+     * the engines.
+     */
     @Override
     public void close() throws IOException {
+        fetcherManager.close();
+        emitterManager.close();
         try {
             defaultMetadataFilter.close();
         } finally {

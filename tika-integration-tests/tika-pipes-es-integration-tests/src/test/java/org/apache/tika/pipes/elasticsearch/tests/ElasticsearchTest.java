@@ -400,7 +400,7 @@ public class ElasticsearchTest {
         Emitter emitter = EmitterManager
                 .load(TikaPluginManager.load(tikaJsonConfig),
                         tikaJsonConfig)
-                .getEmitter();
+                .getEmitter().get();
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");
@@ -484,7 +484,7 @@ public class ElasticsearchTest {
             TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pluginsConfigFile);
             Emitter emitter = EmitterManager
                     .load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig)
-                    .getEmitter();
+                    .getEmitter().get();
 
             for (Object[] doc : docs) {
                 String id = (String) doc[0];

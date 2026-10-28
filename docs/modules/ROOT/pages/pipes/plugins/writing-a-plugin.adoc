@@ -131,8 +131,13 @@ unknown keys, duplicate keys and numbers-for-enums rejected. Using it is optiona
 boundary is the `Fetcher`, not how it is configured — but see the Jackson rule under
 <<classloading>> before deciding.
 
-IMPORTANT: `Fetcher` implementations must be thread-safe. One instance serves every concurrent
-request against that fetcher id.
+IMPORTANT: `Fetcher` and `Emitter` implementations must be thread-safe. One instance serves
+every concurrent request against that id.
+
+A fetcher or emitter that holds resources (clients, connections, pools) implements
+`java.io.Closeable`. Tika closes it when it is replaced or deleted at runtime, once the last
+task using it ends, and when the pipes server shuts down. A pipes server that is killed
+(timeout, OOM) skips `close()`, so do not rely on it to flush data.
 
 == plugin.properties
 
@@ -404,6 +409,7 @@ java -Dtika.plugin.dev.mode=true ...
   Jackson type is) — never a mix.
 * The zip — not an unpacked directory — dropped in a `plugin-roots` directory.
 * `getName()` unique against every other loaded plugin.
+* `Closeable` on any fetcher or emitter that holds a client or connection.
 
 == Source
 

@@ -29,6 +29,7 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.pipes.api.emitter.EmitterNotFoundException;
 import org.apache.tika.pipes.core.AbstractComponentManager;
+import org.apache.tika.pipes.core.Lease;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
@@ -132,35 +133,36 @@ public class EmitterManager extends AbstractComponentManager<Emitter, EmitterFac
     }
 
     /**
-     * Gets an emitter by ID, lazily instantiating it if needed.
+     * Leases an emitter by ID, lazily instantiating it if needed. Close the lease when the
+     * emitter and everything it returned are no longer in use.
      *
      * @param emitterName the emitter ID
-     * @return the emitter
+     * @return a lease on the emitter
      * @throws EmitterNotFoundException if no emitter with the given ID exists
      * @throws IOException if there's an error building the emitter
      * @throws TikaException if there's a configuration error
      */
-    public Emitter getEmitter(String emitterName) throws IOException, TikaException {
-        return getComponent(emitterName);
+    public Lease<Emitter> getEmitter(String emitterName) throws IOException, TikaException {
+        return acquire(emitterName);
     }
 
     /**
-     * Convenience method that returns an emitter if only one emitter
+     * Convenience method that leases an emitter if only one emitter
      * is configured. If 0 or > 1 emitters are configured, this throws an IllegalArgumentException.
      *
-     * @return the single configured emitter
+     * @return a lease on the single configured emitter
      * @throws IOException if there's an error building the emitter
      * @throws TikaException if there's a configuration error
      */
-    public Emitter getEmitter() throws IOException, TikaException {
-        return getComponent();
+    public Lease<Emitter> getEmitter() throws IOException, TikaException {
+        return acquire();
     }
 
     /**
      * Dynamically adds or updates an emitter configuration at runtime.
      * The emitter will not be instantiated until it is first requested via {@link #getEmitter(String)}.
      * This allows for dynamic configuration without the overhead of immediate instantiation.
-     * If an emitter with the same ID already exists, it will be replaced and the cached instance cleared.
+     * If an emitter with the same ID already exists, it will be replaced and its instance retired.
      * An emitter defined in the server config cannot be replaced.
      * <p>
      * This method is only available if the EmitterManager was loaded with
