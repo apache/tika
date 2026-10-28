@@ -93,6 +93,9 @@ Build the API and mapper with the rest of the reactor:
 fetches nothing, so no fetcher has to be registered. The response carries the same
 `Document` that FetchAndParse returns.
 
+[docs/parse-bytes.md](docs/parse-bytes.md) explains why it exists, how the bytes reach
+the worker, and how memory is bounded.
+
 | Request field | Meaning |
 |---------------|---------|
 | `content` | The bytes to parse. Required, at most `parseBytesMaxContentBytes`. |
