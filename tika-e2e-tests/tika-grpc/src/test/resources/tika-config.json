@@ -4,6 +4,8 @@
   ],
   "pipes": {
     "numClients": 1,
+    "configStoreType": "file",
+    "configStoreParams": "{\"path\": \"target/tika-e2e-config-store.json\"}",
     "forkedJvmArgs": [
       "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
       "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",

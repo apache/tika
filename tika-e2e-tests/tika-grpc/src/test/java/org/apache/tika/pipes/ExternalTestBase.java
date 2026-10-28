@@ -55,6 +55,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
 import org.apache.tika.pipes.grpc.proto.ListFetchersRequest;
 import org.apache.tika.pipes.grpc.proto.TikaGrpc;
@@ -325,6 +326,10 @@ public abstract class ExternalTestBase {
         }
         
         LOG.info("Finished downloading and extracting govdocs1 files");
+    }
+
+    public static boolean isSuccess(FetchAndParseReply reply) {
+        return PipesResult.RESULT_STATUS.valueOf(reply.getStatus()).isSuccess();
     }
 
     public static void assertAllFilesFetched(Path baseDir, List<FetchAndParseReply> successes, 
