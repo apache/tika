@@ -19,8 +19,11 @@ package org.apache.tika.pipes.grpc;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,6 +56,7 @@ import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.config.DefaultPluginsDir;
@@ -101,6 +105,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     Path tikaConfigPath;
     PluginManager pluginManager;
     private AutoCloseable igniteStoreServer;
+    /**
+     * One permit per pipes client. A parse takes a permit before it asks the pipes parser
+     * for a client, so the wait for a free worker happens here, where an interrupt costs
+     * nothing, and the pipes parser then always has a client ready. That keeps "waiting for
+     * a worker" and "running on a worker" apart, which a cancelled v2 call needs: see
+     * {@link TikaGrpcConfig#isCancelRunningParse()}.
+     */
+    Semaphore parseSlots;
+    /**
+     * Whether the operator set {@code parse-context.exception-reporting}. When they did not,
+     * v2 errors carry only the first line of the pipes diagnostic: see
+     * {@link #diagnostic(PipesResult, boolean)}.
+     */
+    boolean exceptionReportingConfigured;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
         this(tikaConfigPath, null);
@@ -117,11 +135,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
 
-        // Load PipesConfig directly from root level (not from "parse-context")
-        pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
-        if (pipesConfig == null) {
-            pipesConfig = new PipesConfig();
-        }
+        // PipesConfig.load also reads parse-context.exception-reporting and timeout-limits,
+        // which the parent needs for the results it fabricates itself (timeouts, crashes).
+        pipesConfig = PipesConfig.load(tikaJsonConfig);
         pipesConfig.refuseTrustedRequests("tika-grpc");
 
         // Security-sensitive grpc features (per-request config, runtime component
@@ -130,6 +146,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
         pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
+        parseSlots = new Semaphore(pipesConfig.getNumClients(), true);
+        exceptionReportingConfigured = tikaJsonConfig.getRootNode()
+                .path("parse-context").has("exception-reporting");
         
         try {
             if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {
@@ -259,9 +278,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     private boolean denyPerRequestConfig(FetchAndParseRequest request,
                                          StreamObserver<?> responseObserver) {
+        return denyPerRequestConfig(request.getAdditionalFetchConfigJson(),
+                request.getParseContextJson(), responseObserver);
+    }
+
+    /**
+     * Shared by v1 and v2 parse RPCs: reject per-request config unless the operator
+     * has opted in. Returns {@code true} when the call was closed with
+     * {@code PERMISSION_DENIED}.
+     */
+    boolean denyPerRequestConfig(String additionalFetchConfigJson, String parseContextJson,
+                                 StreamObserver<?> responseObserver) {
         boolean hasPerRequestConfig =
-                StringUtils.isNotBlank(request.getAdditionalFetchConfigJson())
-                        || StringUtils.isNotBlank(request.getParseContextJson());
+                StringUtils.isNotBlank(additionalFetchConfigJson)
+                        || StringUtils.isNotBlank(parseContextJson);
         if (!hasPerRequestConfig || tikaGrpcConfig.isAllowPerRequestConfig()) {
             return false;
         }
@@ -284,8 +314,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
@@ -327,8 +358,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     /**
@@ -346,8 +378,19 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     private ParseContext buildRequestParseContext(FetchAndParseRequest request,
                                                   StreamObserver<?> responseObserver) {
+        return buildRequestParseContext(request.getFetcherId(),
+                request.getAdditionalFetchConfigJson(), request.getParseContextJson(),
+                responseObserver);
+    }
+
+    /**
+     * Shared by v1 and v2 parse RPCs: see {@link #buildRequestParseContext(FetchAndParseRequest,
+     * StreamObserver)}.
+     */
+    ParseContext buildRequestParseContext(String fetcherId, String additionalFetchConfigJson,
+                                          String parseContextJson,
+                                          StreamObserver<?> responseObserver) {
         ParseContext parseContext = new ParseContext();
-        String parseContextJson = request.getParseContextJson();
         if (StringUtils.isNotBlank(parseContextJson)) {
             try {
                 parseContext = ParseContextDeserializer.readParseContext(
@@ -360,63 +403,278 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 return null;
             }
         }
-        String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
         if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
             // The fork reads this jsonConfig by the fetcher's registered component name
             // (e.g. "http-fetcher"). An unregistered key fails the fork's resolveAll and a
             // wire-blocked one is refused by its restricted tuple deserialization -- both
             // exit the worker. Enforce here: a 400, not a JVM restart per request.
-            var info = ComponentNameResolver.getComponentInfo(request.getFetcherId());
+            var info = ComponentNameResolver.getComponentInfo(fetcherId);
             if (info.isEmpty() || ComponentNameResolver.isWireBlocked(
                     ComponentNameResolver.determineContextKey(info.get()))) {
                 responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
                         .withDescription("additional_fetch_config_json requires fetcher_id to "
                                 + "be a registered, wire-allowed component name; got '"
-                                + request.getFetcherId() + "'")
+                                + fetcherId + "'")
                         .asRuntimeException());
                 return null;
             }
-            parseContext.setJsonConfig(request.getFetcherId(), additionalFetchConfigJson);
+            parseContext.setJsonConfig(fetcherId, additionalFetchConfigJson);
         }
         return parseContext;
     }
 
-    private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
-                                   StreamObserver<FetchAndParseReply> responseObserver) {
-        Fetcher fetcher;
-        try {
-            fetcher = fetcherManager.getFetcher(request.getFetcherId());
-        } catch (TikaException | IOException e) {
-            throw new RuntimeException("Could not find fetcher with name " + request.getFetcherId(), e);
+    /**
+     * Sends the reply for one request. Returns {@code false} when the call was closed with an
+     * error instead (see {@link #closeInterrupted}), so the caller must not complete it.
+     */
+    private boolean fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
+                                      StreamObserver<FetchAndParseReply> responseObserver) {
+        FetchParseOutcome outcome = runFetchAndParse(
+                request.getFetcherId(), request.getFetchKey(), parseContext);
+        if (outcome == null) {
+            closeInterrupted(request.getFetchKey(), responseObserver);
+            return false;
         }
+        FetchAndParseReply.Builder fetchReplyBuilder =
+                FetchAndParseReply.newBuilder()
+                        .setFetchKey(outcome.fetchKey())
+                        .setStatus(outcome.status())
+                        .putAllFields(outcome.fields());
+        if (outcome.errorMessage() != null) {
+            fetchReplyBuilder.setErrorMessage(outcome.errorMessage());
+        }
+        responseObserver.onNext(fetchReplyBuilder.build());
+        return true;
+    }
+
+    /**
+     * Shared by v1 and v2 parse RPCs: closes the call with {@code UNAVAILABLE} when
+     * {@link #runFetchAndParse} was interrupted (typically the server shutting down) and has no
+     * outcome. A unary call must not complete without a reply, so callers skip
+     * {@code onCompleted()} after this.
+     */
+    static void closeInterrupted(String fetchKey, StreamObserver<?> responseObserver) {
+        responseObserver.onError(io.grpc.Status.UNAVAILABLE
+                .withDescription("interrupted before the fetch and parse of '" + fetchKey
+                        + "' finished")
+                .asRuntimeException());
+    }
+
+    /**
+     * Shared pipes round-trip used by the v1 {@code fields}-map reply and the v2 typed
+     * {@code Document} reply. {@code parseContext} is the per-request context already
+     * validated by {@link #buildRequestParseContext}. Returns primary metadata as
+     * {@code null} when the pipes result carried no metadata list (so the v2 builder can
+     * distinguish empty output from an empty {@link Metadata} object).
+     */
+    FetchParseOutcome runFetchAndParse(String fetcherId, String fetchKey,
+                                       ParseContext parseContext) {
+        return runFetchAndParse(fetcherId, fetchKey, parseContext, Dispatch.ALWAYS);
+    }
+
+    /**
+     * {@link #runFetchAndParse(String, String, ParseContext)}, telling {@code dispatch} when
+     * the parse has a worker and is about to start on it.
+     */
+    FetchParseOutcome runFetchAndParse(String fetcherId, String fetchKey,
+                                       ParseContext parseContext, Dispatch dispatch) {
+        String resolvedId = resolveFetcherId(fetcherId);
 
         Metadata tikaMetadata = new Metadata();
+        // Times the whole pipesParser.parse() round trip: fetch and parse both happen
+        // inside the forked pipes worker, so this is fetch+parse latency, not parse-only.
+        long fetchParseStart = System.nanoTime();
         try {
-            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
-                    new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            FetchAndParseReply.Builder fetchReplyBuilder =
-                    FetchAndParseReply.newBuilder()
-                                      .setFetchKey(request.getFetchKey())
-                            .setStatus(pipesResult.status().name());
-            if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
-                fetchReplyBuilder.setErrorMessage(pipesResult.message());
-            }
-            if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
-                    for (String name : metadata.names()) {
-                        String value = metadata.get(name);
-                        if (value != null) {
-                            fetchReplyBuilder.putFields(name, value);
-                        }
-                    }
-                }
-            }
-            responseObserver.onNext(fetchReplyBuilder.build());
+            return executeTuple(new FetchEmitTuple(
+                    fetchKey,
+                    new FetchKey(resolvedId, fetchKey),
+                    new EmitKey(),
+                    tikaMetadata,
+                    parseContext,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP), fetchParseStart, dispatch);
         } catch (IOException | PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return null;
         }
+    }
+
+    /** Runs one tuple through the pipes parser and folds the result into an outcome. */
+    FetchParseOutcome executeTuple(FetchEmitTuple tuple, long fetchParseStart)
+            throws PipesException, InterruptedException, IOException {
+        return executeTuple(tuple, fetchParseStart, Dispatch.ALWAYS);
+    }
+
+    /**
+     * {@link #executeTuple(FetchEmitTuple, long)}, telling {@code dispatch} when the tuple
+     * has a worker. Returns {@code null}, and runs nothing, when {@code dispatch} refuses.
+     * A request that waits {@code pipes.maxWaitForClientMillis} without a worker gets the
+     * same {@code CLIENT_UNAVAILABLE_WITHIN_MS} outcome the pipes parser gives.
+     */
+    FetchParseOutcome executeTuple(FetchEmitTuple tuple, long fetchParseStart,
+                                   Dispatch dispatch)
+            throws PipesException, InterruptedException, IOException {
+        PipesResult pipesResult;
+        if (!parseSlots.tryAcquire(pipesConfig.getMaxWaitForClientMillis(),
+                TimeUnit.MILLISECONDS)) {
+            pipesResult = PipesResults.CLIENT_UNAVAILABLE_WITHIN_MS;
+        } else {
+            try {
+                if (!dispatch.starting()) {
+                    return null;
+                }
+                pipesResult = pipesParser.parse(tuple);
+            } finally {
+                parseSlots.release();
+            }
+        }
+        return toOutcome(tuple, pipesResult, fetchParseStart);
+    }
+
+    private FetchParseOutcome toOutcome(FetchEmitTuple tuple, PipesResult pipesResult,
+                                        long fetchParseStart) {
+        String fetchKey = tuple.getFetchKey().getFetchKey();
+        long fetchParseTimeMs = (System.nanoTime() - fetchParseStart) / 1_000_000L;
+        Map<String, String> fields = new LinkedHashMap<>();
+        Metadata primary = null;
+        if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
+            for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
+                for (String name : metadata.names()) {
+                    String value = metadata.get(name);
+                    if (value != null) {
+                        fields.put(name, value);
+                    }
+                }
+            }
+            if (!pipesResult.emitData().getMetadataList().isEmpty()) {
+                primary = pipesResult.emitData().getMetadataList().get(0);
+            }
+        }
+        String errorMessage = null;
+        if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
+            // Scrubbed like the v2 errors: the first line unless the operator chose a policy.
+            errorMessage = diagnostic(pipesResult, exceptionReportingConfigured);
+        }
+        return new FetchParseOutcome(
+                fetchKey,
+                pipesResult.status().name(),
+                errorMessage,
+                diagnostic(pipesResult, exceptionReportingConfigured),
+                fields,
+                primary,
+                fetchParseTimeMs);
+    }
+
+    /**
+     * What went wrong with this tuple, for the v2 {@code ParseStatus.errors}: the pipes
+     * message (a fetch failure, a parse exception with no emit, a timeout or crash) or, when
+     * the parse succeeded alongside an exception, the container stack trace. {@code null}
+     * when there is nothing to report.
+     * <p>
+     * The pipes worker formats both under {@code parse-context.exception-reporting}, whose
+     * default is the full stack trace. A gRPC caller is often outside the operator's trust
+     * boundary, and a stack trace names server classes, library versions and paths. So
+     * unless the operator chose a policy ({@code reportingConfigured}), only the first line
+     * is kept (the exception and its message, what v1's {@code error_message} carries),
+     * cut to {@value #DEFAULT_DIAGNOSTIC_MAX_CHARS} characters. The full trace stays in the
+     * server log.
+     */
+    static String diagnostic(PipesResult pipesResult, boolean reportingConfigured) {
+        String diagnostic = null;
+        if (StringUtils.isNotBlank(pipesResult.message())) {
+            diagnostic = pipesResult.message();
+        } else if (pipesResult.emitData() != null
+                && StringUtils.isNotBlank(pipesResult.emitData().getContainerStackTrace())) {
+            diagnostic = pipesResult.emitData().getContainerStackTrace();
+        }
+        if (diagnostic == null || reportingConfigured) {
+            return diagnostic;
+        }
+        String firstLine = diagnostic.strip().lines().findFirst().orElse("").strip();
+        if (firstLine.length() > DEFAULT_DIAGNOSTIC_MAX_CHARS) {
+            firstLine = firstLine.substring(0, DEFAULT_DIAGNOSTIC_MAX_CHARS) + "...[truncated]";
+        }
+        return firstLine;
+    }
+
+    static final int DEFAULT_DIAGNOSTIC_MAX_CHARS = 1024;
+
+    /**
+     * Told when a parse has its pipes worker and is about to start on it. Returning
+     * {@code false} gives the worker back without running anything: the v2 call it was for
+     * was cancelled while it waited.
+     */
+    @FunctionalInterface
+    interface Dispatch {
+        Dispatch ALWAYS = () -> true;
+
+        boolean starting();
+    }
+
+    /** See {@link TikaGrpcConfig#isCancelRunningParse()}. */
+    boolean isCancelRunningParse() {
+        return tikaGrpcConfig != null && tikaGrpcConfig.isCancelRunningParse();
+    }
+
+    /**
+     * Checks that the fetcher named {@code fetcherId} exists and can be built (building it if
+     * this is its first use), and returns its registered id. The fork does the fetching, so
+     * the server holds no fetcher past this call: the one place that would release a fetcher
+     * lease, once the fetcher manager hands out leases (TIKA-5001).
+     *
+     * @throws FetcherNotFoundException    no fetcher has that id
+     * @throws FetcherUnavailableException the fetcher exists but could not be built or read
+     *                                     from its store (bad credentials, unreadable config,
+     *                                     store I/O)
+     */
+    String resolveFetcherId(String fetcherId) {
+        try {
+            Fetcher fetcher = fetcherManager.getFetcher(fetcherId);
+            return fetcher.getExtensionConfig().id();
+        } catch (org.apache.tika.pipes.api.fetcher.FetcherNotFoundException e) {
+            throw new FetcherNotFoundException(fetcherId, e);
+        } catch (TikaException | IOException | RuntimeException e) {
+            throw new FetcherUnavailableException(fetcherId, e);
+        }
+    }
+
+    /**
+     * The fetcher id names no fetcher the FetchAndParse RPCs may use. v1 lets it surface as
+     * {@code UNKNOWN}, as it always has; v2 answers {@code NOT_FOUND}.
+     */
+    static final class FetcherNotFoundException extends RuntimeException {
+        FetcherNotFoundException(String fetcherId, Throwable cause) {
+            super("Could not find fetcher with name " + fetcherId, cause);
+        }
+    }
+
+    /**
+     * The fetcher exists but could not be built or loaded. v1 lets it surface as
+     * {@code UNKNOWN}; v2 answers {@code UNAVAILABLE}, since the server, not the request, is
+     * at fault.
+     */
+    static final class FetcherUnavailableException extends RuntimeException {
+        FetcherUnavailableException(String fetcherId, Throwable cause) {
+            super("Fetcher " + fetcherId + " could not be loaded", cause);
+        }
+    }
+
+    /**
+     * Outcome of a single fetch+parse pipes round trip, shared by v1 and v2 reply builders.
+     * {@code errorMessage} is the v1 {@code error_message}, set for fetch failures only;
+     * {@code diagnostic} is what {@link #diagnostic(PipesResult, boolean)} found, for the v2 errors.
+     * {@code null} means the calling thread was interrupted before a reply could be built;
+     * callers answer that with {@link #closeInterrupted}.
+     */
+    record FetchParseOutcome(
+            String fetchKey,
+            String status,
+            String errorMessage,
+            String diagnostic,
+            Map<String, String> fields,
+            Metadata primary,
+            long fetchParseTimeMs) {
     }
 
     @SuppressWarnings("raw")

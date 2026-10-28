@@ -1,0 +1,370 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.grpc.mapper;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import org.apache.tika.digest.DigestDef;
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.MetadataValue;
+import org.apache.tika.grpc.v2.ParseStatus;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PagedText;
+import org.apache.tika.metadata.TikaCoreProperties;
+
+/**
+ * Coverage of {@link DocumentBuilder}: the envelope, typed Dublin Core metadata (via
+ * {@link org.apache.tika.grpc.mapper.transform.DocumentTransformers}), the tagged tail,
+ * and status mapping.
+ */
+class DocumentBuilderTest extends ParseFixtureSupport {
+
+    @Test
+    void buildsTypedMetadataFromRealPdf() throws Exception {
+        Document document = map(parseFixture("testPDF.pdf"), "doc-1", 42L);
+
+        assertEquals("application/pdf", document.getContentType());
+        assertEquals("Apache Tika - Apache Tika", document.getMetadata().getTitle());
+        assertTrue(document.getExtraCount() > 0);
+
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS, document.getStatus().getStatus());
+        assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
+        assertEquals(42L, document.getStatus().getFetchParseTimeMs());
+        assertFalse(document.getStatus().getParsersUsedList().isEmpty());
+    }
+
+    @Test
+    void mapsSourceDigestWhenThePipelineRecordedOne() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        // Mirror the digest pipeline exactly: the key comes from DigestDef and the
+        // Property from the curated tk:digest template factory, the same route
+        // InputStreamDigester takes. A hand-rolled key went green here while the real
+        // pipeline diverged (SHA256 vs the javaName SHA-256).
+        String digestKey = new DigestDef(DigestDef.Algorithm.SHA256, DigestDef.Encoding.HEX)
+                .metadataKey();
+        String digestPrefix = TikaCoreProperties.TIKA_META_PREFIX + "digest"
+                + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+        metadata.set(TikaCoreProperties.digestProperty(
+                digestKey.substring(digestPrefix.length())), "0a1b2c3d");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+        assertEquals("0a1b2c3d", document.getOrigin().getSha256());
+
+        Metadata undigested = new Metadata();
+        undigested.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        Document withoutDigest = DocumentBuilder.build(undigested, "d", "PARSE_SUCCESS", 1L);
+        assertTrue(withoutDigest.getOrigin().getSha256().isEmpty());
+    }
+
+    @Test
+    void mapsDublinCorePublishersAndIdentifiers() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        metadata.add(TikaCoreProperties.PUBLISHER, "Apache Software Foundation");
+        metadata.add(TikaCoreProperties.IDENTIFIER, "urn:isbn:9780000000000");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+
+        assertEquals(List.of("Apache Software Foundation"),
+                document.getMetadata().getPublishersList());
+        assertEquals(List.of("urn:isbn:9780000000000"),
+                document.getMetadata().getIdentifiersList());
+        // consumed into the typed fields, so the keys must not duplicate into the tail
+        assertTrue(document.getExtraList().stream()
+                .noneMatch(f -> f.getKey().equals(TikaCoreProperties.PUBLISHER.getName())
+                        || f.getKey().equals(TikaCoreProperties.IDENTIFIER.getName())));
+    }
+
+    /**
+     * Keys the envelope already mapped (Content-Type, resource name) and the flat
+     * content body must not ride along in the tagged tail a second time: the tail is
+     * for metadata that has no typed home, not a duplicate channel.
+     */
+    @Test
+    void envelopeKeysAndContentAreNotDuplicatedIntoTheTail() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "sample.txt");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "the whole extracted body");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+
+        assertEquals("text/plain", document.getContentType());
+        assertEquals("sample.txt", document.getOrigin().getFilename());
+        assertTrue(document.getExtraList().stream()
+                .noneMatch(f -> f.getKey().equals(HttpHeaders.CONTENT_TYPE.getName())
+                        || f.getKey().equals(TikaCoreProperties.RESOURCE_NAME_KEY.getName())
+                        || f.getKey().equals(TikaCoreProperties.TIKA_CONTENT.getName())));
+    }
+
+    /**
+     * The tagged tail preserves Tika's declared Property types over the contract:
+     * {@code xmpTPg:NPages} is declared an integer, so it must arrive typed, not as the
+     * string "7".
+     */
+    @Test
+    void taggedTailPreservesDeclaredTypes() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        metadata.set(PagedText.N_PAGES, 7);
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+
+        MetadataValue pages = document.getExtraList().stream()
+                .filter(f -> f.getKey().equals(PagedText.N_PAGES.getName()))
+                .findFirst()
+                .orElseThrow()
+                .getValue();
+        assertEquals(MetadataValue.ValuesCase.INTEGERS, pages.getValuesCase());
+        assertEquals(List.of(7L), pages.getIntegers().getValuesList());
+    }
+
+    @Test
+    void mapsContentLengthToByteSize() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        metadata.set(HttpHeaders.CONTENT_LENGTH, "12345");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+        assertEquals(12345L, document.getOrigin().getByteSize());
+        assertTrue(document.getExtraList().stream()
+                .noneMatch(f -> f.getKey().equals(HttpHeaders.CONTENT_LENGTH.getName())));
+    }
+
+    /**
+     * A Content-Length that does not parse must not be guessed or dropped: byte_size
+     * stays unset and the raw value survives in the tagged tail.
+     */
+    @Test
+    void malformedContentLengthFallsThroughToTheTail() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        metadata.set(HttpHeaders.CONTENT_LENGTH, "not-a-size");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+        assertEquals(0L, document.getOrigin().getByteSize());
+        assertTrue(document.getExtraList().stream()
+                .anyMatch(f -> f.getKey().equals(HttpHeaders.CONTENT_LENGTH.getName())));
+    }
+
+    /**
+     * parsers_used prefers the full set (tk:parsed-by-full-set) but must not come
+     * back empty just because only tk:parsed-by was recorded.
+     */
+    @Test
+    void parsersUsedFallsBackWhenFullSetIsAbsent() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        metadata.add(TikaCoreProperties.TIKA_PARSED_BY, "org.example.OuterParser");
+        metadata.add(TikaCoreProperties.TIKA_PARSED_BY, "org.example.InnerParser");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+        assertEquals(List.of("org.example.OuterParser", "org.example.InnerParser"),
+                document.getStatus().getParsersUsedList());
+        assertEquals("org.example.OuterParser", document.getOrigin().getParser());
+        // parsed-by keys have a typed home now; they must not duplicate into the tail
+        assertTrue(document.getExtraList().stream()
+                .noneMatch(f -> f.getKey().equals(TikaCoreProperties.TIKA_PARSED_BY.getName())));
+    }
+
+    @Test
+    void missingDocIdAndPipesStatusAreOmittedNotInvented() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+
+        Document document = DocumentBuilder.build(metadata, null, null, 1L);
+        assertEquals("", document.getId());
+        assertEquals(ParseStatus.Status.STATUS_UNSPECIFIED, document.getStatus().getStatus());
+        assertEquals("", document.getStatus().getPipesStatus());
+    }
+
+    @Test
+    void recordsProducerVersion() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+        assertTrue(document.getStatus().getTikaVersion().startsWith("Apache Tika"));
+
+        // Provenance is recorded even when the parse produced no metadata at all.
+        Document failed = DocumentBuilder.build(null, "d", "FETCH_EXCEPTION", 1L);
+        assertTrue(failed.getStatus().getTikaVersion().startsWith("Apache Tika"));
+    }
+
+    /**
+     * {@code primary == null} is the server's signal that the pipes result carried no
+     * metadata at all (see TikaGrpcServerImpl). On a failure status that surfaces as an
+     * explicit error; on {@code EMPTY_OUTPUT} -- a success with nothing to map -- it must
+     * NOT be reported as a failure.
+     */
+    @Test
+    void reportsFailureWhenNoMetadata() {
+        Document document = DocumentBuilder.build(null, "doc-1", "FETCH_EXCEPTION", 1L);
+
+        assertEquals("doc-1", document.getId());
+        assertEquals(ParseStatus.Status.STATUS_FAILED, document.getStatus().getStatus());
+        assertEquals("FETCH_EXCEPTION", document.getStatus().getPipesStatus());
+        assertFalse(document.getStatus().getErrorsList().isEmpty());
+    }
+
+    @Test
+    void emptyOutputWithNoMetadataIsSuccessNotFailure() {
+        Document document = DocumentBuilder.build(null, "doc-1", "EMPTY_OUTPUT", 1L);
+
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS, document.getStatus().getStatus());
+        assertTrue(document.getStatus().getErrorsList().isEmpty());
+    }
+
+    /**
+     * {@code pipesStatus} is populated from {@code PipesResult.RESULT_STATUS.name()} (see
+     * org.apache.tika.pipes.api.PipesResult), never from a plain "OK" -- there is no such
+     * enum constant. A real successful parse reports as e.g. "PARSE_SUCCESS" or
+     * "EMIT_SUCCESS"; a parse cut short by the deadline but still emitted reports as
+     * "PARTIAL_TIMEOUT" (success category); a real timeout reports as "TIMEOUT"
+     * (categorized as a process crash, not a partial success). The status mapping must
+     * recognize the real names.
+     */
+    @Test
+    void mapsRealPipesResultStatusNames() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS,
+                DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L).getStatus().getStatus(),
+                "PARSE_SUCCESS is a real, clean success status");
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS,
+                DocumentBuilder.build(metadata, "d", "EMIT_SUCCESS", 1L).getStatus().getStatus());
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS,
+                DocumentBuilder.build(metadata, "d", "EMPTY_OUTPUT", 1L).getStatus().getStatus());
+
+        assertEquals(ParseStatus.Status.STATUS_PARTIAL,
+                DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS_WITH_EXCEPTION", 1L)
+                        .getStatus().getStatus(),
+                "succeeded, but with a caveat along the way, is a partial success not a clean one");
+        assertEquals(ParseStatus.Status.STATUS_PARTIAL,
+                DocumentBuilder.build(metadata, "d", "PARTIAL_TIMEOUT", 1L).getStatus().getStatus(),
+                "PARTIAL_TIMEOUT is a success-category status: the deadline hit, and what was"
+                        + " parsed before it is emitted, so it is partial, not failed");
+
+        assertEquals(ParseStatus.Status.STATUS_FAILED,
+                DocumentBuilder.build(metadata, "d", "TIMEOUT", 1L).getStatus().getStatus(),
+                "TIMEOUT is categorized as a process crash, not a partial success");
+        assertEquals(ParseStatus.Status.STATUS_FAILED,
+                DocumentBuilder.build(metadata, "d", "OOM", 1L).getStatus().getStatus());
+    }
+
+    /**
+     * {@code PARSE_EXCEPTION_NO_EMIT} is what a parse that threw comes back as under the
+     * {@code ON_PARSE_EXCEPTION.SKIP} tika-grpc sends: no metadata list, only the stack
+     * trace. Nothing partial reached the caller, so it is a failure, not a partial success.
+     */
+    @Test
+    void parseExceptionWithNothingEmittedIsFailedNotPartial() {
+        Document document = DocumentBuilder.build(null, "doc-1", "PARSE_EXCEPTION_NO_EMIT", 1L);
+
+        assertEquals(ParseStatus.Status.STATUS_FAILED, document.getStatus().getStatus());
+        assertEquals("PARSE_EXCEPTION_NO_EMIT", document.getStatus().getPipesStatus());
+        assertFalse(document.getStatus().getErrorsList().isEmpty());
+    }
+
+    /** The pipes error replaces the generic "no metadata" error, so a failure says why. */
+    @Test
+    void failureCarriesThePipesError() {
+        Document document = DocumentBuilder.build(null, "doc-1", "PARSE_EXCEPTION_NO_EMIT",
+                "org.apache.tika.exception.TikaException: bad xref\n\tat ...\n", 1L);
+
+        assertEquals(ParseStatus.Status.STATUS_FAILED, document.getStatus().getStatus());
+        assertEquals(List.of("org.apache.tika.exception.TikaException: bad xref\n\tat ..."),
+                document.getStatus().getErrorsList());
+    }
+
+    /**
+     * A parse that succeeded alongside an exception keeps its metadata and says what the
+     * exception was.
+     */
+    @Test
+    void partialSuccessCarriesTheContainerException() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        metadata.set(TikaCoreProperties.TITLE, "Half a PDF");
+
+        Document document = DocumentBuilder.build(metadata, "doc-1",
+                "PARSE_SUCCESS_WITH_EXCEPTION", "java.io.IOException: truncated", 1L);
+
+        assertEquals(ParseStatus.Status.STATUS_PARTIAL, document.getStatus().getStatus());
+        assertEquals("Half a PDF", document.getMetadata().getTitle());
+        assertEquals(List.of("java.io.IOException: truncated"),
+                document.getStatus().getErrorsList());
+    }
+
+    /** A blank error is no error: a clean success stays without errors. */
+    @Test
+    void blankErrorIsIgnored() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+
+        Document document = DocumentBuilder.build(metadata, "doc-1", "PARSE_SUCCESS", "  ", 1L);
+
+        assertTrue(document.getStatus().getErrorsList().isEmpty());
+        assertTrue(DocumentBuilder.build(null, "doc-1", "EMPTY_OUTPUT", "", 1L)
+                .getStatus().getErrorsList().isEmpty(), "EMPTY_OUTPUT is a clean success");
+    }
+
+    /**
+     * A document with two titles and two created dates keeps the first of each in the typed
+     * field, and both in the tagged tail, so the second is not lost.
+     */
+    @Test
+    void multiValuedSingleFieldsStayInTheTail() {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html");
+        metadata.add(TikaCoreProperties.TITLE, "First");
+        metadata.add(TikaCoreProperties.TITLE, "Second");
+        // Through the key: a merged or deserialized list can hold values the Property refuses.
+        metadata.add(TikaCoreProperties.CREATED.getName(), "2020-01-01T00:00:00Z");
+        metadata.add(TikaCoreProperties.CREATED.getName(), "2021-01-01T00:00:00Z");
+        metadata.set(TikaCoreProperties.DESCRIPTION, "Only one");
+
+        Document document = DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L);
+
+        assertEquals("First", document.getMetadata().getTitle());
+        assertEquals(1577836800L, document.getMetadata().getCreated().getSeconds());
+        MetadataValue titles = extra(document, TikaCoreProperties.TITLE.getName());
+        assertEquals(List.of("First", "Second"), titles.getStrings().getValuesList());
+        MetadataValue created = extra(document, TikaCoreProperties.CREATED.getName());
+        assertEquals(2, created.getTimestamps().getValuesCount());
+        assertTrue(document.getExtraList().stream()
+                        .noneMatch(f -> f.getKey().equals(TikaCoreProperties.DESCRIPTION.getName())),
+                "a single-valued key is consumed by its typed field");
+    }
+
+    private static MetadataValue extra(Document document, String key) {
+        return document.getExtraList().stream()
+                .filter(f -> f.getKey().equals(key))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(key + " missing from extra"))
+                .getValue();
+    }
+}
