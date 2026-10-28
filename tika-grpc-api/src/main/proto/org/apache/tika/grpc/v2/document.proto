@@ -50,7 +50,8 @@ message Document {
 
 message SourceOrigin {
   string filename = 1;
-  int64 byte_size = 2;
+  // Unset when the size is not known; 0 is an empty source.
+  optional int64 byte_size = 2;
   string parser = 3;
   // Hex-encoded SHA-256 of the source bytes, taken from the digest the parse pipeline
   // recorded (the tk:digest:SHA-256 metadata value). Empty when the pipeline has no

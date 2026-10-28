@@ -118,6 +118,9 @@ public class TikaGrpcConfig {
      * connection. That frees the worker sooner, but in the default per-client server mode
      * ({@code pipes.useSharedServer: false}) it also restarts the worker JVM, so clients
      * whose deadlines expire under load, or that cancel on purpose, cost a JVM start each.
+     * The pipes client sees the interrupt between its waits on the worker, about once a
+     * second while the worker sends heartbeats; a worker that has stopped responding
+     * altogether still holds the parse until {@code pipes.socketTimeoutMillis}.
      *
      * @return true if a cancel interrupts a parse already running on a worker
      */

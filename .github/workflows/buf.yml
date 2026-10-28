@@ -37,6 +37,9 @@ concurrency:
 
 env:
   BUF_VERSION: 1.50.0
+  # sha256 of buf-Linux-x86_64 from the release's sha256.txt; a download that does not
+  # match fails the job instead of running an unverified binary.
+  BUF_SHA256: 154ea883ce098eac4fa106ff9ee4e4964bb97f809dd8ec9c34a432b466ce1494
 
 jobs:
   buf:
@@ -48,22 +51,41 @@ jobs:
         # tika-grpc holds the frozen v1 tika.proto, tika-grpc-api the v2 contract.
         module: [ tika-grpc, tika-grpc-api ]
     steps:
-      - uses: actions/checkout@v7
+      # actions/checkout v7.0.1, pinned by commit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
+      - name: install buf
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/buf" \
+            "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64"
+          echo "${BUF_SHA256}  $RUNNER_TEMP/buf" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/buf"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - name: buf lint
         working-directory: ${{ matrix.module }}
-        run: npx --yes "@bufbuild/buf@${BUF_VERSION}" lint
-      - name: buf breaking against the base branch
-        if: github.event_name == 'pull_request'
+        run: buf lint
+      # Pull requests compare with the base branch; pushes with the commit before the push.
+      # The rules come from the base's buf.yaml, so a change cannot loosen the check that
+      # judges it.
+      - name: buf breaking
         env:
-          BASE_REF: ${{ github.base_ref }}
+          BASE: ${{ github.event_name == 'pull_request' && github.base_ref || github.event.before }}
           MODULE: ${{ matrix.module }}
         run: |
-          git fetch --no-tags origin "$BASE_REF"
-          if [ -z "$(git ls-tree -r --name-only FETCH_HEAD -- "$MODULE/src/main/proto" | grep '\.proto$')" ]; then
-            echo "$BASE_REF has no protos under $MODULE yet; nothing to compare."
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags origin "$BASE"
+            BASE_SHA=$(git rev-parse FETCH_HEAD)
+          else
+            BASE_SHA="$BASE"
+          fi
+          if ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null \
+              || [ -z "$(git ls-tree -r --name-only "$BASE_SHA" -- "$MODULE/src/main/proto" | grep '\.proto$')" ]; then
+            echo "$BASE has no protos under $MODULE yet; nothing to compare."
             exit 0
           fi
-          npx --yes "@bufbuild/buf@${BUF_VERSION}" breaking "$MODULE" \
-            --against ".git#ref=$(git rev-parse FETCH_HEAD),subdir=$MODULE/src/main/proto"
+          if git cat-file -e "$BASE_SHA:$MODULE/buf.yaml" 2>/dev/null; then
+            git show "$BASE_SHA:$MODULE/buf.yaml" > "$MODULE/buf.yaml"
+          fi
+          buf breaking "$MODULE" \
+            --against ".git#ref=$BASE_SHA,subdir=$MODULE/src/main/proto"

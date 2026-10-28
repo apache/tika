@@ -1078,6 +1078,9 @@ public class TikaGrpcServerTest {
             
             assertEquals(NUM_TEST_DOCS, successes.size());
             assertEquals(1, errors.size());
+            // v1 error_message is scrubbed to the first line, like v2's errors
+            String message = errors.get(0).getErrorMessage();
+            assertFalse(message.contains("\n") || message.contains("\tat "), message);
             assertTrue(finished.get());
 
             // v1 bi-stream replies keep the legacy fields-map contract
