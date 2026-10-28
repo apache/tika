@@ -50,8 +50,14 @@ goes to `extra`, in its `org.apache.tika.grpc.mapper.transform.DocumentTransform
 implementations. Mapping a format's properties to typed fields means adding a
 transformer; the proto stays the same.
 
-## Lint
+## Lint and breaking-change checks
+
+Both proto modules are checked with [buf](https://buf.build) in CI
+(`.github/workflows/buf.yml`): `buf lint` on every change, and `buf breaking`
+against the pull request's base branch.
 
 ```bash
-cd tika-grpc-api && buf lint
+cd tika-grpc-api && buf lint     # v2 contract: full STANDARD rules
+cd tika-grpc && buf lint         # frozen v1 tika.proto: STANDARD minus legacy naming rules
+buf breaking tika-grpc-api --against '.git#branch=main,subdir=tika-grpc-api/src/main/proto'
 ```
