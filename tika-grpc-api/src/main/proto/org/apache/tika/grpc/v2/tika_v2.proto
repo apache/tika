@@ -104,8 +104,9 @@ message ParseBytesRequest {
   // ParseBytesResponse.correlation_id.
   string correlation_id = 1;
   // Bytes to parse. Required, at most the server's parseBytesMaxContentBytes. The
-  // whole request must also fit the server's gRPC inbound limit: 4 MiB unless
-  // maxInboundMessageBytes sets another value.
+  // whole request must also fit the server's gRPC inbound limit: by default
+  // parseBytesMaxContentBytes plus 1 MiB (257 MiB), unless maxInboundMessageBytes
+  // sets another value.
   bytes content = 2;
   // Optional file name, such as "page.html". Tika uses it to detect the content type
   // and returns it as Document.origin.filename.
