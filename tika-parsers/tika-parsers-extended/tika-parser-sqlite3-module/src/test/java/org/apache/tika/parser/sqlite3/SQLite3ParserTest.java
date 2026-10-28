@@ -19,7 +19,13 @@ package org.apache.tika.parser.sqlite3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -57,6 +63,45 @@ public class SQLite3ParserTest extends TikaTest {
         //everything except for the first key column should be empty
         TikaTest.assertContains("<tr><td>2</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr>",
                 xml);
+    }
+
+    @Test
+    public void testTableNamesThatNeedQuoting(@TempDir Path tmp) throws Exception {
+        Path db = tmp.resolve("names.db");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db.toAbsolutePath());
+                Statement st = c.createStatement()) {
+            st.execute("CREATE TABLE \"my table\" (v VARCHAR(30))");
+            st.execute("INSERT INTO \"my table\" VALUES ('in my table')");
+            st.execute("CREATE TABLE \"order\" (v VARCHAR(30))");
+            st.execute("INSERT INTO \"order\" VALUES ('in order')");
+            st.execute("CREATE TABLE \"say \"\"hi\"\"\" (v VARCHAR(30))");
+            st.execute("INSERT INTO \"say \"\"hi\"\"\" VALUES ('in say hi')");
+        }
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(db)) {
+            xml = getXML(tis, TikaTest.AUTO_DETECT_PARSER, new Metadata()).xml;
+        }
+        TikaTest.assertContains("in my table", xml);
+        TikaTest.assertContains("in order", xml);
+        TikaTest.assertContains("in say hi", xml);
+    }
+
+    @Test
+    public void testTableNameIsNotRunAsSql(@TempDir Path tmp) throws Exception {
+        Path db = tmp.resolve("injection.db");
+        try (Connection c = DriverManager.getConnection("jdbc:sqlite:" + db.toAbsolutePath());
+                Statement st = c.createStatement()) {
+            st.execute("CREATE TABLE a (v VARCHAR(30))");
+            st.execute("INSERT INTO a VALUES ('alpha')");
+            st.execute("CREATE TABLE \"a UNION SELECT upper(v) FROM a\" (v VARCHAR(30))");
+            st.execute("INSERT INTO \"a UNION SELECT upper(v) FROM a\" VALUES ('beta')");
+        }
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(db)) {
+            xml = getXML(tis, TikaTest.AUTO_DETECT_PARSER, new Metadata()).xml;
+        }
+        TikaTest.assertContains("beta", xml);
+        TikaTest.assertNotContained("ALPHA", xml);
     }
 
     //code used for creating the test file
