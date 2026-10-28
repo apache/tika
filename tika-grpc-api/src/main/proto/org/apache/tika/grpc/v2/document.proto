@@ -37,9 +37,12 @@ message Document {
   // envelope
   // The caller's key for the request: fetch_key on FetchAndParse, correlation_id
   // on ParseBytes, returned unchanged. To identify the parsed bytes, use
-  // origin.sha256, which is set when a digester is configured.
+  // origin.sha256, which is set when a digester is configured (always on ParseBytes).
   string id = 1;
-  string content_type = 2;             // Tika-detected MIME type
+  // Tika-detected MIME type. When a ParseBytes parse failed before detecting one, the
+  // server fills it from the bytes and resource name (magic bytes only, no container
+  // detection).
+  string content_type = 2;
   google.protobuf.Timestamp parsed_at = 4;
   ParseStatus status = 5;
   SourceOrigin origin = 6;
@@ -56,8 +59,10 @@ message SourceOrigin {
   int64 byte_size = 2;
   string parser = 3;
   // Hex-encoded SHA-256 of the source bytes, taken from the digest the parse pipeline
-  // recorded (the tk:digest:SHA-256 metadata value). Empty when the pipeline has no
-  // digester configured. Downstream consumers use it to tie derived artifacts
+  // recorded (the tk:digest:SHA-256 metadata value). FetchAndParse leaves it empty when
+  // the pipeline has no digester configured or the parse failed before digesting.
+  // ParseBytes holds the bytes, so it computes the digest itself in those cases and
+  // this is always set. Downstream consumers use it to tie derived artifacts
   // (annotations, index entries) back to the exact bytes that were parsed.
   string sha256 = 4;
   // Set only by ParseBytes, from the request; empty for FetchAndParse. The URIs the

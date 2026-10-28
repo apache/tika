@@ -30,8 +30,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 
@@ -47,12 +49,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
+import org.apache.tika.digest.DigestDef;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
 import org.apache.tika.grpc.v2.ParseBytesResponse;
+import org.apache.tika.grpc.v2.ParseStatus;
 import org.apache.tika.grpc.v2.SourceOrigin;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.config.ConfigStore;
@@ -159,6 +165,80 @@ class TikaGrpcV2ParseBytesUnitTest {
         assertEquals("http://h/b", origin.getEffectiveUri());
         assertEquals("http://h/", origin.getBaseUri());
         assertTrue(origin.getTruncated(), "truncated comes back as sent");
+    }
+
+    /**
+     * A parse that failed before producing metadata still says what was sent: the SHA-256
+     * of the content and a content type detected from its bytes and resource name.
+     */
+    @Test
+    void aFailedParseStillCarriesTheDigestAndContentType() throws Exception {
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+                .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
+                        null, "PARSE_EXCEPTION_NO_EMIT", "boom", 5L));
+        RecordingObserver observer = new RecordingObserver();
+        byte[] pdf = "%PDF-1.4\n%garbage".getBytes(StandardCharsets.US_ASCII);
+
+        v2.parseBytes(ParseBytesRequest.newBuilder()
+                .setContent(ByteString.copyFrom(pdf))
+                .setResourceName("broken.pdf")
+                .build(), observer);
+
+        assertEquals(1, observer.replies.size());
+        Document document = observer.replies.get(0).getDocument();
+        assertEquals(ParseStatus.Status.STATUS_FAILED, document.getStatus().getStatus());
+        assertEquals(HexFormat.of().formatHex(
+                        MessageDigest.getInstance("SHA-256").digest(pdf)),
+                document.getOrigin().getSha256(), "sha256 is computed from the content");
+        assertEquals("application/pdf", document.getContentType(),
+                "content type is detected from the bytes");
+    }
+
+    /** The digest and content type the parse recorded win over the server's fallback. */
+    @Test
+    void theParsesDigestAndContentTypeAreKept() throws Exception {
+        Metadata primary = htmlMetadata();
+        primary.set(TikaCoreProperties.digestProperty(
+                DigestDef.Algorithm.SHA256.getJavaName()), "abc123");
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+                .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
+                        primary, "PARSE_SUCCESS", null, 5L));
+        RecordingObserver observer = new RecordingObserver();
+
+        v2.parseBytes(requestWithContent().build(), observer);
+
+        Document document = observer.replies.get(0).getDocument();
+        assertEquals("text/html", document.getContentType());
+        assertEquals("abc123", document.getOrigin().getSha256());
+    }
+
+    /** A success on bytes the caller marked truncated is reported as partial. */
+    @Test
+    void aSuccessOnTruncatedContentIsPartial() throws Exception {
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome());
+        RecordingObserver observer = new RecordingObserver();
+
+        v2.parseBytes(requestWithContent().setTruncated(true).build(), observer);
+
+        ParseStatus status = observer.replies.get(0).getDocument().getStatus();
+        assertEquals(ParseStatus.Status.STATUS_PARTIAL, status.getStatus());
+        assertEquals("PARSE_SUCCESS", status.getPipesStatus(), "the raw pipes status is kept");
+        assertTrue(status.getErrors(0).contains("truncated"), status.getErrorsList().toString());
+    }
+
+    /** Without the truncated flag a clean parse stays a success. */
+    @Test
+    void aSuccessOnCompleteContentStaysSuccess() throws Exception {
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome());
+        RecordingObserver observer = new RecordingObserver();
+
+        v2.parseBytes(requestWithContent().build(), observer);
+
+        ParseStatus status = observer.replies.get(0).getDocument().getStatus();
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS, status.getStatus());
+        assertEquals(0, status.getErrorsCount());
     }
 
     /** An interrupted parse ends the call with UNAVAILABLE and no Document. */

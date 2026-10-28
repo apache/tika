@@ -16,8 +16,13 @@
  */
 package org.apache.tika.pipes.grpc;
 
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.function.BiFunction;
 
+import com.google.protobuf.ByteString;
 import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -35,8 +40,13 @@ import org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingRequest;
 import org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
 import org.apache.tika.grpc.v2.ParseBytesResponse;
+import org.apache.tika.grpc.v2.ParseStatus;
 import org.apache.tika.grpc.v2.SourceOrigin;
 import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -209,7 +219,28 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
             origin.setBaseUri(request.getBaseUri());
         }
         origin.setTruncated(request.getTruncated());
+        // A parser can recover cut-off bytes without any sign of it (PDFBox rebuilds a PDF
+        // whose trailer is gone and loses the Info dictionary, title included), so a
+        // "success" on bytes the caller says are incomplete is a partial result.
+        if (request.getTruncated()
+                && document.getStatus().getStatus() == ParseStatus.Status.STATUS_SUCCESS) {
+            document.getStatusBuilder()
+                    .setStatus(ParseStatus.Status.STATUS_PARTIAL)
+                    .addErrors("content was truncated by the caller; metadata stored past the"
+                            + " cut, such as a PDF's document info, may be missing");
+        }
+        // The caller's bytes are here, so a parse that failed before recording its digest
+        // or content type (or a pipeline with no digester) still says what was sent.
+        if (origin.getSha256().isEmpty()) {
+            origin.setSha256(sha256Hex(request.getContent()));
+        }
         document.setOrigin(origin);
+        if (document.getContentType().isEmpty()) {
+            String detected = detectContentType(request.getContent(), request.getResourceName());
+            if (detected != null) {
+                document.setContentType(detected);
+            }
+        }
         ParseBytesResponse.Builder response = ParseBytesResponse.newBuilder()
                 .setDocument(document);
         if (!request.getCorrelationId().isEmpty()) {
@@ -217,6 +248,36 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         }
         responseObserver.onNext(response.build());
         responseObserver.onCompleted();
+    }
+
+    private static String sha256Hex(ByteString content) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            content.asReadOnlyByteBufferList().forEach(digest::update);
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            // Every JVM must provide SHA-256.
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * Detects the content type from the magic bytes and the resource name with tika-core's
+     * MIME registry. This is weaker than the forked parse's detector (no container
+     * detection), so it is used only when the parse recorded no content type.
+     */
+    private static String detectContentType(ByteString content, String resourceName) {
+        Metadata metadata = new Metadata();
+        if (!resourceName.isBlank()) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, resourceName.trim());
+        }
+        try (TikaInputStream tis = TikaInputStream.get(content.newInput())) {
+            return MimeTypes.getDefaultMimeTypes().detect(tis, metadata, new ParseContext())
+                    .toString();
+        } catch (IOException e) {
+            LOG.debug("content type detection failed", e);
+            return null;
+        }
     }
 
     /**

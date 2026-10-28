@@ -117,7 +117,9 @@ message ParseBytesRequest {
   string effective_uri = 5;
   string base_uri = 6;
   // Set when the caller cut the bytes short, for example at a crawler's size limit.
-  // Returned as Document.origin.truncated.
+  // Returned as Document.origin.truncated. A parse that would otherwise be
+  // STATUS_SUCCESS is reported as STATUS_PARTIAL, because parsers can recover cut-off
+  // bytes silently while losing metadata stored past the cut.
   bool truncated = 7;
   // Optional JSON object to configure the ParseContext for this request.
   string parse_context_json = 8;
