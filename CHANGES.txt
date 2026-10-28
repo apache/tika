@@ -22,6 +22,13 @@ Release 4.3.0 - ???
      for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
      module it needs (TIKA-5006).
 
+   * tika-grpc applies parse-context.timeout-limits and exception-reporting in the server
+     process too, so its backstop for a hung worker no longer falls back to the built-in
+     timeouts. A FetchAndParse call interrupted before the parse finished (server shutdown)
+     closes with UNAVAILABLE; a unary call used to fail with INTERNAL "no value received",
+     a server-streaming call completed with no reply, and a bidirectional stream went on
+     to throw on the closed call. Thanks to Kristian Rickert and Davide Polato (TIKA-5010).
+
    * The Kafka emitter reports success only once Kafka has acknowledged every record
      (per acks); a rejected or timed-out record fails the emit instead of being lost
      silently, and the producer is flushed and closed on shutdown. (TIKA-5008).
