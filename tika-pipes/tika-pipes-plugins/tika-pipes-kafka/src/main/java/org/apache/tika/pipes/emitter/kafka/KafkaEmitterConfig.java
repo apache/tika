@@ -58,5 +58,10 @@ public record KafkaEmitterConfig(
         if (bootstrapServers == null || bootstrapServers.isBlank()) {
             throw new TikaConfigException("'bootstrapServers' must not be empty");
         }
+        // the emitter never opens a transaction, so the producer refuses every send
+        if (transactionalId != null) {
+            throw new TikaConfigException("'transactionalId' is not supported: the Kafka "
+                    + "emitter does not use transactions");
+        }
     }
 }
