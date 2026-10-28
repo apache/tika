@@ -45,6 +45,17 @@ Installs the dependency modules, regenerates the registries via the forked-exec 
 the key-count diff, and runs the gate tests — see `.skills/devs/metadata-schema/SKILL.md` for flags and the
 manual steps this replaces.
 
+**Type changes are declared, never silent.** A key's `valueType` or `cardinality` is part of what
+clients rely on: gRPC v2 type hints and typed `/rmeta` JSON both come from it. `MetadataTypeChangesTest`
+compares the registry with a committed baseline
+(`src/test/resources/org/apache/tika/metadata/schema/metadata-key-types-baseline.json`). Any change
+must be listed in `type-changes.json` next to it, as
+`{"key": "...", "from": "INTEGER/SIMPLE", "to": "TEXT/SIMPLE", "jira": "TIKA-NNNN"}`, with a CHANGES
+row. At a release, refresh the baseline and clear the list:
+```
+./mvnw -pl tika-metadata-schema test -Dtest=MetadataTypeChangesTest -Dtika.metadata.refreshTypeBaseline=true
+```
+
 ## `metadata-open-namespaces.json` — the open sets (generated + gated)
 The **prefixes** under which parsers mint file-controlled key names at runtime — names that are not
 `Property` constants, so the individual keys cannot be enumerated (scraped HTML `<meta>` under

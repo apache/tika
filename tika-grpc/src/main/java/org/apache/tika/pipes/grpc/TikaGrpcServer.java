@@ -113,6 +113,7 @@ public class TikaGrpcServer {
         server = Grpc
                 .newServerBuilderForPort(port, creds)
                 .addService(serviceImpl)
+                .addService(new TikaV2Alpha1ServerImpl(serviceImpl.runtime))
                 .addService(healthStatusManager.getHealthService())
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build()

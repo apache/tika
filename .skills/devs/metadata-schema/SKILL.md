@@ -88,6 +88,9 @@ under the full test classpath and asserts a byte-match — the definitive comple
   reflects the *registry*, not live code — regenerate before trusting it.
 - `MetadataKeyValidatorTest` — registry-driven CLOSED/OPEN/TEMPLATE/UNKNOWN classifier.
 - `MetadataCoverageTest` — fails if a scanned module's keys are neither in scope nor listed out-of-scope.
+- `MetadataTypeChangesTest` — a key's valueType/cardinality may differ from the committed baseline only
+  if `type-changes.json` declares it (key, from, to, jira). Clients consume these types (gRPC v2 hints,
+  typed /rmeta JSON), so a change also needs a CHANGES row. Refresh the baseline at release (README).
 
 Failures with stale `X-TIKA:`/underscore/`SHA256` keys usually mean *regenerate*, not edit code.
 

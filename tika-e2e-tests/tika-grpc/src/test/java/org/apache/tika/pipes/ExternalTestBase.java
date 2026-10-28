@@ -89,14 +89,16 @@ public abstract class ExternalTestBase {
     }
     
     /**
-     * The checked-in configs name the Docker image's plugins dir; the local server gets a copy
-     * pointed at the zip this module copies into target/plugins.
+     * The checked-in configs name the Docker image's plugins and fixtures dirs; the local server
+     * gets a copy pointed at target/plugins and the fixtures folder.
      */
     public static Path localConfig(String name) throws IOException {
         Path pluginsDir = Path.of("target/plugins").toAbsolutePath();
         String json = Files.readString(Path.of("src/test/resources", name));
         String local = json.replace("/var/cache/tika/plugins",
-                pluginsDir.toString().replace("\\", "\\\\"));
+                pluginsDir.toString().replace("\\", "\\\\"))
+                .replace(GOV_DOCS_FOLDER,
+                        TEST_FOLDER.getAbsolutePath().replace("\\", "\\\\"));
         Path out = Path.of("target", name).toAbsolutePath();
         Files.writeString(out, local);
         return out;

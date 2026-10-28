@@ -1,0 +1,137 @@
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+// Experimental: this package may change incompatibly until it is renamed to
+// org.apache.tika.grpc.v2.
+package org.apache.tika.grpc.v2alpha1;
+
+option java_multiple_files = true;
+option java_package = "org.apache.tika.grpc.v2alpha1";
+option java_outer_classname = "TikaServiceProto";
+
+// What Tika produces for one fetch and parse, as /rmeta returns it: one ParsedDocument
+// for the container and one for each embedded document.
+service TikaService {
+  rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseResponse);
+  // One document per message, in the order of FetchAndParseResponse.documents.
+  rpc FetchAndParseStream(FetchAndParseStreamRequest) returns (stream FetchAndParseStreamResponse);
+  // One response per request. A request that fails gets a response with `error` set; the
+  // stream continues. Match responses to requests by request_id, not by order.
+  rpc FetchAndParseBidi(stream FetchAndParseBidiRequest) returns (stream FetchAndParseBidiResponse);
+}
+
+message FetchAndParseRequest {
+  string fetcher_id = 1;
+  string fetch_key = 2;
+  // Refused unless the operator allows per-request config, as in v1.
+  string parse_context_json = 3;
+  string additional_fetch_config_json = 4;
+}
+
+message FetchAndParseStreamRequest {
+  string fetcher_id = 1;
+  string fetch_key = 2;
+  string parse_context_json = 3;
+  string additional_fetch_config_json = 4;
+}
+
+message FetchAndParseBidiRequest {
+  string fetcher_id = 1;
+  string fetch_key = 2;
+  string parse_context_json = 3;
+  string additional_fetch_config_json = 4;
+  // Chosen by the client and echoed in the response.
+  string request_id = 5;
+}
+
+message FetchAndParseResponse {
+  string fetch_key = 1;
+  // The pipes result status (PARSE_SUCCESS, PARSE_SUCCESS_WITH_EXCEPTION, TIMEOUT, ...). A string,
+  // so new statuses need no proto change.
+  string pipes_status = 2;
+  // [0] is the container; embedded documents follow in the order Tika reports them.
+  repeated ParsedDocument documents = 3;
+  // Why a fetch, parse or worker failed (fetch exception, timeout, crash), formatted under the
+  // operator's parse-context.exception-reporting. Exceptions the parse recorded alongside its
+  // output are in each document's tk:exception:* metadata instead.
+  string message = 4;
+}
+
+message FetchAndParseStreamResponse {
+  ParsedDocument document = 1;
+}
+
+message FetchAndParseBidiResponse {
+  string request_id = 1;
+  // Set when the request failed for a reason that is not about the document.
+  RequestError error = 2;
+  // Set otherwise.
+  FetchAndParseResponse result = 3;
+}
+
+message RequestError {
+  // The gRPC status code a unary call would have closed with (5 NOT_FOUND, 7 PERMISSION_DENIED,
+  // 8 RESOURCE_EXHAUSTED, 14 UNAVAILABLE, ...).
+  int32 code = 1;
+  string message = 2;
+}
+
+message ParsedDocument {
+  // Empty for the container; otherwise the document's tk:embedded-id-path.
+  string embedded_path = 1;
+  // The extracted content. Its format is in metadata under tk:content-handler-type (TEXT, HTML,
+  // XML, MARKDOWN, or a custom handler's own name). Not repeated in metadata.
+  string content = 2;
+  // Every metadata key and all of its values.
+  map<string, Values> metadata = 3;
+}
+
+message Values {
+  // Tika's strings, in Tika's order. Always present; the hints below never replace them.
+  repeated string values = 1;
+  // Hints from Tika's metadata key registry. They can change between Tika versions: read them
+  // on every response, fall back to the strings when a value does not parse, and never
+  // hard-code a key's type.
+  ValueType type = 2;
+  Cardinality cardinality = 3;
+}
+
+// The string form for each type is fixed: BOOLEAN true/false; INTEGER decimal; REAL a Java
+// double; RATIONAL n/d; DATE yyyy-MM-ddTHH:mm:ssZ (UTC), yyyy-MM-ddTHH:mm:ss (no zone known)
+// or yyyy-MM-dd; JSON a JSON document. Treat a value you do not recognize as text.
+enum ValueType {
+  // Text, or no declared type.
+  VALUE_TYPE_UNSPECIFIED = 0;
+  VALUE_TYPE_BOOLEAN = 1;
+  VALUE_TYPE_INTEGER = 2;
+  VALUE_TYPE_REAL = 3;
+  VALUE_TYPE_RATIONAL = 4;
+  VALUE_TYPE_DATE = 5;
+  VALUE_TYPE_URI = 6;
+  VALUE_TYPE_JSON = 7;
+}
+
+enum Cardinality {
+  // A single value, or no declared cardinality.
+  CARDINALITY_UNSPECIFIED = 0;
+  // Unordered values.
+  CARDINALITY_BAG = 1;
+  // Ordered values; position is meaningful (pdf:charsPerPage).
+  CARDINALITY_SEQ = 2;
+  // Alternatives.
+  CARDINALITY_ALT = 3;
+}

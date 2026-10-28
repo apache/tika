@@ -29,6 +29,14 @@ Release 4.3.0 - ???
      a server-streaming call completed with no reply, and a bidirectional stream went on
      to throw on the closed call. Thanks to Kristian Rickert and Davide Polato (TIKA-5010).
 
+   * tika-grpc adds an experimental service, org.apache.tika.grpc.v2alpha1.TikaService, on
+     the same port as v1. It returns what /rmeta returns: one document per container and
+     embedded file, each with its content and every metadata value (v1 keeps one value per
+     key and merges embedded files into one map). Values are strings, with type and
+     cardinality hints from tika-metadata-schema. Protos are in the new tika-grpc-api
+     artifact. The package may change incompatibly until it becomes v2. Thanks to Kristian
+     Rickert and Davide Polato for the design work in #2961 (TIKA-4766).
+
    * The Kafka emitter reports success only once Kafka has acknowledged every record
      (per acks); a rejected or timed-out record fails the emit instead of being lost
      silently, and the producer is flushed and closed on shutdown. (TIKA-5008).
