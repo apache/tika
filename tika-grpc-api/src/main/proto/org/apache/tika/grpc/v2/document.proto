@@ -28,6 +28,7 @@ syntax = "proto3";
 
 package org.apache.tika.grpc.v2;
 
+import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
@@ -51,7 +52,75 @@ message Document {
   DocumentMetadata metadata = 20;      // typed common fields
   repeated MetadataField extra = 21;   // tagged tail: everything not already typed
 
-  // Field numbers 3, 10-19 and 30+ are left unassigned for later fields.
+  // Results that external parsers attached to this document (TIKA-4771). Tika's own
+  // parse never sets them: a composer appends them after calling Tika and the external
+  // parsers with the same bytes. tika-grpc's ParseBytes is such a composer when
+  // grpc.externalParsers is configured. One entry per contribution slot, with its
+  // status, warnings and timing.
+  repeated ExtensionResult extensions = 40;
+
+  // Documents inside this one, such as a WARC's records. External parser adapters add
+  // them, each entry naming its producer_id; Tika's own embedded documents are not
+  // included yet.
+  repeated EmbeddedDocument embedded = 41;
+
+  // Field numbers 3, 10-19, 30-39 and 42+ are left unassigned for later fields.
+}
+
+// One document inside another: a WARC record, an archive entry, an attachment. Not a
+// Document: it has no id of its own and no documents inside it.
+//
+// Document.embedded lists each producer's documents together, in the order the producer
+// made them: Tika's own first (when they are added), then each external parser's, in
+// the order of grpc.externalParsers. (producer_id, path) is unique within a Document;
+// the same record from Tika and from an adapter appears once under each producer.
+message EmbeddedDocument {
+  // Where the document sits in its container, in the form of Tika's
+  // X-TIKA:embedded_resource_path, e.g. /record-12. Set by the producer.
+  string path = 1;
+  // "tika" for Tika's own parse, otherwise the producer_id of the adapter that made it.
+  string producer_id = 2;
+  string content_type = 3;
+  SourceOrigin origin = 4;
+  DocumentMetadata metadata = 5;
+  repeated MetadataField extra = 6;
+  // STATUS_SUCCESS, or STATUS_PARTIAL when the producer reported errors for this
+  // document, listed in errors.
+  ParseStatus.Status status = 7;
+  repeated string errors = 8;
+}
+
+// One external parser's contribution to a Document (TIKA-4771). Tika never models
+// the payload: its schema belongs to the producer, and a consumer unpacks only the
+// types it understands.
+message ExtensionResult {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_OK = 1;
+    STATUS_EMPTY = 2;
+    STATUS_FAILED = 3;
+    STATUS_SKIPPED = 4;
+    // The producer stopped part way: what it produced before is in the Document, and
+    // warnings say why it stopped.
+    STATUS_PARTIAL = 5;
+  }
+  // Names the composer's contribution slot, not a service instance: the same service
+  // called twice is two slots.
+  string producer_id = 1;
+  Status status = 2;
+  // The producer's own message, when the composer keeps it. Several results (one per
+  // page, say) belong inside it, not in several envelopes. tika-grpc's adapters map
+  // the reply into embedded documents and prefixed extra keys, and set this only when
+  // the adapter's config has keepRawReply.
+  google.protobuf.Any payload = 3;
+  repeated string warnings = 4;
+  int64 elapsed_ms = 5;
+  // How many embedded documents the producer reported, and how many of them the
+  // Document carries. They differ when a limit cut the list short, and then truncated
+  // is set: a consumer must not take the embedded list as the whole archive.
+  int64 embedded_reported = 6;
+  int64 embedded_kept = 7;
+  bool truncated = 8;
 }
 
 message SourceOrigin {

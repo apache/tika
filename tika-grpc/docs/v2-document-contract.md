@@ -17,6 +17,8 @@
 
 # The v2 typed Document contract (TIKA-4766)
 
+How this fits with the rest of tika-grpc v2: [architecture.md](architecture.md).
+
 This page explains what `TikaV2Service` returns and why it is shaped the way it is.
 The configuration reference is in [the module README](../README.md), and the field
 list in [tika-grpc-api](../../tika-grpc-api/README.md).

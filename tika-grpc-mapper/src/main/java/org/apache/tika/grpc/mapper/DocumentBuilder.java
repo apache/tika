@@ -24,6 +24,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.digest.DigestDef;
 import org.apache.tika.grpc.mapper.transform.DocumentTransformers;
 import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.EmbeddedDocument;
 import org.apache.tika.grpc.v2.ParseStatus;
 import org.apache.tika.grpc.v2.SourceOrigin;
 import org.apache.tika.metadata.HttpHeaders;
@@ -162,6 +163,20 @@ public final class DocumentBuilder {
         TRANSFORMERS.transform(primary, document, consumed);
 
         return document.build();
+    }
+
+    /**
+     * Maps the metadata of a document inside another (a WARC record an external parser
+     * adapter reported, say) to an {@link EmbeddedDocument}: content type, origin, typed
+     * metadata and the tagged tail. Its path and producer are the caller's to set.
+     */
+    public static EmbeddedDocument.Builder buildEmbedded(Metadata metadata) {
+        Document document = build(metadata, null, null, null, 0);
+        return EmbeddedDocument.newBuilder()
+                .setContentType(document.getContentType())
+                .setOrigin(document.getOrigin())
+                .setMetadata(document.getMetadata())
+                .addAllExtra(document.getExtraList());
     }
 
     /**

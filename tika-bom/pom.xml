@@ -399,6 +399,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-grpc-adapter-api</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-grpc</artifactId>
         <version>${revision}</version>
       </dependency>

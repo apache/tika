@@ -17,6 +17,8 @@
 
 # ParseBytes (TIKA-4795)
 
+How this fits with the rest of tika-grpc v2: [architecture.md](architecture.md).
+
 `TikaV2Service.ParseBytes` parses bytes sent in the request and returns the same
 `Document` as FetchAndParse (see [v2-document-contract.md](v2-document-contract.md)).
 This page covers why it exists and how it behaves; the settings table is in

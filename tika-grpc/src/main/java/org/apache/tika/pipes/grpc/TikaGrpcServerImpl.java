@@ -697,7 +697,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     /**
      * Admits one ParseBytes request: checks its size, then takes one of the
      * {@code parseBytesMaxConcurrent} places. The caller holds the permit for as long as the
-     * request holds memory (the v2 server keeps it until its reply is built) and closes it.
+     * request holds memory (the v2 server keeps it until its reply is built, external parsers
+     * included) and closes it.
      * Taken before staging: a request turned away here never reaches the spool, and gives
      * its bytes back to the heap now instead of after maxWaitForClientMillis.
      *

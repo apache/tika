@@ -17,8 +17,12 @@
 package org.apache.tika.pipes.grpc;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.pipes.grpc.compose.ExternalParserConfig;
+import org.apache.tika.pipes.grpc.compose.ExternalParsers;
 
 /**
  * Configuration for security-sensitive tika-grpc features, loaded from the
@@ -59,7 +63,11 @@ public class TikaGrpcConfig {
 
     private Long parseBytesMaxContentBytes = null;
 
+    private List<ExternalParserConfig> externalParsers = new ArrayList<>();
+
     private Integer parseBytesMaxConcurrent = null;
+
+    private long externalParsersMaxAddedBytes = ExternalParsers.DEFAULT_MAX_ADDED_BYTES;
 
     private boolean cancelRunningParse = false;
 
@@ -135,6 +143,7 @@ public class TikaGrpcConfig {
      * request in flight takes at least this much heap.
      *
      * @return the configured limit in bytes, or {@code null} if not set
+     * @see #effectiveMaxInboundMessageBytes()
      */
     public Integer getMaxInboundMessageBytes() {
         return maxInboundMessageBytes;
@@ -155,8 +164,8 @@ public class TikaGrpcConfig {
 
     /**
      * The largest {@code content} a ParseBytes request may carry, in bytes. gRPC applies
-     * {@link #getMaxInboundMessageBytes()} to the whole request first, so a limit above
-     * that one has no effect.
+     * {@link #effectiveMaxInboundMessageBytes()} to the whole request first, so a limit
+     * above that one has no effect.
      *
      * @return the configured limit in bytes, or {@code null} if not set
      */
@@ -192,6 +201,24 @@ public class TikaGrpcConfig {
     }
 
     /**
+     * How many serialized bytes the external parsers may add to a ParseBytes Document, all
+     * together; 96 MiB by default. Past it the raw replies, then their embedded documents from
+     * the end, are dropped, and the slots say so. Tika's own Document is not counted and never
+     * cut, so a reply can be Tika's Document plus up to this much.
+     */
+    public long getExternalParsersMaxAddedBytes() {
+        return externalParsersMaxAddedBytes;
+    }
+
+    public void setExternalParsersMaxAddedBytes(long externalParsersMaxAddedBytes) {
+        if (externalParsersMaxAddedBytes <= 0) {
+            throw new IllegalArgumentException("externalParsersMaxAddedBytes must be positive,"
+                    + " got: " + externalParsersMaxAddedBytes);
+        }
+        this.externalParsersMaxAddedBytes = externalParsersMaxAddedBytes;
+    }
+
+    /**
      * @return the configured {@link #getParseBytesMaxContentBytes()}, or
      *         {@link #DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES} when it is not set
      */
@@ -202,8 +229,24 @@ public class TikaGrpcConfig {
     }
 
     /**
-     * How many ParseBytes requests the server holds at once: parsing, or waiting for a pipes
-     * worker. A request over the limit is refused at once with {@code RESOURCE_EXHAUSTED},
+     * External gRPC parsers whose results ParseBytes appends to the Document, each for the
+     * content types it names (TIKA-4771). Empty by default.
+     *
+     * @return the configured parsers, never {@code null}
+     * @see ExternalParserConfig
+     */
+    public List<ExternalParserConfig> getExternalParsers() {
+        return externalParsers;
+    }
+
+    public void setExternalParsers(List<ExternalParserConfig> externalParsers) {
+        this.externalParsers = externalParsers == null ? new ArrayList<>() : externalParsers;
+    }
+
+    /**
+     * How many ParseBytes requests the server holds at once: parsing, waiting for a pipes
+     * worker, or waiting for its external parsers. A request over the limit is refused at
+     * once with {@code RESOURCE_EXHAUSTED},
      * before its content is staged to disk, instead of holding its bytes in heap while it
      * waits. When not set, the server uses twice {@code pipes.numClients}.
      * <p>

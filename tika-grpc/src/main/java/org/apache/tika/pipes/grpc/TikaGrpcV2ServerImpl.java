@@ -52,6 +52,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.grpc.compose.ExternalParsers;
 
 /**
  * Experimental v2 parse surface. Reuses the same pipes/fetcher runtime as the v1
@@ -74,9 +75,27 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcV2ServerImpl.class);
 
     private final TikaGrpcServerImpl v1;
+    private final ExternalParsers externalParsers;
 
     TikaGrpcV2ServerImpl(TikaGrpcServerImpl v1) {
+        this(v1, v1.tikaGrpcConfig == null
+                ? ExternalParsers.NONE
+                : ExternalParsers.open(v1.tikaGrpcConfig.getExternalParsers(),
+                        v1.tikaGrpcConfig.getExternalParsersMaxAddedBytes()));
+    }
+
+    /**
+     * @param externalParsers the parsers ParseBytes composes into its replies; closed by
+     *                        {@link #close()}
+     */
+    TikaGrpcV2ServerImpl(TikaGrpcServerImpl v1, ExternalParsers externalParsers) {
         this.v1 = v1;
+        this.externalParsers = externalParsers;
+    }
+
+    /** Closes the channels to the external parsers. */
+    void close() throws InterruptedException {
+        externalParsers.close();
     }
 
     private Cancellation cancellation(StreamObserver<?> responseObserver) {
@@ -178,8 +197,9 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         if (parseContext == null) {
             return;
         }
-        // The permit is held until the reply is sent: hashing and detection below still
-        // read the request's bytes, so parseBytesMaxConcurrent bounds them too.
+        // The permit is held until the reply is sent: hashing, detection and the external
+        // parsers (which hold the request's bytes and their replies) still read the request,
+        // so parseBytesMaxConcurrent bounds them as it bounds Tika's parse.
         TikaGrpcServerImpl.ParseBytesPermit permit;
         try {
             permit = v1.admitParseBytes(request.getContent().size());
@@ -290,14 +310,25 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
             origin.setSha256(sha256Hex(request.getContent()));
         }
         document.setOrigin(origin);
+        // Before composing: external parsers route on the content type, so a parse that
+        // failed before detecting one still reaches the parser built for these bytes.
         if (document.getContentType().isEmpty()) {
             String detected = detectContentType(request.getContent(), request.getResourceName());
             if (detected != null) {
                 document.setContentType(detected);
             }
         }
+        Document composed = document.build();
+        if (!externalParsers.isEmpty()) {
+            // Runs in this call's Context, so a client that cancels also cancels these calls.
+            composed = externalParsers.compose(composed, parseBytesOutcome.primary(),
+                    request.getContent(), request.getResourceName());
+            if (cancellation.isCancelled()) {
+                return;
+            }
+        }
         ParseBytesResponse.Builder response = ParseBytesResponse.newBuilder()
-                .setDocument(document);
+                .setDocument(composed);
         if (!request.getCorrelationId().isEmpty()) {
             response.setCorrelationId(request.getCorrelationId());
         }

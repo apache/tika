@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +47,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.ByteString;
+import io.grpc.Server;
 import io.grpc.Status;
+import io.grpc.inprocess.InProcessChannelBuilder;
+import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +62,7 @@ import org.mockito.Mockito;
 import org.apache.tika.digest.DigestDef;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.ExtensionResult;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
 import org.apache.tika.grpc.v2.ParseBytesResponse;
 import org.apache.tika.grpc.v2.ParseStatus;
@@ -68,6 +73,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.config.ConfigStore;
+import org.apache.tika.pipes.grpc.compose.ExternalParserAdapters;
+import org.apache.tika.pipes.grpc.compose.ExternalParserConfig;
+import org.apache.tika.pipes.grpc.compose.ExternalParsers;
+import org.apache.tika.pipes.grpc.compose.FakeRecordList;
+import org.apache.tika.pipes.grpc.compose.RecordListAdapter;
 import org.apache.tika.serialization.config.JsonConfigHelper;
 
 /**
@@ -435,7 +445,96 @@ class TikaGrpcV2ParseBytesUnitTest {
         assertEquals(0, status.getErrorsCount());
     }
 
-    /** An interrupted parse ends the call with UNAVAILABLE and no Document. */
+    /**
+     * A configured external parser gets the same bytes, and its adapter maps the reply into
+     * the Document (TIKA-4771): here the test RecordListAdapter against its in-process
+     * parser, for a WARC document. The request keeps its ParseBytes admission permit while
+     * the external parser runs.
+     */
+    @Test
+    void externalParsersForTheDetectedTypeAreComposedIn() throws Exception {
+        String name = InProcessServerBuilder.generateName();
+        FakeRecordList fake = new FakeRecordList();
+        Semaphore admission = new Semaphore(0);
+        List<Integer> freeDuringCall = new CopyOnWriteArrayList<>();
+        fake.onCall = () -> freeDuringCall.add(admission.availablePermits());
+        Mockito.when(v1.admitParseBytes(Mockito.anyLong()))
+                .thenAnswer(call -> new TikaGrpcServerImpl.ParseBytesPermit(admission));
+        Server recordList = InProcessServerBuilder.forName(name)
+                .addService(fake)
+                .build()
+                .start();
+        ExternalParserConfig config = new ExternalParserConfig();
+        config.setProducerId("records");
+        config.setTarget(name);
+        config.setPlaintext(true);
+        try (ExternalParsers parsers = ExternalParsers.open(List.of(config),
+                ExternalParserAdapters.of(new RecordListAdapter()),
+                c -> InProcessChannelBuilder.forName(c.getTarget()).build())) {
+            Metadata warc = new Metadata();
+            warc.set(HttpHeaders.CONTENT_TYPE, "application/warc");
+            Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                            Mockito.any(), Mockito.any(), Mockito.any()))
+                    .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
+                            warc, "PARSE_SUCCESS", null, 5L));
+            TikaGrpcV2ServerImpl composing = new TikaGrpcV2ServerImpl(v1, parsers);
+            RecordingObserver observer = new RecordingObserver();
+            ByteString content = FakeRecordList.SAMPLE;
+
+            composing.parseBytes(ParseBytesRequest.newBuilder()
+                    .setCorrelationId("c1")
+                    .setContent(content)
+                    .build(), observer);
+
+            assertEquals(1, observer.replies.size(), "errors=" + observer.errors);
+            Document document = observer.replies.get(0).getDocument();
+            assertEquals("application/warc", document.getContentType());
+            assertEquals("c1", document.getId(), "the composer keeps the caller's id");
+            assertEquals(1, document.getExtensionsCount());
+            ExtensionResult result = document.getExtensions(0);
+            assertEquals(ExtensionResult.Status.STATUS_OK, result.getStatus(),
+                    "warnings=" + result.getWarningsList());
+            assertEquals(2, document.getEmbeddedCount());
+            assertEquals("text/html; charset=UTF-8",
+                    document.getEmbedded(1).getContentType());
+            assertEquals(content, fake.lastRequest.get().getArchive());
+            assertEquals(1, fake.calls.get());
+            assertEquals(List.of(0), freeDuringCall,
+                    "the admission permit is held while the external parser runs");
+            assertEquals(1, admission.availablePermits(), "and given back after the reply");
+
+            // Other types are not sent.
+            RecordingObserver html = new RecordingObserver();
+            Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                            Mockito.any(), Mockito.any(), Mockito.any()))
+                    .thenReturn(outcome());
+            composing.parseBytes(requestWithContent().build(), html);
+            assertEquals(0, html.replies.get(0).getDocument().getExtensionsCount());
+            assertEquals(1, fake.calls.get());
+
+            // A Tika parse that failed before detecting a type still reaches the parser: the
+            // server's fallback detection runs before the external parsers are routed. The
+            // records are added as embedded documents; Tika's status stays failed.
+            Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(),
+                            Mockito.any(), Mockito.any(), Mockito.any()))
+                    .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
+                            null, "PARSE_EXCEPTION_NO_EMIT", "boom", 5L));
+            RecordingObserver failed = new RecordingObserver();
+            composing.parseBytes(ParseBytesRequest.newBuilder().setContent(content).build(),
+                    failed);
+            Document failedDocument = failed.replies.get(0).getDocument();
+            assertEquals(ParseStatus.Status.STATUS_FAILED,
+                    failedDocument.getStatus().getStatus());
+            assertEquals("application/warc", failedDocument.getContentType());
+            assertEquals(ExtensionResult.Status.STATUS_OK,
+                    failedDocument.getExtensions(0).getStatus());
+            assertEquals(2, failedDocument.getEmbeddedCount());
+            assertEquals(2, fake.calls.get());
+        } finally {
+            recordList.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+        }
+    }
+
     @Test
     void anInterruptedParseEndsTheCall() throws Exception {
         Mockito.when(v1.parseAdmitted(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))

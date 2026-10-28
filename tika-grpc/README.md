@@ -136,11 +136,19 @@ take 1 GiB WARCs, raise both limits, leaving the inbound one 1 MiB above the con
 }
 ```
 
-The limit applies to every RPC on the server. gRPC holds each request in memory in
-full before Tika sees it, so each request in flight takes at least this much heap,
-and gRPC does not limit how many it reads at once; `parseBytesMaxConcurrent` only
-bounds how long ParseBytes holds them. The server logs a warning at startup when the
-maximum heap is below three times the limit.
+The limit applies to every RPC on the server. The replies of
+[external parsers](#external-parsers-experimental-tika-4771) have their own
+`maxReplyBytes` instead. gRPC holds each
+request in memory in full before Tika sees it, so each request in flight takes at
+least as much heap as its size, and gRPC does not limit how many it reads at once;
+`parseBytesMaxConcurrent` only bounds how long ParseBytes holds them. Size the heap for the messages you expect. When the limit is
+configured, the server logs a warning at startup if the maximum heap is below
+three times the limit.
+
+The limit only covers what tika-grpc receives. Clients set their own limit on what
+they receive, and stock gRPC clients keep the 4 MiB default, so a client that
+expects large replies (a ParseBytes reply with external results, say) has to raise
+its own `maxInboundMessageSize`.
 
 `parseBytesMaxContentBytes` (256 MiB by default, must be positive) limits the
 `content` field of ParseBytes; the default fits a web-crawl WARC of 100 MB or more.
@@ -161,6 +169,149 @@ inbound limit, or below `parseBytesMaxConcurrent` x `parseBytesMaxContentBytes`,
 when the spool directory (under `java.io.tmpdir`) has less free space than that
 product. On a small host, lower `parseBytesMaxConcurrent` or
 `parseBytesMaxContentBytes` rather than the heap warnings' advice to raise the heap.
+
+### External parsers (experimental, TIKA-4771)
+
+[docs/external-parsers-manual.md](docs/external-parsers-manual.md) is the user
+manual: setup, configuration, reading the result, writing an adapter and
+troubleshooting. [docs/external-parser-adapters.md](docs/external-parser-adapters.md)
+explains the design and the trust model.
+
+ParseBytes can also send the bytes to external gRPC parsers, written in any
+language, and add what they found to Tika's Document. Each parser needs an
+**adapter jar** on tika-grpc's classpath: the parser's generated stubs plus one
+`org.apache.tika.grpc.adapter.ExternalParserAdapter` (module
+`tika-grpc-adapter-api`), listed in `META-INF/services`. The adapter names the
+content types, the unary method and its key prefix, checks its options, builds the
+typed request, and turns the typed reply into an `AdapterContribution`. There is
+no gRPC reflection and no JSON request assembly.
+
+An adapter can contribute two things, and the server enforces it whatever the
+adapter wrote:
+
+- **Child documents** (a WARC's records, say), each with a path the adapter
+  gives it, returned in `Document.embedded` in the adapter's order and typed
+  through Tika's Property model like Tika's own metadata. A path must start with
+  `/` and be unique for that producer; a child without one is dropped with a
+  warning. A child the parser reported errors for has `STATUS_PARTIAL` and the
+  errors.
+- **Parent keys under its own prefix** (`warc:` for FastWARC), added to
+  `Document.extra` only where Tika's parse recorded no key of that name, whether
+  Tika's Document carries it as a typed field or in `extra`. Other parent keys are
+  dropped with a warning.
+
+Tika's own parent fields, status, origin and id are never changed by an adapter.
+Each adapter also gets one `ExtensionResult` in `Document.extensions` with its
+status, warnings, timing and child counts:
+
+| Result | Meaning |
+|--------|---------|
+| `STATUS_OK` | Everything the adapter contributed was merged. |
+| `STATUS_PARTIAL` | The parser stopped part way (a broken record); what it read before, children and parent keys, was merged, and the first warning says why. |
+| `STATUS_FAILED` | Nothing was merged: the call failed or was cancelled, the reply was over `maxReplyBytes`, the adapter threw (an `Error` such as `NoClassDefFoundError` included; only an `OutOfMemoryError` or other VM error is rethrown) or returned nothing, or the adapter said the parse failed. The reason is the first line of the error, at most 1024 characters. A failed result never carries the raw reply. |
+| `STATUS_SKIPPED` | The document was over `maxContentBytes` and was not sent. |
+
+`Document.embedded` lists each producer's documents together, in the order the
+producer made them, producers in the order of `externalParsers`. Tika's own
+embedded documents are not in it yet; when they are, they will come first under
+`producer_id` `tika`, and a WARC parsed by both Tika and FastWARC will list its
+records once under each producer. `(producer_id, path)` is unique.
+
+Adapters run inside the tika-grpc server's JVM, not in the forked parse workers.
+They are trusted code: an adapter that hangs or runs out of memory does so in the
+server. The limits below bound what the server keeps from an adapter, and the
+contribution builder applies them as the adapter adds to it, but they do not bound
+the adapter's own work.
+
+At startup the server reads each adapter's producer id, method, content types and
+key prefix once and checks them: the method must be unary, there must be at least
+one type, and the prefix must end with `:` or `-`, must not overlap one of Tika's
+own namespaces (`tk:`, `X-TIKA`, `dc:`, `dcterms:`, `Content-`, `pdf:`, `xmp`,
+`mp4:`, `audio:`..., the list is `AdapterMerge.TIKA_NAMESPACES`, built from the
+`Property` constants of tika-core's metadata classes plus the namespaces parsers write
+without one), and must not overlap another configured adapter's (`warc:` and
+`WARC:http:` cannot both be configured); prefixes are compared ignoring case. The
+adapter checks its `options`. Any problem, or an entry whose `producerId` has no
+usable adapter jar, stops the server. An adapter jar on the classpath that no entry
+names is never used: if it fails to load, or two jars share a producer id, the server
+logs it and starts anyway. `producerId` is 1 to 64 of `a-z`, `0-9`, `.`, `_` and
+`-`.
+
+Adapters are separate projects. FastWARC (`fastwarc-grpc`, TIKA-4951) running next to
+tika-grpc, with its adapter jar on the classpath:
+
+```json
+{
+  "grpc": {
+    "externalParsers": [
+      {"producerId": "fastwarc", "target": "localhost:50060", "plaintext": true}
+    ]
+  }
+}
+```
+
+| Key | Meaning |
+|-----|---------|
+| `producerId` | The adapter to use, by its producer id. Unique in the list. Required. |
+| `target` | The parser's address, `host:port`. Required. |
+| `plaintext` | Connect without TLS. `false` by default: the channel uses TLS. |
+| `tls` | `caFile` (PEM) to trust a private CA instead of the JVM's defaults; `certFile` and `keyFile` (PEM) for mutual TLS. Not with `plaintext`. |
+| `timeoutMs` | Deadline for each call, 60000 by default. |
+| `maxReplyBytes` | Largest reply read from the parser, 128 MiB by default; a larger one fails the result. |
+| `maxContentBytes` | Larger documents are not sent, and the result is `STATUS_SKIPPED`. Not set by default. |
+| `maxChildren` | Most embedded documents one reply adds, 100000 by default. |
+| `maxEmbeddedBytes` | Most bytes those embedded documents add, 64 MiB by default. |
+| `maxKeysPerDocument` | Most metadata keys per embedded document, and on the parent, 256 by default. |
+| `maxValueChars` | Values and paths are cut to this many characters, 8192 by default. |
+| `keepRawReply` | Also put the parser's whole reply in the result's `payload` as an `Any`. `false` by default. |
+| `options` | The adapter's own settings, checked at startup. FastWARC takes `verifyDigests` and `quirksMode`, both booleans. |
+
+Warnings are capped at 100 per result, 1000 characters each. What the external
+parsers add to a ParseBytes Document, all together, is capped by
+`grpc.externalParsersMaxAddedBytes` (96 MiB by default). The parsers share it: each
+may add embedded documents up to what the ones before it left, and the rest of its
+list is cut there and marked truncated. If the total is still over (raw replies or
+parent keys), raw replies are dropped first, then embedded documents from the end,
+then parent keys from the end. Tika's own Document and the result slots are not
+counted, and Tika's Document is never cut, so a reply can be Tika's Document plus up
+to that much and the slots.
+
+**Memory.** A ParseBytes request keeps its `parseBytesMaxConcurrent` place until its
+reply is built, external parsers included, so at most that many requests hold their
+content, a reply of up to `maxReplyBytes` per parser, and the composed Document at
+once. With the defaults and one parser that is up to 256 MiB of content, a 128 MiB
+reply and 96 MiB added per request, about 480 MiB; eight admitted requests (the
+derived `parseBytesMaxConcurrent`) approach 4 GiB, so size the heap for it or lower
+`parseBytesMaxConcurrent`. A request over the limit gets `RESOURCE_EXHAUSTED`. With no client deadline,
+the longest a request can take is Tika's parse plus the `timeoutMs` of every parser
+that takes its type.
+
+When a limit cuts the embedded list short, or the parser reported more children
+than were kept, the result has `truncated: true` with `embedded_reported` and
+`embedded_kept`, so a consumer does not take a partial list for the whole archive.
+The first child a limit stops ends the list, so the children kept are the
+producer's, in order, up to that point, less any dropped for an unusable or
+repeated path (each counted in a warning). A contribution an adapter built with
+other limits than the ones tika-grpc gave it is refused.
+
+**How a `.warc.gz` reaches FastWARC.** Routing matches the base type of the
+Document's `content_type` against the adapter's types; the FastWARC adapter takes
+`application/warc` and `application/warc+gz`. A gzipped WARC gets
+`application/warc+gz` by its bytes, not its name: Tika's default detection includes
+`GZipSpecializationDetector` (tika-parser-pkg-module), which looks inside the gzip
+stream and reports `application/warc+gz` when a WARC header is there, so
+`crawl.warc.gz`, `crawl.gz` and an unnamed upload all route. When Tika's own parse
+fails before recording a type, ParseBytes detects one itself from the bytes (magic,
+then the same detector on the first 1 KiB of compressed bytes) before routing.
+There is no filename fallback: a file named `.warc.gz` that is not a WARC does not
+route.
+
+The calls run one after another, after Tika's parse. Each call's deadline is the
+earlier of the client's deadline and the entry's `timeoutMs`. A client that cancels
+the ParseBytes call cancels the call in progress, nothing more is mapped or merged,
+and parsers not yet called are not called (their results are `STATUS_FAILED`). Each
+call gets its own copy of the entry's `options`. FetchAndParse does not call external parsers,
+because the server never holds the fetched bytes.
 
 ## Distribution and Maven Artifact
 

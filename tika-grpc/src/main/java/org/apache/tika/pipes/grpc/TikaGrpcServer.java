@@ -49,6 +49,7 @@ public class TikaGrpcServer {
     public static final int TIKA_SERVER_GRPC_DEFAULT_PORT = 50052;
     private Server server;
     TikaGrpcServerImpl serviceImpl;
+    TikaGrpcV2ServerImpl v2Impl;
     @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true)
     private Integer port = TIKA_SERVER_GRPC_DEFAULT_PORT;
 
@@ -114,6 +115,7 @@ public class TikaGrpcServer {
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         serviceImpl = new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginRoots);
         try {
+            v2Impl = new TikaGrpcV2ServerImpl(serviceImpl);
             ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(port, creds);
             applyInboundLimit(serverBuilder, serviceImpl.tikaGrpcConfig);
             for (String warning : startupWarnings(
@@ -131,7 +133,7 @@ public class TikaGrpcServer {
             // experimental typed Document surface. Both share the same pipes runtime.
             server = serverBuilder
                     .addService(serviceImpl)
-                    .addService(new TikaGrpcV2ServerImpl(serviceImpl))
+                    .addService(v2Impl)
                     .addService(healthStatusManager.getHealthService())
                     .addService(ProtoReflectionServiceV1.newInstance())
                     .build()
@@ -140,6 +142,10 @@ public class TikaGrpcServer {
             port = server.getPort();
         } catch (Exception e) {
             // Nothing else holds the impl yet: release its pipes pool and spool directory.
+            if (v2Impl != null) {
+                v2Impl.close();
+                v2Impl = null;
+            }
             serviceImpl.postShutdown();
             serviceImpl = null;
             throw e;
@@ -170,8 +176,14 @@ public class TikaGrpcServer {
                 }
             }
         } finally {
-            if (serviceImpl != null) {
-                serviceImpl.postShutdown();
+            try {
+                if (v2Impl != null) {
+                    v2Impl.close();
+                }
+            } finally {
+                if (serviceImpl != null) {
+                    serviceImpl.postShutdown();
+                }
             }
         }
     }

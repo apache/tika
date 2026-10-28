@@ -16,6 +16,14 @@ Release 4.2.1 - unreleased
      pipes.numClients by default; a request over it gets RESOURCE_EXHAUSTED before
      its content is staged) (TIKA-4795).
 
+   * tika-grpc v2: ParseBytes can call external gRPC parsers through adapter
+     jars (the new tika-grpc-adapter-api SPI, found with ServiceLoader) and add
+     what they return to Tika's Document as embedded documents and prefixed
+     parent keys; Tika's own fields are never changed. Each parser's result is
+     reported in an ExtensionResult slot. New "grpc" settings: externalParsers
+     and externalParsersMaxAddedBytes (96 MiB by default) (TIKA-4771,
+     TIKA-4951).
+
    * tika-grpc v2: a busy pool, a pipes runtime or fetcher that failed to start, and
      an unknown fetcher close the call with RESOURCE_EXHAUSTED, UNAVAILABLE or
      NOT_FOUND instead of OK with a failed Document. A cancelled or expired call no
