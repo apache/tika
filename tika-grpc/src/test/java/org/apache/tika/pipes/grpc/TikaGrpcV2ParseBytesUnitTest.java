@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +38,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
+import java.util.zip.GZIPOutputStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -193,6 +195,34 @@ class TikaGrpcV2ParseBytesUnitTest {
                 document.getOrigin().getSha256(), "sha256 is computed from the content");
         assertEquals("application/pdf", document.getContentType(),
                 "content type is detected from the bytes");
+    }
+
+    /**
+     * The fallback looks inside gzip: a gzipped WARC is application/warc+gz with or without
+     * a name, not application/gzip, so it can still be routed as a WARC.
+     */
+    @Test
+    void theFallbackDetectsAGzippedWarcByItsBytes() throws Exception {
+        ByteString warcGz = testFile("testWARC_multiple.warc.gz");
+        for (String name : new String[]{"", "crawl.warc.gz", "crawl.gz", "crawl.bin"}) {
+            assertEquals("application/warc+gz",
+                    TikaGrpcV2ServerImpl.detectContentType(warcGz, name), "name=" + name);
+        }
+        assertEquals("application/warc",
+                TikaGrpcV2ServerImpl.detectContentType(testFile("testWARC_multiple.warc"), ""));
+
+        ByteArrayOutputStream gz = new ByteArrayOutputStream();
+        try (GZIPOutputStream out = new GZIPOutputStream(gz)) {
+            out.write("just some text".getBytes(StandardCharsets.UTF_8));
+        }
+        assertEquals("application/gzip", TikaGrpcV2ServerImpl.detectContentType(
+                ByteString.copyFrom(gz.toByteArray()), "notes.warc.gz"),
+                "the bytes win over a .warc.gz name on a gzip that holds no WARC");
+    }
+
+    private static ByteString testFile(String name) throws IOException {
+        return ByteString.copyFrom(Files.readAllBytes(
+                Paths.get("src", "test", "resources", "test-files", name)));
     }
 
     /** The digest and content type the parse recorded win over the server's fallback. */

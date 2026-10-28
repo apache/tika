@@ -30,6 +30,7 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.detect.gzip.GZipSpecializationDetector;
 import org.apache.tika.grpc.mapper.DocumentBuilder;
 import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.grpc.v2.FetchAndParseBiDirectionalStreamingRequest;
@@ -46,6 +47,7 @@ import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 
@@ -287,22 +289,39 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
 
     /**
      * Detects the content type from the magic bytes and the resource name with tika-core's
-     * MIME registry. This is weaker than the forked parse's detector (no container
-     * detection), so it is used only when the parse recorded no content type.
+     * MIME registry, and looks one level inside gzip: a gzipped WARC or ARC is
+     * {@code application/warc+gz} or {@code application/arc+gz}, not plain
+     * {@code application/gzip}, whatever its name. Used only when the parse recorded no
+     * content type.
+     * <p>
+     * Deliberately not the full default detector: this runs in the server JVM, on bytes whose
+     * parse may just have crashed a worker, so it stays with checks that read a bounded
+     * prefix (container detectors open whole zip and OLE files).
      */
-    private static String detectContentType(ByteString content, String resourceName) {
+    static String detectContentType(ByteString content, String resourceName) {
         Metadata metadata = new Metadata();
         if (!resourceName.isBlank()) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, resourceName.trim());
         }
         try (TikaInputStream tis = TikaInputStream.get(content.newInput())) {
-            return MimeTypes.getDefaultMimeTypes().detect(tis, metadata, new ParseContext())
-                    .toString();
+            MediaType type = MimeTypes.getDefaultMimeTypes().detect(tis, metadata,
+                    new ParseContext());
+            if (GZipSpecializationDetector.GZ.equals(type)
+                    || GZipSpecializationDetector.WARC_GZ.equals(type)
+                    || GZipSpecializationDetector.ARC_GZ.equals(type)) {
+                // Reads at most 1 KiB of compressed bytes. The magic bytes win over a name
+                // like crawl.warc.gz on a file that is not a WARC.
+                type = GZIP_SPECIALIZATION.detect(tis, metadata, new ParseContext());
+            }
+            return type.toString();
         } catch (IOException e) {
             LOG.debug("content type detection failed", e);
             return null;
         }
     }
+
+    private static final GZipSpecializationDetector GZIP_SPECIALIZATION =
+            new GZipSpecializationDetector();
 
     /**
      * Validates one request, runs the fetch and parse, and sends its typed response, built by

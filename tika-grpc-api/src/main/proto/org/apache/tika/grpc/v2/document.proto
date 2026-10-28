@@ -40,8 +40,8 @@ message Document {
   // origin.sha256, which is set when a digester is configured (always on ParseBytes).
   string id = 1;
   // Tika-detected MIME type. When a ParseBytes parse failed before detecting one, the
-  // server fills it from the bytes and resource name (magic bytes only, no container
-  // detection).
+  // server fills it from the bytes and resource name: magic bytes, plus a look inside
+  // gzip (a gzipped WARC is application/warc+gz), but no container detection.
   string content_type = 2;
   google.protobuf.Timestamp parsed_at = 4;
   ParseStatus status = 5;
