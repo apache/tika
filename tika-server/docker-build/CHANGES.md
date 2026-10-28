@@ -28,6 +28,18 @@ Tag convention:
 The legacy 3.x patch flow in the external `apache/tika-docker` repo still uses
 the `.N` convention until 4.0.0 GA.
 
+* Unreleased
+  * `-full` and `tika-grpc`: dropped `ttf-mscorefonts-installer` and `cabextract`.
+    The installer downloaded Microsoft's fonts from SourceForge at build time (a
+    mirror outage failed a multi-arch push), and the images redistributed fonts
+    under Microsoft's EULA. Non-embedded Verdana, Georgia, Trebuchet, Impact,
+    Comic Sans and Arial Black now render with Liberation fonts (TIKA-5005).
+  * `-full` and `tika-grpc`: added `fonts-ipafont-gothic`, `fonts-ipafont-mincho`
+    and `fonts-wqy-zenhei`. PDFBox 3.0.x can't use the CFF-based Noto CJK fonts
+    for non-embedded Japanese and Chinese fonts, which rendered as empty boxes or
+    not at all (TIKA-5005, PDFBOX-6293).
+  * `wget` stays in `-full` and `tika-grpc` for healthchecks.
+
 * 4.0.0-alpha-1 (11 May 2026, rebuild 1)
   * Tag scheme changed to `<tika-version>` + `<tika-version>-<N>` + `latest`.
   * Migrated build out of the external `apache/tika-docker` repo into

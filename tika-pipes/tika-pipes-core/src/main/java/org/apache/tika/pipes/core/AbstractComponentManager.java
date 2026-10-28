@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.core;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -46,12 +47,17 @@ import org.apache.tika.plugins.TikaExtensionFactory;
 /**
  * Abstract base class for managing Tika components (Fetchers, Emitters, etc.).
  * Provides lazy instantiation, early validation, and optional runtime modifications.
+ * <p>
+ * The manager owns every instance it builds. Callers {@link #acquire(String)} a {@link Lease}
+ * and close it when done. A runtime save or delete retires the instance it replaces: no new
+ * lease can get it, and it is closed (if it implements {@link AutoCloseable}) when its last
+ * lease is released, at once if none is open. {@link #close()} retires every instance.
  *
  * @param <T> the component type (e.g., Fetcher, Emitter)
  * @param <F> the factory type for creating components
  */
 public abstract class AbstractComponentManager<T extends TikaExtension,
-                                                F extends TikaExtensionFactory<T>> {
+                                                F extends TikaExtensionFactory<T>> implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractComponentManager.class);
 
@@ -61,8 +67,9 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
     private final Map<String, ExtensionConfig> configured;
     // runtime registrations only
     private final ConfigStore configStore;
-    private final Map<String, T> componentCache = new ConcurrentHashMap<>();
+    private final Map<String, Holder<T>> holders = new ConcurrentHashMap<>();
     private final boolean allowRuntimeModifications;
+    private volatile boolean closed = false;
 
     protected AbstractComponentManager(PluginManager pluginManager,
                                       Map<String, ExtensionConfig> componentConfigs,
@@ -240,44 +247,66 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
     }
 
     /**
-     * Gets a component by ID, lazily instantiating it if needed.
+     * Leases a component by ID, lazily instantiating it if needed. Close the lease when done
+     * with the component and with everything it returned.
      */
-    public T getComponent(String id) throws IOException, TikaException {
+    public Lease<T> acquire(String id) throws IOException, TikaException {
         // Canonicalize on the way in so lookup agrees with what load() stored. __ is not refused
         // here: the host's own components resolve through this method.
         id = ComponentIds.normalize(id);
-
-        // Check cache first (fast path, no synchronization)
-        T component = componentCache.get(id);
-        if (component != null) {
-            return component;
+        while (true) {
+            Holder<T> holder = holders.get(id);
+            if (holder == null) {
+                holder = build(id);
+            }
+            Lease<T> lease = holder.tryAcquire();
+            if (lease != null) {
+                return lease;
+            }
+            // retired between lookup and acquire: build the replacement
         }
+    }
 
-        // Check if config exists
+    private synchronized Holder<T> build(String id) throws IOException, TikaException {
+        if (closed) {
+            throw new IllegalStateException(getClass().getSimpleName() + " is closed");
+        }
+        Holder<T> holder = holders.get(id);
+        if (holder != null) {
+            return holder;
+        }
         ExtensionConfig config = lookup(id);
         if (config == null) {
             throw createNotFoundException(
                     "Can't find " + getComponentName() + " for id=" + id +
                     ". Available: " + getSupported());
         }
+        try {
+            holder = new Holder<>(buildComponent(config), getComponentName(), id);
+        } catch (TikaConfigException e) {
+            throw new IOException("Failed to build " + getComponentName() + ": " + id, e);
+        }
+        holders.put(id, holder);
+        LOG.debug("Lazily instantiated {}: {}", getComponentName(), id);
+        return holder;
+    }
 
-        // Synchronized block to ensure only one thread builds the component
-        synchronized (this) {
-            // Double-check in case another thread built it while we were waiting
-            component = componentCache.get(id);
-            if (component != null) {
-                return component;
-            }
+    private synchronized void retire(String id) {
+        Holder<T> holder = holders.remove(id);
+        if (holder != null) {
+            holder.retire();
+        }
+    }
 
-            // Build the component
-            try {
-                component = buildComponent(config);
-                componentCache.put(id, component);
-                LOG.debug("Lazily instantiated {}: {}", getComponentName(), id);
-                return component;
-            } catch (TikaConfigException e) {
-                throw new IOException("Failed to build " + getComponentName() + ": " + id, e);
-            }
+    /**
+     * Retires every instance: each is closed now if no lease is open, else when its last lease
+     * is released. Later calls to {@link #acquire(String)} fail.
+     */
+    @Override
+    public synchronized void close() {
+        closed = true;
+        for (String id : Set.copyOf(holders.keySet())) {
+            retire(id);
         }
     }
 
@@ -313,8 +342,8 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
 
     /**
      * Dynamically adds or updates a component configuration at runtime.
-     * The component will not be instantiated until it is first requested via {@link #getComponent(String)}.
-     * If a component with the same ID already exists, it will be replaced and the cached instance cleared.
+     * The component will not be instantiated until it is first requested via {@link #acquire(String)}.
+     * If a component with the same ID already exists, it will be replaced and its instance retired.
      * A component defined in the server config cannot be replaced.
      * <p>
      * This method is only available if the manager was loaded with allowRuntimeModifications=true.
@@ -358,9 +387,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
                     ". Available: " + factories.keySet());
         }
 
-        // If updating existing component, clear the cache so it gets re-instantiated
         if (configStore.containsKey(componentId)) {
-            componentCache.remove(componentId);
             LOG.debug("Updating existing {} config: id={}, type={}", getComponentName(), componentId, typeName);
         } else {
             LOG.debug("Creating new {} config: id={}, type={}", getComponentName(), componentId, typeName);
@@ -368,11 +395,12 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
 
         // Store config without instantiating
         configStore.put(componentId, config);
+        retire(componentId);
     }
 
     /**
      * Deletes a component configuration by ID.
-     * Clears the cached instance and removes the configuration.
+     * Removes the configuration and retires the instance.
      *
      * @param componentId the component ID to delete
      * @throws TikaConfigException if runtime modifications are not allowed, the component is not
@@ -405,9 +433,8 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
                     getComponentName().substring(1) + " with ID '" + componentId + "' not found");
         }
 
-        // Clear cache and remove config
-        componentCache.remove(componentId);
         configStore.remove(componentId);
+        retire(componentId);
         LOG.debug("Deleted {} config: id={}", getComponentName(), componentId);
     }
 
@@ -442,12 +469,12 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
     }
 
     /**
-     * Convenience method that returns a component if only one component
+     * Convenience method that leases a component if only one component
      * is configured. If 0 or > 1 components are configured, this throws an IllegalArgumentException.
      *
-     * @return the single configured component
+     * @return a lease on the single configured component
      */
-    public T getComponent() throws IOException, TikaException {
+    public Lease<T> acquire() throws IOException, TikaException {
         Set<String> ids = getAllIds();
         if (ids.size() != 1) {
             throw new IllegalArgumentException(
@@ -455,8 +482,65 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
                     getComponentName().substring(1) + "() requires exactly 1 configured " +
                     getComponentName() + ". Found: " + ids.size() + " (" + ids + ")");
         }
-        // Get the single component id and use getComponent(id) for lazy loading
-        String componentId = ids.iterator().next();
-        return getComponent(componentId);
+        return acquire(ids.iterator().next());
+    }
+
+    /**
+     * One built instance. Closed exactly once, when it is retired and no lease is open,
+     * whichever comes last.
+     */
+    private static final class Holder<T> {
+        private final T component;
+        private final String componentName;
+        private final String id;
+        private int refs = 0;
+        private boolean retired = false;
+
+        Holder(T component, String componentName, String id) {
+            this.component = component;
+            this.componentName = componentName;
+            this.id = id;
+        }
+
+        synchronized Lease<T> tryAcquire() {
+            if (retired) {
+                return null;
+            }
+            refs++;
+            return new Lease<>(component, this::release);
+        }
+
+        private void release() {
+            synchronized (this) {
+                if (--refs > 0 || !retired) {
+                    return;
+                }
+            }
+            closeComponent();
+        }
+
+        void retire() {
+            synchronized (this) {
+                if (retired) {
+                    return;
+                }
+                retired = true;
+                if (refs > 0) {
+                    return;
+                }
+            }
+            closeComponent();
+        }
+
+        private void closeComponent() {
+            if (component instanceof AutoCloseable closeable) {
+                try {
+                    closeable.close();
+                    LOG.debug("Closed {}: {}", componentName, id);
+                } catch (Exception e) {
+                    LOG.warn("Failed to close {} '{}'", componentName, id, e);
+                }
+            }
+        }
     }
 }

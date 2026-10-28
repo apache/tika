@@ -36,7 +36,7 @@ import org.apache.tika.plugins.ExtensionConfig;
  *       "topic": "my-topic",
  *       "bootstrapServers": "localhost:9092",
  *       "acks": "all",
- *       "lingerMs": 5000
+ *       "lingerMs": 5
  *     }
  *   }
  * }

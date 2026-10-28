@@ -51,7 +51,7 @@ public class PipesWorkerUnpackCleanupTest {
     @ValueSource(booleans = {true, false})
     public void testFetchFailure(boolean frictionless) throws Exception {
         ParseContext context = unpackContext(frictionless);
-        FetchHandler fetchHandler = new FetchHandler(null) {
+        FetchHandler fetchHandler = new FetchHandler(null, null) {
             @Override
             public TisOrResult fetch(FetchEmitTuple t, Metadata metadata, ParseContext ctx) {
                 return new TisOrResult(null, FETCH_FAILED);
@@ -66,7 +66,7 @@ public class PipesWorkerUnpackCleanupTest {
     @ValueSource(booleans = {true, false})
     public void testParseFailure(boolean frictionless) throws Exception {
         ParseContext context = unpackContext(frictionless);
-        FetchHandler fetchHandler = new FetchHandler(null) {
+        FetchHandler fetchHandler = new FetchHandler(null, null) {
             @Override
             public TisOrResult fetch(FetchEmitTuple t, Metadata metadata, ParseContext ctx) {
                 return new TisOrResult(TikaInputStream.get(new byte[0]), null);
@@ -103,7 +103,8 @@ public class PipesWorkerUnpackCleanupTest {
         FetchEmitTuple tuple = new FetchEmitTuple("id", new FetchKey("fsf", "missing.txt"),
                 new EmitKey("fse", "missing.txt"), new Metadata(), context,
                 FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
-        return new PipesWorker(tuple, context, null, null, fetchHandler, parseHandler, null,
+        return new PipesWorker(tuple, context, null, new TaskLeases(null, null), fetchHandler,
+                parseHandler, null,
                 null, ParseMode.UNPACK);
     }
 

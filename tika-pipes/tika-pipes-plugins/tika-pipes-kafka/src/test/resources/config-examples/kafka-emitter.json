@@ -5,7 +5,7 @@
         "topic": "tika-parsed-docs",
         "bootstrapServers": "kafka1.example.com:9092,kafka2.example.com:9092",
         "acks": "all",
-        "lingerMs": 5000,
+        "lingerMs": 5,
         "batchSize": 16384,
         "compressionType": "lz4",
         "enableIdempotence": true,

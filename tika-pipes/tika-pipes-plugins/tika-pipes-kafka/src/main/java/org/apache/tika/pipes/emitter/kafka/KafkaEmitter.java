@@ -16,17 +16,22 @@
  */
 package org.apache.tika.pipes.emitter.kafka;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +40,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
+import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
@@ -49,14 +55,14 @@ import org.apache.tika.plugins.ExtensionConfig;
  *         "topic": "tika-output",
  *         "bootstrapServers": "localhost:9092",
  *         "acks": "all",
- *         "lingerMs": 5000
+ *         "lingerMs": 5
  *       }
  *     }
  *   }
  * }
  * </pre>
  */
-public class KafkaEmitter extends AbstractEmitter {
+public class KafkaEmitter extends AbstractEmitter implements Closeable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaEmitter.class);
     private static final ObjectMapper OM = new ObjectMapper();
@@ -71,7 +77,7 @@ public class KafkaEmitter extends AbstractEmitter {
         return new KafkaEmitter(extensionConfig, config, producer);
     }
 
-    private KafkaEmitter(ExtensionConfig extensionConfig, KafkaEmitterConfig config, Producer<String, String> producer) throws IOException {
+    KafkaEmitter(ExtensionConfig extensionConfig, KafkaEmitterConfig config, Producer<String, String> producer) throws IOException {
         super(extensionConfig);
         this.config = config;
         this.producer = producer;
@@ -132,6 +138,26 @@ public class KafkaEmitter extends AbstractEmitter {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or of size 0");
         }
+        List<Future<RecordMetadata>> sent = new ArrayList<>();
+        send(emitKey, metadataList, sent);
+        awaitAcks(sent);
+    }
+
+    /** Sends every record first, then waits once: one round trip for the batch, not per item. */
+    @Override
+    public void emit(List<? extends EmitData> emitData) throws IOException {
+        List<Future<RecordMetadata>> sent = new ArrayList<>();
+        for (EmitData d : emitData) {
+            if (d.getMetadataList() == null || d.getMetadataList().isEmpty()) {
+                throw new IOException("metadata list must not be null or of size 0");
+            }
+            send(d.getEmitKey(), d.getMetadataList(), sent);
+        }
+        awaitAcks(sent);
+    }
+
+    private void send(String emitKey, List<Metadata> metadataList,
+                      List<Future<RecordMetadata>> sent) throws IOException {
         for (Metadata metadata : metadataList) {
             LOGGER.trace("about to emit to target topic: ({}) path:({})", config.topic(), emitKey);
 
@@ -144,7 +170,28 @@ public class KafkaEmitter extends AbstractEmitter {
                 fields.put(n, vals[0]);
             }
 
-            producer.send(new ProducerRecord<>(config.topic(), emitKey, OM.writeValueAsString(fields)));
+            sent.add(producer.send(
+                    new ProducerRecord<>(config.topic(), emitKey, OM.writeValueAsString(fields))));
         }
+    }
+
+    // send() only queues the record: success is the broker's ack, bounded by deliveryTimeoutMs
+    private static void awaitAcks(List<Future<RecordMetadata>> sent) throws IOException {
+        for (Future<RecordMetadata> f : sent) {
+            try {
+                f.get();
+            } catch (ExecutionException e) {
+                throw new IOException("Kafka did not accept the record", e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("interrupted waiting for Kafka to accept the record", e);
+            }
+        }
+    }
+
+    /** Flushes buffered records and releases the producer. */
+    @Override
+    public void close() {
+        producer.close();
     }
 }

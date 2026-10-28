@@ -267,7 +267,7 @@ class HttpFetcherTest extends TikaTest {
         String url = "https://t.co/cvfkWAEIxw?amp=1";
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Metadata metadata = new Metadata();
-        HttpFetcher httpFetcher = (HttpFetcher) getFetcherManager("tika-config-http.json").getFetcher("http");
+        HttpFetcher httpFetcher = (HttpFetcher) getFetcherManager("tika-config-http.json").getFetcher("http").get();
         try (InputStream is = httpFetcher.fetch(url, metadata, new ParseContext())) {
             IOUtils.copy(is, bos);
         }
@@ -281,7 +281,7 @@ class HttpFetcherTest extends TikaTest {
         long start = 969596307;
         long end = start + 1408 - 1;
         Metadata metadata = new Metadata();
-        HttpFetcher httpFetcher = (HttpFetcher) getFetcherManager("tika-config-http.json").getFetcher("http");
+        HttpFetcher httpFetcher = (HttpFetcher) getFetcherManager("tika-config-http.json").getFetcher("http").get();
         try (TemporaryResources tmp = new TemporaryResources()) {
             Path tmpPath = tmp.createTempFile(metadata);
             try (InputStream is = httpFetcher.fetch(url, start, end, metadata)) {
@@ -304,7 +304,7 @@ class HttpFetcherTest extends TikaTest {
     @Test
     public void testVerifySslReachesClientFactory() throws Exception {
         HttpFetcher fetcher = (HttpFetcher) getFetcherManager("tika-config-http.json")
-                .getFetcher("http-fetcher-1");
+                .getFetcher("http-fetcher-1").get();
         assertTrue(fetcher.getHttpFetcherConfig().isVerifySsl(), "config default must be verify-on");
         assertTrue(new HttpFetcherConfig().isVerifySsl(), "bare config default must be verify-on");
 
@@ -322,7 +322,7 @@ class HttpFetcherTest extends TikaTest {
     }
 
     private void mockClientResponse(final HttpResponse response) throws Exception {
-        httpFetcher = (HttpFetcher) getFetcherManager("tika-config-http.json").getFetcher("http-fetcher-1");
+        httpFetcher = (HttpFetcher) getFetcherManager("tika-config-http.json").getFetcher("http-fetcher-1").get();
 
         final HttpClient httpClient = Mockito.mock(HttpClient.class);
         final HttpClientFactory clientFactory = Mockito.mock(HttpClientFactory.class);
