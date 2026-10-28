@@ -145,8 +145,8 @@ class FileSystemFetcherTest extends ExternalTestBase {
             LOG.info("Processed {} documents (limit was {})", totalProcessed, maxDocs);
             Assertions.assertTrue(totalProcessed <= maxDocs, 
                 "Should not process more than " + maxDocs + " documents");
-            Assertions.assertTrue(totalProcessed > 0, 
-                "Should have processed at least one document");
+            Assertions.assertNotEquals(0, successes.size(),
+                () -> "Should have some successful fetches; errors: " + errors);
         }
         
         LOG.info("Test completed successfully - {} successes, {} errors", 
