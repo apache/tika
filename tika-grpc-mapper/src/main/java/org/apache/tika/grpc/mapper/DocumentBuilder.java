@@ -87,6 +87,11 @@ public final class DocumentBuilder {
         boolean hasError = error != null && !error.isBlank();
         if (hasError) {
             status.addErrors(error.strip());
+        } else if (primary != null
+                && (status.getStatus() == ParseStatus.Status.STATUS_FAILED
+                || status.getStatus() == ParseStatus.Status.STATUS_PARTIAL)) {
+            // A failed or partial Document always says why, even when pipes gave no message.
+            status.addErrors("parse ended with pipes status " + pipesStatus);
         }
 
         if (primary == null) {

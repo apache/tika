@@ -144,11 +144,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
 
-        // Load PipesConfig directly from root level (not from "parse-context")
-        pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
-        if (pipesConfig == null) {
-            pipesConfig = new PipesConfig();
-        }
+        // PipesConfig.load also reads parse-context.exception-reporting and timeout-limits,
+        // which the parent needs for the results it fabricates itself (timeouts, crashes).
+        pipesConfig = PipesConfig.load(tikaJsonConfig);
         pipesConfig.refuseTrustedRequests("tika-grpc");
 
         // Security-sensitive grpc features (per-request config, runtime component
@@ -521,12 +519,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     FetchParseOutcome runFetchAndParse(String fetcherId, String fetchKey,
                                        ParseContext parseContext, Dispatch dispatch) {
-        Fetcher fetcher;
-        try {
-            fetcher = fetcherManager.getFetcher(fetcherId);
-        } catch (TikaException | IOException e) {
-            throw new FetcherNotFoundException(fetcherId, e);
-        }
+        Fetcher fetcher = resolveFetcher(fetcherId);
 
         Metadata tikaMetadata = new Metadata();
         // Times the whole pipesParser.parse() round trip: fetch and parse both happen
@@ -601,7 +594,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         String errorMessage = null;
         if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
-            errorMessage = pipesResult.message();
+            // Scrubbed like the v2 errors: the first line unless the operator chose a policy.
+            errorMessage = diagnostic(pipesResult, exceptionReportingConfigured);
         }
         return new FetchParseOutcome(
                 fetchKey,
@@ -747,6 +741,24 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     /**
+     * The fetcher named {@code fetcherId}, built if this is its first use.
+     *
+     * @throws FetcherNotFoundException    no fetcher has that id
+     * @throws FetcherUnavailableException the fetcher exists but could not be built or read
+     *                                     from its store (bad credentials, unreadable config,
+     *                                     store I/O)
+     */
+    Fetcher resolveFetcher(String fetcherId) {
+        try {
+            return fetcherManager.getFetcher(fetcherId);
+        } catch (org.apache.tika.pipes.api.fetcher.FetcherNotFoundException e) {
+            throw new FetcherNotFoundException(fetcherId, e);
+        } catch (TikaException | IOException | RuntimeException e) {
+            throw new FetcherUnavailableException(fetcherId, e);
+        }
+    }
+
+    /**
      * The fetcher id names no fetcher the FetchAndParse RPCs may use. v1 lets it surface as
      * {@code UNKNOWN}, as it always has; v2 answers {@code NOT_FOUND}.
      */
@@ -776,6 +788,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     record ParseBytesOutcome(Metadata primary, String status, String diagnostic,
                              long fetchParseTimeMs) {
+    }
+
+    /**
+     * The fetcher exists but could not be built or loaded. v1 lets it surface as
+     * {@code UNKNOWN}; v2 answers {@code UNAVAILABLE}, since the server, not the request, is
+     * at fault.
+     */
+    static final class FetcherUnavailableException extends RuntimeException {
+        FetcherUnavailableException(String fetcherId, Throwable cause) {
+            super("Fetcher " + fetcherId + " could not be loaded", cause);
+        }
     }
 
     /**

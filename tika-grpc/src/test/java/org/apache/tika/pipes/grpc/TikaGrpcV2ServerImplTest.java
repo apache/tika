@@ -47,6 +47,8 @@ import org.apache.tika.grpc.v2.FetchAndParseBiDirectionalStreamingRequest;
 import org.apache.tika.grpc.v2.FetchAndParseBiDirectionalStreamingResponse;
 import org.apache.tika.grpc.v2.FetchAndParseRequest;
 import org.apache.tika.grpc.v2.FetchAndParseResponse;
+import org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingRequest;
+import org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
 import org.apache.tika.grpc.v2.ParseBytesResponse;
 import org.apache.tika.grpc.v2.ParseStatus;
@@ -237,6 +239,7 @@ class TikaGrpcV2ServerImplTest {
 
         assertEquals(1, observer.replies.size(), "only the request before the error is answered");
         assertEquals(1, observer.errors.size());
+        assertEquals(Status.Code.NOT_FOUND, Status.fromThrowable(observer.errors.get(0)).getCode());
         assertEquals(0, observer.completions, "a call closed with an error is not completed too");
     }
 
@@ -517,6 +520,117 @@ class TikaGrpcV2ServerImplTest {
         ManagedChannel channel = InProcessChannelBuilder.forName(name).build();
         closeables.add(0, () -> channel.shutdownNow().awaitTermination(10, TimeUnit.SECONDS));
         return channel;
+    }
+
+    /** A fetcher that exists but cannot be built is the server's fault: UNAVAILABLE. */
+    @Test
+    void aFetcherThatCannotBeLoadedIsUnavailable() {
+        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenThrow(new TikaGrpcServerImpl.FetcherUnavailableException("fs",
+                        new java.io.IOException("secret store path")));
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        v2.fetchAndParse(request("a"), observer);
+
+        Status status = Status.fromThrowable(observer.errors.get(0));
+        assertEquals(Status.Code.UNAVAILABLE, status.getCode());
+        assertFalse(status.getDescription().contains("secret"), status.getDescription());
+    }
+
+    @Test
+    void aFetcherThatFailedToInitializeInTheWorkerIsUnavailable() {
+        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome("a", "FETCHER_INITIALIZATION_EXCEPTION", null, "boom"));
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        v2.fetchAndParse(request("a"), observer);
+
+        assertTrue(observer.replies.isEmpty());
+        assertEquals(Status.Code.UNAVAILABLE, Status.fromThrowable(observer.errors.get(0)).getCode());
+    }
+
+    /**
+     * additional_fetch_config_json for a fetcher that does not exist is NOT_FOUND, not the
+     * INVALID_ARGUMENT the config check would give.
+     */
+    @Test
+    void additionalConfigForAMissingFetcherIsNotFound() {
+        Mockito.when(v1.resolveFetcher("nope"))
+                .thenThrow(new TikaGrpcServerImpl.FetcherNotFoundException("nope", null));
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        v2.fetchAndParse(FetchAndParseRequest.newBuilder().setFetcherId("nope").setFetchKey("a")
+                .setAdditionalFetchConfigJson("{\"basePath\":\"/x\"}").build(), observer);
+
+        assertEquals(Status.Code.NOT_FOUND, Status.fromThrowable(observer.errors.get(0)).getCode());
+        Mockito.verify(v1, Mockito.never()).buildRequestParseContext(Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void serverStreamingClosesWithTheSameStatusCodes() {
+        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenThrow(new TikaGrpcServerImpl.FetcherNotFoundException("fs", null));
+        Recording<FetchAndParseServerSideStreamingResponse> observer = new Recording<>();
+
+        v2.fetchAndParseServerSideStreaming(FetchAndParseServerSideStreamingRequest.newBuilder()
+                .setFetcherId("fs").setFetchKey("a").build(), observer);
+
+        assertEquals(0, observer.completions);
+        assertEquals(Status.Code.NOT_FOUND, Status.fromThrowable(observer.errors.get(0)).getCode());
+    }
+
+    @Test
+    void aBidiStreamClosesWithTheFailuresStatusCode() {
+        Mockito.when(v1.runFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome("a", "CLIENT_UNAVAILABLE_WITHIN_MS", null, null));
+        Recording<FetchAndParseBiDirectionalStreamingResponse> observer = new Recording<>();
+
+        StreamObserver<FetchAndParseBiDirectionalStreamingRequest> requests =
+                v2.fetchAndParseBiDirectionalStreaming(observer);
+        requests.onNext(bidi("a"));
+
+        assertEquals(Status.Code.RESOURCE_EXHAUSTED,
+                Status.fromThrowable(observer.errors.get(0)).getCode());
+    }
+
+    /** An interrupt from outside the call (a shutdown) does not leak into the next call. */
+    @Test
+    void endClearsAnInterruptEvenWithoutACancel() {
+        TikaGrpcV2ServerImpl.Cancellation cancellation = new TikaGrpcV2ServerImpl.Cancellation();
+        assertTrue(cancellation.begin());
+        Thread.currentThread().interrupt();
+        cancellation.end();
+        assertFalse(Thread.currentThread().isInterrupted());
+    }
+
+    /** A Windows-style CRLF stack trace is cut at its first line too. */
+    @Test
+    void aCrlfDiagnosticIsCutAtTheFirstLine() {
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                "java.io.IOException: denied\r\n\tat C:\\tika\\x.jar");
+        assertEquals("java.io.IOException: denied", TikaGrpcServerImpl.diagnostic(result, false));
+    }
+
+    /**
+     * A v2 request from a client built before emitter_id (field 4) was removed still parses;
+     * the old field is kept only as an unknown field and nothing reads it.
+     */
+    @Test
+    void anOldClientsEmitterIdIsIgnored() throws Exception {
+        byte[] old = FetchAndParseRequest.newBuilder().setFetcherId("fs").setFetchKey("a")
+                .setUnknownFields(com.google.protobuf.UnknownFieldSet.newBuilder()
+                        .addField(4, com.google.protobuf.UnknownFieldSet.Field.newBuilder()
+                                .addLengthDelimited(com.google.protobuf.ByteString
+                                        .copyFromUtf8("my-emitter")).build())
+                        .build())
+                .build().toByteArray();
+
+        FetchAndParseRequest parsed = FetchAndParseRequest.parseFrom(old);
+
+        assertEquals("fs", parsed.getFetcherId());
+        assertEquals("a", parsed.getFetchKey());
+        assertTrue(parsed.getUnknownFields().hasField(4));
     }
 
     private static Metadata html() {

@@ -27,6 +27,7 @@ import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -337,6 +338,18 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
                 request.parseContextJson(), responseObserver)) {
             return false;
         }
+        // A missing or broken fetcher is NOT_FOUND or UNAVAILABLE whatever else the request
+        // carries: checked before additional_fetch_config_json, which also names the fetcher.
+        if (StringUtils.isNotBlank(request.additionalFetchConfigJson())) {
+            try {
+                v1.resolveFetcher(request.fetcherId());
+            } catch (RuntimeException e) {
+                if (fetcherFailure(e, request.fetcherId(), responseObserver)) {
+                    return false;
+                }
+                throw e;
+            }
+        }
         ParseContext parseContext = v1.buildRequestParseContext(request.fetcherId(),
                 request.additionalFetchConfigJson(), request.parseContextJson(),
                 responseObserver);
@@ -350,12 +363,10 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         try {
             outcome = v1.runPublicFetchAndParse(request.fetcherId(), request.fetchKey(),
                     parseContext, cancellation::dispatching);
-        } catch (TikaGrpcServerImpl.FetcherNotFoundException e) {
-            responseObserver.onError(Status.NOT_FOUND
-                    .withDescription("no fetcher named '" + request.fetcherId() + "'")
-                    .asRuntimeException());
-            return false;
         } catch (RuntimeException e) {
+            if (fetcherFailure(e, request.fetcherId(), responseObserver)) {
+                return false;
+            }
             closeFailed("the fetch and parse of '" + request.fetchKey() + "'", e,
                     cancellation, responseObserver);
             return false;
@@ -384,6 +395,29 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
                 outcome.diagnostic(),
                 outcome.fetchParseTimeMs())));
         return true;
+    }
+
+    /**
+     * Closes the call for a fetcher that does not exist ({@code NOT_FOUND}) or could not be
+     * loaded ({@code UNAVAILABLE}), and returns {@code true}; {@code false} for any other
+     * failure.
+     */
+    private static boolean fetcherFailure(RuntimeException e, String fetcherId,
+                                          StreamObserver<?> responseObserver) {
+        if (e instanceof TikaGrpcServerImpl.FetcherNotFoundException) {
+            responseObserver.onError(Status.NOT_FOUND
+                    .withDescription("no fetcher named '" + fetcherId + "'")
+                    .asRuntimeException());
+            return true;
+        }
+        if (e instanceof TikaGrpcServerImpl.FetcherUnavailableException) {
+            LOG.warn("fetcher '{}' could not be loaded", fetcherId, e.getCause());
+            responseObserver.onError(Status.UNAVAILABLE
+                    .withDescription("fetcher '" + fetcherId + "' could not be loaded")
+                    .asRuntimeException());
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -541,17 +575,16 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         }
 
         /**
-         * Ends what {@link #begin()} started. Clears an interrupt that {@link #cancel()} may
-         * have sent, so it does not leak into the next call this thread serves.
+         * Ends what {@link #begin()} started. Clears the thread's interrupt, whether
+         * {@link #cancel()} sent it or a shutdown did, so it does not leak into the next call
+         * this pooled thread serves.
          */
         synchronized void end() {
             if (parsing == Thread.currentThread()) {
                 parsing = null;
                 running = false;
-                if (cancelled) {
-                    Thread.interrupted();
-                }
             }
+            Thread.interrupted();
         }
     }
 }
