@@ -524,7 +524,7 @@ class TikaGrpcV2ServerImplTest {
      */
     @Test
     void additionalConfigForAMissingFetcherIsNotFound() {
-        Mockito.when(v1.resolveFetcher("nope"))
+        Mockito.when(v1.resolveFetcherId("nope"))
                 .thenThrow(new TikaGrpcServerImpl.FetcherNotFoundException("nope", null));
         Recording<FetchAndParseResponse> observer = new Recording<>();
 

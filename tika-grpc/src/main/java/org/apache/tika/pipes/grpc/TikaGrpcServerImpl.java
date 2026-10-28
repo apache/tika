@@ -478,7 +478,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     FetchParseOutcome runFetchAndParse(String fetcherId, String fetchKey,
                                        ParseContext parseContext, Dispatch dispatch) {
-        Fetcher fetcher = resolveFetcher(fetcherId);
+        String resolvedId = resolveFetcherId(fetcherId);
 
         Metadata tikaMetadata = new Metadata();
         // Times the whole pipesParser.parse() round trip: fetch and parse both happen
@@ -487,7 +487,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         try {
             return executeTuple(new FetchEmitTuple(
                     fetchKey,
-                    new FetchKey(fetcher.getExtensionConfig().id(), fetchKey),
+                    new FetchKey(resolvedId, fetchKey),
                     new EmitKey(),
                     tikaMetadata,
                     parseContext,
@@ -618,16 +618,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     /**
-     * The fetcher named {@code fetcherId}, built if this is its first use.
+     * Checks that the fetcher named {@code fetcherId} exists and can be built (building it if
+     * this is its first use), and returns its registered id. The fork does the fetching, so
+     * the server holds no fetcher past this call: the one place that would release a fetcher
+     * lease, once the fetcher manager hands out leases (TIKA-5001).
      *
      * @throws FetcherNotFoundException    no fetcher has that id
      * @throws FetcherUnavailableException the fetcher exists but could not be built or read
      *                                     from its store (bad credentials, unreadable config,
      *                                     store I/O)
      */
-    Fetcher resolveFetcher(String fetcherId) {
+    String resolveFetcherId(String fetcherId) {
         try {
-            return fetcherManager.getFetcher(fetcherId);
+            Fetcher fetcher = fetcherManager.getFetcher(fetcherId);
+            return fetcher.getExtensionConfig().id();
         } catch (org.apache.tika.pipes.api.fetcher.FetcherNotFoundException e) {
             throw new FetcherNotFoundException(fetcherId, e);
         } catch (TikaException | IOException | RuntimeException e) {

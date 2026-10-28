@@ -875,7 +875,7 @@ public class TikaGrpcServerTest {
         String fetcherId = createFetcherId(1);
         String fetchKey = "tika4766-interrupted.html";
         // build the fetcher up front, so only the wait for a pipes client sees the interrupt
-        serviceImpl.fetcherManager.getFetcher(fetcherId);
+        serviceImpl.resolveFetcherId(fetcherId);
 
         RecordingObserver<FetchAndParseReply> v1Observer = new RecordingObserver<>();
         RecordingObserver<org.apache.tika.grpc.v2.FetchAndParseResponse> v2Observer =
