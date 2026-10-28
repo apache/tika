@@ -117,13 +117,14 @@ they wait.
 
 By default the server's inbound message limit is the ParseBytes content limit plus
 1 MiB for the request's other fields (257 MiB with the defaults), instead of gRPC's
-own 4 MiB default. Set it with `maxInboundMessageBytes` in the `grpc` section:
+own 4 MiB default. Set it with `maxInboundMessageBytes` in the `grpc` section. To
+take 1 GiB WARCs, raise both limits, leaving the inbound one 1 MiB above the content:
 
 ```json
 {
   "grpc": {
-    "maxInboundMessageBytes": 104857600,
-    "parseBytesMaxContentBytes": 33554432
+    "maxInboundMessageBytes": 1074790400,
+    "parseBytesMaxContentBytes": 1073741824
   }
 }
 ```
