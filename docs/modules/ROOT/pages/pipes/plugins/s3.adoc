@@ -44,10 +44,13 @@ The Amazon S3 plugin (`tika-pipes-s3`) provides fetcher, emitter, and iterator i
 All three components share the same `credentialsProvider` selector:
 
 * `profile` — reads credentials from the local AWS profile named by `profile` (e.g., `default`).
-* `instance` — uses the instance/container role attached to the host (EC2 IAM role, ECS task role, etc.). No additional fields needed.
+* `instance` — uses the IAM role of the EC2 instance the host runs on, read from the instance metadata service. No additional fields needed.
+* `web_identity` — assumes a role with a web identity token, as EKS IAM roles for service accounts (IRSA) provide. Reads the role from `AWS_ROLE_ARN` and the token from `AWS_WEB_IDENTITY_TOKEN_FILE`, which EKS sets on the pod. No additional fields needed.
 * `key_secret` — reads `accessKey` and `secretKey` from the config. Avoid checking these into source control; prefer environment-variable substitution or one of the other providers.
 
-The emitter's `validate()` enforces these values, but the fetcher and iterator do not — they fail later when the AWS SDK tries to resolve credentials.
+All three components reject any other value when they are created. If `credentialsProvider` is unset, the emitter's `validate()` rejects it, but the fetcher and iterator fall back to `instance`.
+
+ECS task roles and EKS Pod Identity are not supported — neither `instance` nor `web_identity` picks them up.
 
 [#s3-fetcher]
 == S3 Fetcher (`s3-fetcher`)
@@ -78,8 +81,8 @@ include::example$pipes-s3-fetcher.json[]
 |Optional key prefix, prepended verbatim to the fetch key — include the trailing `/` yourself. Leave it unset when the fetch keys already carry the prefix (see <<prefix-warning>>).
 
 |`credentialsProvider`
-|_required_
-|One of `profile`, `instance`, `key_secret`. See <<credentials>>.
+|`instance`
+|One of `profile`, `instance`, `web_identity`, `key_secret`. See <<credentials>>.
 
 |`profile` / `accessKey` / `secretKey`
 |_conditional_
@@ -141,7 +144,7 @@ include::example$pipes-s3-emitter.json[]
 
 |`credentialsProvider`
 |_required_
-|One of `profile`, `instance`, `key_secret` (validated). See <<credentials>>.
+|One of `profile`, `instance`, `web_identity`, `key_secret` (validated). See <<credentials>>.
 
 |`profile` / `accessKey` / `secretKey`
 |_conditional_
@@ -203,8 +206,8 @@ In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.
 |Key prefix to scope the listing.
 
 |`credentialsProvider`
-|_none_
-|One of `profile`, `instance`, `key_secret`. See <<credentials>>.
+|`instance`
+|One of `profile`, `instance`, `web_identity`, `key_secret`. See <<credentials>>.
 
 |`profile` / `accessKey` / `secretKey` / `endpointConfigurationService`
 |_conditional_

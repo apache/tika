@@ -13,16 +13,18 @@ Release 4.3.0 - ???
      the forks never saw such a fetcher, so every fetch through it failed. Use file or
      ignite (TIKA-5001).
 
+  SERVER, PIPES AND OPERATIONS
+
+   * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
+     for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
+     module it needs (TIKA-5006).
+
   OTHER CHANGES
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
      their next fetch, through a change token on file and ignite stores
      (ConfigStore.changeToken); before, a worker kept the instance it first built
      until it restarted (TIKA-5001).
-
-Release 4.2.1 - ???
-
-  OTHER CHANGES
 
    * PEM-armored CMS/PKCS7 (-----BEGIN PKCS7----- or -----BEGIN CMS-----) is parsed like
      DER: Pkcs7Parser and the opt-in pkcs-7-detector report the smime-type and extract

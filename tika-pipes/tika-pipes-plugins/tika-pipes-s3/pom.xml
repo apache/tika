@@ -50,6 +50,11 @@
       <artifactId>apache-client</artifactId>
     </dependency>
     <dependency>
+      <!-- WebIdentityTokenFileCredentialsProvider ('web_identity') loads STS reflectively -->
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sts</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
       <scope>provided</scope>

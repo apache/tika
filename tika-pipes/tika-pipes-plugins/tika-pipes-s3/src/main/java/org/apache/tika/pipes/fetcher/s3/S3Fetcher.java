@@ -34,6 +34,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -106,25 +107,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
         ConfigValidator.mustNotBeEmpty("bucket", config.getBucket());
         ConfigValidator.mustNotBeEmpty("region", config.getRegion());
 
-        AwsCredentialsProvider provider;
-        String credentialsProvider = config.getCredentialsProvider();
-        if (credentialsProvider == null) {
-            credentialsProvider = "instance";
-        }
-        switch (credentialsProvider) {
-            case "instance":
-                provider = InstanceProfileCredentialsProvider.builder().build();
-                break;
-            case "profile":
-                provider = ProfileCredentialsProvider.builder().profileName(config.getProfile()).build();
-                break;
-            case "key_secret":
-                AwsBasicCredentials awsCreds = AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey());
-                provider = StaticCredentialsProvider.create(awsCreds);
-                break;
-            default:
-                throw new TikaConfigException("credentialsProvider must be set and must be either 'instance', 'profile' or 'key_secret'");
-        }
+        AwsCredentialsProvider provider = buildCredentialsProvider(config);
 
         int maxConnections = config.getMaxConnections();
         if (maxConnections <= 0) {
@@ -150,6 +133,27 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
             }
         } catch (SdkClientException e) {
             throw new TikaConfigException("can't initialize s3 fetcher", e);
+        }
+    }
+
+    static AwsCredentialsProvider buildCredentialsProvider(S3FetcherConfig config) throws TikaConfigException {
+        String credentialsProvider = config.getCredentialsProvider();
+        if (credentialsProvider == null) {
+            credentialsProvider = "instance";
+        }
+        switch (credentialsProvider) {
+            case "instance":
+                return InstanceProfileCredentialsProvider.builder().build();
+            case "web_identity":
+                return WebIdentityTokenFileCredentialsProvider.builder().build();
+            case "profile":
+                return ProfileCredentialsProvider.builder().profileName(config.getProfile()).build();
+            case "key_secret":
+                AwsBasicCredentials awsCreds = AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey());
+                return StaticCredentialsProvider.create(awsCreds);
+            default:
+                throw new TikaConfigException("credentialsProvider must be set and must be either "
+                        + "'instance', 'web_identity', 'profile' or 'key_secret'");
         }
     }
 
