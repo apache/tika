@@ -141,4 +141,21 @@ public class TikaConfigAsyncWriterTest {
                     .path("onExists").asText(), pair[0]);
         }
     }
+
+    @Test
+    public void testPluginRootsPlaceholderGetsDefault(@TempDir Path dir) throws Exception {
+        // the docs' example configs carry this token (TIKA-4984)
+        Path config = dir.resolve("config.json");
+        Files.writeString(config, "{ \"plugin-roots\": \"PLUGINS_PATHS\" }");
+        Path plugins = Files.createDirectories(dir.resolve("my-plugins"));
+        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
+                null, null, null, config.toAbsolutePath().toString().replace("\\", "/"),
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                SimpleAsyncConfig.ExtractBytesMode.NONE, plugins.toString());
+
+        Path tmp = Files.createTempFile(dir, "plugins-", ".json");
+        new PluginsWriter(simpleAsyncConfig, null).write(tmp);
+        assertEquals(plugins.toAbsolutePath().toString(),
+                new ObjectMapper().readTree(tmp.toFile()).path("plugin-roots").asText());
+    }
 }

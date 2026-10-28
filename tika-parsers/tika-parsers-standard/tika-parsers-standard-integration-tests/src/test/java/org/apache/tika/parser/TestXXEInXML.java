@@ -20,17 +20,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.ConnectException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -79,6 +83,9 @@ public class TestXXEInXML extends XMLTestBase {
     private static final String BOGUS_FILE = "file:///couldnt_possibly_exist/xxe.dtd";
     private static final long MAX_CHARS = 50_000_000L;
 
+    // count only payload fetches: under -T1C a tika-server test can poll a reused ephemeral port
+    private static final Set<String> ORACLE_PATHS = Set.of("/xxe.dtd", "/p.dtd", "/inc.xml");
+
     private static ServerSocket oracle;
     private static Thread acceptor;
     private static final AtomicInteger CONNECTIONS = new AtomicInteger();
@@ -91,9 +98,17 @@ public class TestXXEInXML extends XMLTestBase {
         acceptor = new Thread(() -> {
             while (!oracle.isClosed()) {
                 try (Socket s = oracle.accept()) {
-                    CONNECTIONS.incrementAndGet();
+                    s.setSoTimeout(2_000);
+                    String requestLine = new BufferedReader(new InputStreamReader(
+                            s.getInputStream(), StandardCharsets.US_ASCII)).readLine();
+                    String[] parts = requestLine == null ? new String[0] : requestLine.split(" ");
+                    if (parts.length > 1 && ORACLE_PATHS.contains(parts[1])) {
+                        CONNECTIONS.incrementAndGet();
+                    }
                 } catch (IOException e) {
-                    return;
+                    if (oracle.isClosed()) {
+                        return;
+                    }
                 }
             }
         }, "xxe-oracle");
@@ -124,6 +139,19 @@ public class TestXXEInXML extends XMLTestBase {
             // the oracle closes the connection without answering; an error is expected
         }
         assertTrue(CONNECTIONS.get() > before, "unsecured parser did not reach the oracle");
+    }
+
+    // what a tika-server startup poll on a reused port looks like; the oracle must ignore it
+    @Test
+    public void testOracleIgnoresForeignPoll() throws Exception {
+        int before = CONNECTIONS.get();
+        try (Socket s = new Socket(InetAddress.getLoopbackAddress(), oracle.getLocalPort())) {
+            s.getOutputStream().write(
+                    "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+            // EOF: the oracle has read the request line and decided
+            assertEquals(-1, s.getInputStream().read());
+        }
+        assertEquals(before, CONNECTIONS.get(), "a foreign GET / counted as a fetch");
     }
 
     @ParameterizedTest

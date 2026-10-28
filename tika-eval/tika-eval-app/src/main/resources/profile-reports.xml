@@ -36,6 +36,8 @@
       end
       from containers c
     </sql>
+    <sql>create index pc_container_id on pipes_class (container_id)</sql>
+    <sql>create index if not exists ee_container_id on extract_exceptions (container_id)</sql>
   </before>
 
 

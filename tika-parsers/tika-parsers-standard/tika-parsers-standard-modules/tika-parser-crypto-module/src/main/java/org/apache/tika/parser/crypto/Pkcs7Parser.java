@@ -74,26 +74,31 @@ public class Pkcs7Parser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         tis.setCloseShield();
-        try {
-            // route on the cheap ContentInfo OID; signedData is then parsed exactly once (in
-            // parseSignedData), which both labels the subtype and extracts the payload
-            ASN1ObjectIdentifier oid = CmsClassifier.contentType(tis);
-            if (PKCSObjectIdentifiers.signedData.equals(oid)) {
-                parseSignedData(tis, handler, metadata, context);
-            } else if (PKCSObjectIdentifiers.id_ct_compressedData.equals(oid)) {
-                metadata.set(HttpHeaders.CONTENT_TYPE, CmsClassifier.COMPRESSED.toString());
-                extractCompressedContent(tis, handler, metadata, context);
-            } else {
-                // enveloped / digested / encrypted (labelled; payload absent, encrypted, or
-                // unsupported) or unknown / non-CMS -> empty doc, no throw
-                MediaType type = CmsClassifier.nonSignedType(oid);
-                if (type != null) {
-                    metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
-                }
-                emptyDocument(handler, metadata);
-            }
+        try (TikaInputStream der = CmsClassifier.decodePem(tis)) {
+            parseDer(der != null ? der : tis, handler, metadata, context);
         } finally {
             tis.removeCloseShield();
+        }
+    }
+
+    private void parseDer(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+        // route on the cheap ContentInfo OID; signedData is then parsed exactly once (in
+        // parseSignedData), which both labels the subtype and extracts the payload
+        ASN1ObjectIdentifier oid = CmsClassifier.contentType(tis);
+        if (PKCSObjectIdentifiers.signedData.equals(oid)) {
+            parseSignedData(tis, handler, metadata, context);
+        } else if (PKCSObjectIdentifiers.id_ct_compressedData.equals(oid)) {
+            metadata.set(HttpHeaders.CONTENT_TYPE, CmsClassifier.COMPRESSED.toString());
+            extractCompressedContent(tis, handler, metadata, context);
+        } else {
+            // enveloped / digested / encrypted (labelled; payload absent, encrypted, or
+            // unsupported) or unknown / non-CMS -> empty doc, no throw
+            MediaType type = CmsClassifier.nonSignedType(oid);
+            if (type != null) {
+                metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
+            }
+            emptyDocument(handler, metadata);
         }
     }
 

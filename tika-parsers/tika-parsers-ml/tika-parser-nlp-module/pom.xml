@@ -98,8 +98,8 @@
             <artifactId>commons-codec</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -171,6 +171,6 @@
         </plugins>
     </build>
   <scm>
-    <tag>4.1.0-rc2</tag>
+    <tag>4.2.0-rc2</tag>
   </scm>
 </project>

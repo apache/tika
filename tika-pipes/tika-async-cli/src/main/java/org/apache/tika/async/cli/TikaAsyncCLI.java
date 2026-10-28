@@ -448,7 +448,7 @@ public class TikaAsyncCLI {
         ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         JsonNode rootNode = mapper.readTree(originalConfigPath.toFile());
 
-        if (rootNode.has("plugin-roots")) {
+        if (!DefaultPluginsDir.needsDefault(rootNode.get("plugin-roots"))) {
             // plugin-roots already set, use original config
             return originalConfigPath;
         }

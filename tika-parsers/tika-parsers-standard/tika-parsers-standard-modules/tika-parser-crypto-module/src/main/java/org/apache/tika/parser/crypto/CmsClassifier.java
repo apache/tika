@@ -16,10 +16,15 @@
  */
 package org.apache.tika.parser.crypto;
 
+import java.io.BufferedInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -48,6 +53,10 @@ public final class CmsClassifier {
     // cap the first primitive read when peeking the content-type OID (an OID is a few bytes)
     private static final int OID_PEEK_LIMIT = 1 << 16;
 
+    private static final byte[][] PEM_PREFIXES = {
+            "-----BEGIN PKCS7".getBytes(StandardCharsets.US_ASCII),
+            "-----BEGIN CMS".getBytes(StandardCharsets.US_ASCII)};
+
     static final MediaType PKCS7_MIME = MediaType.application("pkcs7-mime");
     static final MediaType PKCS7_SIGNATURE = MediaType.application("pkcs7-signature");
     static final MediaType SIGNED = smime("signed-data");
@@ -70,6 +79,12 @@ public final class CmsClassifier {
      *         {@code null}), so a real I/O error is not silently masked as a non-crypto stream.
      */
     public static MediaType classify(TikaInputStream tis) throws IOException {
+        try (TikaInputStream der = decodePem(tis)) {
+            return classifyDer(der != null ? der : tis);
+        }
+    }
+
+    private static MediaType classifyDer(TikaInputStream tis) throws IOException {
         ASN1ObjectIdentifier oid = contentType(tis);
         if (oid == null) {
             return null;
@@ -111,6 +126,43 @@ public final class CmsClassifier {
             return ENCRYPTED;
         }
         return null;
+    }
+
+    /**
+     * A PEM-armored ({@code -----BEGIN PKCS7} / {@code -----BEGIN CMS}) stream decoded to DER, or
+     * {@code null} if the stream is not PEM CMS or its body does not decode. The caller closes the
+     * result; {@code tis} itself is spooled, not consumed.
+     *
+     * @throws IOException on a genuine spool failure of {@code tis}.
+     */
+    static TikaInputStream decodePem(TikaInputStream tis) throws IOException {
+        if (tis == null || !startsWithPemPrefix(tis)) {
+            return null;
+        }
+        Path path = tis.getPath();
+        if (path == null) {
+            return null;
+        }
+        TikaInputStream der = TikaInputStream.get(
+                Base64.getMimeDecoder().wrap(new PemBody(new BufferedInputStream(Files.newInputStream(path)))));
+        try {
+            der.getPath();   // decode eagerly so malformed base64 reads as "not CMS", not an I/O error
+            return der;
+        } catch (IOException | IllegalArgumentException e) {
+            der.close();
+            return null;
+        }
+    }
+
+    private static boolean startsWithPemPrefix(TikaInputStream tis) throws IOException {
+        byte[] head = new byte[PEM_PREFIXES[0].length];
+        int n = tis.peek(head);
+        for (byte[] prefix : PEM_PREFIXES) {
+            if (n >= prefix.length && Arrays.equals(head, 0, prefix.length, prefix, 0, prefix.length)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Cheap DER-{@code SEQUENCE} gate: peek one byte (mark/reset, no spool). */
@@ -171,5 +223,71 @@ public final class CmsClassifier {
         boolean hasSigners = !parser.getSignerInfos().getSigners().isEmpty();
         boolean hasCerts = !parser.getCertificates().getMatches(null).isEmpty();
         return (hasCerts && !hasSigners) ? CERTS_ONLY : PKCS7_SIGNATURE;
+    }
+
+    /** The base64 body of a PEM block: skips the BEGIN line, ends at the {@code -----END} line. */
+    private static final class PemBody extends FilterInputStream {
+
+        private boolean inBody;
+        private boolean done;
+
+        PemBody(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (done) {
+                return -1;
+            }
+            int c;
+            while (!inBody) {
+                c = in.read();
+                if (c == -1) {
+                    done = true;
+                    return -1;
+                }
+                inBody = c == '\n';
+            }
+            c = in.read();
+            // '-' is outside the base64 alphabet, so it can only start the END line
+            if (c == -1 || c == '-') {
+                done = true;
+                return -1;
+            }
+            return c;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int i = 0;
+            for (; i < len; i++) {
+                int c = read();
+                if (c == -1) {
+                    break;
+                }
+                b[off + i] = (byte) c;
+            }
+            return i == 0 && len > 0 ? -1 : i;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            long i = 0;
+            while (i < n && read() != -1) {
+                i++;
+            }
+            return i;
+        }
+
+        @Override
+        public int available() {
+            return 0;
+        }
+
+        @Override
+        public boolean markSupported() {
+            return false;
+        }
     }
 }

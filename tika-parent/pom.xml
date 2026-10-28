@@ -288,7 +288,7 @@
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-10-23T17:59:18Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-10-25T19:27:37Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
@@ -298,8 +298,8 @@
     <maven.assembly.version>3.8.0</maven.assembly.version>
     <maven.bundle.version>6.2.0</maven.bundle.version>
     <maven.compiler.plugin.version>3.16.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.6.0</maven.failsafe.version>
-    <maven.surefire.version>3.6.0</maven.surefire.version>
+    <maven.failsafe.version>3.6.1</maven.failsafe.version>
+    <maven.surefire.version>3.6.1</maven.surefire.version>
     <maven.javadoc.version>3.12.0</maven.javadoc.version>
     <maven.jar.version>3.5.1</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -384,7 +384,7 @@
          in Apache Tika eval core, possibly related to using an "old" lucene version:
          https://github.com/eXist-db/exist/issues/1744
     -->
-    <icu4j.version>75.1</icu4j.version>
+    <icu4j.version>79.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.5</jackrabbit.version>
     <jackson.version>2.22.4</jackson.version>
@@ -445,7 +445,7 @@
     <pax.exam.version>4.14.0</pax.exam.version>
     <!-- TODO remove PDFBOX-6261 bugfix in PDFMarkedContent2XHTML with 3.0.9 release -->
     <pdfbox.version>3.0.8</pdfbox.version>
-    <poi.version>5.5.1</poi.version>
+    <poi.version>6.0.0</poi.version>
     <protobuf.version>3.25.9</protobuf.version>
     <quartz.version>2.5.2</quartz.version>
     <reactor.core.version>3.8.8</reactor.core.version>
@@ -718,7 +718,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.50.0</version>
+        <version>2.51.0</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
@@ -1893,7 +1893,7 @@
 
   </profiles>
   <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false" child.scm.url.inherit.append.path="false">
-    <tag>4.1.0-rc2</tag>
+    <tag>4.2.0-rc2</tag>
     <connection>scm:git:https://github.com/apache/tika.git</connection>
     <developerConnection>scm:git:https://github.com/apache/tika.git</developerConnection>
     <url>https://github.com/apache/tika</url>

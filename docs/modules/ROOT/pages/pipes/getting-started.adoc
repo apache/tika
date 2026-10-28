@@ -69,7 +69,13 @@ include::example$pipes-fs-pipeline.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-basic.json[View source on GitHub]
 
-NOTE: The values shown like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`, and `EMIT_INTERMEDIATE_RESULTS` are placeholders the integration tests substitute at runtime. Replace them with real paths (or, for `EMIT_INTERMEDIATE_RESULTS`, the boolean `true`/`false`) in your own config.
+NOTE: `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS` and `EMIT_INTERMEDIATE_RESULTS` are
+placeholders the integration tests substitute at runtime. Replace the two base paths with real
+paths and `EMIT_INTERMEDIATE_RESULTS` with `true` or `false`. With tika-app, **delete the
+`plugin-roots` line**: tika-app then loads the plugins from the `plugins/` directory beside its jar.
+A `plugin-roots` you set replaces that default, and if it names a directory without the plugin zips
+the run fails with `Unknown type: file-system-pipes-iterator. Available: []`. See
+xref:pipes/plugins/writing-a-plugin.adoc#plugin-roots[plugin-roots].
 
 Run it with:
 
