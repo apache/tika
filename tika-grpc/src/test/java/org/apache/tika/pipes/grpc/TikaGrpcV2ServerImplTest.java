@@ -166,7 +166,7 @@ class TikaGrpcV2ServerImplTest {
     @Test
     void aFailedParseBytesReturnsThePipesError() throws Exception {
         Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(),
-                        Mockito.any()))
+                        Mockito.any(), Mockito.any()))
                 .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(null,
                         "PARSE_EXCEPTION_NO_EMIT", STACK, 4L));
         Recording<ParseBytesResponse> observer = new Recording<>();
@@ -199,7 +199,7 @@ class TikaGrpcV2ServerImplTest {
         Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenThrow(new RuntimeException("secret /var/lib/tika path"));
         Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(),
-                        Mockito.any()))
+                        Mockito.any(), Mockito.any()))
                 .thenThrow(new java.io.IOException("secret /var/lib/tika path"));
         Recording<FetchAndParseResponse> fetch = new Recording<>();
         Recording<ParseBytesResponse> bytes = new Recording<>();

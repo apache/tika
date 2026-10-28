@@ -106,6 +106,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     TikaGrpcConfig tikaGrpcConfig;
     PipesParser pipesParser;
     long parseBytesMaxContentBytes;
+    /** See {@link TikaGrpcConfig#getParseBytesMaxConcurrent()}. */
+    Semaphore parseBytesAdmission;
     ParseBytesSpool spool;
     FetcherManager fetcherManager;
     ConfigStore configStore;
@@ -163,6 +165,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
             pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
             parseSlots = new Semaphore(pipesConfig.getNumClients(), true);
+            parseBytesAdmission = new Semaphore(
+                    tikaGrpcConfig.effectiveParseBytesMaxConcurrent(pipesConfig.getNumClients()));
             exceptionReportingConfigured = tikaJsonConfig.getRootNode()
                     .path("parse-context").has("exception-reporting");
 
@@ -670,6 +674,19 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     ParseBytesOutcome runParseBytes(InputStream content, long size, String resourceNameHint,
                                     ParseContext requestContext) throws IOException {
+        return runParseBytes(content, size, resourceNameHint, requestContext, Dispatch.ALWAYS);
+    }
+
+    /**
+     * {@link #runParseBytes(InputStream, long, String, ParseContext)} with a
+     * {@link Dispatch}. Also returns {@code null} when {@code dispatch} refuses.
+     *
+     * @throws ParseBytesBusyException when {@code parseBytesMaxConcurrent} requests are
+     *                                 already in progress
+     */
+    ParseBytesOutcome runParseBytes(InputStream content, long size, String resourceNameHint,
+                                    ParseContext requestContext, Dispatch dispatch)
+            throws IOException {
         if (content == null || size <= 0) {
             throw new IllegalArgumentException("content is required");
         }
@@ -679,6 +696,21 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     "content exceeds the ParseBytes limit of " + parseBytesMaxContentBytes
                             + " bytes");
         }
+        // Taken before staging: a request turned away here never reaches the spool, and
+        // gives its bytes back to the heap now instead of after maxWaitForClientMillis.
+        if (!parseBytesAdmission.tryAcquire()) {
+            throw new ParseBytesBusyException();
+        }
+        try {
+            return stageAndParse(content, resourceNameHint, requestContext, dispatch);
+        } finally {
+            parseBytesAdmission.release();
+        }
+    }
+
+    private ParseBytesOutcome stageAndParse(InputStream content, String resourceNameHint,
+                                            ParseContext requestContext, Dispatch dispatch)
+            throws IOException {
         Metadata tikaMetadata = new Metadata();
         if (resourceNameHint != null && !resourceNameHint.isBlank()) {
             tikaMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, resourceNameHint.trim());
@@ -697,7 +729,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     new EmitKey(),
                     tikaMetadata,
                     parseContext,
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP), fetchParseStart);
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP), fetchParseStart, dispatch);
+            if (outcome == null) {
+                return null;
+            }
             return new ParseBytesOutcome(
                     payload.scrub(outcome.primary()),
                     outcome.status(),
@@ -724,6 +759,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     static final class ParseBytesTooLargeException extends RuntimeException {
         ParseBytesTooLargeException(String message) {
             super(message);
+        }
+    }
+
+    /** {@code parseBytesMaxConcurrent} ParseBytes requests are already in progress. */
+    static final class ParseBytesBusyException extends RuntimeException {
+        ParseBytesBusyException() {
+            super("too many ParseBytes requests in progress; retry later");
         }
     }
 

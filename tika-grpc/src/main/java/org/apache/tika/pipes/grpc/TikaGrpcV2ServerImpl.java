@@ -184,8 +184,10 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
                     request.getContent().newInput(),
                     request.getContent().size(),
                     request.getResourceName(),
-                    parseContext);
-        } catch (TikaGrpcServerImpl.ParseBytesTooLargeException e) {
+                    parseContext,
+                    cancellation::dispatching);
+        } catch (TikaGrpcServerImpl.ParseBytesTooLargeException
+                 | TikaGrpcServerImpl.ParseBytesBusyException e) {
             responseObserver.onError(Status.RESOURCE_EXHAUSTED
                     .withDescription(e.getMessage())
                     .asRuntimeException());
@@ -201,10 +203,21 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         } finally {
             cancellation.end();
         }
+        if (cancellation.isCancelled()) {
+            return;
+        }
         if (parseBytesOutcome == null) {
             // The parse was interrupted, so there is no Document to return.
             responseObserver.onError(Status.UNAVAILABLE
                     .withDescription("parse was interrupted before a reply could be built")
+                    .asRuntimeException());
+            return;
+        }
+        Status failure = serviceFailure(parseBytesOutcome.status());
+        if (failure != null) {
+            responseObserver.onError(failure
+                    .withDescription(serviceFailureDescription(parseBytesOutcome.status(),
+                            "ParseBytes content", null))
                     .asRuntimeException());
             return;
         }

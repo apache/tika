@@ -49,6 +49,8 @@ public class TikaGrpcConfig {
 
     private Long parseBytesMaxContentBytes = null;
 
+    private Integer parseBytesMaxConcurrent = null;
+
     private boolean cancelRunningParse = false;
 
     /**
@@ -172,6 +174,43 @@ public class TikaGrpcConfig {
         return parseBytesMaxContentBytes != null
                 ? parseBytesMaxContentBytes
                 : DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES;
+    }
+
+    /**
+     * How many ParseBytes requests the server holds at once: parsing, or waiting for a pipes
+     * worker. A request over the limit is refused at once with {@code RESOURCE_EXHAUSTED},
+     * before its content is staged to disk, instead of holding its bytes in heap while it
+     * waits. When not set, the server uses twice {@code pipes.numClients}.
+     * <p>
+     * gRPC has already read a request into heap when this check runs, so it bounds how long
+     * request bytes are held and how much is spooled to {@code java.io.tmpdir}, not how many
+     * requests gRPC reads at once.
+     *
+     * @return the configured limit, or {@code null} if not set
+     */
+    public Integer getParseBytesMaxConcurrent() {
+        return parseBytesMaxConcurrent;
+    }
+
+    /**
+     * @param parseBytesMaxConcurrent positive limit, or {@code null} for twice
+     *                                {@code pipes.numClients}
+     * @throws IllegalArgumentException if the value is present and not positive
+     */
+    public void setParseBytesMaxConcurrent(Integer parseBytesMaxConcurrent) {
+        if (parseBytesMaxConcurrent != null && parseBytesMaxConcurrent <= 0) {
+            throw new IllegalArgumentException(
+                    "parseBytesMaxConcurrent must be positive, got: " + parseBytesMaxConcurrent);
+        }
+        this.parseBytesMaxConcurrent = parseBytesMaxConcurrent;
+    }
+
+    /**
+     * @return the configured {@link #getParseBytesMaxConcurrent()}, or twice
+     *         {@code numClients} when it is not set
+     */
+    public int effectiveParseBytesMaxConcurrent(int numClients) {
+        return parseBytesMaxConcurrent != null ? parseBytesMaxConcurrent : 2 * numClients;
     }
 
     /**

@@ -11,7 +11,9 @@ Release 4.2.1 - unreleased
    * tika-grpc: the new TikaV2Service.ParseBytes RPC parses bytes sent in
      the request and returns the same Document as FetchAndParse, without
      fetching anything. New "grpc" settings: parseBytesMaxContentBytes (64 MiB
-     by default) and maxInboundMessageBytes (TIKA-4795).
+     by default), maxInboundMessageBytes and parseBytesMaxConcurrent (twice
+     pipes.numClients by default; a request over it gets RESOURCE_EXHAUSTED before
+     its content is staged) (TIKA-4795).
 
    * tika-grpc v2: a busy pool, a pipes runtime or fetcher that failed to start, and
      an unknown fetcher close the call with RESOURCE_EXHAUSTED, UNAVAILABLE or

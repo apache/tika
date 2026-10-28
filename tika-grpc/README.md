@@ -107,6 +107,12 @@ An empty `content` returns `INVALID_ARGUMENT`, and `content` above
 `parseBytesMaxContentBytes` returns `RESOURCE_EXHAUSTED`. A document the parser
 fails on still returns a `Document`, with the outcome in its `status`.
 
+At most `parseBytesMaxConcurrent` ParseBytes requests (twice `pipes.numClients` by
+default) are in progress at once, parsing or waiting for a worker. One more is refused
+at once with `RESOURCE_EXHAUSTED`, before its content is written to a temporary file,
+so a burst of large requests cannot pile up in heap or fill `java.io.tmpdir` while
+they wait.
+
 ### Message size
 
 By default the server keeps gRPC's inbound message limit of 4 MiB. Raise it
@@ -123,8 +129,9 @@ with `maxInboundMessageBytes` in the `grpc` section:
 
 The limit applies to every RPC on the server. gRPC holds each request in memory in
 full before Tika sees it, so each request in flight takes at least this much heap,
-and the server does not limit how many requests are in flight. The server logs a
-warning at startup when the maximum heap is below three times the limit.
+and gRPC does not limit how many it reads at once; `parseBytesMaxConcurrent` only
+bounds how long ParseBytes holds them. The server logs a warning at startup when the
+maximum heap is below three times the limit.
 
 `parseBytesMaxContentBytes` (64 MiB by default, must be positive) limits the
 `content` field of ParseBytes. gRPC applies the inbound limit to the whole request

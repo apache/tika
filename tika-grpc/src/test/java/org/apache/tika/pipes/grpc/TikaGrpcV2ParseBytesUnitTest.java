@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -129,7 +130,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** The correlation id comes back unchanged, whitespace included. */
     @Test
     void whitespaceCorrelationEchoesVerbatim() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
 
@@ -145,7 +146,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** origin carries the caller's URIs and truncation flag, and the size of the content. */
     @Test
     void originCarriesTheCallersProvenanceAndTheByteCount() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
         ParseBytesRequest request = requestWithContent()
@@ -173,7 +174,7 @@ class TikaGrpcV2ParseBytesUnitTest {
      */
     @Test
     void aFailedParseStillCarriesTheDigestAndContentType() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
                         null, "PARSE_EXCEPTION_NO_EMIT", "boom", 5L));
         RecordingObserver observer = new RecordingObserver();
@@ -200,7 +201,7 @@ class TikaGrpcV2ParseBytesUnitTest {
         Metadata primary = htmlMetadata();
         primary.set(TikaCoreProperties.digestProperty(
                 DigestDef.Algorithm.SHA256.getJavaName()), "abc123");
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(
                         primary, "PARSE_SUCCESS", null, 5L));
         RecordingObserver observer = new RecordingObserver();
@@ -215,7 +216,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** A success on bytes the caller marked truncated is reported as partial. */
     @Test
     void aSuccessOnTruncatedContentIsPartial() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
 
@@ -230,7 +231,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** Without the truncated flag a clean parse stays a success. */
     @Test
     void aSuccessOnCompleteContentStaysSuccess() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome());
         RecordingObserver observer = new RecordingObserver();
 
@@ -244,7 +245,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** An interrupted parse ends the call with UNAVAILABLE and no Document. */
     @Test
     void anInterruptedParseEndsTheCall() throws Exception {
-        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(null);
         RecordingObserver observer = new RecordingObserver();
 
@@ -278,6 +279,60 @@ class TikaGrpcV2ParseBytesUnitTest {
         }
     }
 
+    /**
+     * Over parseBytesMaxConcurrent, a request is turned away at once, before its bytes are
+     * staged, instead of holding them while it waits for a worker.
+     */
+    @Test
+    void aRequestOverTheConcurrencyLimitIsRefusedBeforeItIsStaged(@TempDir Path tmp)
+            throws Exception {
+        TikaGrpcServerImpl real = realImpl(tmp);
+        try {
+            assertEquals(2 * real.pipesConfig.getNumClients(),
+                    real.parseBytesAdmission.availablePermits(),
+                    "the default is twice pipes.numClients");
+            real.parseBytesAdmission = new Semaphore(0);
+
+            assertThrows(TikaGrpcServerImpl.ParseBytesBusyException.class, () ->
+                    real.runParseBytes(bytes("<x/>"), 4, "a.html", null));
+
+            try (var files = Files.list(real.spool.directory())) {
+                assertTrue(files.findAny().isEmpty(),
+                        "a refused request must not have created a spool file");
+            }
+        } finally {
+            real.postShutdown();
+        }
+    }
+
+    @Test
+    void aBusyServerAnswersResourceExhausted() throws Exception {
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenThrow(new TikaGrpcServerImpl.ParseBytesBusyException());
+        RecordingObserver observer = new RecordingObserver();
+
+        v2.parseBytes(requestWithContent().build(), observer);
+
+        assertEquals(0, observer.completions);
+        assertEquals(Status.Code.RESOURCE_EXHAUSTED,
+                Status.fromThrowable(observer.errors.get(0)).getCode());
+    }
+
+    /** No free pipes worker is RESOURCE_EXHAUSTED for ParseBytes too, not a failed Document. */
+    @Test
+    void noFreeWorkerAnswersResourceExhausted() throws Exception {
+        Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(new TikaGrpcServerImpl.ParseBytesOutcome(null,
+                        "CLIENT_UNAVAILABLE_WITHIN_MS", null, 1L));
+        RecordingObserver observer = new RecordingObserver();
+
+        v2.parseBytes(requestWithContent().build(), observer);
+
+        assertTrue(observer.replies.isEmpty());
+        assertEquals(Status.Code.RESOURCE_EXHAUSTED,
+                Status.fromThrowable(observer.errors.get(0)).getCode());
+    }
+
     @Test
     void theContentLimitComesFromTheConfig(@TempDir Path tmp) throws Exception {
         TikaGrpcServerImpl real = realImpl(tmp, 1024L);
@@ -298,7 +353,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     @Test
     void oversizeIsReportedAsResourceExhausted() throws Exception {
         Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(),
-                        Mockito.any()))
+                        Mockito.any(), Mockito.any()))
                 .thenThrow(new TikaGrpcServerImpl.ParseBytesTooLargeException(
                         "content exceeds the ParseBytes limit of 1 bytes"));
         RecordingObserver observer = new RecordingObserver();
@@ -359,7 +414,7 @@ class TikaGrpcV2ParseBytesUnitTest {
         try {
             TikaGrpcServerImpl spied = Mockito.spy(real);
             Mockito.doThrow(new RuntimeException("worker unavailable"))
-                    .when(spied).executeTuple(Mockito.any(), Mockito.anyLong());
+                    .when(spied).executeTuple(Mockito.any(), Mockito.anyLong(), Mockito.any());
 
             assertThrows(RuntimeException.class, () ->
                     spied.runParseBytes(bytes("<x/>"), 4, "a.html", null));
@@ -380,7 +435,7 @@ class TikaGrpcV2ParseBytesUnitTest {
         try {
             TikaGrpcServerImpl spied = Mockito.spy(real);
             Mockito.doThrow(new InterruptedException())
-                    .when(spied).executeTuple(Mockito.any(), Mockito.anyLong());
+                    .when(spied).executeTuple(Mockito.any(), Mockito.anyLong(), Mockito.any());
 
             assertNull(spied.runParseBytes(bytes("<x/>"), 4, "a.html", null));
             assertTrue(Thread.interrupted(), "the interrupt flag must be set again");
@@ -398,7 +453,7 @@ class TikaGrpcV2ParseBytesUnitTest {
     /** The stubbed pipes call received the spool fetcher, so the bytes went to a file. */
     private static void assertSpooled(TikaGrpcServerImpl spied) throws Exception {
         ArgumentCaptor<FetchEmitTuple> tuple = ArgumentCaptor.forClass(FetchEmitTuple.class);
-        Mockito.verify(spied).executeTuple(tuple.capture(), Mockito.anyLong());
+        Mockito.verify(spied).executeTuple(tuple.capture(), Mockito.anyLong(), Mockito.any());
         assertEquals(spied.spool.fetcherId(),
                 tuple.getValue().getFetchKey().getFetcherId(),
                 "the bytes must have gone through a spool file");
