@@ -47,7 +47,8 @@ Set these first:
 - **`$SCRATCH`** — release working dir: unzipped src release, `CHANGES-<NEW>.txt`,
   built javadoc.
 
-Scripts: `./scripts/`. Local paths + toolchain (Maven binary, JDKs) live in a
+Scripts: `.skills/devs/update-site-for-release/scripts/` in the tika git repo
+(not `$SITE/scripts` — there is none). Local paths + toolchain (Maven binary, JDKs) live in a
 private companion skill under `~/.claude/skills/`.
 
 > **[HUMAN] gates — never do these yourself:** final `svn commit` (outward-facing,
@@ -81,7 +82,15 @@ https://github.com/apache/tika | grep <NEW>`). The vote passes on an `-rcN` tag
 and nothing creates the plain `<NEW>` tag; 4.1.0 shipped with only `4.1.0-rc3`.
 Ask the RM to tag the rc commit (`git tag <NEW> <NEW>-rcN^{}` + push) — the
 contributor query, the docs branch and the next release's `PREV_TAG` all want it.
-Until then use the rc tag for `--tag`.
+Until then use the rc tag for `--tag`. **Refresh rc tags from apache first**
+(`git fetch --force apache 'refs/tags/<NEW>-rc*:refs/tags/<NEW>-rc*'`): a
+clone that fetched a fork can hold a stale `-rcN` pointing at a different
+commit (4.2.0-rc2 did), and branching/tagging from it is silently wrong.
+
+**Check the CHANGES file name in `dist/release/tika/<NEW>/`.** The download
+page and news links assume `CHANGES-<NEW>.txt`; 4.2.0 was promoted as plain
+`CHANGES.txt` (download link 404s). Ask the RM to `svn cp` it to
+`CHANGES-<NEW>.txt` in dist rather than special-casing the site.
 
 | Step | 4.x track | 3.x maintenance track |
 |---|---|---|
@@ -277,6 +286,10 @@ branch's `docs/antora.yml`, and make sure main's antora.yml has `prerelease: tru
 **and its `version`/`tika-version` match main's new `<revision>`** (the release
 plugin bumps the poms, not antora.yml — after 4.1.0 main was `4.1.1-SNAPSHOT` in
 `tika-parent/pom.xml` but still `4.1.0-SNAPSHOT` in antora.yml) [HUMAN commits].
+Also bump main's `tika-javadoc-url` and `docs/antora-playbook.yml`'s soft
+defaults (`tika-version`, `tika-stable-version` = newest 3.x, `tika-javadoc-url`):
+the playbook is read only from HEAD, so nothing else keeps it current (it was
+still at 4.1.0-SNAPSHOT / 3.3.2 / 4.0.0 at 4.2.0).
 Cut the branch from the release tag, not main: main's docs may already describe
 post-release changes. Patch: commit doc changes + `tika-version` bump to the
 existing branch (bump `tika-javadoc-url` too). Then:
