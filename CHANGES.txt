@@ -9,7 +9,11 @@ Release 4.3.0 - ???
      last task using it ends) and on graceful shutdown; nothing closed them before.
      EmittingUnpackHandler takes the emitter, not the EmitterManager (TIKA-5001).
 
-Release 4.2.1 - ???
+  SERVER, PIPES AND OPERATIONS
+
+   * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
+     for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
+     module it needs (TIKA-5006).
 
   OTHER CHANGES
 

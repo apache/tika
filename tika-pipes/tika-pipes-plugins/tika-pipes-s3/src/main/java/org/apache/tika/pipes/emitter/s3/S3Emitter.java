@@ -39,6 +39,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -140,6 +141,8 @@ public class S3Emitter extends AbstractStreamEmitter {
         switch (config.credentialsProvider()) {
             case "instance":
                 return InstanceProfileCredentialsProvider.builder().build();
+            case "web_identity":
+                return WebIdentityTokenFileCredentialsProvider.builder().build();
             case "profile":
                 return ProfileCredentialsProvider.builder()
                         .profileName(config.profile())
@@ -149,7 +152,7 @@ public class S3Emitter extends AbstractStreamEmitter {
                         config.accessKey(), config.secretKey());
                 return StaticCredentialsProvider.create(awsCreds);
             default:
-                throw new TikaConfigException("credentialsProvider must be 'instance', 'profile' or 'key_secret'");
+                throw new TikaConfigException("credentialsProvider must be 'instance', 'web_identity', 'profile' or 'key_secret'");
         }
     }
 
