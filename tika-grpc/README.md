@@ -116,7 +116,7 @@ they wait.
 ### Message size
 
 By default the server's inbound message limit is the ParseBytes content limit plus
-1 MiB for the request's other fields (65 MiB with the defaults), instead of gRPC's
+1 MiB for the request's other fields (257 MiB with the defaults), instead of gRPC's
 4 MiB. Set it with `maxInboundMessageBytes` in the `grpc` section:
 
 ```json
@@ -134,11 +134,25 @@ and gRPC does not limit how many it reads at once; `parseBytesMaxConcurrent` onl
 bounds how long ParseBytes holds them. The server logs a warning at startup when the
 maximum heap is below three times the limit.
 
-`parseBytesMaxContentBytes` (64 MiB by default, must be positive) limits the
-`content` field of ParseBytes. gRPC applies the inbound limit to the whole request
-first. When `maxInboundMessageBytes` is set at or below `parseBytesMaxContentBytes`,
-the server logs a warning at startup. `dev-tika-config.json` sets a 100 MiB
-inbound limit.
+`parseBytesMaxContentBytes` (256 MiB by default, must be positive) limits the
+`content` field of ParseBytes; the default fits a web-crawl WARC of 100 MB or more.
+gRPC applies the inbound limit to the whole request first. When
+`maxInboundMessageBytes` is set at or below `parseBytesMaxContentBytes`, the server
+logs a warning at startup.
+
+The defaults, and what they cost:
+
+| Setting | Default | Cost |
+|---|---|---|
+| `parseBytesMaxContentBytes` | 256 MiB | the largest ParseBytes content |
+| `maxInboundMessageBytes` | content limit + 1 MiB (257 MiB) | heap per request gRPC is reading; about 3x this for one request |
+| `parseBytesMaxConcurrent` | 2 x `pipes.numClients` (8 when `numClients` is derived) | each admitted request holds its content in heap until its reply, and its spool file until its parse ends: up to 8 x 256 MiB = 2 GiB of each |
+
+At startup the server logs a warning when the maximum heap is below three times the
+inbound limit, or below `parseBytesMaxConcurrent` x `parseBytesMaxContentBytes`, and
+when the spool directory (under `java.io.tmpdir`) has less free space than that
+product. On a small host, lower `parseBytesMaxConcurrent` or
+`parseBytesMaxContentBytes` rather than the heap warnings' advice to raise the heap.
 
 ## Distribution and Maven Artifact
 

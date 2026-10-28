@@ -122,6 +122,11 @@ public class TikaGrpcServer {
                     Runtime.getRuntime().maxMemory())) {
                 LOGGER.warn(warning);
             }
+            for (String warning : admissionWarnings(serviceImpl.parseBytesMaxConcurrent,
+                    serviceImpl.tikaGrpcConfig.effectiveParseBytesMaxContentBytes(),
+                    Runtime.getRuntime().maxMemory(), usableBytes(serviceImpl.spool.directory()))) {
+                LOGGER.warn(warning);
+            }
             // v1 (tika.Tika) stays the stable fields-map contract; v2 (TikaV2Service) is the
             // experimental typed Document surface. Both share the same pipes runtime.
             server = serverBuilder
@@ -280,6 +285,50 @@ public class TikaGrpcServer {
                 + "heap is " + maxHeapBytes + " bytes. gRPC holds each request in memory "
                 + "before parsing starts, so one request of that size needs about " + wanted
                 + " bytes. Raise the heap or lower the limit.";
+    }
+
+    /**
+     * The warnings to log at startup when the ParseBytes requests admitted at once
+     * ({@code parseBytesMaxConcurrent}), each with up to {@code parseBytesMaxContentBytes} of
+     * content, could hold more than the maximum heap or more than the spool directory's free
+     * space. An admitted request keeps its content in heap until its reply is sent, and its
+     * spool file until its parse ends. Possibly none.
+     *
+     * @param spoolUsableBytes free space where the spool directory is, or
+     *                         {@link Long#MAX_VALUE} when unknown
+     */
+    static List<String> admissionWarnings(int maxConcurrent, long parseBytesMaxContentBytes,
+                                          long maxHeapBytes, long spoolUsableBytes) {
+        List<String> warnings = new ArrayList<>(2);
+        long admitted;
+        try {
+            admitted = Math.multiplyExact(maxConcurrent, parseBytesMaxContentBytes);
+        } catch (ArithmeticException e) {
+            admitted = Long.MAX_VALUE;
+        }
+        if (maxHeapBytes != Long.MAX_VALUE && maxHeapBytes < admitted) {
+            warnings.add("parseBytesMaxConcurrent (" + maxConcurrent + ") ParseBytes requests"
+                    + " of up to " + parseBytesMaxContentBytes + " bytes can hold " + admitted
+                    + " bytes of content in memory at once, but the maximum heap is "
+                    + maxHeapBytes + " bytes. Raise the heap, or lower parseBytesMaxConcurrent"
+                    + " or parseBytesMaxContentBytes.");
+        }
+        if (spoolUsableBytes < admitted) {
+            warnings.add("parseBytesMaxConcurrent (" + maxConcurrent + ") ParseBytes requests"
+                    + " of up to " + parseBytesMaxContentBytes + " bytes can spool " + admitted
+                    + " bytes at once, but the spool directory has " + spoolUsableBytes
+                    + " bytes free. A request that finds the disk full is refused with"
+                    + " RESOURCE_EXHAUSTED.");
+        }
+        return warnings;
+    }
+
+    private static long usableBytes(Path directory) {
+        try {
+            return Files.getFileStore(directory).getUsableSpace();
+        } catch (IOException | RuntimeException e) {
+            return Long.MAX_VALUE;
+        }
     }
 
     public TikaGrpcServer setTikaConfig(File tikaConfig) {

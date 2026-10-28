@@ -109,6 +109,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     PipesParser pipesParser;
     long parseBytesMaxContentBytes;
     /** See {@link TikaGrpcConfig#getParseBytesMaxConcurrent()}. */
+    int parseBytesMaxConcurrent;
     Semaphore parseBytesAdmission;
     ParseBytesSpool spool;
     FetcherManager fetcherManager;
@@ -165,8 +166,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
             pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
             parseSlots = new Semaphore(pipesConfig.getNumClients(), true);
-            parseBytesAdmission = new Semaphore(
-                    tikaGrpcConfig.effectiveParseBytesMaxConcurrent(pipesConfig.getNumClients()));
+            parseBytesMaxConcurrent =
+                    tikaGrpcConfig.effectiveParseBytesMaxConcurrent(pipesConfig.getNumClients());
+            parseBytesAdmission = new Semaphore(parseBytesMaxConcurrent);
             exceptionReportingConfigured = tikaJsonConfig.getRootNode()
                     .path("parse-context").has("exception-reporting");
 

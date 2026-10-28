@@ -452,7 +452,7 @@ class TikaGrpcV2ParseBytesUnitTest {
                 Status.fromThrowable(observer.errors.get(0)).getCode());
     }
 
-    /** runParseBytes checks the declared size, so four bytes declared as 64 MiB + 1 are refused. */
+    /** runParseBytes checks the declared size, so four bytes declared as the default limit + 1 are refused. */
     @Test
     void contentAboveTheLimitIsRefusedBeforeItIsStaged(@TempDir Path tmp)
             throws Exception {

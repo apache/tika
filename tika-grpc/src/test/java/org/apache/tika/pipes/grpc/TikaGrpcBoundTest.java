@@ -87,8 +87,13 @@ public class TikaGrpcBoundTest {
     /** Above grpc-java's 4 MiB default. */
     private static final int ABOVE_DEFAULT = 5 * 1024 * 1024;
 
-    /** 100 MiB, the limit in dev-tika-config.json. */
-    private static final int DEV_CONFIG_LIMIT = 104857600;
+    /** 100 MiB: a raised inbound limit, below the default ParseBytes content limit. */
+    private static final int RAISED_LIMIT = 104857600;
+
+    /** The inbound limit derived from the default ParseBytes content limit. */
+    private static final int DEFAULT_DERIVED_LIMIT = (int)
+            (TikaGrpcConfig.DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES
+                    + TikaGrpcConfig.INBOUND_OVERHEAD_BYTES);
 
     @TempDir
     static Path tempDir;
@@ -179,7 +184,7 @@ public class TikaGrpcBoundTest {
 
     @Test
     public void payloadAboveTheGrpcDefaultIsAcceptedWhenTheLimitIsRaised() throws Exception {
-        try (RealServer s = new RealServer(configWithLimit(DEV_CONFIG_LIMIT))) {
+        try (RealServer s = new RealServer(configWithLimit(RAISED_LIMIT))) {
             ParseBytesResponse reply = s.v2.parseBytes(ParseBytesRequest.newBuilder()
                     .setCorrelationId("big-1")
                     .setContent(bigInputTinyOutput(ABOVE_DEFAULT))
@@ -196,7 +201,7 @@ public class TikaGrpcBoundTest {
     @Test
     public void contentExactlyAtTheConfiguredLimitIsAccepted() throws Exception {
         try (RealServer s = new RealServer(
-                configWithLimits(DEV_CONFIG_LIMIT, (long) ABOVE_DEFAULT))) {
+                configWithLimits(RAISED_LIMIT, (long) ABOVE_DEFAULT))) {
             ParseBytesResponse reply = s.v2.parseBytes(ParseBytesRequest.newBuilder()
                     .setCorrelationId("at-cap-1")
                     .setContent(bigInputTinyOutput(ABOVE_DEFAULT))
@@ -297,11 +302,13 @@ public class TikaGrpcBoundTest {
                 "an inbound limit below the content limit");
         assertNotNull(TikaGrpcServer.inboundLimitWarning((int) contentLimit, contentLimit),
                 "an inbound limit equal to the content limit");
-        assertNull(TikaGrpcServer.inboundLimitWarning(DEV_CONFIG_LIMIT, contentLimit),
-                "the dev-tika-config.json limit is above the default content limit");
+        assertNull(TikaGrpcServer.inboundLimitWarning(DEFAULT_DERIVED_LIMIT, contentLimit),
+                "the derived default is above the default content limit");
+        assertNotNull(TikaGrpcServer.inboundLimitWarning(RAISED_LIMIT, contentLimit),
+                "100 MiB is below the 256 MiB default content limit");
         assertNull(TikaGrpcServer.inboundLimitWarning(null, contentLimit),
                 "no inbound limit configured");
-        assertNotNull(TikaGrpcServer.inboundLimitWarning(DEV_CONFIG_LIMIT, DEV_CONFIG_LIMIT * 2L),
+        assertNotNull(TikaGrpcServer.inboundLimitWarning(RAISED_LIMIT, RAISED_LIMIT * 2L),
                 "a configured content limit above the inbound limit");
     }
 
@@ -353,9 +360,32 @@ public class TikaGrpcBoundTest {
         assertEquals(2, TikaGrpcServer.startupWarnings((int) contentLimit, contentLimit,
                         100 * mib).size(),
                 "an inbound limit equal to the content limit, on a 100 MiB heap");
-        assertTrue(TikaGrpcServer.startupWarnings(DEV_CONFIG_LIMIT, contentLimit, 8192 * mib)
-                        .isEmpty(),
-                "the dev-tika-config.json limit on an 8 GiB heap");
+        assertTrue(TikaGrpcServer.startupWarnings(DEFAULT_DERIVED_LIMIT, contentLimit,
+                        8192 * mib).isEmpty(),
+                "the default limits on an 8 GiB heap");
+    }
+
+    /** The default limits fit a 100 MB WARC, and say when admitted requests outgrow the host. */
+    @Test
+    public void theDefaultsFitALargeWarcAndAdmissionIsCheckedAgainstTheHost() {
+        long mib = 1024L * 1024L;
+        TikaGrpcConfig defaults = new TikaGrpcConfig();
+        assertEquals(256 * mib, defaults.effectiveParseBytesMaxContentBytes());
+        assertEquals(257 * mib, defaults.effectiveMaxInboundMessageBytes());
+        assertTrue(defaults.effectiveParseBytesMaxContentBytes() > 100_000_000L * 2,
+                "a 100 MB WARC fits with room to spare");
+
+        long content = defaults.effectiveParseBytesMaxContentBytes();
+        assertTrue(TikaGrpcServer.admissionWarnings(8, content, 4096 * mib, 4096 * mib)
+                .isEmpty(), "8 x 256 MiB fits a 4 GiB heap and 4 GiB of disk");
+        List<String> tight = TikaGrpcServer.admissionWarnings(8, content, 1024 * mib, 512 * mib);
+        assertEquals(2, tight.size(), tight.toString());
+        assertTrue(tight.get(0).contains("maximum heap"), tight.get(0));
+        assertTrue(tight.get(1).contains("spool directory"), tight.get(1));
+        assertTrue(TikaGrpcServer.admissionWarnings(8, content, Long.MAX_VALUE, Long.MAX_VALUE)
+                .isEmpty(), "no heap maximum and unknown free space");
+        assertEquals(2, TikaGrpcServer.admissionWarnings(Integer.MAX_VALUE, Long.MAX_VALUE,
+                1024 * mib, 1024 * mib).size(), "an overflowing product still warns");
     }
 
     /** {@link TikaGrpcServer#start()} logs the warnings. */

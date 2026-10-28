@@ -38,8 +38,11 @@ import org.apache.tika.config.loader.TikaJsonConfig;
  */
 public class TikaGrpcConfig {
 
-    /** The ParseBytes content limit when {@code parseBytesMaxContentBytes} is not set. */
-    public static final long DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES = 64L * 1024 * 1024;
+    /**
+     * The ParseBytes content limit when {@code parseBytesMaxContentBytes} is not set: 256 MiB,
+     * so a typical web-crawl WARC of 100 MB or more fits without configuration.
+     */
+    public static final long DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES = 256L * 1024 * 1024;
 
     /**
      * Room for a ParseBytes request's other fields (resource name, URIs, parse context JSON)
