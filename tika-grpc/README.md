@@ -43,6 +43,10 @@ A `Document` holds:
 
 The extracted text (`tk:content`) is not part of the `Document`.
 
+[docs/v2-document-contract.md](docs/v2-document-contract.md) explains the design: how
+values get their types, which outcomes are a Document status and which a gRPC status,
+and how v1 stays frozen.
+
 ### v2 errors, overload and cancellation
 
 - **A failed document is a Document.** A document that could not be fetched or parsed
