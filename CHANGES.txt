@@ -22,6 +22,10 @@ Release 4.3.0 - ???
      for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
      module it needs (TIKA-5006).
 
+   * The JDBC emitter is thread-safe: concurrent emits (shared-server mode, several
+     async emitter threads) shared one connection and prepared statement unguarded,
+     mixing values across rows and committing each other's batches (TIKA-5007).
+
   OTHER CHANGES
 
    * PEM-armored CMS/PKCS7 (-----BEGIN PKCS7----- or -----BEGIN CMS-----) is parsed like
