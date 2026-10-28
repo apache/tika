@@ -42,6 +42,8 @@ public class TikaGrpcConfig {
 
     private boolean allowComponentManagement = false;
 
+    private boolean cancelRunningParse = false;
+
     /**
      * Loads {@link TikaGrpcConfig} from the {@code "grpc"} section of the JSON
      * configuration, or returns a locked-down default instance (all flags
@@ -102,5 +104,28 @@ public class TikaGrpcConfig {
 
     public void setAllowComponentManagement(boolean allowComponentManagement) {
         this.allowComponentManagement = allowComponentManagement;
+    }
+
+    /**
+     * What a v2 call that the client cancels, or whose deadline expires, does to a parse
+     * that is already running on a pipes worker. A call still waiting for a worker always
+     * stops waiting at once, whatever this says.
+     * <p>
+     * {@code false} (the default): the running parse finishes, bounded by the pipes
+     * timeouts, and its result is dropped. The worker stays up for the next request.
+     * <p>
+     * {@code true}: the parse is interrupted and the pipes client abandons the worker's
+     * connection. That frees the worker sooner, but in the default per-client server mode
+     * ({@code pipes.useSharedServer: false}) it also restarts the worker JVM, so clients
+     * whose deadlines expire under load, or that cancel on purpose, cost a JVM start each.
+     *
+     * @return true if a cancel interrupts a parse already running on a worker
+     */
+    public boolean isCancelRunningParse() {
+        return cancelRunningParse;
+    }
+
+    public void setCancelRunningParse(boolean cancelRunningParse) {
+        this.cancelRunningParse = cancelRunningParse;
     }
 }

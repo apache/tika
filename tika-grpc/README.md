@@ -43,6 +43,28 @@ A `Document` holds:
 
 The extracted text (`tk:content`) is not part of the `Document`.
 
+### v2 errors, overload and cancellation
+
+- **A failed document is a Document.** A document that could not be fetched or parsed
+  comes back as gRPC OK with `ParseStatus.status = STATUS_FAILED`, and `pipes_status`
+  says why. That includes a worker that timed out, ran out of memory or crashed on it:
+  sending the same bytes again would most likely do the same.
+- **A server that cannot take the request answers with a gRPC status**, so retry
+  policies keyed on status codes work: `RESOURCE_EXHAUSTED` when no pipes worker became
+  free within `pipes.maxWaitForClientMillis`, `UNAVAILABLE` when the pipes runtime or a
+  fetcher failed to start, `NOT_FOUND` for an unknown fetcher.
+- **Errors carry one line by default.** `ParseStatus.errors` holds the exception and its
+  message, cut to 1024 characters, not the server's stack trace. Set
+  `parse-context.exception-reporting` in the tika-config to choose the detail yourself;
+  v2 then passes the formatted text through as is.
+- **Cancelling.** A call that the client cancels, or whose deadline expires, stops
+  waiting for a worker at once. A parse already running on a worker finishes, and its
+  result is dropped. Set `"grpc": {"cancelRunningParse": true}` to interrupt it instead;
+  in the default per-client server mode that restarts the worker JVM, so each cancelled
+  or expired call then costs a JVM start.
+
+v1 replies are unchanged: v1 still reports every outcome in-band, in `status`.
+
 Supporting artifacts live in sibling Maven modules (also listed in `tika-bom`):
 
 | Module | Role |

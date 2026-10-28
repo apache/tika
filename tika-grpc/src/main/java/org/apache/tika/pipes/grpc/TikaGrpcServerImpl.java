@@ -22,6 +22,8 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,6 +56,7 @@ import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.config.DefaultPluginsDir;
@@ -102,6 +105,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     Path tikaConfigPath;
     PluginManager pluginManager;
     private AutoCloseable igniteStoreServer;
+    /**
+     * One permit per pipes client. A parse takes a permit before it asks the pipes parser
+     * for a client, so the wait for a free worker happens here, where an interrupt costs
+     * nothing, and the pipes parser then always has a client ready. That keeps "waiting for
+     * a worker" and "running on a worker" apart, which a cancelled v2 call needs: see
+     * {@link TikaGrpcConfig#isCancelRunningParse()}.
+     */
+    Semaphore parseSlots;
+    /**
+     * Whether the operator set {@code parse-context.exception-reporting}. When they did not,
+     * v2 errors carry only the first line of the pipes diagnostic: see
+     * {@link #diagnostic(PipesResult, boolean)}.
+     */
+    boolean exceptionReportingConfigured;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
         this(tikaConfigPath, null);
@@ -131,6 +148,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
         pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
+        parseSlots = new Semaphore(pipesConfig.getNumClients(), true);
+        exceptionReportingConfigured = tikaJsonConfig.getRootNode()
+                .path("parse-context").has("exception-reporting");
         
         try {
             if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {
@@ -451,6 +471,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     FetchParseOutcome runFetchAndParse(String fetcherId, String fetchKey,
                                        ParseContext parseContext) {
+        return runFetchAndParse(fetcherId, fetchKey, parseContext, Dispatch.ALWAYS);
+    }
+
+    /**
+     * {@link #runFetchAndParse(String, String, ParseContext)}, telling {@code dispatch} when
+     * the parse has a worker and is about to start on it.
+     */
+    FetchParseOutcome runFetchAndParse(String fetcherId, String fetchKey,
+                                       ParseContext parseContext, Dispatch dispatch) {
         Fetcher fetcher;
         try {
             fetcher = fetcherManager.getFetcher(fetcherId);
@@ -469,7 +498,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     new EmitKey(),
                     tikaMetadata,
                     parseContext,
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP), fetchParseStart);
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP), fetchParseStart, dispatch);
         } catch (IOException | PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
@@ -481,8 +510,38 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     /** Runs one tuple through the pipes parser and folds the result into an outcome. */
     FetchParseOutcome executeTuple(FetchEmitTuple tuple, long fetchParseStart)
             throws PipesException, InterruptedException, IOException {
+        return executeTuple(tuple, fetchParseStart, Dispatch.ALWAYS);
+    }
+
+    /**
+     * {@link #executeTuple(FetchEmitTuple, long)}, telling {@code dispatch} when the tuple
+     * has a worker. Returns {@code null}, and runs nothing, when {@code dispatch} refuses.
+     * A request that waits {@code pipes.maxWaitForClientMillis} without a worker gets the
+     * same {@code CLIENT_UNAVAILABLE_WITHIN_MS} outcome the pipes parser gives.
+     */
+    FetchParseOutcome executeTuple(FetchEmitTuple tuple, long fetchParseStart,
+                                   Dispatch dispatch)
+            throws PipesException, InterruptedException, IOException {
+        PipesResult pipesResult;
+        if (!parseSlots.tryAcquire(pipesConfig.getMaxWaitForClientMillis(),
+                TimeUnit.MILLISECONDS)) {
+            pipesResult = PipesResults.CLIENT_UNAVAILABLE_WITHIN_MS;
+        } else {
+            try {
+                if (!dispatch.starting()) {
+                    return null;
+                }
+                pipesResult = pipesParser.parse(tuple);
+            } finally {
+                parseSlots.release();
+            }
+        }
+        return toOutcome(tuple, pipesResult, fetchParseStart);
+    }
+
+    private FetchParseOutcome toOutcome(FetchEmitTuple tuple, PipesResult pipesResult,
+                                        long fetchParseStart) {
         String fetchKey = tuple.getFetchKey().getFetchKey();
-        PipesResult pipesResult = pipesParser.parse(tuple);
         long fetchParseTimeMs = (System.nanoTime() - fetchParseStart) / 1_000_000L;
         Map<String, String> fields = new LinkedHashMap<>();
         Metadata primary = null;
@@ -507,7 +566,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 fetchKey,
                 pipesResult.status().name(),
                 errorMessage,
-                diagnostic(pipesResult),
+                diagnostic(pipesResult, exceptionReportingConfigured),
                 fields,
                 primary,
                 fetchParseTimeMs);
@@ -516,19 +575,52 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     /**
      * What went wrong with this tuple, for the v2 {@code ParseStatus.errors}: the pipes
      * message (a fetch failure, a parse exception with no emit, a timeout or crash) or, when
-     * the parse succeeded alongside an exception, the container stack trace. The pipes
-     * worker already formatted either one under the configured exception reporting.
-     * {@code null} when there is nothing to report.
+     * the parse succeeded alongside an exception, the container stack trace. {@code null}
+     * when there is nothing to report.
+     * <p>
+     * The pipes worker formats both under {@code parse-context.exception-reporting}, whose
+     * default is the full stack trace. A gRPC caller is often outside the operator's trust
+     * boundary, and a stack trace names server classes, library versions and paths. So
+     * unless the operator chose a policy ({@code reportingConfigured}), only the first line
+     * is kept (the exception and its message, what v1's {@code error_message} carries),
+     * cut to {@value #DEFAULT_DIAGNOSTIC_MAX_CHARS} characters. The full trace stays in the
+     * server log.
      */
-    static String diagnostic(PipesResult pipesResult) {
+    static String diagnostic(PipesResult pipesResult, boolean reportingConfigured) {
+        String diagnostic = null;
         if (StringUtils.isNotBlank(pipesResult.message())) {
-            return pipesResult.message();
-        }
-        if (pipesResult.emitData() != null
+            diagnostic = pipesResult.message();
+        } else if (pipesResult.emitData() != null
                 && StringUtils.isNotBlank(pipesResult.emitData().getContainerStackTrace())) {
-            return pipesResult.emitData().getContainerStackTrace();
+            diagnostic = pipesResult.emitData().getContainerStackTrace();
         }
-        return null;
+        if (diagnostic == null || reportingConfigured) {
+            return diagnostic;
+        }
+        String firstLine = diagnostic.strip().lines().findFirst().orElse("").strip();
+        if (firstLine.length() > DEFAULT_DIAGNOSTIC_MAX_CHARS) {
+            firstLine = firstLine.substring(0, DEFAULT_DIAGNOSTIC_MAX_CHARS) + "...[truncated]";
+        }
+        return firstLine;
+    }
+
+    static final int DEFAULT_DIAGNOSTIC_MAX_CHARS = 1024;
+
+    /**
+     * Told when a parse has its pipes worker and is about to start on it. Returning
+     * {@code false} gives the worker back without running anything: the v2 call it was for
+     * was cancelled while it waited.
+     */
+    @FunctionalInterface
+    interface Dispatch {
+        Dispatch ALWAYS = () -> true;
+
+        boolean starting();
+    }
+
+    /** See {@link TikaGrpcConfig#isCancelRunningParse()}. */
+    boolean isCancelRunningParse() {
+        return tikaGrpcConfig != null && tikaGrpcConfig.isCancelRunningParse();
     }
 
     /**
@@ -544,7 +636,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     /**
      * Outcome of a single fetch+parse pipes round trip, shared by v1 and v2 reply builders.
      * {@code errorMessage} is the v1 {@code error_message}, set for fetch failures only;
-     * {@code diagnostic} is what {@link #diagnostic(PipesResult)} found, for the v2 errors.
+     * {@code diagnostic} is what {@link #diagnostic(PipesResult, boolean)} found, for the v2 errors.
      * {@code null} means the calling thread was interrupted before a reply could be built;
      * callers answer that with {@link #closeInterrupted}.
      */

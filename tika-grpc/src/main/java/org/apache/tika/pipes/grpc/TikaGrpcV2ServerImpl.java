@@ -41,9 +41,16 @@ import org.apache.tika.parser.ParseContext;
  * {@link TikaGrpcServerImpl}; fetcher management stays on v1. Replies carry the typed
  * {@link Document} contract instead of the v1 fields map.
  * <p>
- * A client that cancels a call stops its parse: the thread running it is interrupted, which
- * the pipes client answers by abandoning the forked worker's connection, so a cancelled call
- * does not hold a pipes worker until its parse ends.
+ * A client that cancels a call, or whose deadline expires, stops it waiting for a pipes
+ * worker at once. A parse already running on a worker finishes and its result is dropped,
+ * unless {@code grpc.cancelRunningParse} is set: see
+ * {@link TikaGrpcConfig#isCancelRunningParse()}.
+ * <p>
+ * A Document with {@code STATUS_FAILED} means this document could not be fetched or parsed.
+ * When the server could not take the request at all (no worker free, the pipes runtime
+ * failed to start, a fetcher that failed to initialize) the call is closed with a gRPC
+ * status instead, so retry policies keyed on status codes see it: see
+ * {@link #serviceFailure(String)}.
  */
 class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
 
@@ -55,10 +62,14 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         this.v1 = v1;
     }
 
+    private Cancellation cancellation(StreamObserver<?> responseObserver) {
+        return Cancellation.of(responseObserver, v1.isCancelRunningParse());
+    }
+
     @Override
     public void fetchAndParse(FetchAndParseRequest request,
                               StreamObserver<FetchAndParseResponse> responseObserver) {
-        Cancellation cancellation = Cancellation.of(responseObserver);
+        Cancellation cancellation = cancellation(responseObserver);
         FetchRequest fetch = new FetchRequest(request.getFetcherId(), request.getFetchKey(),
                 request.getAdditionalFetchConfigJson(), request.getParseContextJson());
         if (reply(fetch, responseObserver, cancellation, (fetchKey, document) ->
@@ -74,7 +85,7 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
     @Override
     public void fetchAndParseServerSideStreaming(FetchAndParseServerSideStreamingRequest request,
             StreamObserver<FetchAndParseServerSideStreamingResponse> responseObserver) {
-        Cancellation cancellation = Cancellation.of(responseObserver);
+        Cancellation cancellation = cancellation(responseObserver);
         FetchRequest fetch = new FetchRequest(request.getFetcherId(), request.getFetchKey(),
                 request.getAdditionalFetchConfigJson(), request.getParseContextJson());
         if (reply(fetch, responseObserver, cancellation, (fetchKey, document) ->
@@ -90,7 +101,7 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
     @Override
     public StreamObserver<FetchAndParseBiDirectionalStreamingRequest> fetchAndParseBiDirectionalStreaming(
             StreamObserver<FetchAndParseBiDirectionalStreamingResponse> responseObserver) {
-        Cancellation cancellation = Cancellation.of(responseObserver);
+        Cancellation cancellation = cancellation(responseObserver);
         return new StreamObserver<>() {
             // Set once the call is closed, by an error sent for one request or by the client.
             // The client may still have requests in flight; they are dropped, because a
@@ -157,7 +168,7 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         TikaGrpcServerImpl.FetchParseOutcome outcome;
         try {
             outcome = v1.runFetchAndParse(request.fetcherId(), request.fetchKey(),
-                    parseContext);
+                    parseContext, cancellation::dispatching);
         } catch (TikaGrpcServerImpl.FetcherNotFoundException e) {
             responseObserver.onError(Status.NOT_FOUND
                     .withDescription("no fetcher named '" + request.fetcherId() + "'")
@@ -170,11 +181,19 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         } finally {
             cancellation.end();
         }
+        if (cancellation.isCancelled()) {
+            return false;
+        }
         if (outcome == null) {
             TikaGrpcServerImpl.closeInterrupted(request.fetchKey(), responseObserver);
             return false;
         }
-        if (cancellation.isCancelled()) {
+        Status failure = serviceFailure(outcome.status());
+        if (failure != null) {
+            responseObserver.onError(failure
+                    .withDescription(serviceFailureDescription(outcome.status(),
+                            request.fetchKey(), request.fetcherId()))
+                    .asRuntimeException());
             return false;
         }
         responseObserver.onNext(response.apply(outcome.fetchKey(), DocumentBuilder.build(
@@ -184,6 +203,55 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
                 outcome.diagnostic(),
                 outcome.fetchParseTimeMs())));
         return true;
+    }
+
+    /**
+     * The gRPC status for a pipes outcome that says the server, not the document, failed,
+     * or {@code null} for an outcome that belongs in the Document. Names are
+     * {@code PipesResult.RESULT_STATUS} constants.
+     * <ul>
+     *   <li>{@code CLIENT_UNAVAILABLE_WITHIN_MS}: every worker stayed busy for
+     *   {@code pipes.maxWaitForClientMillis}. {@code RESOURCE_EXHAUSTED}; retry later or
+     *   elsewhere.</li>
+     *   <li>{@code FAILED_TO_INITIALIZE}, {@code FETCHER_INITIALIZATION_EXCEPTION},
+     *   {@code EMITTER_INITIALIZATION_EXCEPTION}: the pipes runtime or a component could not
+     *   start. {@code UNAVAILABLE}.</li>
+     *   <li>{@code FETCHER_NOT_FOUND}, {@code EMITTER_NOT_FOUND}, {@code PRESET_NOT_FOUND}:
+     *   {@code NOT_FOUND}, as when the server's own check finds no fetcher.</li>
+     * </ul>
+     * Everything else stays in the Document, including {@code PAYLOAD_LIMIT_EXCEEDED} (this
+     * document is too big, and a retry will not change that) and the crashes:
+     * {@code TIMEOUT}, {@code OOM} and {@code UNSPECIFIED_CRASH} are a worker dying on this
+     * document, so they are a {@code STATUS_FAILED} Document whose {@code pipes_status} says
+     * which. A retry of the same bytes would most likely crash the same way.
+     */
+    static Status serviceFailure(String pipesStatus) {
+        if (pipesStatus == null) {
+            return null;
+        }
+        return switch (pipesStatus) {
+            case "CLIENT_UNAVAILABLE_WITHIN_MS" -> Status.RESOURCE_EXHAUSTED;
+            case "FAILED_TO_INITIALIZE", "FETCHER_INITIALIZATION_EXCEPTION",
+                 "EMITTER_INITIALIZATION_EXCEPTION" -> Status.UNAVAILABLE;
+            case "FETCHER_NOT_FOUND", "EMITTER_NOT_FOUND", "PRESET_NOT_FOUND" ->
+                    Status.NOT_FOUND;
+            default -> null;
+        };
+    }
+
+    /** The description for a {@link #serviceFailure(String)} status. */
+    static String serviceFailureDescription(String pipesStatus, String fetchKey,
+                                            String fetcherId) {
+        return switch (pipesStatus) {
+            case "CLIENT_UNAVAILABLE_WITHIN_MS" ->
+                    "no pipes worker became free for '" + fetchKey + "'; retry later";
+            case "FAILED_TO_INITIALIZE" -> "the pipes runtime failed to start";
+            case "FETCHER_INITIALIZATION_EXCEPTION" ->
+                    "fetcher '" + fetcherId + "' failed to initialize";
+            case "FETCHER_NOT_FOUND" -> "no fetcher named '" + fetcherId + "'";
+            default -> "the fetch and parse of '" + fetchKey + "' could not run: "
+                    + pipesStatus;
+        };
     }
 
     /**
@@ -212,14 +280,27 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
     }
 
     /**
-     * Ties one call to the thread parsing for it. When the client cancels, the parse in
-     * progress is interrupted and later {@link #begin()}s refuse, so no new parse starts for
-     * a call nobody is waiting on. Registering the cancel handler also stops gRPC from
-     * throwing when a reply races the cancel.
+     * Ties one call to the thread parsing for it. When the client cancels, a request still
+     * waiting for a pipes worker is interrupted, later {@link #begin()}s refuse, and a
+     * worker that frees up is handed back unused ({@link #dispatching()}), so no new parse
+     * starts for a call nobody is waiting on. A parse already on a worker is interrupted
+     * only when {@code interruptRunning} is set; otherwise it finishes and its result is
+     * dropped. Registering the cancel handler also stops gRPC from throwing when a reply
+     * races the cancel.
      */
     static final class Cancellation {
+        private final boolean interruptRunning;
         private boolean cancelled;
         private Thread parsing;
+        private boolean running;
+
+        Cancellation() {
+            this(false);
+        }
+
+        Cancellation(boolean interruptRunning) {
+            this.interruptRunning = interruptRunning;
+        }
 
         /**
          * Must be called from the RPC method itself, before it returns: gRPC only accepts a
@@ -232,8 +313,8 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
          * a reply racing the cancel is dropped instead of throwing. Outside a gRPC call (a
          * unit test's observer), nothing ever cancels.
          */
-        static Cancellation of(StreamObserver<?> responseObserver) {
-            Cancellation cancellation = new Cancellation();
+        static Cancellation of(StreamObserver<?> responseObserver, boolean interruptRunning) {
+            Cancellation cancellation = new Cancellation(interruptRunning);
             if (responseObserver instanceof ServerCallStreamObserver<?> call) {
                 call.setOnCancelHandler(cancellation::cancel);
             }
@@ -244,9 +325,22 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
 
         synchronized void cancel() {
             cancelled = true;
-            if (parsing != null) {
+            if (parsing != null && (!running || interruptRunning)) {
                 parsing.interrupt();
             }
+        }
+
+        /**
+         * Called on the parsing thread once its parse has a pipes worker, just before the
+         * parse starts on it. Returns {@code false} when the call is already cancelled, so
+         * the worker goes back unused.
+         */
+        synchronized boolean dispatching() {
+            if (cancelled) {
+                return false;
+            }
+            running = true;
+            return true;
         }
 
         synchronized boolean isCancelled() {
@@ -272,6 +366,7 @@ class TikaGrpcV2ServerImpl extends TikaV2ServiceGrpc.TikaV2ServiceImplBase {
         synchronized void end() {
             if (parsing == Thread.currentThread()) {
                 parsing = null;
+                running = false;
                 if (cancelled) {
                     Thread.interrupted();
                 }
