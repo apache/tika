@@ -18,6 +18,7 @@ package org.apache.tika.pipes.grpc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.PipesResult;
 
 /**
  * The v2 FetchAndParse and ParseBytes error paths and cancellation, with a mocked
@@ -119,7 +121,7 @@ class TikaGrpcV2ServerImplTest {
     /** A parse that threw returns a failed Document that says why. */
     @Test
     void aFailedParseReturnsThePipesError() {
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome("bad.pdf", "PARSE_EXCEPTION_NO_EMIT", null, STACK));
         Recording<FetchAndParseResponse> observer = new Recording<>();
 
@@ -135,7 +137,7 @@ class TikaGrpcV2ServerImplTest {
     /** A fetch failure carries the fetcher's message, as v1's error_message does. */
     @Test
     void aFetchFailureReturnsTheFetchersMessage() {
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome("missing.txt", "FETCH_EXCEPTION", null,
                         "java.nio.file.NoSuchFileException: missing.txt"));
         Recording<FetchAndParseResponse> observer = new Recording<>();
@@ -149,7 +151,7 @@ class TikaGrpcV2ServerImplTest {
     /** A document with no text and no metadata is a clean success, without errors. */
     @Test
     void emptyOutputIsASuccessWithoutErrors() {
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome("empty.txt", "EMPTY_OUTPUT", null, null));
         Recording<FetchAndParseResponse> observer = new Recording<>();
 
@@ -181,7 +183,7 @@ class TikaGrpcV2ServerImplTest {
 
     @Test
     void anUnknownFetcherIsNotFound() {
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenThrow(new TikaGrpcServerImpl.FetcherNotFoundException("nope", null));
         Recording<FetchAndParseResponse> observer = new Recording<>();
 
@@ -194,7 +196,7 @@ class TikaGrpcV2ServerImplTest {
     /** An unexpected failure is INTERNAL, and its cause stays in the server log. */
     @Test
     void anUnexpectedFailureIsInternalWithoutTheCause() throws Exception {
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenThrow(new RuntimeException("secret /var/lib/tika path"));
         Mockito.when(v1.runParseBytes(Mockito.any(), Mockito.anyLong(), Mockito.any(),
                         Mockito.any()))
@@ -220,9 +222,9 @@ class TikaGrpcV2ServerImplTest {
      */
     @Test
     void aBidiStreamIgnoresRequestsAfterAnError() {
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.eq("bad"), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.eq("bad"), Mockito.any(), Mockito.any()))
                 .thenThrow(new TikaGrpcServerImpl.FetcherNotFoundException("fs", null));
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.eq("good"), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.eq("good"), Mockito.any(), Mockito.any()))
                 .thenReturn(outcome("good", "PARSE_SUCCESS", html(), null));
         Recording<FetchAndParseBiDirectionalStreamingResponse> observer = new Recording<>();
 
@@ -239,15 +241,178 @@ class TikaGrpcV2ServerImplTest {
     }
 
     /**
-     * A client that cancels a FetchAndParse call interrupts the parse running for it, so
-     * the pipes worker is released instead of finishing a parse nobody is waiting for.
+     * Pool exhaustion is the server's problem, not the document's: the call closes with
+     * RESOURCE_EXHAUSTED, which retry policies keyed on status codes act on, not OK with a
+     * failed Document.
+     */
+    @Test
+    void noFreeWorkerIsResourceExhausted() {
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome("a", "CLIENT_UNAVAILABLE_WITHIN_MS", null, null));
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        v2.fetchAndParse(request("a"), observer);
+
+        assertTrue(observer.replies.isEmpty());
+        assertEquals(0, observer.completions);
+        assertEquals(Status.Code.RESOURCE_EXHAUSTED,
+                Status.fromThrowable(observer.errors.get(0)).getCode());
+    }
+
+    @Test
+    void aPipesRuntimeThatFailedToStartIsUnavailable() {
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome("a", "FAILED_TO_INITIALIZE", null, "boom"));
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        v2.fetchAndParse(request("a"), observer);
+
+        Status status = Status.fromThrowable(observer.errors.get(0));
+        assertEquals(Status.Code.UNAVAILABLE, status.getCode());
+        assertFalse(status.getDescription().contains("boom"), status.getDescription());
+    }
+
+    /** The fork not finding the fetcher answers as the server's own check does. */
+    @Test
+    void aFetcherTheWorkerCannotFindIsNotFound() {
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome("a", "FETCHER_NOT_FOUND", null, null));
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        v2.fetchAndParse(request("a"), observer);
+
+        assertEquals(Status.Code.NOT_FOUND, Status.fromThrowable(observer.errors.get(0)).getCode());
+    }
+
+    /**
+     * A worker dying on a document (timeout, OOM, crash) is about that document: it stays a
+     * failed Document whose pipes_status says which, not a call error.
+     */
+    @Test
+    void aWorkerCrashIsAFailedDocument() {
+        for (String documentLevel : List.of("TIMEOUT", "OOM", "UNSPECIFIED_CRASH",
+                "PAYLOAD_LIMIT_EXCEEDED", "FETCH_EXCEPTION", "PARSE_EXCEPTION_NO_EMIT")) {
+            assertNull(TikaGrpcV2ServerImpl.serviceFailure(documentLevel), documentLevel);
+        }
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(outcome("a", "TIMEOUT", null, null));
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        v2.fetchAndParse(request("a"), observer);
+
+        ParseStatus status = observer.replies.get(0).getDocument().getStatus();
+        assertEquals(ParseStatus.Status.STATUS_FAILED, status.getStatus());
+        assertEquals("TIMEOUT", status.getPipesStatus());
+    }
+
+    /**
+     * By default a cancel does not interrupt a parse already running on a worker: in the
+     * per-client server mode that would restart the worker JVM. The parse finishes and
+     * nothing is sent to the client that left.
+     */
+    @Test
+    void cancellingLetsARunningParseFinishByDefault() throws Exception {
+        CountDownLatch parsing = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch finished = new CountDownLatch(1);
+        AtomicBoolean interrupted = new AtomicBoolean();
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> {
+                    TikaGrpcServerImpl.Dispatch dispatch = invocation.getArgument(3);
+                    if (!dispatch.starting()) {
+                        return null;
+                    }
+                    parsing.countDown();
+                    try {
+                        release.await(1, TimeUnit.MINUTES);
+                        return outcome("slow", "PARSE_SUCCESS", html(), null);
+                    } catch (InterruptedException e) {
+                        interrupted.set(true);
+                        Thread.currentThread().interrupt();
+                        return null;
+                    } finally {
+                        finished.countDown();
+                    }
+                });
+        TikaV2ServiceGrpc.TikaV2ServiceStub stub = TikaV2ServiceGrpc.newStub(channel());
+        Recording<FetchAndParseResponse> observer = new Recording<>();
+
+        Context.CancellableContext context = Context.current().withCancellation();
+        context.run(() -> stub.fetchAndParse(request("slow"), observer));
+        assertTrue(parsing.await(10, TimeUnit.SECONDS), "the parse never started");
+        context.cancel(null);
+        Thread.sleep(200);
+        release.countDown();
+
+        assertTrue(finished.await(10, TimeUnit.SECONDS));
+        assertFalse(interrupted.get(), "a running parse must not be interrupted by default");
+        assertTrue(observer.replies.isEmpty(), "nothing is sent for a cancelled call");
+    }
+
+    /** With cancelRunningParse a cancel interrupts the parse running on the worker. */
+    @Test
+    void cancelRunningParseInterruptsARunningParse() {
+        TikaGrpcV2ServerImpl.Cancellation cancellation =
+                new TikaGrpcV2ServerImpl.Cancellation(true);
+        assertTrue(cancellation.begin());
+        assertTrue(cancellation.dispatching());
+        cancellation.cancel();
+        assertTrue(Thread.currentThread().isInterrupted());
+        cancellation.end();
+        assertFalse(Thread.currentThread().isInterrupted());
+    }
+
+    /** By default a running parse is left alone, and a waiting one is interrupted. */
+    @Test
+    void aCancelInterruptsOnlyAWaitingParseByDefault() {
+        TikaGrpcV2ServerImpl.Cancellation running = new TikaGrpcV2ServerImpl.Cancellation();
+        assertTrue(running.begin());
+        assertTrue(running.dispatching());
+        running.cancel();
+        assertFalse(Thread.currentThread().isInterrupted(), "a running parse is not interrupted");
+        running.end();
+
+        TikaGrpcV2ServerImpl.Cancellation waiting = new TikaGrpcV2ServerImpl.Cancellation();
+        assertTrue(waiting.begin());
+        waiting.cancel();
+        assertTrue(Thread.currentThread().isInterrupted(), "a waiting parse is interrupted");
+        assertFalse(waiting.dispatching(), "a worker that frees up after the cancel goes back unused");
+        waiting.end();
+        assertFalse(Thread.currentThread().isInterrupted());
+    }
+
+    /**
+     * Unless the operator set parse-context.exception-reporting, a caller gets the first line
+     * of the pipes diagnostic, not the server's stack trace.
+     */
+    @Test
+    void callersGetOnlyTheFirstLineOfAStackTraceByDefault() {
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT,
+                "org.apache.tika.exception.TikaException: bad header\n"
+                        + "\tat org.apache.pdfbox.Foo.bar(Foo.java:12)\n"
+                        + "\tat /opt/tika/lib/x.jar");
+        assertEquals("org.apache.tika.exception.TikaException: bad header",
+                TikaGrpcServerImpl.diagnostic(result, false));
+        assertEquals(result.message(), TikaGrpcServerImpl.diagnostic(result, true),
+                "an operator's own exception-reporting policy is passed through as formatted");
+
+        PipesResult huge = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                "x".repeat(5000));
+        String cut = TikaGrpcServerImpl.diagnostic(huge, false);
+        assertEquals(TikaGrpcServerImpl.DEFAULT_DIAGNOSTIC_MAX_CHARS + "...[truncated]".length(),
+                cut.length());
+    }
+
+    /**
+     * A client that cancels a FetchAndParse call while it waits for a pipes worker stops
+     * the wait at once.
      */
     @Test
     void cancellingTheCallInterruptsTheParse() throws Exception {
         CountDownLatch parsing = new CountDownLatch(1);
         CountDownLatch finished = new CountDownLatch(1);
         AtomicBoolean interrupted = new AtomicBoolean();
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenAnswer(invocation -> {
                     parsing.countDown();
                     try {
@@ -304,7 +469,7 @@ class TikaGrpcV2ServerImplTest {
     @Test
     void aBidiStreamAnswersEveryRequestOverGrpc() throws Exception {
         AtomicInteger calls = new AtomicInteger();
-        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any()))
+        Mockito.when(v1.runPublicFetchAndParse(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenAnswer(invocation -> {
                     calls.incrementAndGet();
                     return outcome(invocation.getArgument(1), "PARSE_SUCCESS", html(), null);

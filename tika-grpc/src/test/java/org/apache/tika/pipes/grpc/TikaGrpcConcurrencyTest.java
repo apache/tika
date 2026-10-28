@@ -45,12 +45,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.grpc.ManagedChannel;
 import io.grpc.Server;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.apache.tika.grpc.v2.ParseStatus;
+import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
@@ -191,6 +195,64 @@ public class TikaGrpcConcurrencyTest {
                             PipesResult.RESULT_STATUS.CLIENT_UNAVAILABLE_WITHIN_MS.name(),
                             PipesResult.RESULT_STATUS.PARSE_SUCCESS.name()),
                     statuses);
+        } finally {
+            pool.shutdownNow();
+            service.postShutdown();
+            cleanUp(config, testFiles);
+        }
+    }
+
+    /**
+     * The v2 side of {@link #saturationSurfacesInBand}: the call that finds no free worker
+     * is closed with RESOURCE_EXHAUSTED instead of OK with a failed Document, so a client's
+     * retry policy sees an overload as one. v1 keeps its in-band status, above.
+     */
+    @Test
+    public void v2SaturationIsResourceExhausted(Resources resources) throws Exception {
+        Path config = writeConfig(1, 0L, null);
+        TikaGrpcServerImpl service = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
+        List<File> testFiles = new ArrayList<>();
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            String serverName = InProcessServerBuilder.generateName();
+            Server server = InProcessServerBuilder.forName(serverName)
+                    .addService(new TikaGrpcV2ServerImpl(service))
+                    .build()
+                    .start();
+            resources.register(server, Duration.ofSeconds(30));
+            ManagedChannel channel = InProcessChannelBuilder.forName(serverName).build();
+            resources.register(channel, Duration.ofSeconds(30));
+            TikaV2ServiceGrpc.TikaV2ServiceBlockingStub stub =
+                    TikaV2ServiceGrpc.newBlockingStub(channel);
+
+            CyclicBarrier barrier = new CyclicBarrier(2);
+            List<Callable<String>> calls = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                String fetchKey = "tika4815-v2sat-" + i + "-" + UUID.randomUUID() + ".html";
+                writeDoc(testFiles, fetchKey, "saturation " + i);
+                calls.add(() -> {
+                    barrier.await(30, TimeUnit.SECONDS);
+                    try {
+                        return stub.fetchAndParse(org.apache.tika.grpc.v2.FetchAndParseRequest
+                                        .newBuilder()
+                                        .setFetcherId(FETCHER_ID)
+                                        .setFetchKey(fetchKey)
+                                        .build())
+                                .getDocument().getStatus().getStatus().name();
+                    } catch (StatusRuntimeException e) {
+                        return e.getStatus().getCode().name();
+                    }
+                });
+            }
+            List<String> outcomes = new ArrayList<>();
+            for (Future<String> future : pool.invokeAll(calls, 120, TimeUnit.SECONDS)) {
+                assertFalse(future.isCancelled(), "a call did not finish within the time budget");
+                outcomes.add(future.get());
+            }
+            Collections.sort(outcomes);
+            assertEquals(List.of(Status.Code.RESOURCE_EXHAUSTED.name(),
+                            ParseStatus.Status.STATUS_SUCCESS.name()),
+                    outcomes);
         } finally {
             pool.shutdownNow();
             service.postShutdown();

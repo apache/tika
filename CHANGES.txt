@@ -13,6 +13,13 @@ Release 4.2.1 - unreleased
      fetching anything. New "grpc" settings: parseBytesMaxContentBytes (64 MiB
      by default) and maxInboundMessageBytes (TIKA-4795).
 
+   * tika-grpc v2: a busy pool, a pipes runtime or fetcher that failed to start, and
+     an unknown fetcher close the call with RESOURCE_EXHAUSTED, UNAVAILABLE or
+     NOT_FOUND instead of OK with a failed Document. A cancelled or expired call no
+     longer restarts a worker JVM unless grpc.cancelRunningParse is set, and errors
+     carry one line instead of a stack trace unless parse-context.exception-reporting
+     is configured. v1 replies are unchanged (TIKA-4766).
+
    * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
      for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
      module it needs (TIKA-5006).
