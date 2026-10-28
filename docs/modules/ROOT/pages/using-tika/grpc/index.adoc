@@ -25,7 +25,8 @@ The service definition lives in `tika-grpc/src/main/proto/tika.proto`. Clients r
 (`SaveFetcher`) and then submit `FetchAndParseRequest` messages, each returning a
 `FetchAndParseReply` with extracted metadata and content. Streaming variants
 (`FetchAndParseServerSideStreaming`, `FetchAndParseBiDirectionalStreaming`) return the same reply
-type.
+type. An experimental second service returns every document and every metadata value; see
+<<_v2alpha1,The v2alpha1 service>>.
 
 == Concurrency
 
@@ -33,7 +34,83 @@ type.
 `pipes.numClients` (default: derived from host cores, at most 4). A call that cannot get a fork
 within `pipes.maxWaitForClientMillis` (default 60s) returns the in-band reply status
 `CLIENT_UNAVAILABLE_WITHIN_MS` — at capacity, not failing. `pipes.useSharedServer: true` shares one
-JVM instead.
+JVM instead. (The v2alpha1 service answers that case with `RESOURCE_EXHAUSTED`.)
+
+== Message size
+
+gRPC clients reject replies larger than 4 MB by default, and a large document's text easily
+exceeds that. Raise the limit on the client channel, up to the server's ceiling,
+`pipes.maxIpcPayloadBytes` (100 MB by default):
+
+* Java: `ManagedChannelBuilder.forTarget(...).maxInboundMessageSize(100 * 1024 * 1024)`
+* Python: `grpc.insecure_channel(target, options=[("grpc.max_receive_message_length", 100 * 1024 * 1024)])`
+* Go: `grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(100 << 20))`
+* grpcurl: `-max-msg-sz 104857600`
+
+gRPC compression saves bandwidth but does not help with this limit, which applies to the
+decompressed size. `writeLimit` in the parse context caps how much text is extracted. The
+v2alpha1 `FetchAndParseStream` RPC sends one message per document, so an archive's attachments
+each count against the limit separately.
+
+[#_v2alpha1]
+== The v2alpha1 service (experimental)
+
+`org.apache.tika.grpc.v2alpha1.TikaService` runs on the same port as the v1 service. Its protos
+are in the `tika-grpc-api` artifact, so clients can depend on them without the server. The
+package may change incompatibly until it is renamed to `v2`.
+
+It returns what `/rmeta` returns. Each reply holds one `ParsedDocument` for the container and one
+for each embedded file, and each `ParsedDocument` carries:
+
+* `embedded_path`: empty for the container, otherwise the file's `tk:embedded-id-path`.
+* `content`: the extracted text, in the format named by `tk:content-handler-type`.
+* `metadata`: every key with all of its values. v1's `fields` map keeps one value per key and
+merges embedded files into one map.
+
+Metadata values are always strings, exactly as Tika stores them. Each key may also carry a type
+hint (`VALUE_TYPE_INTEGER`, `VALUE_TYPE_DATE`, ...) and a cardinality hint (`CARDINALITY_BAG`,
+`CARDINALITY_SEQ`, ...). Hints come from Tika's metadata key registry (`tika-metadata-schema`), and
+an absent hint means text. Hints can change between Tika versions, so treat them this way:
+
+* Read them on every response.
+* Fall back to the string when a value does not parse as its hinted type.
+* Never hard-code a key's type.
+
+Dates are written as `yyyy-MM-ddTHH:mm:ssZ` (UTC), `yyyy-MM-ddTHH:mm:ss` (no time zone was
+known), or `yyyy-MM-dd`.
+
+[cols="1,3",options="header"]
+|===
+|RPC |Behavior
+
+|`FetchAndParse`
+|One `FetchAndParseResponse` with every document.
+
+|`FetchAndParseStream`
+|One message per document, in the same order.
+
+|`FetchAndParseBidi`
+|Many requests on one stream, one response per request, matched by `request_id`. A request that
+fails gets a response with `error` set, and the stream continues.
+|===
+
+Failures that are not about the document close a unary or streaming call with a gRPC status:
+
+* `NOT_FOUND`: unknown fetcher.
+* `RESOURCE_EXHAUSTED`: no worker became free in time.
+* `UNAVAILABLE`: a worker or fetcher failed to start, or the server is shutting down.
+* `PERMISSION_DENIED`: per-request config was sent but is not allowed.
+* `INVALID_ARGUMENT`: bad `parse_context_json`.
+
+On `FetchAndParseBidi`, the same codes arrive in that request's `error` instead, and only server
+shutdown ends the stream. Everything about the document itself is a normal reply: `pipes_status`
+says what happened (`PARSE_SUCCESS`, `FETCH_EXCEPTION`, `TIMEOUT`, ...) and `message` says why. Each
+document's `tk:exception:*` metadata holds exceptions the parse recorded. How much exception detail
+callers see is set by
+xref:advanced/setting-limits.adoc#_exception_reporting[`parse-context.exception-reporting`].
+
+The v2alpha1 service goes through the same capability flags and request checks as v1. Fetchers are
+still managed through v1 (`SaveFetcher` and related RPCs).
 
 == Command-line options
 

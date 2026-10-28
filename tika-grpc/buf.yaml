@@ -1,0 +1,45 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# The v1 tika.Tika service. Its package, service and message names are the wire API
+# v1 clients already call, so the STANDARD rules that would rename them are excepted;
+# every other STANDARD rule applies. Behaviour changes go to the v2 service
+# (tika-grpc-api), which passes STANDARD with no exceptions. The breaking check keeps
+# v1 from drifting:
+#
+#   cd tika-grpc && buf lint
+#   buf breaking tika-grpc --against '.git#branch=main,subdir=tika-grpc/src/main/proto'
+version: v2
+modules:
+  - path: src/main/proto
+lint:
+  use:
+    - STANDARD
+  except:
+    # package tika, at the root of src/main/proto
+    - PACKAGE_DIRECTORY_MATCH
+    - PACKAGE_VERSION_SUFFIX
+    # service Tika
+    - SERVICE_SUFFIX
+    # FooRequest/FooReply, and FetchAndParseRequest/Reply shared by the three
+    # FetchAndParse RPCs
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME
+    - RPC_REQUEST_RESPONSE_UNIQUE
+breaking:
+  use:
+    - FILE

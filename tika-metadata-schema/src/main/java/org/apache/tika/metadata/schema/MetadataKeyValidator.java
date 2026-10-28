@@ -56,6 +56,8 @@ public final class MetadataKeyValidator {
     private final List<String> openPrefixes;   // longest-first: most specific prefix wins
     private final Map<String, String> keyModules;      // closed key -> supplying module
     private final Map<String, String> prefixModules;   // open prefix -> supplying module
+    private final Map<String, String> keyValueTypes;   // closed key -> Property.ValueType name
+    private final Map<String, String> keyCardinalities; // closed key -> Property.PropertyType name
 
     MetadataKeyValidator(Set<String> closedKeys, List<String> openPrefixes) {
         this(closedKeys, openPrefixes, Map.of(), Map.of());
@@ -66,6 +68,14 @@ public final class MetadataKeyValidator {
      * registries) or unattributed for a given entry. */
     MetadataKeyValidator(Set<String> closedKeys, List<String> openPrefixes,
             Map<String, String> keyModules, Map<String, String> prefixModules) {
+        this(closedKeys, openPrefixes, keyModules, prefixModules, Map.of(), Map.of());
+    }
+
+    MetadataKeyValidator(Set<String> closedKeys, List<String> openPrefixes,
+            Map<String, String> keyModules, Map<String, String> prefixModules,
+            Map<String, String> keyValueTypes, Map<String, String> keyCardinalities) {
+        this.keyValueTypes = Map.copyOf(keyValueTypes);
+        this.keyCardinalities = Map.copyOf(keyCardinalities);
         this.closedKeys = Set.copyOf(closedKeys);
         List<String> sorted = new ArrayList<>(openPrefixes);
         sorted.sort(Comparator.comparingInt(String::length).reversed());
@@ -78,7 +88,19 @@ public final class MetadataKeyValidator {
     public static MetadataKeyValidator fromClasspath() {
         return new MetadataKeyValidator(
                 new HashSet<>(readValues(KEYS, "key")), readValues(OPEN, "prefix"),
-                readFieldMap(KEYS, "key", "module"), readFieldMap(OPEN, "prefix", "module"));
+                readFieldMap(KEYS, "key", "module"), readFieldMap(OPEN, "prefix", "module"),
+                readFieldMap(KEYS, "key", "valueType"), readFieldMap(KEYS, "key", "cardinality"));
+    }
+
+    /** The registered {@code Property.ValueType} name of a closed key, or {@code null}. */
+    public String valueTypeOf(String key) {
+        return keyValueTypes.get(key);
+    }
+
+    /** The registered {@code Property.PropertyType} name (SIMPLE, BAG, SEQ, ...) of a closed key,
+     * or {@code null}. */
+    public String cardinalityOf(String key) {
+        return keyCardinalities.get(key);
     }
 
     public Classification classify(String key) {
