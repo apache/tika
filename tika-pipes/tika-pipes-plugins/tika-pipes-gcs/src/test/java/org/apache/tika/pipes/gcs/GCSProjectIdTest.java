@@ -34,6 +34,7 @@ import org.apache.tika.plugins.ExtensionConfig;
 public class GCSProjectIdTest {
 
     private static final String BUCKET_ONLY = "{\"bucket\": \"bucket\"}";
+    private static final String WITH_PROJECT = "{\"bucket\": \"bucket\", \"projectId\": \"project\"}";
 
     @Test
     public void testFetcherWithoutProjectId() throws Exception {
@@ -42,8 +43,7 @@ public class GCSProjectIdTest {
 
     @Test
     public void testFetcherWithProjectId() throws Exception {
-        String json = "{\"bucket\": \"bucket\", \"projectId\": \"project\"}";
-        assertNotNull(GCSFetcher.build(new ExtensionConfig("gcs", "gcs-fetcher", json)));
+        assertNotNull(GCSFetcher.build(new ExtensionConfig("gcs", "gcs-fetcher", WITH_PROJECT)));
     }
 
     @Test
@@ -58,7 +58,29 @@ public class GCSProjectIdTest {
     }
 
     @Test
+    public void testEmitterWithProjectId() throws Exception {
+        assertNotNull(GCSEmitter.build(new ExtensionConfig("gcs", "gcs-emitter", WITH_PROJECT)));
+    }
+
+    @Test
+    public void testEmitterRequiresBucket() {
+        assertThrows(TikaConfigException.class,
+                () -> GCSEmitter.build(new ExtensionConfig("gcs", "gcs-emitter", "{}")));
+    }
+
+    @Test
     public void testIteratorWithoutProjectId() throws Exception {
         assertNotNull(GCSPipesIterator.build(new ExtensionConfig("gcs", "gcs-pipes-iterator", BUCKET_ONLY)));
+    }
+
+    @Test
+    public void testIteratorWithProjectId() throws Exception {
+        assertNotNull(GCSPipesIterator.build(new ExtensionConfig("gcs", "gcs-pipes-iterator", WITH_PROJECT)));
+    }
+
+    @Test
+    public void testIteratorRequiresBucket() {
+        assertThrows(TikaConfigException.class,
+                () -> GCSPipesIterator.build(new ExtensionConfig("gcs", "gcs-pipes-iterator", "{}")));
     }
 }
