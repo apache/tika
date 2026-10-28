@@ -37,6 +37,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -395,6 +400,63 @@ public class JDBCEmitterTest {
             }
         }
         assertEquals(3, rows);
+    }
+
+    /**
+     * Shared-server mode hands one emitter to every thread (TIKA-5007): concurrent emits must
+     * not mix one document's values into another's row or commit each other's batches.
+     */
+    @Test
+    public void testConcurrentEmits(@TempDir Path tmpDir) throws Exception {
+        String connectionString = "jdbc:h2:file:" + tmpDir.resolve("h2").toAbsolutePath();
+        LinkedHashMap<String, String> keys = new LinkedHashMap<>();
+        keys.put("k1", "string");
+        keys.put("k2", "int");
+        ObjectNode configNode = createConfigNode(connectionString,
+                "insert into test (path, k1, k2) values (?,?,?)",
+                "create table test (path varchar(64) primary key, k1 varchar(64), k2 integer)",
+                null, "first_only", keys);
+        JDBCEmitter emitter = JDBCEmitter.build(new ExtensionConfig("test-jdbc", "jdbc-emitter",
+                MAPPER.writeValueAsString(configNode)));
+
+        int threads = 8;
+        int perThread = 200;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<?>> futures = new ArrayList<>();
+        try {
+            for (int t = 0; t < threads; t++) {
+                int base = t * perThread;
+                futures.add(executor.submit(() -> {
+                    start.await();
+                    for (int i = base; i < base + perThread; i++) {
+                        emitter.emit("id" + i, List.of(m("k1", "v" + i, "k2", Integer.toString(i))),
+                                new ParseContext());
+                    }
+                    return null;
+                }));
+            }
+            start.countDown();
+            for (Future<?> f : futures) {
+                f.get(2, TimeUnit.MINUTES);
+            }
+        } finally {
+            executor.shutdownNow();
+            emitter.close();
+        }
+
+        try (Connection connection = DriverManager.getConnection(connectionString);
+                Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery("select path, k1, k2 from test")) {
+            int rows = 0;
+            while (rs.next()) {
+                int k2 = rs.getInt(3);
+                assertEquals("id" + k2, rs.getString(1));
+                assertEquals("v" + k2, rs.getString(2));
+                rows++;
+            }
+            assertEquals(threads * perThread, rows);
+        }
     }
 
     private Metadata m(String... strings) {

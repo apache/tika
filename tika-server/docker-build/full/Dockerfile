@@ -62,15 +62,16 @@ RUN set -eux \
         ffmpeg \
         tesseract-ocr \
         $(printf 'tesseract-ocr-%s ' $LANGUAGES) \
-    && echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections \
     && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
         xfonts-utils \
         fonts-freefont-ttf \
         fonts-liberation \
         fonts-noto-cjk \
-        ttf-mscorefonts-installer \
+        # TrueType CJK fallbacks: PDFBox 3.0.x can't use CFF-based Noto CJK for non-embedded fonts
+        fonts-ipafont-gothic \
+        fonts-ipafont-mincho \
+        fonts-wqy-zenhei \
         wget \
-        cabextract \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ARG TIKA_VERSION

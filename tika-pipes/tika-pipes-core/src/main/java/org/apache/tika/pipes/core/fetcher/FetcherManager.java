@@ -29,6 +29,7 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.pipes.api.fetcher.FetcherNotFoundException;
 import org.apache.tika.pipes.core.AbstractComponentManager;
+import org.apache.tika.pipes.core.Lease;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
@@ -131,35 +132,36 @@ public class FetcherManager extends AbstractComponentManager<Fetcher, FetcherFac
     }
 
     /**
-     * Gets a fetcher by ID, lazily instantiating it if needed.
+     * Leases a fetcher by ID, lazily instantiating it if needed. Close the lease when the
+     * fetcher and everything it returned are no longer in use.
      *
      * @param id the fetcher ID
-     * @return the fetcher
+     * @return a lease on the fetcher
      * @throws FetcherNotFoundException if no fetcher with the given ID exists
      * @throws IOException if there's an error building the fetcher
      * @throws TikaException if there's a configuration error
      */
-    public Fetcher getFetcher(String id) throws IOException, TikaException {
-        return getComponent(id);
+    public Lease<Fetcher> getFetcher(String id) throws IOException, TikaException {
+        return acquire(id);
     }
 
     /**
-     * Convenience method that returns a fetcher if only one fetcher
+     * Convenience method that leases a fetcher if only one fetcher
      * is configured. If 0 or > 1 fetchers are configured, this throws an IllegalArgumentException.
      *
-     * @return the single configured fetcher
+     * @return a lease on the single configured fetcher
      * @throws IOException if there's an error building the fetcher
      * @throws TikaException if there's a configuration error
      */
-    public Fetcher getFetcher() throws IOException, TikaException {
-        return getComponent();
+    public Lease<Fetcher> getFetcher() throws IOException, TikaException {
+        return acquire();
     }
 
     /**
      * Dynamically adds or updates a fetcher configuration at runtime.
      * The fetcher will not be instantiated until it is first requested via {@link #getFetcher(String)}.
      * This allows for dynamic configuration without the overhead of immediate instantiation.
-     * If a fetcher with the same ID already exists, it will be replaced and the cached instance cleared.
+     * If a fetcher with the same ID already exists, it will be replaced and its instance retired.
      * A fetcher defined in the server config cannot be replaced.
      * <p>
      * This method is only available if the FetcherManager was loaded with

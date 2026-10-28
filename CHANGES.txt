@@ -1,17 +1,34 @@
-Release 4.2.1 - unreleased
+Release 4.3.0 - ???
+
+  BREAKING CHANGES AND DEPRECATIONS
+
+   * FetcherManager.getFetcher and EmitterManager.getEmitter return a Lease
+     (AbstractComponentManager.getComponent is now acquire); close it when done with
+     the component and anything it returned. Pipes now closes a
+     Closeable fetcher or emitter when a runtime save or delete replaces it (after the
+     last task using it ends) and on graceful shutdown; nothing closed them before.
+     EmittingUnpackHandler takes the emitter, not the EmitterManager (TIKA-5001).
 
   SERVER, PIPES AND OPERATIONS
 
+   * The tika-server full and tika-grpc Docker images no longer install
+     ttf-mscorefonts-installer, which downloaded Microsoft's fonts from SourceForge
+     at build time; non-embedded Verdana, Georgia, Trebuchet, Impact, Comic Sans and
+     Arial Black now render with Liberation fonts. The images add the IPA and
+     WenQuanYi fonts, so pages in non-embedded Japanese and Chinese fonts render
+     instead of showing empty boxes or nothing (TIKA-5005).
+     
    * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
      for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
      module it needs (TIKA-5006).
 
    * The Kafka emitter reports success only once Kafka has acknowledged every record
      (per acks); a rejected or timed-out record fails the emit instead of being lost
-     silently, and the producer is flushed and closed on shutdown. An async batch is
-     sent in full before waiting. Emits are slower by a broker round trip; keep
-     lingerMs small. transactionalId is now refused at load: the emitter never opened
-     a transaction, so every send with it failed (TIKA-5008).
+     silently, and the producer is flushed and closed on shutdown. (TIKA-5008).
+     
+   * The JDBC emitter is thread-safe: concurrent emits (shared-server mode, several
+     async emitter threads) shared one connection and prepared statement unguarded,
+     mixing values across rows and committing each other's batches (TIKA-5007).
 
   OTHER CHANGES
 

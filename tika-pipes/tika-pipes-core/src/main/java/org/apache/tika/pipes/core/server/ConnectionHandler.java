@@ -304,7 +304,9 @@ public class ConnectionHandler implements Runnable, Closeable {
     private PipesWorker createPipesWorker(ArrayBlockingQueue<Metadata> intermediateResult,
                                           FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                           CountDownLatch countDownLatch) {
-        FetchHandler fetchHandler = new FetchHandler(resources.getFetcherManager());
+        TaskLeases leases = new TaskLeases(resources.getFetcherManager(),
+                resources.getEmitterManager());
+        FetchHandler fetchHandler = new FetchHandler(resources.getFetcherManager(), leases);
         ParseHandler parseHandler = new ParseHandler(resources.getDetector(), intermediateResult,
                 countDownLatch, resources.getAutoDetectParser(), resources.getRMetaParser(),
                 resources.getDefaultContentHandlerFactory(), pipesConfig.getParseMode());
@@ -312,9 +314,9 @@ public class ConnectionHandler implements Runnable, Closeable {
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
         EmitHandler emitHandler = new EmitHandler(resources.getDefaultMetadataFilter(),
                 resources.getInferenceDispatcher(), resources.getEmitStrategy(),
-                resources.getEmitterManager(), threshold);
+                resources.getEmitterManager(), leases, threshold);
         return new PipesWorker(fetchEmitTuple, mergedContext, resources.getAutoDetectParser(),
-                resources.getEmitterManager(), fetchHandler, parseHandler, emitHandler,
+                leases, fetchHandler, parseHandler, emitHandler,
                 resources.getDefaultMetadataWriteLimiterFactory(), pipesConfig.getParseMode());
     }
 
