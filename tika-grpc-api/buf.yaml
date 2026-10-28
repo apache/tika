@@ -19,8 +19,6 @@ version: v2
 modules:
   - path: src/main/proto
     name: buf.build/apache/tika-grpc-api
-deps:
-  - buf.build/googleapis/googleapis
 lint:
   use:
     - STANDARD
