@@ -17,14 +17,14 @@
 
 name: tika
 title: Apache Tika
-version: '4.2.1-SNAPSHOT'
+version: '4.3.0-SNAPSHOT'
 # Keeps the /docs redirect pointed at the released line, not this snapshot.
 prerelease: true
 start_page: index.adoc
 
 asciidoc:
   attributes:
-    tika-version: '4.2.1-SNAPSHOT'
+    tika-version: '4.3.0-SNAPSHOT'
     # Latest published aggregate javadoc; per-release, so bump on docs/X.Y.x branches.
     tika-javadoc-url: 'https://tika.apache.org/4.2.0/api'
 
