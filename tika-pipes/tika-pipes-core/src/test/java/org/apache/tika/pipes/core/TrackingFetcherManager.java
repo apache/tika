@@ -32,6 +32,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.pipes.api.fetcher.FetcherNotFoundException;
+import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.InMemoryConfigStore;
 import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -63,7 +64,11 @@ public class TrackingFetcherManager extends AbstractComponentManager<Fetcher, Fe
     };
 
     public TrackingFetcherManager(String... configuredIds) {
-        super(null, configs(configuredIds), true, new InMemoryConfigStore());
+        this(new InMemoryConfigStore(), configuredIds);
+    }
+
+    public TrackingFetcherManager(ConfigStore store, String... configuredIds) {
+        super(null, configs(configuredIds), true, store);
     }
 
     public static ExtensionConfig config(String id) {

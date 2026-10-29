@@ -82,7 +82,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
             public void onNext(FetchAndParseReply fetchAndParseReply) {
                 LOG.debug("Reply from fetch-and-parse - key={}, status={}", 
                     fetchAndParseReply.getFetchKey(), fetchAndParseReply.getStatus());
-                if ("FETCH_AND_PARSE_EXCEPTION".equals(fetchAndParseReply.getStatus())) {
+                if (!ExternalTestBase.isSuccess(fetchAndParseReply)) {
                     errors.add(fetchAndParseReply);
                 } else {
                     successes.add(fetchAndParseReply);
@@ -145,8 +145,8 @@ class FileSystemFetcherTest extends ExternalTestBase {
             LOG.info("Processed {} documents (limit was {})", totalProcessed, maxDocs);
             Assertions.assertTrue(totalProcessed <= maxDocs, 
                 "Should not process more than " + maxDocs + " documents");
-            Assertions.assertTrue(totalProcessed > 0, 
-                "Should have processed at least one document");
+            Assertions.assertNotEquals(0, successes.size(),
+                () -> "Should have some successful fetches; errors: " + errors);
         }
         
         LOG.info("Test completed successfully - {} successes, {} errors", 

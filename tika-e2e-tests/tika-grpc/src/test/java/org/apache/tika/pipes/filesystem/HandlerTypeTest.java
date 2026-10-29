@@ -106,6 +106,7 @@ class HandlerTypeTest {
 
     private static void startLocalGrpcServer() throws Exception {
         LOG.info("Starting local tika-grpc server with Ignite config for HandlerType test");
+        ExternalTestBase.assertPortFree(GRPC_PORT);
 
         Path currentDir = Path.of("").toAbsolutePath();
         Path tikaRootDir = currentDir;

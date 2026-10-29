@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,7 +35,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -55,6 +58,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
 import org.apache.tika.pipes.grpc.proto.ListFetchersRequest;
 import org.apache.tika.pipes.grpc.proto.TikaGrpc;
@@ -104,7 +108,8 @@ public abstract class ExternalTestBase {
 
     private static void startLocalGrpcServer() throws Exception {
         LOG.info("Starting local tika-grpc server using Maven exec");
-        
+        assertPortFree(GRPC_PORT);
+
         Path tikaGrpcDir = findTikaGrpcDirectory();
         Path configFile = localConfig("tika-config.json");
         
@@ -275,14 +280,25 @@ public abstract class ExternalTestBase {
     void close() {
         if (USE_LOCAL_SERVER && localGrpcProcess != null) {
             LOG.info("Stopping local gRPC server");
+            // mvn exec's java child outlives mvn and keeps the port; snapshot before it reparents
+            List<ProcessHandle> children = localGrpcProcess.descendants().toList();
             localGrpcProcess.destroy();
+            children.forEach(ProcessHandle::destroy);
             try {
                 if (!localGrpcProcess.waitFor(10, TimeUnit.SECONDS)) {
                     localGrpcProcess.destroyForcibly();
                 }
+                for (ProcessHandle child : children) {
+                    try {
+                        child.onExit().get(10, TimeUnit.SECONDS);
+                    } catch (ExecutionException | TimeoutException e) {
+                        child.destroyForcibly();
+                    }
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 localGrpcProcess.destroyForcibly();
+                children.forEach(ProcessHandle::destroyForcibly);
             }
         } else if (composeContainer != null) {
             composeContainer.close();
@@ -325,6 +341,23 @@ public abstract class ExternalTestBase {
         }
         
         LOG.info("Finished downloading and extracting govdocs1 files");
+    }
+
+    /**
+     * The readiness probe accepts any server on the port, so a leftover one would silently
+     * answer this test's requests.
+     */
+    public static void assertPortFree(int port) {
+        try (ServerSocket ignored = new ServerSocket(port)) {
+            // free
+        } catch (IOException e) {
+            throw new IllegalStateException("Port " + port + " is already in use, likely a "
+                    + "leftover tika-grpc server from an earlier run; stop it and rerun", e);
+        }
+    }
+
+    public static boolean isSuccess(FetchAndParseReply reply) {
+        return PipesResult.RESULT_STATUS.valueOf(reply.getStatus()).isSuccess();
     }
 
     public static void assertAllFilesFetched(Path baseDir, List<FetchAndParseReply> successes, 

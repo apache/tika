@@ -19,12 +19,16 @@ package org.apache.tika.pipes.core.config;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,6 +83,26 @@ public class FileBasedConfigStore implements ConfigStore {
             LOG.info("Loaded {} configurations from {}", cache.size(), configFile);
         } else {
             LOG.info("Config file does not exist yet, will be created on first save: {}", configFile);
+        }
+    }
+
+    /**
+     * A digest of the file's bytes. Not mtime or the file key: coarse timestamps and inode
+     * reuse can hide an edit that keeps the size, and the file is small and already re-read
+     * on every lookup.
+     */
+    @Override
+    public Object changeToken() {
+        try {
+            return HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(configFile)));
+        } catch (NoSuchFileException e) {
+            return "";
+        } catch (IOException e) {
+            LOG.warn("Failed to read {}", configFile, e);
+            return "";
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
         }
     }
 
@@ -140,6 +164,8 @@ public class FileBasedConfigStore implements ConfigStore {
 
     private synchronized void loadFromFile() throws IOException {
         if (!Files.exists(configFile)) {
+            // the file is the shared state; a deleted file means an empty store
+            cache.clear();
             return;
         }
         

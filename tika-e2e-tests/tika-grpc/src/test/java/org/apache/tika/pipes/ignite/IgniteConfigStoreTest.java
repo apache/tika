@@ -109,6 +109,7 @@ class IgniteConfigStoreTest {
 
     private static void startLocalGrpcServer() throws Exception {
         LOG.info("Starting local tika-grpc server using Maven");
+        ExternalTestBase.assertPortFree(GRPC_PORT);
         
         Path currentDir = Path.of("").toAbsolutePath();
         Path tikaRootDir = currentDir;
@@ -428,7 +429,7 @@ class IgniteConfigStoreTest {
                 public void onNext(FetchAndParseReply fetchAndParseReply) {
                     LOG.debug("Reply from fetch-and-parse - key={}, status={}", 
                         fetchAndParseReply.getFetchKey(), fetchAndParseReply.getStatus());
-                    if ("FETCH_AND_PARSE_EXCEPTION".equals(fetchAndParseReply.getStatus())) {
+                    if (!ExternalTestBase.isSuccess(fetchAndParseReply)) {
                         errors.add(fetchAndParseReply);
                     } else {
                         successes.add(fetchAndParseReply);
@@ -498,8 +499,8 @@ class IgniteConfigStoreTest {
                     totalProcessed, maxDocs);
                 Assertions.assertTrue(totalProcessed <= maxDocs, 
                     "Should not process more than " + maxDocs + " documents");
-                Assertions.assertTrue(totalProcessed > 0, 
-                    "Should have processed at least one document");
+                Assertions.assertNotEquals(0, successes.size(),
+                    () -> "Should have some successful fetches; errors: " + errors);
             }
             
             LOG.info("Ignite ConfigStore test completed successfully - {} successes, {} errors", 

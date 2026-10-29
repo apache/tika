@@ -177,7 +177,7 @@ public class PipesConfig {
 
     /**
      * Type of ConfigStore to use for distributed state management.
-     * Options: "memory" (default), "ignite"
+     * Options: "memory" (default), "file", "ignite"
      */
     private String configStoreType = "memory";
     

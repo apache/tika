@@ -19,6 +19,7 @@ package org.apache.tika.pipes.ignite;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.ignite.Ignite;
 import org.apache.ignite.table.KeyValueView;
@@ -45,6 +46,8 @@ public class IgniteConfigStore implements ConfigStore {
     private static final Logger LOG = LoggerFactory.getLogger(IgniteConfigStore.class);
     private static final String DEFAULT_TABLE_NAME = "tika_config_store";
     private static final String DEFAULT_INSTANCE_NAME = "TikaIgniteConfigStore";
+    // '#' is outside ComponentIds.LEGAL_ID, so no component can collide with this row
+    static final String CHANGE_TOKEN_KEY = "#change-token";
 
     private Ignite ignite;
     private KeyValueView<String, ExtensionConfigDTO> kvView;
@@ -120,6 +123,34 @@ public class IgniteConfigStore implements ConfigStore {
             LOG.error("Failed to put config with id: {}", id, e);
             throw new RuntimeException("Failed to put config", e);
         }
+        touchChangeToken();
+    }
+
+    /**
+     * A random value rewritten after every put and remove, so every process sharing the
+     * table sees each change; random rather than a counter, so writers need no CAS.
+     */
+    @Override
+    public Object changeToken() {
+        checkInitialized();
+        try {
+            ExtensionConfigDTO dto = kvView.get(null, CHANGE_TOKEN_KEY);
+            return dto != null ? dto.getJson() : "";
+        } catch (Exception e) {
+            LOG.error("Failed to read the change token", e);
+            throw new RuntimeException("Failed to read the change token", e);
+        }
+    }
+
+    // after the change itself: a reader that sees the new token must see the new config
+    private void touchChangeToken() {
+        try {
+            kvView.put(null, CHANGE_TOKEN_KEY,
+                    new ExtensionConfigDTO(CHANGE_TOKEN_KEY, UUID.randomUUID().toString()));
+        } catch (Exception e) {
+            LOG.error("Failed to write the change token", e);
+            throw new RuntimeException("Failed to write the change token", e);
+        }
     }
 
     @Override
@@ -155,6 +186,7 @@ public class IgniteConfigStore implements ConfigStore {
                 // by position: column lookup by name folds in the default locale too
                 keys.add(resultSet.next().stringValue(0));
             }
+            keys.remove(CHANGE_TOKEN_KEY);
             return keys;
         } catch (Exception e) {
             LOG.error("Failed to get keySet", e);
@@ -164,29 +196,24 @@ public class IgniteConfigStore implements ConfigStore {
 
     @Override
     public int size() {
-        checkInitialized();
-        try {
-            var resultSet = ignite.sql().execute(null, "SELECT COUNT(*) as cnt FROM " + quotedName(tableName));
-            if (resultSet.hasNext()) {
-                return (int) resultSet.next().longValue(0);
-            }
-            return 0;
-        } catch (Exception e) {
-            LOG.error("Failed to get size", e);
-            throw new RuntimeException("Failed to get size", e);
-        }
+        return keySet().size();
     }
 
     @Override
     public ExtensionConfig remove(String id) {
         checkInitialized();
+        ExtensionConfigDTO removed;
         try {
-            ExtensionConfigDTO removed = kvView.getAndRemove(null, id);
-            return removed != null ? new ExtensionConfig(id, removed.getName(), removed.getJson()) : null;
+            removed = kvView.getAndRemove(null, id);
         } catch (Exception e) {
             LOG.error("Failed to remove config with id: {}", id, e);
             throw new RuntimeException("Failed to remove config", e);
         }
+        if (removed == null) {
+            return null;
+        }
+        touchChangeToken();
+        return new ExtensionConfig(id, removed.getName(), removed.getJson());
     }
 
     public void close() {

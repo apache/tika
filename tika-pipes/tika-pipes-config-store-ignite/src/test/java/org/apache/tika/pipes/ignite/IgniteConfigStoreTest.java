@@ -18,6 +18,7 @@ package org.apache.tika.pipes.ignite;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -129,6 +130,32 @@ public class IgniteConfigStoreTest {
         assertTrue(store.keySet().contains("id1"));
         assertTrue(store.keySet().contains("id2"));
         assertFalse(store.keySet().contains("id3"));
+    }
+
+    @Test
+    public void testChangeTokenSeenByAnotherClient() throws Exception {
+        IgniteConfigStore other = new IgniteConfigStore();
+        other.init();
+        try {
+            Object before = other.changeToken();
+            store.put("id1", new ExtensionConfig("id1", "type1", "{}"));
+            Object afterPut = other.changeToken();
+            assertNotEquals(before, afterPut);
+
+            store.put("id1", new ExtensionConfig("id1", "type1", "{\"updated\":true}"));
+            Object afterUpdate = other.changeToken();
+            assertNotEquals(afterPut, afterUpdate);
+
+            store.remove("nonexistent");
+            assertEquals(afterUpdate, other.changeToken(), "a no-op remove is not a change");
+
+            store.remove("id1");
+            assertNotEquals(afterUpdate, other.changeToken());
+            assertTrue(other.keySet().isEmpty(), "the token row is not a component");
+            assertEquals(0, other.size());
+        } finally {
+            other.close();
+        }
     }
 
     @Test

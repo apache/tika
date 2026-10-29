@@ -47,6 +47,17 @@ public interface ConfigStore extends TikaExtension {
     }
 
     /**
+     * A value that changes whenever the stored configurations may have changed, including
+     * changes made by another process; compared with {@code equals}. Runtime components
+     * built from an older state are retired when it changes, so it must be cheap: it is
+     * read on every component lookup. Null (the default) for a store no other process
+     * shares, whose changes the owning manager already sees.
+     */
+    default Object changeToken() {
+        return null;
+    }
+
+    /**
      * Stores a configuration.
      *
      * @param id the configuration ID (must not be null)
