@@ -41,7 +41,7 @@ asciidoc:
   attributes:
     # Tika version attributes
     # '@' = soft: each branch's antora.yml tika-version wins over this default
-    tika-version: '4.2.1-SNAPSHOT@'
+    tika-version: '4.3.0-SNAPSHOT@'
     tika-stable-version: '3.3.3'
     tika-javadoc-url: 'https://tika.apache.org/4.2.0/api@'
     # Enable source highlighting
