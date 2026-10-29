@@ -29,6 +29,9 @@ Release 4.3.0 - ???
      a server-streaming call completed with no reply, and a bidirectional stream went on
      to throw on the closed call. Thanks to Kristian Rickert and Davide Polato (TIKA-5010).
 
+   * The GCS fetcher, emitter and pipes iterator no longer require projectId. When it is
+     unset, the client resolves a project from the environment, as it does for its
+     credentials (TIKA-5009).
    * The Kafka emitter reports success only once Kafka has acknowledged every record
      (per acks); a rejected or timed-out record fails the emit instead of being lost
      silently, and the producer is flushed and closed on shutdown. (TIKA-5008).
