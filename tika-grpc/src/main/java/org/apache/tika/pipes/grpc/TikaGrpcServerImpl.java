@@ -118,11 +118,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
 
-        // Load PipesConfig directly from root level (not from "parse-context")
-        pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
-        if (pipesConfig == null) {
-            pipesConfig = new PipesConfig();
-        }
+        // also reads parse-context.timeout-limits/exception-reporting for the client's backstop
+        // and the results it fabricates itself (timeouts, crashes)
+        pipesConfig = PipesConfig.load(tikaJsonConfig);
         pipesConfig.refuseTrustedRequests("tika-grpc");
 
         // Security-sensitive grpc features (per-request config, runtime component
@@ -285,25 +283,34 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
     public StreamObserver<FetchAndParseRequest> fetchAndParseBiDirectionalStreaming(
             StreamObserver<FetchAndParseReply> responseObserver) {
         return new StreamObserver<>() {
+            // set once the call is closed with an error; later requests have nowhere to go
+            private boolean closed;
+
             @Override
             public void onNext(FetchAndParseRequest fetchAndParseRequest) {
+                if (closed) {
+                    return;
+                }
                 if (denyPerRequestConfig(fetchAndParseRequest, responseObserver)) {
+                    closed = true;
                     return;
                 }
                 ParseContext parseContext =
                         buildRequestParseContext(fetchAndParseRequest, responseObserver);
                 if (parseContext == null) {
+                    closed = true;
                     return;
                 }
-                fetchAndParseImpl(fetchAndParseRequest, parseContext, responseObserver);
+                closed = !fetchAndParseImpl(fetchAndParseRequest, parseContext, responseObserver);
             }
 
             @Override
@@ -313,7 +320,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
             @Override
             public void onCompleted() {
-                responseObserver.onCompleted();
+                if (!closed) {
+                    responseObserver.onCompleted();
+                }
             }
         };
     }
@@ -328,8 +337,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     /**
@@ -382,8 +392,12 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         return parseContext;
     }
 
-    private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
-                                   StreamObserver<FetchAndParseReply> responseObserver) {
+    /**
+     * Sends the reply for one request. Returns {@code false} when the call was closed with an
+     * error instead, so the caller must not complete it.
+     */
+    private boolean fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
+                                      StreamObserver<FetchAndParseReply> responseObserver) {
         String fetcherId;
         try (Lease<Fetcher> lease = fetcherManager.getFetcher(request.getFetcherId())) {
             fetcherId = lease.get().getExtensionConfig().id();
@@ -413,10 +427,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 }
             }
             responseObserver.onNext(fetchReplyBuilder.build());
+            return true;
         } catch (IOException | PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            // no outcome to reply with; completing a unary call without a reply surfaces as INTERNAL
+            responseObserver.onError(io.grpc.Status.UNAVAILABLE
+                    .withDescription("interrupted before the fetch and parse of '"
+                            + request.getFetchKey() + "' finished")
+                    .asRuntimeException());
+            return false;
         }
     }
 

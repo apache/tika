@@ -74,6 +74,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.core.Lease;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
@@ -793,6 +795,88 @@ public class TikaGrpcServerTest {
             tikaGrpcServerImpl.postShutdown();
         } finally {
             FileUtils.deleteDirectory(testDocumentFolder);
+        }
+    }
+
+    @Test
+    public void testParentReadsOperatorTimeoutLimits() throws Exception {
+        // the test config sets parse-context.timeout-limits.progressTimeoutMillis
+        assertEquals(60000, newService(tikaConfig).pipesConfig.getDefaultTimeoutLimits()
+                .getProgressTimeoutMillis());
+    }
+
+    @Test
+    public void testInterruptedFetchAndParseClosesWithUnavailable(Resources resources)
+            throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = newService(tikaConfig);
+        Server server = InProcessServerBuilder.forName(serverName).directExecutor()
+                .addService(serviceImpl).build().start();
+        resources.register(server, Duration.ofSeconds(10));
+        ManagedChannel channel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
+        resources.register(channel, Duration.ofSeconds(10));
+
+        String fetcherId = createFetcherId(1);
+        // build the fetcher up front, so only the wait for a pipes client sees the interrupt
+        try (Lease<Fetcher> lease = serviceImpl.fetcherManager.getFetcher(fetcherId)) {
+            assertNotNull(lease.get());
+        }
+        FetchAndParseRequest request = FetchAndParseRequest.newBuilder()
+                .setFetcherId(fetcherId)
+                .setFetchKey("interrupted.html")
+                .build();
+        TikaGrpc.TikaStub stub = TikaGrpc.newStub(channel);
+
+        RecordingObserver unary = new RecordingObserver();
+        RecordingObserver serverStreaming = new RecordingObserver();
+        RecordingObserver biDi = new RecordingObserver();
+        try {
+            Thread.currentThread().interrupt();
+            stub.fetchAndParse(request, unary);
+            Thread.currentThread().interrupt();
+            stub.fetchAndParseServerSideStreaming(request, serverStreaming);
+            // direct, not through a stub: a gRPC client drops its own sends once the call is
+            // closed, but requests already queued at the server still arrive
+            Thread.currentThread().interrupt();
+            StreamObserver<FetchAndParseRequest> requests =
+                    serviceImpl.fetchAndParseBiDirectionalStreaming(biDi);
+            requests.onNext(request);
+            Thread.interrupted();
+            requests.onNext(request);
+            requests.onCompleted();
+        } finally {
+            // the server restores the interrupt it caught; clear it before cleanup waits
+            Thread.interrupted();
+        }
+
+        for (RecordingObserver observer : List.of(unary, serverStreaming, biDi)) {
+            assertEquals(0, observer.replies.size(), "there is no outcome to reply with");
+            assertEquals(0, observer.completions.get(), "a call closed with an error must not complete");
+            assertEquals(1, observer.errors.size(), "the call must be closed with one error");
+            assertEquals(Status.Code.UNAVAILABLE,
+                    Status.fromThrowable(observer.errors.get(0)).getCode(),
+                    String.valueOf(observer.errors.get(0)));
+        }
+    }
+
+    private static final class RecordingObserver implements StreamObserver<FetchAndParseReply> {
+        private final List<FetchAndParseReply> replies = Collections.synchronizedList(new ArrayList<>());
+        private final List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
+        private final AtomicInteger completions = new AtomicInteger();
+
+        @Override
+        public void onNext(FetchAndParseReply reply) {
+            replies.add(reply);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            errors.add(t);
+        }
+
+        @Override
+        public void onCompleted() {
+            completions.incrementAndGet();
         }
     }
 }
