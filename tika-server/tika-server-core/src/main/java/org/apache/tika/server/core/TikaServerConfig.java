@@ -198,7 +198,8 @@ public class TikaServerConfig {
         });
         TikaServerConfig tikaServerConfig = tikaJsonConfig.deserialize("server", TikaServerConfig.class);
         if (tikaServerConfig == null) {
-            throw new TikaConfigException("Couldn't find 'server' element");
+            // no "server" block: same as {}, so a tika-app config works as is
+            tikaServerConfig = new TikaServerConfig();
         }
         PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
         if (pipesConfig != null) {
