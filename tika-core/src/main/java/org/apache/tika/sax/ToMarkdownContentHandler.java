@@ -45,6 +45,7 @@ import org.commonmark.node.Emphasis;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.HardLineBreak;
 import org.commonmark.node.Heading;
+import org.commonmark.node.HtmlInline;
 import org.commonmark.node.Image;
 import org.commonmark.node.Link;
 import org.commonmark.node.ListBlock;
@@ -104,6 +105,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     // Buffer for inline <code> literal (commonmark Code holds a literal, not children).
     private Code inlineCode;
     private StringBuilder inlineCodeText;
+
+    // Buffer for <span class="math ..."> TeX, written verbatim; depth counts nested spans.
+    private StringBuilder mathText;
+    private int mathSpanDepth;
 
     // Buffer for <pre> fenced code block literal.
     private FencedCodeBlock codeBlock;
@@ -253,6 +258,15 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 ensureInlineContainer();
                 stack.peek().appendChild(new HardLineBreak());
                 break;
+            case "span":
+                if (mathText != null) {
+                    mathSpanDepth++;
+                } else if (codeBlockText == null && inlineCodeText == null
+                        && isMathClass(atts.getValue("class"))) {
+                    mathText = new StringBuilder();
+                    mathSpanDepth = 1;
+                }
+                break;
             case "img":
                 ensureInlineContainer();
                 Image img = new Image(value(atts, "src"), null);
@@ -330,6 +344,12 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "div":
                 closeImplicitParagraph();
                 break;
+            case "span":
+                if (mathText != null && --mathSpanDepth == 0) {
+                    appendMath(mathText.toString());
+                    mathText = null;
+                }
+                break;
             case "table":
                 endTable();
                 break;
@@ -361,6 +381,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         }
         if (inlineCodeText != null) {
             inlineCodeText.append(ch, start, length);
+            return;
+        }
+        if (mathText != null) {
+            mathText.append(ch, start, length);
             return;
         }
 
@@ -635,6 +659,33 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         cell.setHeader(header || inHeaderRow);
         stack.peek().appendChild(cell);
         stack.push(cell);
+    }
+
+    /**
+     * TeX goes out raw: the renderer's escaping ({@code \\mathcal}, {@code u\\_0}) breaks
+     * math-aware readers. In a table cell the renderer still escapes {@code |}, which GFM
+     * unescapes on read.
+     */
+    private void appendMath(String tex) {
+        if (tex.isEmpty()) {
+            return;
+        }
+        ensureInlineContainer();
+        HtmlInline raw = new HtmlInline();
+        raw.setLiteral(collapseLineBreaks(tex));
+        stack.peek().appendChild(raw);
+    }
+
+    private static boolean isMathClass(String cls) {
+        if (cls == null) {
+            return false;
+        }
+        for (String token : cls.trim().split("\\s+")) {
+            if (token.equals("math")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static BulletList newBulletList() {

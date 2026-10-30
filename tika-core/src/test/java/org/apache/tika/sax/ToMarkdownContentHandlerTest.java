@@ -501,6 +501,51 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testMathSpanWrittenVerbatim() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "see u_0 and ");
+        startElement(handler, "span", "class", "math inline");
+        chars(handler, "$u_0 \\in ");
+        startElement(handler, "span");
+        chars(handler, "\\mathcal{H} *");
+        endElement(handler, "span");
+        chars(handler, "\n x$");
+        endElement(handler, "span");
+        endElement(handler, "p");
+        handler.endDocument();
+        String md = handler.toString();
+        assertContains("see u\\_0 and $u_0 \\in \\mathcal{H} *  x$", md);
+    }
+
+    @Test
+    public void testMathSpanInTableCellEscapesOnlyPipes() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        script(handler, "table", "tr", "th", "#h1", "/th", "th", "#h2", "/th", "/tr", "tr", "td");
+        startElement(handler, "span", "class", "math inline");
+        chars(handler, "$\\|x\\|_1$");
+        endElement(handler, "span");
+        script(handler, "/td", "td", "#2", "/td", "/tr", "/table");
+        handler.endDocument();
+        assertContains("|$\\\\|x\\\\|_1$|2|", handler.toString());
+    }
+
+    @Test
+    public void testNonMathSpanStillEscaped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "span", "class", "mathematics");
+        chars(handler, "u_0*");
+        endElement(handler, "span");
+        endElement(handler, "p");
+        handler.endDocument();
+        assertContains("u\\_0\\*", handler.toString());
+    }
+
+    @Test
     public void testBoldInsideListItem() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
