@@ -107,6 +107,15 @@ public class ToMarkdownContentHandlerTest {
                 atts.addAttribute("", "src", "src", "CDATA", "i.png");
                 atts.addAttribute("", "alt", "alt", "CDATA", "alt");
                 startElement(h, "img", atts);
+            } else if (op.contains(" ")) {
+                // "td colspan=2 rowspan=3"
+                String[] parts = op.split(" ");
+                AttributesImpl atts = new AttributesImpl();
+                for (int i = 1; i < parts.length; i++) {
+                    String[] kv = parts[i].split("=", 2);
+                    atts.addAttribute("", kv[0], kv[0], "CDATA", kv[1]);
+                }
+                startElement(h, parts[0], atts);
             } else {
                 startElement(h, op);
             }
@@ -926,6 +935,73 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testMergedCellsWriteHtmlTable() throws Exception {
+        String result = renderNoThrow("colspan", h -> script(h,
+                "p", "#before", "/p",
+                "table", "thead", "tr", "th colspan=2", "#Region", "/th", "/tr", "/thead",
+                "tbody", "tr", "td rowspan=2", "#North", "/td", "td", "#1 < 2 & *x*", "/td", "/tr",
+                "tr", "td colspan=1", "#Q", "b", "#2", "/b", "/td", "/tr", "/tbody", "/table",
+                "p", "#after", "/p"));
+        assertEquals("before\n\n"
+                + "<table><thead><tr><th colspan=\"2\">Region</th></tr>\n</thead>\n"
+                + "<tbody><tr><td rowspan=\"2\">North</td><td>1 &lt; 2 &amp; *x*</td></tr>\n"
+                + "<tr><td>Q<b>2</b></td></tr>\n</tbody>\n</table>\n\n"
+                + "after\n", result);
+    }
+
+    @Test
+    public void testNestedTableRowsAndCellsSeparated() throws Exception {
+        String result = renderNoThrow("nested", h -> script(h,
+                "table", "tr", "th", "#outer", "/th", "/tr",
+                "tr", "td", "table", "tr", "td", "#a", "/td", "td", "#b", "/td", "/tr",
+                "tr", "td", "#c", "/td", "/tr", "/table", "#tail", "/td", "/tr",
+                "/table", "p", "#after", "/p"));
+        assertFalse(result.contains("<table"), result);
+        assertContains("|a b<br>c<br>tail|", result);
+    }
+
+    @Test
+    public void testNestedTableInMergedCellTableKeptInHtml() throws Exception {
+        String result = renderNoThrow("nested in spans", h -> script(h,
+                "table", "tr", "td colspan=2", "table", "tr", "td", "#inner", "/td", "/tr",
+                "/table", "/td", "/tr", "/table"));
+        assertContains("<td colspan=\"2\"><table><tr><td>inner</td></tr></table></td>", result);
+    }
+
+    @Test
+    public void testHtmlTableHasNoBlankLine() throws Exception {
+        // a CommonMark HTML block ends at the first blank line
+        String result = renderNoThrow("blank lines", h -> script(h,
+                "table", "tr", "td colspan=2", "#a\n\n\nb", "/td", "/tr",
+                "tr", "td", "pre", "#x\n\ny", "/pre", "/td", "td", "p", "#one", "/p",
+                "p", "#two", "/p", "/td", "/tr", "/table"));
+        String table = result.substring(0, result.indexOf("</table>"));
+        assertFalse(table.contains("\n\n"), result);
+        assertContains("<td colspan=\"2\">a b</td>", result);
+        assertContains("<pre>x&#10;&#10;y</pre>", result);
+        assertContains("<td><p>one</p><p>two</p></td>", result);
+    }
+
+    @Test
+    public void testPlainTableStaysPipeTable() throws Exception {
+        String result = renderNoThrow("plain", h -> script(h,
+                "table", "tr", "th colspan=1", "#a", "/th", "th", "#b", "/th", "/tr",
+                "tr", "td", "p", "#one", "/p", "p", "#two", "/p", "/td", "td", "#2", "/td", "/tr",
+                "/table"));
+        assertFalse(result.contains("<table"), result);
+        assertContains("|a|b|", result);
+    }
+
+    @Test
+    public void testHtmlTableInListItem() throws Exception {
+        String result = renderNoThrow("in list", h -> script(h,
+                "ul", "li", "#item", "table", "tr", "td colspan=2", "#x", "/td", "/tr", "/table",
+                "/li", "/ul", "p", "#after", "/p"));
+        assertContains("<td colspan=\"2\">x</td>", result);
+        assertContains("after", result);
+    }
+
+    @Test
     public void testNoEscapedSpaceAtLineStart() throws Exception {
         String result = renderNoThrow("whitespace after br", h -> script(h,
                 "p", "#Com mon", "br", "/br", "#\n Nam", "/p",
@@ -997,7 +1073,7 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
-    public void testNestedTablesIgnored() throws Exception {
+    public void testNestedTableSeparatedInCell() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
 
@@ -1021,7 +1097,6 @@ public class ToMarkdownContentHandlerTest {
         startElement(handler, "td");
         chars(handler, "B");
 
-        // Nested table -- should be ignored
         startElement(handler, "table");
         startElement(handler, "tr");
         startElement(handler, "td");
@@ -1038,13 +1113,10 @@ public class ToMarkdownContentHandlerTest {
         handler.endDocument();
 
         String result = handler.toString();
-        // Outer table should be rendered
-        assertTrue(result.contains("|Outer1|Outer2|"));
-        assertTrue(result.contains("|---|---|"));
-        // Inner cell text gets folded into the outer cell ("B" + "Inner" = "BInner")
-        assertTrue(result.contains("|A|BInner|"));
-        // Inner table structure should not appear as a separate table
-        assertFalse(result.contains("|Inner|"));
+        assertTrue(result.contains("|Outer1|Outer2|"), result);
+        // the nested table's text is kept apart from the cell's ("BInner" before)
+        assertTrue(result.contains("|A|B<br>Inner|"), result);
+        assertFalse(result.contains("<table"), result);
     }
 
     private static final String[] ALL_ELEMENTS = {

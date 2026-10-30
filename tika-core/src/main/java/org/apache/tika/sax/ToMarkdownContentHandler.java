@@ -45,6 +45,7 @@ import org.commonmark.node.Emphasis;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.HardLineBreak;
 import org.commonmark.node.Heading;
+import org.commonmark.node.HtmlBlock;
 import org.commonmark.node.HtmlInline;
 import org.commonmark.node.Image;
 import org.commonmark.node.Link;
@@ -64,7 +65,8 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * SAX event handler that writes content as Markdown.
  * Supports headings, paragraphs, bold, italic, strikethrough, links, images,
- * lists (ordered and unordered, including nested), tables (GFM pipe tables),
+ * lists (ordered and unordered, including nested), tables (GFM pipe tables, or HTML
+ * when a table has merged cells, which a pipe table cannot express),
  * code blocks, inline code, blockquotes, horizontal rules, and definition
  * lists.
  * <p>
@@ -120,6 +122,11 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     private TableBody tableBody;
     private int rowIndex;
     private boolean inHeaderRow;
+    // The outermost table as HTML, used instead of the pipe table when it has merged cells.
+    private HtmlTableRecorder tableHtml;
+    private boolean tableNeedsHtml;
+    // Text after a nested table's end, in the same outer cell, starts a new line.
+    private boolean breakAfterNestedTable;
 
     // <script>/<style> content is dropped.
     private int suppressDepth;
@@ -153,6 +160,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         if (suppressDepth > 0) {
             return;
         }
+        recordTableStart(name, atts);
 
         switch (name) {
             // --- block-level ---
@@ -207,12 +215,15 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 startTable();
                 break;
             case "tr":
+                separateNested(true);
                 startRow();
                 break;
             case "th":
+                separateNested(false);
                 startCell(true);
                 break;
             case "td":
+                separateNested(false);
                 startCell(false);
                 break;
             case "dt":
@@ -297,6 +308,9 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         if (suppressDepth > 0) {
             return;
         }
+        if (tableHtml != null) {
+            tableHtml.end(name);
+        }
 
         switch (name) {
             case "h1":
@@ -352,6 +366,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 }
                 break;
             case "table":
+                breakAfterNestedTable = tableDepth > 1;
                 endTable();
                 break;
             case "tr":
@@ -364,6 +379,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "td":
                 if (tableDepth == 1) {
                     pop();
+                    breakAfterNestedTable = false;
                 }
                 break;
             default:
@@ -375,6 +391,9 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     public void characters(char[] ch, int start, int length) throws SAXException {
         if (suppressDepth > 0) {
             return;
+        }
+        if (tableHtml != null) {
+            tableHtml.characters(ch, start, length);
         }
         if (codeBlockText != null) {
             codeBlockText.append(ch, start, length);
@@ -401,6 +420,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         if (isStructuralOnly(stack.peek())) {
             // Stray text inside a list/table wrapper — not a valid inline position; drop.
             return;
+        }
+        if (breakAfterNestedTable) {
+            breakAfterNestedTable = false;
+            separateInCell(true);
         }
         ensureInlineContainer();
         if (atLineStart()) {
@@ -627,12 +650,72 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         }
     }
 
+    private void recordTableStart(String name, Attributes atts) {
+        if (name.equals("table")) {
+            if (tableDepth == 0) {
+                tableHtml = new HtmlTableRecorder();
+                tableNeedsHtml = false;
+            }
+        } else if (tableHtml != null && (name.equals("td") || name.equals("th"))
+                && HtmlTableRecorder.isSpanned(atts)) {
+            tableNeedsHtml = true;
+        }
+        if (tableHtml != null) {
+            tableHtml.start(name, atts);
+        }
+    }
+
     private void endTable() {
         if (tableDepth == 1) {
+            if (tableNeedsHtml && tableHtml != null && tableBlock != null) {
+                replaceWithHtml(tableBlock, tableHtml.html());
+            }
+            tableHtml = null;
             tableBlock = null;
             tableBody = null;
         }
         tableDepth = Math.max(0, tableDepth - 1);
+    }
+
+    /**
+     * A nested table is flattened into its outer cell; keep its rows and cells apart
+     * there ({@code <br>} between rows, a space between cells).
+     */
+    private void separateNested(boolean lineBreak) {
+        if (tableDepth >= 2) {
+            separateInCell(lineBreak);
+        }
+    }
+
+    private void separateInCell(boolean lineBreak) {
+        if (!inTableCell()) {
+            return;
+        }
+        Node top = stack.peek();
+        if (top.getLastChild() == null || atLineStart()) {
+            return;
+        }
+        top.appendChild(lineBreak ? newBrInline() : new Text(" "));
+    }
+
+    /** Swaps the pipe table for an HTML block, closing anything still open inside it. */
+    private void replaceWithHtml(TableBlock table, String html) {
+        while (stack.size() > 1 && isWithin(stack.peek(), table)) {
+            pop();
+        }
+        HtmlBlock block = new HtmlBlock();
+        block.setLiteral(html);
+        table.insertBefore(block);
+        table.unlink();
+    }
+
+    private static boolean isWithin(Node n, Node ancestor) {
+        for (Node p = n; p != null; p = p.getParent()) {
+            if (p == ancestor) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void startRow() {

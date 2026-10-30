@@ -385,6 +385,23 @@ public class MarkdownToXHTMLEmitterTest {
         assertContains("|$\\\\|x\\\\|$|2|", written);
     }
 
+    @Test
+    void testMergedCellTableRoundTripsThroughMarkdownWriter() throws Exception {
+        String md = "<table><thead><tr><th colspan=\"2\">Region</th></tr></thead>\n"
+                + "<tbody><tr><td rowspan=\"2\">North</td><td>1 &lt; 2, $\\|x\\|$</td></tr>\n"
+                + "<tr><td><b>Q</b>2<table><tr><td>inner</td></tr></table></td></tr>"
+                + "</tbody></table>\n\nafter\n";
+        String first = emit(md);
+        assertContains("<th colspan=\"2\">", first);
+        ToMarkdownContentHandler out = new ToMarkdownContentHandler();
+        out.startDocument();
+        MarkdownToXHTMLEmitter.emit(md, out);
+        out.endDocument();
+        String written = out.toString();
+        assertContains("<th colspan=\"2\">Region</th>", written);
+        assertEquals(first, emit(written), written);
+    }
+
     private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
 
     /**

@@ -67,6 +67,11 @@ Release 4.3.0 - ???
      longer splits, and no longer prefixes the text after a line break or at the start
      of a paragraph with &#32; (TIKA-5012).
 
+   * Markdown output writes a table with merged cells (colspan/rowspan) as an HTML table
+     instead of a pipe table, which dropped the spans. A nested table is still flattened
+     into its cell, now with <br> between its rows and a space between its cells; its text
+     was fused with the cell's before (TIKA-5015).
+
    * A PDF with pages that pages.ocr.maxPages kept from the OCR engine records
      skipped:max-pages in tk:ocr-warnings; before, the cap left no trace and
      pdf:ocr-page-count still counted those pages (TIKA-5013).
