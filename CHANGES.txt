@@ -55,6 +55,10 @@ Release 4.3.0 - ???
      DER: Pkcs7Parser and the opt-in pkcs-7-detector report the smime-type and extract
      signed content; -----BEGIN CMS----- is now detected (TIKA-5002).
 
+   * Markdown output writes a line break inside a table cell as <br>, so the row no
+     longer splits, and no longer prefixes the text after a line break or at the start
+     of a paragraph with &#32; (TIKA-5012).
+
 Release 4.2.0 - 10/25/2026
 
   BREAKING CHANGES AND DEPRECATIONS

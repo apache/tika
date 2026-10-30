@@ -854,6 +854,31 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testTableCellLineBreak() throws Exception {
+        // the shape a VLM table with multi-line cells arrives in
+        String result = renderNoThrow("br in cells", h -> script(h,
+                "table", "tr", "th", "#Nandina", "br", "/br", "#\n(berrying varieties)", "/th",
+                "th", "#Name", "/th", "/tr",
+                "tr", "td", "#Bush Germander,", "br", "/br", "# ", "#Barbados Cherry", "/td",
+                "td", "#x", "/td", "/tr", "/table"));
+        assertTrue(result.contains("|Nandina<br>(berrying varieties)|Name|\n"), result);
+        assertTrue(result.contains("|Bush Germander,<br>Barbados Cherry|x|\n"), result);
+        assertFalse(result.contains("&#32;"), result);
+    }
+
+    @Test
+    public void testNoEscapedSpaceAtLineStart() throws Exception {
+        String result = renderNoThrow("whitespace after br", h -> script(h,
+                "p", "#Com mon", "br", "/br", "#\n Nam", "/p",
+                "p", "#one", "br", "/br", "# ", "#two", "/p",
+                "p", "# ", "# lead", "/p"));
+        assertTrue(result.contains("Com mon  \nNam"), result);
+        assertTrue(result.contains("one  \ntwo"), result);
+        assertTrue(result.contains("\nlead"), result);
+        assertFalse(result.contains("&#32;"), result);
+    }
+
+    @Test
     public void testHandlerTypeParsingMarkdown() {
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN,
                 BasicContentHandlerFactory.parseHandlerType("markdown",
