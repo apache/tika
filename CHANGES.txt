@@ -46,6 +46,11 @@ Release 4.3.0 - ???
 
   OTHER CHANGES
 
+   * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
+     list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
+     and checks tk:parsed-by-full-set, not pdf:ocr-page-count, to confirm OCR ran. A test
+     loads every config in the user skills in tika-app and tika-server (TIKA-XXXX).
+
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
      their next fetch, through a change token on file and ignite stores
      (ConfigStore.changeToken); before, a worker kept the instance it first built

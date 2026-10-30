@@ -123,29 +123,26 @@ fail inside the container even though it works fine outside it.
 Don't assume the `-full` image means OCR fired on a given file — confirm it,
 especially the first time you stand one up.
 
-**For PDFs**, `pdf:ocr-page-count` is a verified, code-confirmed signal —
-non-zero means Tesseract processed that many pages:
+The signal is `tk:parsed-by-full-set`: it lists
+`org.apache.tika.parser.ocr.TesseractOCRParser` when Tesseract was run on the
+file (a PDF page or an image), and leaves it out when it wasn't:
 
 ```bash
-curl -T scanned.pdf http://localhost:9998/rmeta | jq '.[0]."pdf:ocr-page-count"'
+curl -T scanned.pdf http://localhost:9998/rmeta | jq '.[0]."tk:parsed-by-full-set"'
 ```
 
-Secondary evidence: the same entry's `tk:parsed-by-full-set` lists
-`org.apache.tika.parser.ocr.TesseractOCRParser` when Tesseract ran.
+Do **not** use `pdf:ocr-page-count` for this. It counts the pages that looked
+like they needed OCR, whether or not an engine ran, so it is non-zero with OCR
+turned off too. `tk:ocr-warnings` names input the engine was not given:
+`skipped:<reason>` from an image check, `skipped:max-pages` once a
+`pages.ocr.maxPages` cap is reached (4.3.0+).
 
-`0` or `null` means OCR didn't run on this PDF — check you're on `-full` (not
-minimal), that the PDF is actually image-only (a PDF with a real text layer
-correctly skips OCR — that's not a bug), and that no mounted config sets
-`skipOcr: true` (see below). If the key exists but under a **camelCase name**
-(`pdf:ocrPageCount`) — or you see `X-TIKA:*` keys — your image predates the
-4.0.0 metadata-key renames; upgrade the image rather than adapting to the old
-spellings.
-
-**For standalone images** (not embedded in a PDF), there's no single
-verified flag confirmed here — this skill doesn't have a code-checked answer
-for that case yet. The pragmatic fallback: compare extracted-text length
-against a file you know is a genuine scan; suspiciously empty output on a
-visibly text-bearing image is the same "wrong image" signal as above.
+No engine listed means OCR didn't run — check you're on `-full` (not
+minimal), that the file actually needs it (a PDF with a real text layer
+correctly skips OCR — that's not a bug), and that no mounted config turns it
+off (see below). If you see camelCase keys (`pdf:ocrPageCount`) or `X-TIKA:*`
+keys, your image predates the 4.0.0 metadata-key renames; upgrade the image
+rather than adapting to the old spellings.
 
 ## Configuration (turning OCR off, or anything else)
 
@@ -159,17 +156,22 @@ docker run -d -p 127.0.0.1:9998:9998 \
   apache/tika:<version>-full -c /tika-config.json
 ```
 
+Through 4.2.x the server refuses a config file without a `server` block
+(`Couldn't find 'server' element`), so include one, even if empty; it is
+harmless on later versions.
+
 To keep `-full`'s other parsers but disable OCR specifically (e.g. you only
-wanted GDAL):
+wanted GDAL), empty the `text-recognizers` list (4.1.0+):
 
 ```json
 {
-  "parsers": [
-    { "default-parser": {} },
-    { "tesseract-ocr-parser": { "skipOcr": true } }
-  ]
+  "server": {},
+  "text-recognizers": []
 }
 ```
+
+Since 4.2.0 an OCR engine under `parsers` fails the config load; engines go
+under `engines` and are named in `text-recognizers`.
 
 ## Memory
 
