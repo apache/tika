@@ -72,6 +72,9 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             new HashMap<>();
     private static final char[] SPACE = new char[]{' '};
     private static final String CLASS = "class";
+    // ODF 1.2+ sheet limits
+    private static final int MAX_COLUMNS = 16384;
+    private static final int MAX_ROWS = 1048576;
     private static final Attributes ANNOTATION_ATTRIBUTES = buildAttributes(CLASS, "annotation");
     private static final Attributes NOTE_ATTRIBUTES = buildAttributes(CLASS, "note");
     private static final Attributes NOTES_ATTRIBUTES = buildAttributes(CLASS, "notes");
@@ -104,27 +107,21 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
         // create HTML tables from table:-tags
         MAPPINGS.put(new QName(TABLE_NS, "table"), new TargetElement(XHTML, "table"));
-        // repeating of rows is ignored; for columns, see below!
+        // number-rows-repeated: see RepeatedElementHandler
         MAPPINGS.put(new QName(TABLE_NS, "table-row"), new TargetElement(XHTML, "tr"));
         // special mapping for rowspan/colspan attributes
         final HashMap<QName, QName> tableCellAttsMapping = new HashMap<>();
         tableCellAttsMapping
                 .put(new QName(TABLE_NS, "number-columns-spanned"), new QName("colspan"));
         tableCellAttsMapping.put(new QName(TABLE_NS, "number-rows-spanned"), new QName("rowspan"));
-        /* TODO: The following is not correct, the cell should be repeated not spanned!
-         * Code generates a HTML cell, spanning all repeated columns, to make the cell look correct.
-         * Problems may occur when both spanning and repeating is given, which is not allowed by
-         *  spec.
-         * Cell spanning instead of repeating  is not a problem, because OpenOffice uses it
-         * only for empty cells.
-         */
-        tableCellAttsMapping
-                .put(new QName(TABLE_NS, "number-columns-repeated"), new QName("colspan"));
+        // number-columns-repeated: see RepeatedElementHandler
         MAPPINGS.put(new QName(TABLE_NS, "table-cell"),
                 new TargetElement(XHTML, "td", tableCellAttsMapping));
     }
 
     private final ContentHandler handler;
+    private final RepeatedElementHandler repeatedCells;
+    private final RepeatedElementHandler repeatedRows;
     private final ParseContext parseContext;
     private final BitSet textNodeStack = new BitSet();
     //have we written the start style tags
@@ -156,10 +153,47 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     // is that bold/italic/underline runs that begin or end inside a link lose
     // their formatting in the captured XHTML.
     private int anchorDepth = 0;
-    OpenDocumentBodyHandler(ContentHandler handler, ParseContext parseContext) {
-        super(handler, MAPPINGS);
-        this.handler = handler;
+    OpenDocumentBodyHandler(ContentHandler handler, ParseContext parseContext, Metadata metadata) {
+        this(new RepeatedElementHandler(handler, "tr", "table", MAX_ROWS,
+                new RepeatedElementHandler.Budget(metadata)), parseContext);
+    }
+
+    private OpenDocumentBodyHandler(RepeatedElementHandler rows, ParseContext parseContext) {
+        this(new RepeatedElementHandler(rows, "td", "tr", MAX_COLUMNS, rows.budget()), rows,
+                parseContext);
+    }
+
+    private OpenDocumentBodyHandler(RepeatedElementHandler cells, RepeatedElementHandler rows,
+                                    ParseContext parseContext) {
+        super(cells, MAPPINGS);
+        this.handler = cells;
+        this.repeatedCells = cells;
+        this.repeatedRows = rows;
         this.parseContext = parseContext;
+    }
+
+    /**
+     * Writes table content still held for repeat handling. Call when the parse fails,
+     * so the partly read row is not lost.
+     */
+    void flushBuffered(Exception cause) {
+        try {
+            repeatedCells.flushBuffered();
+            repeatedRows.flushBuffered();
+        } catch (SAXException e) {
+            cause.addSuppressed(e);
+        }
+    }
+
+    private static int parseRepeat(String value) {
+        if (value == null) {
+            return 1;
+        }
+        try {
+            return Math.max(1, Integer.parseInt(value.trim()));
+        } catch (NumberFormatException e) {
+            return 1;
+        }
     }
 
     private static Attributes buildAttributes(String key, String value) {
@@ -478,6 +512,13 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         }
         // call next handler if no filtering
         if (completelyFiltered == 0) {
+            if (TABLE_NS.equals(namespaceURI) && "table-cell".equals(localName)) {
+                repeatedCells.repeatNext(
+                        parseRepeat(attrs.getValue(TABLE_NS, "number-columns-repeated")));
+            } else if (TABLE_NS.equals(namespaceURI) && "table-row".equals(localName)) {
+                repeatedRows.repeatNext(
+                        parseRepeat(attrs.getValue(TABLE_NS, "number-rows-repeated")));
+            }
             // special handling of text:h, that are directly passed
             // to incoming handler
             if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {

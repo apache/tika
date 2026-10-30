@@ -52,6 +52,13 @@ Release 4.3.0 - ???
      and split GFM table cells on |. Math is emitted as <span class="math inline"> or
      <span class="math display">, and the Markdown writer outputs it unescaped (TIKA-5011).
 
+   * The OpenDocument parser writes repeated cells and rows (table:number-columns-repeated,
+     table:number-rows-repeated) once per repeat; a cell was written once with that
+     colspan and a row once, so values repeated across columns or rows were lost. Empty
+     cells and rows at the end of a row or table, such as the filler out to a sheet's
+     last column and row, are dropped. Past 10 million characters of repeated content
+     per document the rest are written once, with a tk:exception:warn entry (TIKA-5014).
+
   OTHER CHANGES
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
