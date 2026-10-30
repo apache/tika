@@ -293,7 +293,38 @@ public class MarkdownToXHTMLEmitterTest {
     void testInlineHtmlTagsDroppedTextKept() throws Exception {
         String md = "This is <b>bold</b>, x<sup>2</sup> and a<br>break.";
         String xml = emit(md);
-        assertContains("<p>This is bold, x2 and a<br/>break.</p>", xml);
+        assertContains("<p>This is bold, x<sup>2</sup> and a<br/>break.</p>", xml);
+    }
+
+    @Test
+    void testInlineSupSub() throws Exception {
+        String xml = emit("E = mc<SUP>2</SUP>, H<sub>2</sub>O, x<sup>a<sub>i</sub></sup> and word<sup>3</sup>");
+        assertContains("<p>E = mc<sup>2</sup>, H<sub>2</sub>O, x<sup>a<sub>i</sub></sup>"
+                + " and word<sup>3</sup></p>", xml);
+    }
+
+    @Test
+    void testUnbalancedSupSubKeepTextOnly() throws Exception {
+        String xml = emit("a<sup>1 b</sup>2</sup> c<sub>3 d<sup>4</sub>5</sup> e<sup>6\n\nf</sup>");
+        assertContains("a<sup>1 b</sup>2 c3 d45 e6", xml);
+        // *...* closes inside the sup: the pair is not siblings, so text only
+        xml = emit("*a<sup>b*</sup> c");
+        assertContains("<i>ab</i> c", xml);
+    }
+
+    @Test
+    void testSupSubRoundTripsThroughMarkdownWriter() throws Exception {
+        String md = "x<sup>2</sup> and H<sub>2</sub>O\n\n"
+                + "| a | b |\n|---|---|\n| m<sup>3</sup> | 2 |\n\n"
+                + "<table><tr><td>cm<sup>2</sup></td></tr></table>\n";
+        ToMarkdownContentHandler out = new ToMarkdownContentHandler();
+        out.startDocument();
+        MarkdownToXHTMLEmitter.emit(md, out);
+        out.endDocument();
+        String written = out.toString();
+        assertContains("x<sup>2</sup> and H<sub>2</sub>O", written);
+        assertContains("|m<sup>3</sup>|2|", written);
+        assertContains("cm<sup>2</sup>", written);
     }
 
     @Test

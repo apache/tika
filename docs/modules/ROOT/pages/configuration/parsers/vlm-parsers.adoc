@@ -310,9 +310,18 @@ instead of dumping raw text. GFM tables and strikethrough are supported.
 
 Document-OCR models such as jina-ocr-v1 and DeepSeek-OCR write tables as raw HTML inside the
 markdown, and a prompt does not change that. An HTML block is parsed leniently and re-emitted as
-the same structural elements (`table`, `tr`, `th`, `td`, `p`, lists, headings) with attributes
-dropped except `colspan` and `rowspan`; other elements contribute their text, and `script`/`style` contribute nothing. Inline
-HTML tags are dropped and their text kept, except `<br>`.
+the same elements (`table`, `tr`, `th`, `td`, `p`, lists, headings, `blockquote`, `pre`, `code`,
+`b`, `i`, `s`, `sup`, `sub`) with attributes dropped except `colspan` and `rowspan`; other
+elements contribute their text, and `script`/`style` contribute nothing. Outside an HTML block,
+inline HTML tags are dropped and their text kept, except `<br>` and matched `<sup>`/`<sub>` pairs.
+
+Superscripts and subscripts are `sup`/`sub` in XHTML and inline HTML in markdown output
+(`x<sup>2</sup>`); plain-text output reads `x2`.
+
+TeX math (`$...$`, `$$...$$`, `\(...\)`, `\[...\]`) is kept verbatim, delimiters included, in
+`<span class="math inline">` or `<span class="math display">`, and written unescaped in markdown
+output. A `$` followed by a space, or a closing `$` followed by a digit, is not math, so prices are
+left alone. Math containing a backtick or a blank line is not recognized.
 
 [#_per_request_configuration]
 == Per-request configuration
