@@ -18,9 +18,11 @@ package org.apache.tika.parser.vlm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
+import java.time.Duration;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
@@ -28,6 +30,8 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.xml.secure.SecureTransformerFactory;
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.sax.ToMarkdownContentHandler;
 
 public class MarkdownToXHTMLEmitterTest {
 
@@ -290,6 +294,95 @@ public class MarkdownToXHTMLEmitterTest {
         String md = "This is <b>bold</b>, x<sup>2</sup> and a<br>break.";
         String xml = emit(md);
         assertContains("<p>This is bold, x2 and a<br/>break.</p>", xml);
+    }
+
+    @Test
+    void testInlineMathKeepsBackslashedPunctuation() throws Exception {
+        String xml = emit("the norm $\\|\\cdot\\|$ on $S := \\{u \\in \\mathcal{H}\\}$ here");
+        assertContains("<span class=\"math inline\">$\\|\\cdot\\|$</span>", xml);
+        assertContains("<span class=\"math inline\">$S := \\{u \\in \\mathcal{H}\\}$</span>", xml);
+    }
+
+    @Test
+    void testMathDelimiters() throws Exception {
+        assertContains("<span class=\"math inline\">\\(\\{x\\}\\)</span>", emit("a \\(\\{x\\}\\) b"));
+        assertContains("<span class=\"math display\">\\[\\|x\\|\\]</span>", emit("\\[\\|x\\|\\]"));
+        assertContains("<span class=\"math display\">$$a_1 * b_2$$</span>", emit("$$a_1 * b_2$$"));
+    }
+
+    @Test
+    void testMultiLineDisplayMathIsNotParsedAsBlocks() throws Exception {
+        String xml = emit("$$\nx = a\n- b\n# c\n$$\n\nafter");
+        assertContains("<span class=\"math display\">$$\nx = a\n- b\n# c\n$$</span>", xml);
+        assertFalse(xml.contains("<li>"), xml);
+        assertFalse(xml.contains("<h1>"), xml);
+    }
+
+    @Test
+    void testMathKeepsEmphasisMarkersLiteral() throws Exception {
+        String xml = emit("$a_1 * b_2 * c_3$ and *em*");
+        assertContains("<span class=\"math inline\">$a_1 * b_2 * c_3$</span>", xml);
+        assertContains("<i>em</i>", xml);
+    }
+
+    @Test
+    void testDollarsThatAreNotMath() throws Exception {
+        for (String md : new String[] {"costs $5 and $10 today", "a $ b$ c", "a $b $ c",
+                "pay $x$5", "lone $$ here", "escaped \\$x\\$ here", "split $a\n\nb$"}) {
+            String xml = emit(md);
+            assertFalse(xml.contains("math"), md + " -> " + xml);
+        }
+        assertContains("costs $5 and $10 today", emit("costs $5 and $10 today"));
+    }
+
+    @Test
+    void testMathInsideCodeIsUntouched() throws Exception {
+        assertContains("<code>$\\|x\\|$</code>", emit("see `$\\|x\\|$` here"));
+        assertContains("<code>$\\{a\\}$\n</code>", emit("```\n$\\{a\\}$\n```"));
+        // a code span that opens first wins over a later $
+        String xml = emit("`cost $5` and $x$");
+        assertContains("<code>cost $5</code>", xml);
+        assertContains("<span class=\"math inline\">$x$</span>", xml);
+    }
+
+    @Test
+    void testMathWithPipesInGfmTable() throws Exception {
+        String xml = emit("| a | b |\n|---|---|\n| $\\|x\\|$ | 2 |\n");
+        assertContains("<td><span class=\"math inline\">$\\|x\\|$</span></td><td>2</td>", xml);
+    }
+
+    @Test
+    void testMathInHtmlTableBlock() throws Exception {
+        String xml = emit("<table><tr><td>$\\{a\\} < b$</td></tr></table>");
+        assertContains("<td><span class=\"math inline\">$\\{a\\} &lt; b$</span></td>", xml);
+    }
+
+    @Test
+    void testPlaceholderCharactersInInputPassThrough() throws Exception {
+        String md = "odd \uE000" + "0\uE001 and $\\{x\\}$";
+        String xml = emit(md);
+        assertContains("odd \uE000" + "0\uE001 and $", xml);
+        assertFalse(xml.contains("<span"), xml);
+    }
+
+    @Test
+    void testManyUnmatchedDollarsIsLinear() {
+        String md = "$a ".repeat(200_000);
+        assertTimeoutPreemptively(Duration.ofSeconds(20), () -> emit(md));
+    }
+
+    @Test
+    void testMathRoundTripsThroughMarkdownWriter() throws Exception {
+        String md = "norm $\\|\\cdot\\|$ with $u_0 \\in \\mathcal{H}$\n\n"
+                + "| a | b |\n|---|---|\n| $\\|x\\|$ | 2 |\n";
+        ToMarkdownContentHandler out = new ToMarkdownContentHandler();
+        out.startDocument();
+        MarkdownToXHTMLEmitter.emit(md, out);
+        out.endDocument();
+        String written = out.toString();
+        assertContains("norm $\\|\\cdot\\|$ with $u_0 \\in \\mathcal{H}$", written);
+        // GFM unescapes \| in a cell before math, so a renderer sees $\|x\|$
+        assertContains("|$\\\\|x\\\\|$|2|", written);
     }
 
     private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";

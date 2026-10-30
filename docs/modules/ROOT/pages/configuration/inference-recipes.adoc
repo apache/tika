@@ -65,7 +65,9 @@ text is poor. The key comes from the environment
 
 The model returns markdown with tables as raw HTML, whatever the prompt says; Tika parses both
 into XHTML, so a table is a `<table>` in every output format and a pipe table in markdown. Body
-cells come back as `<th>` and are passed through as such. The load-time health check reads the
+cells come back as `<th>` and are passed through as such. Math comes back as LaTeX; Tika keeps it
+verbatim, delimiters included, in `<span class="math inline">` or `<span class="math display">`,
+and writes it unescaped in markdown. The load-time health check reads the
 public `/v1/models`, so a wrong key passes startup and surfaces on the first request as the
 document's parse exception (HTTP 401 in the message).
 

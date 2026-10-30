@@ -44,6 +44,14 @@ Release 4.3.0 - ???
      async emitter threads) shared one connection and prepared statement unguarded,
      mixing values across rows and committing each other's batches (TIKA-5007).
 
+  EXTRACTION AND FORMATS
+
+   * VLM text recognizers (jina-ocr, OpenAI-compatible, Claude, Gemini) no longer corrupt
+     LaTeX math in model output: $...$, $$...$$, \(...\) and \[...\] are kept verbatim
+     instead of being read as Markdown, which dropped the backslash from \{, \} and \|
+     and split GFM table cells on |. Math is emitted as <span class="math inline"> or
+     <span class="math display">, and the Markdown writer outputs it unescaped (TIKA-5011).
+
   OTHER CHANGES
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
