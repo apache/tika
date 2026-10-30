@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -259,6 +260,41 @@ class HttpFetcherTest extends TikaTest {
         // Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
 
 
+    }
+
+    /**
+     * httpcore writes a header name as given (only a value has CR and LF folded), so a
+     * per-request header name carrying CRLF would inject request lines.
+     */
+    @Test
+    public void testHeadersWithCrLfAreRefused() throws Exception {
+        HttpResponse response = buildMockResponse(HttpStatus.SC_OK, IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
+        HttpClient httpClient = Mockito.mock(HttpClient.class);
+        Mockito.when(httpClient.execute(ArgumentMatchers.any(HttpUriRequest.class), ArgumentMatchers.any(HttpContext.class)))
+                .thenReturn(response);
+        httpFetcher.setHttpClient(httpClient);
+
+        ParseContext nameContext = new ParseContext();
+        nameContext.setJsonConfig("http-fetcher", OBJECT_MAPPER.writeValueAsString(
+                Map.of("httpRequestHeaders", Map.of("map", Map.of(
+                        "X-Test\r\nInjected: yes\r\n\r\nPOST /evil HTTP/1.1\r\nHost: h",
+                        List.of("v"))))));
+        assertThrows(TikaException.class,
+                () -> httpFetcher.fetch("http://localhost", new Metadata(), nameContext));
+
+        ParseContext valueContext = new ParseContext();
+        valueContext.setJsonConfig("http-fetcher", OBJECT_MAPPER.writeValueAsString(
+                Map.of("httpRequestHeaders", Map.of("map", Map.of(
+                        "X-Test", List.of("v\r\nInjected: yes"))))));
+        assertThrows(TikaException.class,
+                () -> httpFetcher.fetch("http://localhost", new Metadata(), valueContext));
+
+        Metadata metadata = new Metadata();
+        metadata.set(Property.externalText("httpRequestHeaders"), "X-Test\r\nInjected: yes: v");
+        assertThrows(TikaException.class,
+                () -> httpFetcher.fetch("http://localhost", metadata, new ParseContext()));
+
+        Mockito.verifyNoInteractions(httpClient);
     }
 
     @Test
