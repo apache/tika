@@ -1817,6 +1817,41 @@ public class PDFParserTest extends TikaTest {
         assertContainsCount("This is a page about", xml, 1);
         assertContains("Denmark", xml);
         assertEquals(2, metadata.getInt(PDF.OCR_PAGE_COUNT));
+        assertEquals(List.of("skipped:max-pages"),
+                List.of(metadata.getValues(TikaCoreProperties.OCR_WARNINGS)));
+    }
+
+    /** The max-pages warning marks only a document the cap actually cut short. */
+    @Test
+    public void testAutoOcrMaxPagesUnderCapNoWarning() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        auto(config, 0.02f, 1_000_000);
+        config.pages().ocr().setMaxPages(2);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, mockOcrParser(config, "MOCK_OCR_CONTENT"));
+        Metadata metadata = new Metadata();
+
+        String xml = parsePdfToXml("testPDF_bookmarks.pdf", metadata, context);
+
+        assertContainsCount("MOCK_OCR_CONTENT", xml, 2);
+        assertEquals(0, metadata.getValues(TikaCoreProperties.OCR_WARNINGS).length);
+    }
+
+    /** With no engine nothing would have been OCR'd, so the cap cut nothing short. */
+    @Test
+    public void testAutoOcrMaxPagesNoEngineNoWarning() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        auto(config, 0.02f, 1_000_000);
+        config.pages().ocr().setMaxPages(1);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        Metadata metadata = new Metadata();
+
+        parsePdfToXml("testPDF_bookmarks.pdf", metadata, context);
+
+        assertEquals(2, metadata.getInt(PDF.OCR_PAGE_COUNT));
+        assertEquals(0, metadata.getValues(TikaCoreProperties.OCR_WARNINGS).length);
     }
 
     /** TIKA-4883: inline-image markers are written after the recorded text and survive OCR. */

@@ -142,7 +142,10 @@ thumbnail presets set `imageType: RGB` and a box for that reason.
 == `ocr`: the recognizer's budget and verdict
 
 `maxPages`::
-Pages of one document that may be OCR'd, counted from the first; `-1` for no limit.
+Pages of one document that may be OCR'd, counted from the first; `-1` for no limit. A document
+with a page the limit kept from an engine gets `skipped:max-pages` in `tk:ocr-warnings`, so it can
+be found and re-run with a higher limit. `pdf:ocr-page-count` still counts every page that wanted
+OCR, including those.
 `auto`::
 When `AUTO` sends a page to OCR: `totalCharsPerPage`, below which a page is OCR'd, and
 `unmappedUnicodeCharsPerPage`, glyphs without a Unicode mapping (a count when 1 or more, a fraction
