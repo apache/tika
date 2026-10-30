@@ -110,13 +110,14 @@ public class FlatOpenDocumentParser implements Parser {
         // and masks the real well-formedness error.
         final XHTMLBalancingHandler balancer = new XHTMLBalancingHandler(xhtml);
         tis.setCloseShield();
+        FlatOpenDocumentParserHandler fodHandler = null;
         try {
-            ContentHandler fodHandler = getContentHandler(balancer, metadata, context);
+            fodHandler = getContentHandler(balancer, metadata, context);
             XMLReaderUtils.parseSAX(tis,
                     new EmbeddedContentHandler(fodHandler), context);
             //can only detect subtype (text/pres/sheet) during parse.
             //update it here.
-            MediaType detected = ((FlatOpenDocumentParserHandler) fodHandler).getDetectedType();
+            MediaType detected = fodHandler.getDetectedType();
             if (detected != null) {
                 metadata.set(HttpHeaders.CONTENT_TYPE, detected.toString());
             }
@@ -125,6 +126,9 @@ public class FlatOpenDocumentParser implements Parser {
             // loop. Without this, the finally's xhtml.endDocument() throws
             // on the unbalanced stack and the masked </body> vs <p>/<b>
             // hides the real failure (truncated input, malformed XML, etc.).
+            if (fodHandler != null) {
+                fodHandler.bodyHandler.flushBuffered(e);
+            }
             balancer.drainOpenElements();
             throw e;
         } finally {
@@ -140,8 +144,9 @@ public class FlatOpenDocumentParser implements Parser {
     public boolean isExtractMacros() {
         return extractMacros;
     }
-    private ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                             ParseContext context) {
+    private FlatOpenDocumentParserHandler getContentHandler(ContentHandler handler,
+                                                            Metadata metadata,
+                                                            ParseContext context) {
         return new FlatOpenDocumentParserHandler(handler, metadata, context, extractMacros);
     }
 
@@ -154,7 +159,7 @@ public class FlatOpenDocumentParser implements Parser {
 
         private final ContentHandler defaultHandler = new DefaultHandler();
 
-        private final ContentHandler bodyHandler;
+        private final OpenDocumentBodyHandler bodyHandler;
         private final ContentHandler metadataHandler;
         private final ContentHandler macroHandler;
         private final boolean extractMacros;
@@ -180,7 +185,7 @@ public class FlatOpenDocumentParser implements Parser {
             this.extractMacros = extractMacros;
 
             this.bodyHandler = new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler),
-                            parseContext);
+                            parseContext, metadata);
 
             this.metadataHandler = new NSNormalizerContentHandler(
                     OpenDocumentMetaParser.getContentHandler(metadata, parseContext));
