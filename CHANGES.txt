@@ -63,6 +63,10 @@ Release 4.3.0 - ???
      DER: Pkcs7Parser and the opt-in pkcs-7-detector report the smime-type and extract
      signed content; -----BEGIN CMS----- is now detected (TIKA-5002).
 
+   * A PDF with pages that pages.ocr.maxPages kept from the OCR engine records
+     skipped:max-pages in tk:ocr-warnings; before, the cap left no trace and
+     pdf:ocr-page-count still counted those pages (TIKA-5013).
+
 Release 4.2.0 - 10/25/2026
 
   BREAKING CHANGES AND DEPRECATIONS
