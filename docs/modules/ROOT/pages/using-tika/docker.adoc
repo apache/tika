@@ -100,8 +100,10 @@ For example, to keep the full image's parsers but turn OCR off:
 
 [source,json]
 ----
-{ "text-recognizers": [] }
+{ "server": {}, "text-recognizers": [] }
 ----
+
+Through 4.2.x, tika-server refuses a config file without a `server` block; `{}` keeps the defaults.
 
 See xref:configuration/index.adoc[Configuration] for the file format.
 
