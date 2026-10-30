@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -217,10 +216,8 @@ public class TikaServerHttp2Test {
         throw new IllegalStateException("tika-server did not start within " + SERVER_STARTUP_TIMEOUT_MILLIS + " ms");
     }
 
-    private static int findFreePort() throws Exception {
-        try (ServerSocket s = new ServerSocket(0)) {
-            return s.getLocalPort();
-        }
+    private static int findFreePort() {
+        return TestPorts.findFreePort();
     }
 
     /** Returns the tika-server-standard-&lt;version&gt;.jar in serverHome, or null if absent. */
