@@ -26,6 +26,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -194,6 +198,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
@@ -234,6 +239,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
@@ -265,6 +271,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
@@ -299,6 +306,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
@@ -334,6 +342,7 @@ public class TikaPipesTest extends CXFTestBase {
         return WebClient
                 .create(endPoint + PIPES_PATH)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
     }
 
@@ -370,6 +379,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(endPoint + PIPES_PATH)
                 .accept("application/json")
+                .type("application/json")
                 .post("this is not json");
         assertEquals(400, response.getStatus());
         assertContains("/pipes request body",
@@ -383,10 +393,36 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(endPoint + PIPES_PATH)
                 .accept("application/json")
+                .type("application/json")
                 .post(body);
         assertEquals(400, response.getStatus());
         assertContains("bogusField",
                 getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
+    /**
+     * A web page can POST to /pipes without a CORS preflight only with a text/plain,
+     * form-urlencoded or multipart content type, or with none at all; refusing those
+     * keeps a browser on the server's network from running tuples cross-site.
+     */
+    @Test
+    public void testCrossSiteSimpleRequestIsRefused() throws Exception {
+        FetchEmitTuple t = new FetchEmitTuple("myId",
+                new FetchKey(FETCHER_ID, HELLO_WORLD), new EmitKey(EMITTER_JSON_ID, ""), new Metadata());
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        HttpClient client = HttpClient.newHttpClient();
+        for (String contentType : new String[]{"text/plain", "application/x-www-form-urlencoded", null}) {
+            HttpRequest.Builder request = HttpRequest
+                    .newBuilder(URI.create(endPoint + PIPES_PATH))
+                    .POST(HttpRequest.BodyPublishers.ofString(writer.toString()));
+            if (contentType != null) {
+                request.header("Content-Type", contentType);
+            }
+            HttpResponse<String> response = client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(415, response.statusCode(), String.valueOf(contentType));
+            assertFalse(Files.exists(tmpOutputFile), String.valueOf(contentType));
+        }
     }
 
 }
