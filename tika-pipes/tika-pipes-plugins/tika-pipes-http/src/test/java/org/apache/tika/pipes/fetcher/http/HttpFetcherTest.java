@@ -24,6 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,6 +51,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -327,6 +331,23 @@ class HttpFetcherTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testSocketTimeoutAppliesToRequests() throws Exception {
+        HttpFetcherConfig config = new HttpFetcherConfig()
+                .setSocketTimeoutMillis(500)
+                .setOverallTimeoutMillis(10_000L);
+        HttpFetcher fetcher = new HttpFetcher(null, config);
+        fetcher.initialize();
+        // the backlog completes the handshake; nothing ever answers the request
+        try (ServerSocket silent = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+            String url = "http://127.0.0.1:" + silent.getLocalPort() + "/";
+            assertThrows(SocketTimeoutException.class,
+                    () -> fetcher.fetch(url, new Metadata(), new ParseContext()));
+            assertThrows(SocketTimeoutException.class,
+                    () -> fetcher.fetch(url, 0, 10, new Metadata(), new ParseContext()));
+        }
+    }
+
     FetcherManager getFetcherManager(String path) throws Exception {
         Path configPath = Paths.get(HttpFetcherTest.class.getResource("/configs/" + path).toURI());
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
@@ -369,6 +390,8 @@ class HttpFetcherTest extends TikaTest {
                 .when(clientFactory.build()).thenReturn(httpClient);
         Mockito
                 .when(clientFactory.copy()).thenReturn(clientFactory);
+        Mockito
+                .when(clientFactory.getDefaultRequestConfig()).thenReturn(RequestConfig.DEFAULT);
 
         httpFetcher.setHttpClientFactory(clientFactory);
         httpFetcher.setHttpFetcherConfig(httpFetcherConfig);

@@ -173,7 +173,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
 
     private RequestConfig buildRequestConfig() {
         return RequestConfig
-                .custom()
+                .copy(httpClientFactory.getDefaultRequestConfig())
                 .setMaxRedirects(httpFetcherConfig.getMaxRedirects())
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();

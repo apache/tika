@@ -17,10 +17,17 @@
 package org.apache.tika.pipes.atlassianjwt;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.fetcher.atlassianjwt.AtlassianJwtFetcher;
 import org.apache.tika.pipes.fetcher.atlassianjwt.config.AtlassianJwtFetcherConfig;
 
@@ -50,5 +57,19 @@ public class AtlassianJwtFetcherTest {
     public void testVerifySslDeserializes() throws Exception {
         assertFalse(AtlassianJwtFetcherConfig.load("{\"verifySsl\":false}").isVerifySsl());
         assertTrue(AtlassianJwtFetcherConfig.load("{}").isVerifySsl());
+    }
+
+    @Test
+    public void testSocketTimeoutAppliesToRequests() throws Exception {
+        AtlassianJwtFetcher fetcher = new AtlassianJwtFetcher(null, new AtlassianJwtFetcherConfig()
+                .setSocketTimeoutMillis(500)
+                .setOverallTimeoutMillis(10_000L));
+        fetcher.initialize();
+        // the backlog completes the handshake; nothing ever answers the request
+        try (ServerSocket silent = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+            String url = "http://127.0.0.1:" + silent.getLocalPort() + "/";
+            assertThrows(SocketTimeoutException.class,
+                    () -> fetcher.fetch(url, new Metadata(), new ParseContext()));
+        }
     }
 }
