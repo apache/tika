@@ -85,6 +85,7 @@ every page, with its results such as `tk:chunks` landing on the PDF. The embedde
 render is parsed for its metadata but not enriched again.
 
 `pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
+A page that `pages.ocr.maxPages` kept from an engine adds `skipped:max-pages` to `tk:ocr-warnings`.
 
 == Tagged PDFs (`markedContent`)
 

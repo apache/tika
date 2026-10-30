@@ -119,6 +119,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
+import org.apache.tika.parser.enricher.OcrWarnings;
 import org.apache.tika.parser.hook.ParseHooks;
 import org.apache.tika.parser.inference.InputKind;
 import org.apache.tika.parser.pages.PagesConfig;
@@ -725,6 +726,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         // Enforce maxPagesToOcr limit
         int maxPagesToOcr = pages.getOcr().getMaxPages();
         if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
+            if (ocrEngine != null) {
+                OcrWarnings.add(metadata, "skipped:max-pages");
+            }
             return PageOcr.SKIPPED;
         }
         if (ocrEngine == null) {
