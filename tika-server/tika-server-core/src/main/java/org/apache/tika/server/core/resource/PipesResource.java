@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -84,6 +85,7 @@ public class PipesResource {
      * @throws Exception
      */
     @POST
+    @Consumes("application/json")
     @Produces("application/json")
     public Response postRmeta(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         FetchEmitTuple t = null;

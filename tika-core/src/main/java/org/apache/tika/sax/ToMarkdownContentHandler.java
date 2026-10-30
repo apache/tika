@@ -106,6 +106,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     private Code inlineCode;
     private StringBuilder inlineCodeText;
 
+    // Buffer for <span class="math ..."> TeX, written verbatim; depth counts nested spans.
+    private StringBuilder mathText;
+    private int mathSpanDepth;
+
     // Buffer for <pre> fenced code block literal.
     private FencedCodeBlock codeBlock;
     private StringBuilder codeBlockText;
@@ -255,6 +259,15 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 // a hard break would end a GFM table row
                 stack.peek().appendChild(inTableCell() ? newBrInline() : new HardLineBreak());
                 break;
+            case "span":
+                if (mathText != null) {
+                    mathSpanDepth++;
+                } else if (codeBlockText == null && inlineCodeText == null
+                        && isMathClass(atts.getValue("class"))) {
+                    mathText = new StringBuilder();
+                    mathSpanDepth = 1;
+                }
+                break;
             case "img":
                 ensureInlineContainer();
                 Image img = new Image(value(atts, "src"), null);
@@ -332,6 +345,12 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "div":
                 closeImplicitParagraph();
                 break;
+            case "span":
+                if (mathText != null && --mathSpanDepth == 0) {
+                    appendMath(mathText.toString());
+                    mathText = null;
+                }
+                break;
             case "table":
                 endTable();
                 break;
@@ -363,6 +382,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         }
         if (inlineCodeText != null) {
             inlineCodeText.append(ch, start, length);
+            return;
+        }
+        if (mathText != null) {
+            mathText.append(ch, start, length);
             return;
         }
 
@@ -652,6 +675,33 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         return false;
     }
 
+    /**
+     * TeX goes out raw: the renderer's escaping ({@code \\mathcal}, {@code u\\_0}) breaks
+     * math-aware readers. In a table cell the renderer still escapes {@code |}, which GFM
+     * unescapes on read.
+     */
+    private void appendMath(String tex) {
+        if (tex.isEmpty()) {
+            return;
+        }
+        ensureInlineContainer();
+        HtmlInline raw = new HtmlInline();
+        raw.setLiteral(collapseLineBreaks(tex));
+        stack.peek().appendChild(raw);
+    }
+
+    private static boolean isMathClass(String cls) {
+        if (cls == null) {
+            return false;
+        }
+        for (String token : cls.trim().split("\\s+")) {
+            if (token.equals("math")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static HtmlInline newBrInline() {
         HtmlInline br = new HtmlInline();
         br.setLiteral("<br>");
@@ -666,7 +716,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             return top instanceof Paragraph || top instanceof Heading
                     || top instanceof TableCell;
         }
-        return last instanceof HardLineBreak || last instanceof HtmlInline;
+        return last instanceof HardLineBreak
+                || (last instanceof HtmlInline && "<br>".equals(((HtmlInline) last).getLiteral()));
     }
 
     private static String stripLeadingWhitespace(String s) {

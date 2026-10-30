@@ -141,6 +141,7 @@ public class PipesRequestLimitsTest extends CXFTestBase {
         Response response = WebClient
                 .create(endPoint + "/pipes")
                 .accept("application/json")
+                .type("application/json")
                 .post(tuple);
         assertEquals(200, response.getStatus());
 

@@ -24,6 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -47,6 +51,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -261,6 +266,41 @@ class HttpFetcherTest extends TikaTest {
 
     }
 
+    /**
+     * httpcore writes a header name as given (only a value has CR and LF folded), so a
+     * per-request header name carrying CRLF would inject request lines.
+     */
+    @Test
+    public void testHeadersWithCrLfAreRefused() throws Exception {
+        HttpResponse response = buildMockResponse(HttpStatus.SC_OK, IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
+        HttpClient httpClient = Mockito.mock(HttpClient.class);
+        Mockito.when(httpClient.execute(ArgumentMatchers.any(HttpUriRequest.class), ArgumentMatchers.any(HttpContext.class)))
+                .thenReturn(response);
+        httpFetcher.setHttpClient(httpClient);
+
+        ParseContext nameContext = new ParseContext();
+        nameContext.setJsonConfig("http-fetcher", OBJECT_MAPPER.writeValueAsString(
+                Map.of("httpRequestHeaders", Map.of("map", Map.of(
+                        "X-Test\r\nInjected: yes\r\n\r\nPOST /evil HTTP/1.1\r\nHost: h",
+                        List.of("v"))))));
+        assertThrows(TikaException.class,
+                () -> httpFetcher.fetch("http://localhost", new Metadata(), nameContext));
+
+        ParseContext valueContext = new ParseContext();
+        valueContext.setJsonConfig("http-fetcher", OBJECT_MAPPER.writeValueAsString(
+                Map.of("httpRequestHeaders", Map.of("map", Map.of(
+                        "X-Test", List.of("v\r\nInjected: yes"))))));
+        assertThrows(TikaException.class,
+                () -> httpFetcher.fetch("http://localhost", new Metadata(), valueContext));
+
+        Metadata metadata = new Metadata();
+        metadata.set(Property.externalText("httpRequestHeaders"), "X-Test\r\nInjected: yes: v");
+        assertThrows(TikaException.class,
+                () -> httpFetcher.fetch("http://localhost", metadata, new ParseContext()));
+
+        Mockito.verifyNoInteractions(httpClient);
+    }
+
     @Test
     @Disabled("requires network connectivity")
     public void testRedirect() throws Exception {
@@ -288,6 +328,23 @@ class HttpFetcherTest extends TikaTest {
                 Files.copy(new GZIPInputStream(is), tmpPath, StandardCopyOption.REPLACE_EXISTING);
             }
             assertEquals(2461, Files.size(tmpPath));
+        }
+    }
+
+    @Test
+    public void testSocketTimeoutAppliesToRequests() throws Exception {
+        HttpFetcherConfig config = new HttpFetcherConfig()
+                .setSocketTimeoutMillis(500)
+                .setOverallTimeoutMillis(10_000L);
+        HttpFetcher fetcher = new HttpFetcher(null, config);
+        fetcher.initialize();
+        // the backlog completes the handshake; nothing ever answers the request
+        try (ServerSocket silent = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+            String url = "http://127.0.0.1:" + silent.getLocalPort() + "/";
+            assertThrows(SocketTimeoutException.class,
+                    () -> fetcher.fetch(url, new Metadata(), new ParseContext()));
+            assertThrows(SocketTimeoutException.class,
+                    () -> fetcher.fetch(url, 0, 10, new Metadata(), new ParseContext()));
         }
     }
 
@@ -333,6 +390,8 @@ class HttpFetcherTest extends TikaTest {
                 .when(clientFactory.build()).thenReturn(httpClient);
         Mockito
                 .when(clientFactory.copy()).thenReturn(clientFactory);
+        Mockito
+                .when(clientFactory.getDefaultRequestConfig()).thenReturn(RequestConfig.DEFAULT);
 
         httpFetcher.setHttpClientFactory(clientFactory);
         httpFetcher.setHttpFetcherConfig(httpFetcherConfig);

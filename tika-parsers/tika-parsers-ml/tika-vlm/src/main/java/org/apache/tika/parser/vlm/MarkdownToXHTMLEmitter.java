@@ -82,6 +82,9 @@ import org.xml.sax.helpers.AttributesImpl;
  *       attributes dropped except {@code colspan}/{@code rowspan}; unknown elements
  *       contribute their text. Inline HTML tags are
  *       dropped (their text is kept), except {@code <br>}.</li>
+ *   <li>TeX math ({@code $...$}, {@code $$...$$}, {@code \(...\)}, {@code \[...\]}):
+ *       kept verbatim, delimiters included, in {@code <span class="math inline">} or
+ *       {@code <span class="math display">} (see {@link MathSpans}).</li>
  * </ul>
  *
  * @since Apache Tika 4.0
@@ -133,8 +136,9 @@ class MarkdownToXHTMLEmitter {
         if (markdown == null || markdown.isEmpty()) {
             return;
         }
-        Node document = PARSER.parse(markdown);
-        SAXVisitor visitor = new SAXVisitor(handler);
+        MathSpans math = MathSpans.protect(markdown);
+        Node document = PARSER.parse(math.text());
+        SAXVisitor visitor = new SAXVisitor(handler, math);
         document.accept(visitor);
         if (visitor.saxException != null) {
             throw visitor.saxException;
@@ -147,10 +151,12 @@ class MarkdownToXHTMLEmitter {
     private static class SAXVisitor extends AbstractVisitor {
 
         private final ContentHandler handler;
+        private final MathSpans math;
         SAXException saxException;
 
-        SAXVisitor(ContentHandler handler) {
+        SAXVisitor(ContentHandler handler, MathSpans math) {
             this.handler = handler;
+            this.math = math;
         }
 
         // --- block nodes ---
@@ -221,7 +227,7 @@ class MarkdownToXHTMLEmitter {
             }
             startElement("pre");
             startElement("code", attrs);
-            characters(fencedCodeBlock.getLiteral());
+            characters(math.restore(fencedCodeBlock.getLiteral()));
             endElement("code");
             endElement("pre");
         }
@@ -230,7 +236,7 @@ class MarkdownToXHTMLEmitter {
         public void visit(IndentedCodeBlock indentedCodeBlock) {
             startElement("pre");
             startElement("code");
-            characters(indentedCodeBlock.getLiteral());
+            characters(math.restore(indentedCodeBlock.getLiteral()));
             endElement("code");
             endElement("pre");
         }
@@ -257,7 +263,7 @@ class MarkdownToXHTMLEmitter {
             if (node instanceof TextNode) {
                 String text = ((TextNode) node).getWholeText();
                 if (!(inStructure && text.isBlank())) {
-                    characters(text);
+                    textWithMath(text);
                 }
                 return;
             }
@@ -303,7 +309,7 @@ class MarkdownToXHTMLEmitter {
 
         @Override
         public void visit(Text text) {
-            characters(text.getLiteral());
+            textWithMath(text.getLiteral());
         }
 
         @Override
@@ -323,16 +329,16 @@ class MarkdownToXHTMLEmitter {
         @Override
         public void visit(Code code) {
             startElement("code");
-            characters(code.getLiteral());
+            characters(math.restore(code.getLiteral()));
             endElement("code");
         }
 
         @Override
         public void visit(Link link) {
             AttributesImpl attrs = new AttributesImpl();
-            attrs.addAttribute("", "href", "href", "CDATA", link.getDestination());
+            attrs.addAttribute("", "href", "href", "CDATA", math.restore(link.getDestination()));
             if (link.getTitle() != null && !link.getTitle().isEmpty()) {
-                attrs.addAttribute("", "title", "title", "CDATA", link.getTitle());
+                attrs.addAttribute("", "title", "title", "CDATA", math.restore(link.getTitle()));
             }
             startElement("a", attrs);
             visitChildren(link);
@@ -342,9 +348,9 @@ class MarkdownToXHTMLEmitter {
         @Override
         public void visit(Image image) {
             AttributesImpl attrs = new AttributesImpl();
-            attrs.addAttribute("", "src", "src", "CDATA", image.getDestination());
+            attrs.addAttribute("", "src", "src", "CDATA", math.restore(image.getDestination()));
             if (image.getTitle() != null && !image.getTitle().isEmpty()) {
-                attrs.addAttribute("", "title", "title", "CDATA", image.getTitle());
+                attrs.addAttribute("", "title", "title", "CDATA", math.restore(image.getTitle()));
             }
             // Use alt text from child text nodes
             StringBuilder alt = new StringBuilder();
@@ -355,7 +361,7 @@ class MarkdownToXHTMLEmitter {
                 }
                 child = child.getNext();
             }
-            attrs.addAttribute("", "alt", "alt", "CDATA", alt.toString());
+            attrs.addAttribute("", "alt", "alt", "CDATA", math.restore(alt.toString()));
             emptyElement("img", attrs);
         }
 
@@ -440,6 +446,21 @@ class MarkdownToXHTMLEmitter {
                 endElement("s");
             } else {
                 visitChildren(customNode);
+            }
+        }
+
+        private void textWithMath(String text) {
+            for (MathSpans.Piece piece : math.split(text)) {
+                if (!piece.math) {
+                    characters(piece.text);
+                    continue;
+                }
+                AttributesImpl attrs = new AttributesImpl();
+                attrs.addAttribute("", "class", "class", "CDATA",
+                        piece.display ? "math display" : "math inline");
+                startElement("span", attrs);
+                characters(piece.text);
+                endElement("span");
             }
         }
 
