@@ -80,6 +80,24 @@ public class TikaServerConfigTest extends TikaTest {
 
     /** Documented defaults: 1 GiB request cap, 5 min transfer deadlines, 2 min idle, derived in-flight budget, 60s /async queue pause. */
     @Test
+    public void testNoServerBlockMeansDefaults(@TempDir Path dir) throws Exception {
+        Path path = dir.resolve("tika-config.json");
+        Files.writeString(path, "{ \"parsers\": [ { \"default-parser\": {} } ] }");
+        Options options = new Options();
+        options.addOption("c", true, "");
+        options.addOption("p", true, "");
+        CommandLine line = new DefaultParser().parse(options,
+                new String[]{"-c", path.toString(), "-p", "9876"});
+        TikaServerConfig config = TikaServerConfig.load(line, null);
+        TikaServerConfig defaults = new TikaServerConfig();
+        assertEquals(9876, config.getPort());
+        assertEquals(defaults.getHost(), config.getHost());
+        assertEquals(defaults.getMaxRequestSizeBytes(), config.getMaxRequestSizeBytes());
+        assertFalse(config.isAllowPipes());
+        assertEquals(path.toAbsolutePath(), config.getConfigPath());
+    }
+
+    @Test
     public void testDocumentedDefaults() {
         TikaServerConfig config = new TikaServerConfig();
         assertEquals(1024L * 1024 * 1024, config.getMaxRequestSizeBytes());

@@ -258,7 +258,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 break;
             case "br":
                 ensureInlineContainer();
-                stack.peek().appendChild(new HardLineBreak());
+                // a hard break would end a GFM table row
+                stack.peek().appendChild(inTableCell() ? newBrInline() : new HardLineBreak());
                 break;
             case "span":
                 if (mathText != null) {
@@ -408,7 +409,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         String text = new String(ch, start, length);
         if (text.trim().isEmpty()) {
             // Inter-element whitespace: drop between blocks, collapse within inline runs.
-            if (!isBlockContainer(stack.peek())) {
+            if (!isBlockContainer(stack.peek()) && !atLineStart()) {
                 stack.peek().appendChild(new Text(" "));
             }
             return;
@@ -419,6 +420,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             return;
         }
         ensureInlineContainer();
+        if (atLineStart()) {
+            // insignificant in Markdown, and the renderer would escape it as &#32;
+            text = stripLeadingWhitespace(text);
+        }
         // Newlines inside prose would otherwise survive as literal line breaks.
         stack.peek().appendChild(new Text(collapseLineBreaks(text)));
     }
@@ -678,6 +683,15 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         stack.push(cell);
     }
 
+    private boolean inTableCell() {
+        for (Node n : stack) {
+            if (n instanceof TableCell) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * TeX goes out raw: the renderer's escaping ({@code \\mathcal}, {@code u\\_0}) breaks
      * math-aware readers. In a table cell the renderer still escapes {@code |}, which GFM
@@ -723,6 +737,33 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             }
         }
         return false;
+    }
+
+    private static HtmlInline newBrInline() {
+        HtmlInline br = new HtmlInline();
+        br.setLiteral("<br>");
+        return br;
+    }
+
+    /** True when the next inline text starts a rendered line (or a cell). */
+    private boolean atLineStart() {
+        Node top = stack.peek();
+        Node last = top.getLastChild();
+        if (last == null) {
+            return top instanceof Paragraph || top instanceof Heading
+                    || top instanceof TableCell;
+        }
+        return last instanceof HardLineBreak
+                || (last instanceof HtmlInline && "<br>".equals(((HtmlInline) last).getLiteral()));
+    }
+
+    private static String stripLeadingWhitespace(String s) {
+        int i = 0;
+        while (i < s.length() && (s.charAt(i) == ' ' || s.charAt(i) == '\t'
+                || s.charAt(i) == '\n' || s.charAt(i) == '\r' || s.charAt(i) == '\f')) {
+            i++;
+        }
+        return s.substring(i);
     }
 
     private static BulletList newBulletList() {
