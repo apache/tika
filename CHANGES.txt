@@ -15,6 +15,10 @@ Release 4.3.0 - ???
 
   SERVER, PIPES AND OPERATIONS
 
+   * tika-server no longer requires a "server" block in its config file; an absent block
+     means the server defaults, as "server": {} did. A tika-app config, or the documented
+     Docker example { "text-recognizers": [] }, now works as is (TIKA-XXXX).
+
    * The tika-server full and tika-grpc Docker images no longer install
      ttf-mscorefonts-installer, which downloaded Microsoft's fonts from SourceForge
      at build time; non-embedded Verdana, Georgia, Trebuchet, Impact, Comic Sans and
@@ -59,7 +63,17 @@ Release 4.3.0 - ???
      last column and row, are dropped. Past 10 million characters of repeated content
      per document the rest are written once, with a tk:exception:warn entry (TIKA-5014).
 
+   * VLM text recognizers keep superscripts and subscripts: inline <sup>/<sub> in model
+     output (x<sup>2</sup>, H<sub>2</sub>O, footnote markers) reach the XHTML as sup/sub
+     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML
+     (TIKA-XXXX).
+
   OTHER CHANGES
+
+   * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
+     list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
+     and checks tk:parsed-by-full-set, not pdf:ocr-page-count, to confirm OCR ran. A test
+     loads every config in the user skills in tika-app and tika-server (TIKA-XXXX).
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
      their next fetch, through a change token on file and ignite stores
@@ -69,6 +83,10 @@ Release 4.3.0 - ???
    * PEM-armored CMS/PKCS7 (-----BEGIN PKCS7----- or -----BEGIN CMS-----) is parsed like
      DER: Pkcs7Parser and the opt-in pkcs-7-detector report the smime-type and extract
      signed content; -----BEGIN CMS----- is now detected (TIKA-5002).
+
+   * Markdown output writes a line break inside a table cell as <br>, so the row no
+     longer splits, and no longer prefixes the text after a line break or at the start
+     of a paragraph with &#32; (TIKA-5012).
 
    * A PDF with pages that pages.ocr.maxPages kept from the OCR engine records
      skipped:max-pages in tk:ocr-warnings; before, the cap left no trace and
