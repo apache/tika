@@ -297,7 +297,7 @@ public class JDBCTableReader {
             }
         }
 
-        String sql = "SELECT * from " + tableName;
+        String sql = "SELECT * from " + quoteIdentifier(tableName);
         try {
             Statement st = connection.createStatement();
             results = st.executeQuery(sql);
@@ -309,5 +309,10 @@ public class JDBCTableReader {
 
     public String getTableName() {
         return tableName;
+    }
+
+    //table names come from the file being parsed
+    private static String quoteIdentifier(String name) {
+        return "\"" + name.replace("\"", "\"\"") + "\"";
     }
 }
