@@ -109,6 +109,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     // Buffer for <span class="math ..."> TeX, written verbatim; depth counts nested spans.
     private StringBuilder mathText;
     private int mathSpanDepth;
+    /** Open {@code <sup>}/{@code <sub>} tags written as raw inline HTML. */
+    private final Deque<HtmlInline> rawInlineOpen = new ArrayDeque<>();
 
     // Buffer for <pre> fenced code block literal.
     private FencedCodeBlock codeBlock;
@@ -268,6 +270,15 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                     mathSpanDepth = 1;
                 }
                 break;
+            case "sup":
+            case "sub":
+                if (codeBlockText == null && inlineCodeText == null && mathText == null) {
+                    ensureInlineContainer();
+                    HtmlInline open = rawInline("<" + name + ">");
+                    stack.peek().appendChild(open);
+                    rawInlineOpen.push(open);
+                }
+                break;
             case "img":
                 ensureInlineContainer();
                 Image img = new Image(value(atts, "src"), null);
@@ -349,6 +360,12 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 if (mathText != null && --mathSpanDepth == 0) {
                     appendMath(mathText.toString());
                     mathText = null;
+                }
+                break;
+            case "sup":
+            case "sub":
+                if (codeBlockText == null && inlineCodeText == null && mathText == null) {
+                    closeRawInline(name);
                 }
                 break;
             case "table":
@@ -688,6 +705,26 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         HtmlInline raw = new HtmlInline();
         raw.setLiteral(collapseLineBreaks(tex));
         stack.peek().appendChild(raw);
+    }
+
+    /** Writes the close tag next to its open one; if a block intervened, drops the open. */
+    private void closeRawInline(String name) {
+        HtmlInline open = rawInlineOpen.peek();
+        if (open == null || !open.getLiteral().equals("<" + name + ">")) {
+            return;
+        }
+        rawInlineOpen.pop();
+        if (open.getParent() == stack.peek()) {
+            stack.peek().appendChild(rawInline("</" + name + ">"));
+        } else {
+            open.unlink();
+        }
+    }
+
+    private static HtmlInline rawInline(String literal) {
+        HtmlInline raw = new HtmlInline();
+        raw.setLiteral(literal);
+        return raw;
     }
 
     private static boolean isMathClass(String cls) {

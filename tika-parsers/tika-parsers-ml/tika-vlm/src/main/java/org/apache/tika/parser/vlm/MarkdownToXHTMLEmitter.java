@@ -16,10 +16,16 @@
  */
 package org.apache.tika.parser.vlm;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.commonmark.Extension;
@@ -81,7 +87,8 @@ import org.xml.sax.helpers.AttributesImpl;
  *       tables: parsed leniently and re-emitted as the same structural subset with
  *       attributes dropped except {@code colspan}/{@code rowspan}; unknown elements
  *       contribute their text. Inline HTML tags are
- *       dropped (their text is kept), except {@code <br>}.</li>
+ *       dropped (their text is kept), except {@code <br>} and balanced
+ *       {@code <sup>}/{@code <sub>} pairs.</li>
  *   <li>TeX math ({@code $...$}, {@code $$...$$}, {@code \(...\)}, {@code \[...\]}):
  *       kept verbatim, delimiters included, in {@code <span class="math inline">} or
  *       {@code <span class="math display">} (see {@link MathSpans}).</li>
@@ -121,6 +128,8 @@ class MarkdownToXHTMLEmitter {
 
     private static final Pattern INLINE_BR = Pattern.compile("(?i)<br\\s*/?>");
 
+    private static final Pattern INLINE_SUP_SUB = Pattern.compile("(?i)<(/?)(sup|sub)\\s*>");
+
     /**
      * Parses the given markdown text and emits SAX events to the handler.
      * <p>
@@ -152,6 +161,8 @@ class MarkdownToXHTMLEmitter {
 
         private final ContentHandler handler;
         private final MathSpans math;
+        /** Close tags of the {@code sup}/{@code sub} pairs opened so far. */
+        private final Set<Node> pairedCloses = Collections.newSetFromMap(new IdentityHashMap<>());
         SAXException saxException;
 
         SAXVisitor(ContentHandler handler, MathSpans math) {
@@ -379,9 +390,53 @@ class MarkdownToXHTMLEmitter {
         public void visit(HtmlInline htmlInline) {
             // Open and close tags arrive as separate nodes with the text between them as
             // siblings, so the tag itself is dropped and the text survives.
-            if (INLINE_BR.matcher(htmlInline.getLiteral()).matches()) {
+            String literal = htmlInline.getLiteral();
+            if (INLINE_BR.matcher(literal).matches()) {
                 emptyElement("br");
+                return;
             }
+            Matcher m = INLINE_SUP_SUB.matcher(literal);
+            if (!m.matches()) {
+                return;
+            }
+            String tag = m.group(2).toLowerCase(Locale.ROOT);
+            if (m.group(1).isEmpty()) {
+                Node close = findClose(htmlInline, tag);
+                if (close != null) {
+                    pairedCloses.add(close);
+                    startElement(tag);
+                }
+            } else if (pairedCloses.remove(htmlInline)) {
+                endElement(tag);
+            }
+        }
+
+        /**
+         * The sibling close tag that balances {@code open}, or null when there is none or
+         * the tags between cross it; an unbalanced tag stays text-only.
+         */
+        private static Node findClose(HtmlInline open, String tag) {
+            Deque<String> between = new ArrayDeque<>();
+            for (Node n = open.getNext(); n != null; n = n.getNext()) {
+                if (!(n instanceof HtmlInline)) {
+                    continue;
+                }
+                Matcher m = INLINE_SUP_SUB.matcher(((HtmlInline) n).getLiteral());
+                if (!m.matches()) {
+                    continue;
+                }
+                String name = m.group(2).toLowerCase(Locale.ROOT);
+                if (m.group(1).isEmpty()) {
+                    between.push(name);
+                } else if (between.isEmpty()) {
+                    return name.equals(tag) ? n : null;
+                } else if (between.peek().equals(name)) {
+                    between.pop();
+                } else {
+                    return null;
+                }
+            }
+            return null;
         }
 
         // --- GFM extensions ---

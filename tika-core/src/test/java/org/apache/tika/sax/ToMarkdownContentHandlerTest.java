@@ -546,6 +546,50 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testSupSubWrittenAsInlineHtml() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "x");
+        startElement(handler, "sup");
+        chars(handler, "2*");
+        endElement(handler, "sup");
+        chars(handler, " H");
+        startElement(handler, "sub");
+        startElement(handler, "b");
+        chars(handler, "2");
+        endElement(handler, "b");
+        endElement(handler, "sub");
+        chars(handler, "O ");
+        startElement(handler, "code");
+        chars(handler, "a");
+        startElement(handler, "sup");
+        chars(handler, "b");
+        endElement(handler, "sup");
+        endElement(handler, "code");
+        endElement(handler, "p");
+        handler.endDocument();
+        assertContains("x<sup>2\\*</sup> H<sub>**2**</sub>O `ab`", handler.toString());
+    }
+
+    @Test
+    public void testSupAcrossBlockDropsTags() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "sup");
+        chars(handler, "a");
+        startElement(handler, "p");
+        chars(handler, "b");
+        endElement(handler, "p");
+        endElement(handler, "sup");
+        handler.endDocument();
+        String md = handler.toString();
+        assertFalse(md.contains("sup>"), md);
+        assertContains("a", md);
+        assertContains("b", md);
+    }
+
+    @Test
     public void testTextAfterMathSpanKeepsLeadingSpace() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();

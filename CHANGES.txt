@@ -56,6 +56,11 @@ Release 4.3.0 - ???
      and split GFM table cells on |. Math is emitted as <span class="math inline"> or
      <span class="math display">, and the Markdown writer outputs it unescaped (TIKA-5011).
 
+   * VLM text recognizers keep superscripts and subscripts: inline <sup>/<sub> in model
+     output (x<sup>2</sup>, H<sub>2</sub>O, footnote markers) reach the XHTML as sup/sub
+     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML
+     (TIKA-XXXX).
+
   OTHER CHANGES
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
