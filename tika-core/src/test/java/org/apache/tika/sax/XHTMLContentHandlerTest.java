@@ -24,9 +24,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -341,4 +343,124 @@ public class XHTMLContentHandlerTest {
                 "Should contain metadata");
     }
 
+
+    @Test
+    public void testEmptyAndBlankInlineFormattingDropped() throws Exception {
+        String body = body(x -> {
+            x.startElement("p");
+            x.characters("a");
+            x.startElement("b");
+            x.endElement("b");
+            x.characters("b");
+            x.startElement("i");
+            x.characters(" ");
+            x.endElement("i");
+            x.characters("c");
+            x.startElement("sup");
+            x.startElement("sub");
+            x.characters("\u00A0");
+            x.endElement("sub");
+            x.endElement("sup");
+            x.characters("d");
+            x.endElement("p");
+        });
+        assertEquals("<p>ab c\u00A0d</p>", body);
+    }
+
+    @Test
+    public void testEdgeWhitespaceMovedOutsideInlineFormatting() throws Exception {
+        String body = body(x -> {
+            x.startElement("p");
+            x.characters("a");
+            x.startElement("b");
+            x.characters(" Note: ");
+            x.endElement("b");
+            x.characters("b ");
+            x.startElement("b");
+            x.startElement("i");
+            x.characters("x");
+            x.characters(" ");
+            x.endElement("i");
+            x.characters(" y ");
+            x.endElement("b");
+            x.characters("z");
+            x.endElement("p");
+        });
+        assertEquals("<p>a <b>Note:</b> b <b><i>x</i>  y</b> z</p>", body);
+    }
+
+    @Test
+    public void testUnderlineAndStrikeKeepWhitespace() throws Exception {
+        String body = body(x -> {
+            x.startElement("p");
+            x.characters("Name:");
+            x.startElement("u");
+            x.characters("   ");
+            x.endElement("u");
+            x.startElement("s");
+            x.endElement("s");
+            x.endElement("p");
+        });
+        assertEquals("<p>Name:<u>   </u><s /></p>", body);
+    }
+
+    @Test
+    public void testMismatchedInlineEndIsNotRepaired() throws Exception {
+        List<String> events = new ArrayList<>();
+        XHTMLContentHandler x = new XHTMLContentHandler(new DefaultHandler() {
+            @Override
+            public void startElement(String uri, String local, String name, Attributes atts) {
+                events.add("<" + name + ">");
+            }
+
+            @Override
+            public void endElement(String uri, String local, String name) {
+                events.add("</" + name + ">");
+            }
+
+            @Override
+            public void characters(char[] ch, int start, int length) {
+                events.add(new String(ch, start, length));
+            }
+        }, new Metadata());
+        x.startDocument();
+        x.startElement("p");
+        x.startElement("b");
+        x.endElement("i");
+        x.characters("a");
+        x.endElement("b");
+        x.endElement("p");
+        x.endDocument();
+        String all = String.join("", events);
+        assertTrue(all.contains("<p><b></i>a</b></p>"), all);
+    }
+
+    @Test
+    public void testInlineFormattingAroundBlockAndBreak() throws Exception {
+        String body = body(x -> {
+            x.startElement("p");
+            x.startElement("b");
+            x.characters("a ");
+            x.startElement("br");
+            x.endElement("br");
+            x.characters(" b");
+            x.endElement("b");
+            x.endElement("p");
+        });
+        assertEquals("<p><b>a <br />\n b</b></p>", body);
+    }
+
+    private interface Events {
+        void write(XHTMLContentHandler x) throws SAXException;
+    }
+
+    private static String body(Events events) throws SAXException {
+        ToXMLContentHandler out = new ToXMLContentHandler();
+        XHTMLContentHandler x = new XHTMLContentHandler(out, new Metadata());
+        x.startDocument();
+        events.write(x);
+        x.endDocument();
+        String xml = out.toString();
+        return xml.substring(xml.indexOf("<body>") + 6, xml.indexOf("</body>")).strip();
+    }
 }

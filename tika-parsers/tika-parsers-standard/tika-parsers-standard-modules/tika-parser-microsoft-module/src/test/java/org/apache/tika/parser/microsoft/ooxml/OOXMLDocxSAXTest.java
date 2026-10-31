@@ -150,7 +150,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
         String xml = getXML("testWORD_omml.docx").xml;
         assertContains("<p>area <span class=\"omml\">A=<b>π</b>rr2</span> done</p>", xml);
         assertContains("<p><span class=\"omml\">x+y</span></p>", xml);
-        assertContains("<p><b>bold </b><span class=\"omml\">z</span><b> after</b></p>", xml);
+        assertContains("<p><b>bold</b> <span class=\"omml\">z</span> <b>after</b></p>", xml);
         assertContains("<p><span class=\"omml\">a</span><a href=\"#eq\"><span class=\"omml\">b</span></a>"
                 + "<span class=\"omml\">c</span></p>", xml);
         assertContains("<p>empty</p>", xml);
@@ -689,7 +689,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
         assertContainsCount("Wordartr1c1", content, 1);
         assertContains("Click or tap to enter a date", content);
         assertContains(
-                "<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over",
+                "<p>The <i>quick</i> brown <b>fox</b> j<i>um</i><b><i>ped</i></b> over",
                 content);
         assertContains("This is a comment", content);
         assertContains("This is an endnote", content);
