@@ -50,6 +50,11 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
+     instead of relationship-id order, which put rId10 before rId2; embedded-resource
+     page numbers follow the same order. Slides that are related but missing from the
+     list are extracted last and counted in msoffice:ppt:num-unlisted-slides (TIKA-5017).
+
    * VLM text recognizers (jina-ocr, OpenAI-compatible, Claude, Gemini) no longer corrupt
      LaTeX math in model output: $...$, $$...$$, \(...\) and \[...\] are kept verbatim
      instead of being read as Markdown, which dropped the backslash from \{, \} and \|
