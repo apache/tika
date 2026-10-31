@@ -146,6 +146,12 @@ public class OOXMLTikaBodyPartHandler
             if (!runProperties.isItalicsSet()) {
                 effectiveRunProperties.italics = styles.isItalics(styleId);
             }
+            if (!runProperties.isVerticalAlignSet()) {
+                String styleVertAlign = styles.getVerticalAlign(styleId);
+                if (styleVertAlign != null) {
+                    effectiveRunProperties.setVerticalAlign(styleVertAlign);
+                }
+            }
             formattingTags.applyFormatting(effectiveRunProperties, getSpanClass(styleId));
         }
         xhtml.characters(contents);

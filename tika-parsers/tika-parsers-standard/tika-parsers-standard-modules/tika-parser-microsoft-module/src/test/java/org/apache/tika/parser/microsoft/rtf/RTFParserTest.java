@@ -46,6 +46,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -554,4 +555,37 @@ public class RTFParserTest extends TikaTest {
         assertContains("this Agreement on today", getXML("testRTFTIKA_2899.rtf").xml);
     }
 
+
+    private String rtfXml(String body) throws Exception {
+        String rtf = "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Times;}}\n" + body + "\n}";
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(rtf.getBytes(StandardCharsets.US_ASCII))) {
+            xml = getXML(tis, new RTFParser(), new Metadata()).xml;
+        }
+        // well-formed: sup/sub must nest inside b/i on every path
+        XMLReaderUtils.parseSAX(TikaInputStream.get(xml.getBytes(StandardCharsets.UTF_8)),
+                new DefaultHandler(), new ParseContext());
+        return xml;
+    }
+
+    @Test
+    public void testSupSub() throws Exception {
+        assertContains("<p>E = mc<sup>2</sup> and H<sub>2</sub>O, note<sup>3</sup></p>",
+                rtfXml("\\pard E = mc{\\super 2} and H{\\sub 2}O, note{\\super 3}\\par"));
+        // toggled without groups
+        assertContains("<p>x<sup>2</sup>+y<sub>i</sub>z</p>",
+                rtfXml("\\pard x\\super 2\\nosupersub +y\\sub i\\plain z\\par"));
+    }
+
+    @Test
+    public void testSupSubNestsInsideBoldItalic() throws Exception {
+        // sup opened before bold, bold toggled inside it, italic around it
+        String xml = rtfXml("\\pard a{\\super b\\b c\\b0 d}{\\i e{\\super f}g}\\par"
+                + "\\pard{\\b\\super h\\par i}\\par");
+        assertContains("a<sup>b</sup><b><sup>c</sup></b><sup>d</sup>", xml);
+        assertContains("<i>e<sup>f</sup>g</i>", xml);
+        // carried across \\par with the bold around it
+        assertContains("<b><sup>h</sup></b></p>", xml);
+        assertContains("<b><sup>i</sup></b>", xml);
+    }
 }

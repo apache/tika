@@ -109,11 +109,27 @@ public class XWPFStylesShim {
         return false;
     }
 
+    /**
+     * @return the w:vertAlign value of the style or the nearest style it is based on
+     * that sets one; null if none does
+     */
+    public String getVerticalAlign(String styleId) {
+        StyleInfo info = styles.get(styleId);
+        for (int i = 0; info != null && i < MAX_BASED_ON_DEPTH; i++) {
+            if (info.vertAlign != null) {
+                return info.vertAlign;
+            }
+            info = info.basedOn == null ? null : styles.get(info.basedOn);
+        }
+        return null;
+    }
+
     private static class StyleInfo {
         String name;
         String basedOn;
         Boolean bold;
         Boolean italics;
+        String vertAlign;
     }
 
     private static class EmptyXWPFStyles extends XWPFStylesShim {
@@ -131,6 +147,11 @@ public class XWPFStylesShim {
         @Override
         public boolean isItalics(String styleId) {
             return false;
+        }
+
+        @Override
+        public String getVerticalAlign(String styleId) {
+            return null;
         }
     }
 
@@ -172,6 +193,8 @@ public class XWPFStylesShim {
                 current.bold = getOnOff(atts);
             } else if (depth == 2 && inStyleRPr && "i".equals(localName)) {
                 current.italics = getOnOff(atts);
+            } else if (depth == 2 && inStyleRPr && "vertAlign".equals(localName)) {
+                current.vertAlign = getVal(atts);
             }
         }
 
