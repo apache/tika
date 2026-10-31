@@ -330,11 +330,11 @@ public class RTFParserTest extends TikaTest {
     public void testBoldItalic() throws Exception {
         String content = getXML("testRTFBoldItalic.rtf").xml;
         assertContains("<b>bold</b>", content);
-        assertContains("<b>bold </b><b><i>italic</i></b>", content);
-        assertContains("<b><i>italic </i></b><b>bold</b>", content);
+        assertContains("<b>bold</b> <b><i>italic</i></b>", content);
+        assertContains("<b><i>italic</i></b> <b>bold</b>", content);
         assertContains("<i>italic</i>", content);
-        assertContains("<b>bold then </b><b><i>italic then</i></b><i> not bold</i>", content);
-        assertContains("<i>italic then </i><b><i>bold then</i></b><b> not italic</b>", content);
+        assertContains("<b>bold then</b> <b><i>italic then</i></b> <i>not bold</i>", content);
+        assertContains("<i>italic then</i> <b><i>bold then</i></b> <b>not italic</b>", content);
     }
 
     @Test

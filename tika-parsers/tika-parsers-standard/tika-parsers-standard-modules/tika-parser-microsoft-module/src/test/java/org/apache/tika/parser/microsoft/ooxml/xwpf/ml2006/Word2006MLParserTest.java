@@ -124,7 +124,7 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
         assertContains("Click or tap to enter a date", content);
 
         //basic formatting
-        assertContains("<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over",
+        assertContains("<p>The <i>quick</i> brown <b>fox</b> j<i>um</i><b><i>ped</i></b> over",
                 content);
 
         //TODO: add chart parsing

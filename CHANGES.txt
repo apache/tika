@@ -73,6 +73,11 @@ Release 4.3.0 - ???
      instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML
      (TIKA-XXXX).
 
+   * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
+     elements, and whitespace at their edges is written outside them (<b>Note: </b>
+     becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
+     **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
+
   OTHER CHANGES
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
