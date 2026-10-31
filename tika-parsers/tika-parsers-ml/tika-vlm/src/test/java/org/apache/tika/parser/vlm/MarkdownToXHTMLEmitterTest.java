@@ -455,7 +455,8 @@ public class MarkdownToXHTMLEmitterTest {
         th.endElement(XHTML_NS, "root", "root");
         th.endDocument();
 
-        return sw.toString();
+        // the JDK serializer writes \n in text as line.separator
+        return sw.toString().replace("\r\n", "\n");
     }
 
     private static void assertContains(String needle, String haystack) {
