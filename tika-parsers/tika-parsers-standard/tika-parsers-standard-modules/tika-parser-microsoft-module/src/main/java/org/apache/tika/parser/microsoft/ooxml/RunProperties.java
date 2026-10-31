@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.apache.poi.xwpf.usermodel.VerticalAlign;
 
 /**
  * WARNING: This class is mutable.  Make a copy of it
@@ -29,6 +30,9 @@ public class RunProperties {
     boolean strikeThrough = false;
 
     UnderlinePatterns underline = UnderlinePatterns.NONE;
+
+    VerticalAlign verticalAlign = VerticalAlign.BASELINE;
+    boolean verticalAlignSet = false;
 
     // PPTX hlinkClick hyperlink URL — set from <a:hlinkClick> inside <a:rPr>
     String hlinkClickUrl = null;
@@ -95,6 +99,37 @@ public class RunProperties {
         }
     }
 
+    public VerticalAlign getVerticalAlign() {
+        return verticalAlign;
+    }
+
+    /** docx w:vertAlign w:val: superscript, subscript, baseline. */
+    public void setVerticalAlign(String val) {
+        verticalAlignSet = true;
+        if ("superscript".equals(val)) {
+            verticalAlign = VerticalAlign.SUPERSCRIPT;
+        } else if ("subscript".equals(val)) {
+            verticalAlign = VerticalAlign.SUBSCRIPT;
+        } else {
+            verticalAlign = VerticalAlign.BASELINE;
+        }
+    }
+
+    public boolean isVerticalAlignSet() {
+        return verticalAlignSet;
+    }
+
+    /** pptx a:rPr baseline, in thousandths of a percent: above 0 raised, below 0 lowered. */
+    public void setBaselineOffset(String baseline) {
+        try {
+            int v = Integer.parseInt(baseline.trim());
+            verticalAlign = v > 0 ? VerticalAlign.SUPERSCRIPT
+                    : v < 0 ? VerticalAlign.SUBSCRIPT : VerticalAlign.BASELINE;
+        } catch (NumberFormatException e) {
+            verticalAlign = VerticalAlign.BASELINE;
+        }
+    }
+
     public String getHlinkClickUrl() {
         return hlinkClickUrl;
     }
@@ -108,6 +143,8 @@ public class RunProperties {
         bold = other.bold;
         strikeThrough = other.strikeThrough;
         underline = other.underline;
+        verticalAlign = other.verticalAlign;
+        verticalAlignSet = other.verticalAlignSet;
         hlinkClickUrl = other.hlinkClickUrl;
         styleID = other.styleID;
         boldSet = other.boldSet;
@@ -119,6 +156,8 @@ public class RunProperties {
         bold = false;
         strikeThrough = false;
         underline = UnderlinePatterns.NONE;
+        verticalAlign = VerticalAlign.BASELINE;
+        verticalAlignSet = false;
         hlinkClickUrl = null;
         styleID = null;
         boldSet = false;

@@ -54,6 +54,11 @@ Release 4.3.0 - ???
      instead of relationship-id order, which put rId10 before rId2; embedded-resource
      page numbers follow the same order. Slides that are related but missing from the
      list are extracted last and counted in msoffice:ppt:num-unlisted-slides (TIKA-5017).
+     
+   * Superscript and subscript are kept as <sup>/<sub> in XHTML for docx (w:vertAlign,
+     directly or through a character style), pptx (a:rPr baseline), doc, RTF (\super,
+     \sub, \nosupersub) and HTML; they were dropped, so "x<sup>2</sup>" read "x2" and
+     footnote markers fused with the word before them. .ppt is not covered (TIKA-5016).
 
    * VLM text recognizers (jina-ocr, OpenAI-compatible, Claude, Gemini) no longer corrupt
      LaTeX math in model output: $...$, $$...$$, \(...\) and \[...\] are kept verbatim

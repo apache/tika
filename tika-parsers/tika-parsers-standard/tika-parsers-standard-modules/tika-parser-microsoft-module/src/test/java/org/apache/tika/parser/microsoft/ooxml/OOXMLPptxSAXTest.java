@@ -167,12 +167,12 @@ public class OOXMLPptxSAXTest extends TikaTest {
         Metadata metadata = new Metadata();
         String xml = getXML("testPPT_various.pptx", metadata).xml;
         assertContains("<p>Footnote appears here", xml);
-        assertContains("<p>[1] This is a footnote.", xml);
+        assertContains("<p><sup>[1]</sup> This is a footnote.", xml);
         assertContains("<p>This is the header text.</p>", xml);
         assertContains("<p>This is the footer text.</p>", xml);
         assertContains("<p>Here is a text box</p>", xml);
         assertContains("<p>Bold", xml);
-        assertContains("italic underline superscript subscript", xml);
+        assertContains("italic underline <sup>superscript</sup> <sub>subscript</sub>", xml);
         assertContains("<p>Here is a citation:", xml);
         assertContains("Figure 1 This is a caption for Figure 1", xml);
         assertContains("(Kramer)", xml);

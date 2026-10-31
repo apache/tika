@@ -79,6 +79,10 @@ public class DefaultHtmlMapper implements HtmlMapper {
             put("PARAM", "param");
             put("INS", "ins");
             put("DEL", "del");
+
+            // not presentation: dropping them turns x<sup>2</sup> into "x2"
+            put("SUP", "sup");
+            put("SUB", "sub");
         }};
     private static final Set<String> DISCARDABLE_ELEMENTS = new HashSet<String>() {{
             add("STYLE");
