@@ -4992,6 +4992,16 @@
   <mime-type type="application/x-pkcs7-certificates">
     <glob pattern="*.p7b"/>
     <glob pattern="*.spc"/>
+    <!-- certs-only SignedData: empty digestAlgorithms (31 00) and an id-data-only encapContentInfo,
+         so no signature; outranks the pkcs7-signature magic. Version byte masked; offset spans DER length forms. -->
+    <magic priority="60">
+      <match value="0x30" offset="0">
+        <match value="0x06092a864886f70d010702" type="string" offset="2:6">
+          <match value="0x0201013100300b06092a864886f70d010701" type="string"
+                 mask="0xFFFF00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" offset="17:29"/>
+        </match>
+      </match>
+    </magic>
   </mime-type>
   <mime-type type="application/x-pkcs7-certreqresp">
     <glob pattern="*.p7r"/>
