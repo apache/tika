@@ -519,6 +519,37 @@ public class RecursiveParserWrapperTest extends TikaTest {
 
     @Test
     public void testCompressionRatioAcrossEmbedded() throws Exception {
+        // one deflate layer stays under the default ratio; the check across the tree is what's under test
+        AutoDetectParserConfig config = new AutoDetectParserConfig();
+        config.setMaximumCompressionRatio(100);
+        AutoDetectParser parser = new AutoDetectParser();
+        parser.setAutoDetectParserConfig(config);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        try (TikaInputStream tis = TikaInputStream.get(gzippedText())) {
+            TikaException e = assertThrows(TikaException.class,
+                    () -> wrapper.parse(tis, handler, new Metadata(), new ParseContext()));
+            assertTrue(e.getMessage().contains("Zip bomb"));
+        }
+    }
+
+    @Test
+    public void testCompressedTextUnderDefaultRatio() throws Exception {
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        try (TikaInputStream tis = TikaInputStream.get(gzippedText())) {
+            wrapper.parse(tis, handler, new Metadata(), new ParseContext());
+        }
+        List<Metadata> metadataList = handler.getMetadataList();
+        assertEquals(2, metadataList.size());
+        assertNull(metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertTrue(metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT).length() > 1_000_000);
+    }
+
+    //~2 MB of text, a few KB compressed: a ratio between 100 and 1000
+    private static byte[] gzippedText() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (GZIPOutputStream gz = new GZIPOutputStream(bos)) {
             byte[] line = ("a ".repeat(50) + "\n").getBytes(StandardCharsets.US_ASCII);
@@ -526,14 +557,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 gz.write(line);
             }
         }
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
-        try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
-            TikaException e = assertThrows(TikaException.class,
-                    () -> wrapper.parse(tis, handler, new Metadata(), new ParseContext()));
-            assertTrue(e.getMessage().contains("Zip bomb"));
-        }
+        return bos.toByteArray();
     }
 
     private List<Metadata> getMetadata(Metadata metadata,
