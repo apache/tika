@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,9 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -83,6 +86,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
      * the second-and-later references.
      */
     private final Map<String, Set<Integer>> picturePages = new HashMap<>();
+    private List<PackageRelationship> slideRelationships = null;
 
     public SXSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context,
                                              XSLFEventBasedPowerPointExtractor extractor) {
@@ -105,26 +109,16 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         loadCommentAuthors();
         addCommentAuthorMetadata();
 
-        PackageRelationshipCollection slidesPRC = null;
-        try {
-            slidesPRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
-        } catch (InvalidFormatException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata, context);
-        }
-
         int hiddenSlideCount = 0;
-        if (slidesPRC != null && slidesPRC.size() > 0) {
-            for (int i = 0; i < slidesPRC.size(); i++) {
-                try {
-                    PackagePart slidePart =
-                            safeGetRelatedPart(mainDocument, slidesPRC.getRelationship(i));
-                    if (slidePart == null) {
-                        continue;
-                    }
-                    hiddenSlideCount += handleSlidePart(slidePart, xhtml);
-                } catch (InvalidFormatException | ZipException e) {
-                    EmbeddedDocumentUtil.recordException(e, metadata, context);
+        for (PackageRelationship slideRel : getSlideRelationships()) {
+            try {
+                PackagePart slidePart = safeGetRelatedPart(mainDocument, slideRel);
+                if (slidePart == null) {
+                    continue;
                 }
+                hiddenSlideCount += handleSlidePart(slidePart, xhtml);
+            } catch (InvalidFormatException | ZipException e) {
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
         }
         if (hiddenSlideCount > 0) {
@@ -143,6 +137,49 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
                             new HashMap<>()));
         }
+    }
+
+    /**
+     * Slide relationships in presentation order ({@code p:sldIdLst}), not in the
+     * relationship-id order POI iterates. Slides related but absent from the list go last.
+     */
+    private List<PackageRelationship> getSlideRelationships() {
+        if (slideRelationships != null) {
+            return slideRelationships;
+        }
+        slideRelationships = new ArrayList<>();
+        PackageRelationshipCollection slidesPRC = null;
+        try {
+            slidesPRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
+        } catch (InvalidFormatException e) {
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
+        }
+        if (slidesPRC == null || slidesPRC.size() == 0) {
+            return slideRelationships;
+        }
+        Map<String, PackageRelationship> remaining = new LinkedHashMap<>();
+        for (PackageRelationship rel : slidesPRC) {
+            remaining.put(rel.getId(), rel);
+        }
+        SlideIdListHandler handler = new SlideIdListHandler();
+        boolean parsed = false;
+        try (InputStream stream = mainDocument.getInputStream()) {
+            XMLReaderUtils.parseSAX(stream, handler, context);
+            parsed = true;
+        } catch (TikaException | SAXException | IOException e) {
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
+        }
+        for (String rId : handler.rIds) {
+            PackageRelationship rel = remaining.remove(rId);
+            if (rel != null) {
+                slideRelationships.add(rel);
+            }
+        }
+        if (parsed && !remaining.isEmpty()) {
+            metadata.set(Office.NUM_UNLISTED_SLIDES, remaining.size());
+        }
+        slideRelationships.addAll(remaining.values());
+        return slideRelationships;
     }
 
     private void loadCommentAuthors() {
@@ -265,24 +302,16 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         List<PackagePart> parts = new ArrayList<>();
         //TODO: consider: getPackage().getPartsByName(Pattern.compile("/ppt/embeddings/.*?
         //TODO: consider: getPackage().getPartsByName(Pattern.compile("/ppt/media/.*?
-        PackageRelationshipCollection slidePRC = null;
-        try {
-            slidePRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
-        } catch (InvalidFormatException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata, context);
-
-        }
-        if (slidePRC != null) {
-            for (int i = 0; i < slidePRC.size(); i++) {
-                PackagePart slidePart = null;
-                try {
-                    slidePart = safeGetRelatedPart(mainDocument, slidePRC.getRelationship(i));
-                } catch (InvalidFormatException e) {
-                    EmbeddedDocumentUtil.recordException(e, metadata, context);
-                }
-                recordPicturePageRefs(slidePart, i + 1);
-                addSlideParts(slidePart, parts);
+        List<PackageRelationship> slideRels = getSlideRelationships();
+        for (int i = 0; i < slideRels.size(); i++) {
+            PackagePart slidePart = null;
+            try {
+                slidePart = safeGetRelatedPart(mainDocument, slideRels.get(i));
+            } catch (InvalidFormatException e) {
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
+            recordPicturePageRefs(slidePart, i + 1);
+            addSlideParts(slidePart, parts);
         }
 
         parts.add(mainDocument);
@@ -402,4 +431,22 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
+    /** Collects the relationship ids of {@code p:sldIdLst/p:sldId} in document order. */
+    private static class SlideIdListHandler extends DefaultHandler {
+        private final List<String> rIds = new ArrayList<>();
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts) {
+            if (!"sldId".equals(localName)) {
+                return;
+            }
+            // r:id; the unqualified id attribute is the numeric slide id
+            for (int i = 0; i < atts.getLength(); i++) {
+                if ("id".equals(atts.getLocalName(i)) && !atts.getURI(i).isEmpty()) {
+                    rIds.add(atts.getValue(i));
+                    return;
+                }
+            }
+        }
+    }
 }
