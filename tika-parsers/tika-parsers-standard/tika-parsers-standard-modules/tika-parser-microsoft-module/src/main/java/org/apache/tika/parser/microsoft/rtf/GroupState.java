@@ -22,9 +22,14 @@ import java.nio.charset.Charset;
  * ... }. */
 
 class GroupState {
+    static final int SUPER = 1;
+    static final int SUB = 2;
+
     public int depth;
     public boolean bold;
     public boolean italic;
+    // 0 none, SUPER or SUB; nested inside <b><i>
+    public int vert;
     // True if we are skipping all text in current group,
     // eg if group leads with a \*:
     public boolean ignore;
@@ -55,6 +60,7 @@ class GroupState {
     public GroupState(GroupState other) {
         bold = other.bold;
         italic = other.italic;
+        vert = other.vert;
         ignore = other.ignore;
         ucSkip = other.ucSkip;
         list = other.list;

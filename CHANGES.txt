@@ -50,6 +50,11 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Superscript and subscript are kept as <sup>/<sub> in XHTML for docx (w:vertAlign,
+     directly or through a character style), pptx (a:rPr baseline), doc, RTF (\super,
+     \sub, \nosupersub) and HTML; they were dropped, so "x<sup>2</sup>" read "x2" and
+     footnote markers fused with the word before them. .ppt is not covered (TIKA-5016).
+
    * VLM text recognizers (jina-ocr, OpenAI-compatible, Claude, Gemini) no longer corrupt
      LaTeX math in model output: $...$, $$...$$, \(...\) and \[...\] are kept verbatim
      instead of being read as Markdown, which dropped the backslash from \{, \} and \|
