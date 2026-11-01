@@ -235,6 +235,7 @@
   {"class":"org.apache.tika.metadata.Office","field":"MAPI_RECIPIENTS_STRING","key":"meta:mapi-recipients-string"},
   {"class":"org.apache.tika.metadata.Office","field":"MAPI_SENT_BY_SERVER_TYPE","key":"meta:mapi-sent-by-server-type"},
   {"class":"org.apache.tika.metadata.Office","field":"NUM_HIDDEN_SLIDES","key":"msoffice:ppt:num-hidden-slides"},
+  {"class":"org.apache.tika.metadata.Office","field":"NUM_UNLISTED_SLIDES","key":"msoffice:ppt:num-unlisted-slides"},
   {"class":"org.apache.tika.metadata.Office","field":"OBJECT_COUNT","key":"meta:object-count"},
   {"class":"org.apache.tika.metadata.Office","field":"OCX_NAME","key":"msoffice:ocxName"},
   {"class":"org.apache.tika.metadata.Office","field":"PAGE_COUNT","key":"meta:page-count"},
