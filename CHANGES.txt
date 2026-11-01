@@ -8,6 +8,12 @@ Release 3.4.0 - ???
   * HttpFetcher refuses request headers whose name is not an RFC 7230 token or whose
     value holds a control character, from the fetcher config, per-request fetcher config
     or the httpRequestHeaders metadata; a CRLF in a header name injected request lines.
+    
+  * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
+    up from 100. The ratio is now measured across the whole embedded tree against the
+    container's bytes, so nested compression is still caught; at 100, ordinary compressed
+    logs and text tripped it. Set maximumCompressionRatio to 100 to restore the old limit
+    (TIKA-4985).
 
   * A RAR entry junrar fails to extract is recorded as
     X-TIKA:EXCEPTION:embedded_stream_exception on the container; what was extracted

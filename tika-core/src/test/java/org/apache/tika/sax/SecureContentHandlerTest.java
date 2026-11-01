@@ -89,7 +89,7 @@ public class SecureContentHandlerTest {
     @Test
     public void testManyCharactersPerByte() throws IOException {
         try {
-            char[] ch = new char[1000];
+            char[] ch = new char[2000];
             for (int i = 0; i < MANY_BYTES; i++) {
                 stream.read();
                 handler.characters(ch, 0, ch.length);
