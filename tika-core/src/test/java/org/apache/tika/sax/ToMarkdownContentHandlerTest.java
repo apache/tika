@@ -573,6 +573,31 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testEmptyAndBlankSupSubDropped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "a");
+        startElement(handler, "sup");
+        endElement(handler, "sup");
+        chars(handler, "b");
+        startElement(handler, "sub");
+        chars(handler, " ");
+        endElement(handler, "sub");
+        chars(handler, "c");
+        startElement(handler, "sup");
+        startElement(handler, "sub");
+        endElement(handler, "sub");
+        endElement(handler, "sup");
+        chars(handler, "d");
+        endElement(handler, "p");
+        handler.endDocument();
+        String md = handler.toString();
+        assertFalse(md.contains("sup>") || md.contains("sub>"), md);
+        assertContains("ab c", md);
+    }
+
+    @Test
     public void testSupAcrossBlockDropsTags() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
