@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
@@ -179,9 +180,8 @@ public class ID3v2Frame implements MP3Frame {
                     throw new IOException("Tried to read " + length + " bytes, but only " + pos +
                             " bytes present");
                 } else {
-                    // Give them what we found
-                    // TODO Log the short read
-                    return b;
+                    // return only what was read, not zero padding (TIKA-4812)
+                    return Arrays.copyOf(b, pos);
                 }
             }
             pos += read;
@@ -417,8 +417,9 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         public boolean hasNext() {
-            // Check for padding at the end
-            return offset < data.length && data[offset] != 0;
+            // stop at padding, and at a tail too short for a full frame header
+            return offset + nameLength + sizeLength + flagLength <= data.length
+                    && data[offset] != 0;
         }
 
         public RawTag next() {

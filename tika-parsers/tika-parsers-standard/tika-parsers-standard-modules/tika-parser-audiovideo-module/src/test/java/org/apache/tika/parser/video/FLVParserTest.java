@@ -17,6 +17,13 @@
 package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +31,38 @@ import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
 
 public class FLVParserTest {
+
+    /**
+     * Deeply nested AMF objects used to recurse in readAMFData until the stack
+     * overflowed (an uncaught Error); the reader must bound the nesting depth.
+     */
+    @Test
+    public void testAmfNestingIsBounded() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(3); //top-level AMF object marker
+        for (int i = 0; i < 100_000; i++) {
+            bos.write(new byte[]{0, 0}); //empty key (uint16 length 0)
+            bos.write(3);                //value type = object -> recurse
+        }
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        assertThrows(IOException.class, () -> new FLVParser().readAMFData(dis, -1));
+    }
+
+    /** A crafted 32-bit element count must fail fast, not grow a collection until OOM. */
+    @Test
+    public void testAmfArrayCountIsBounded() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(10); //strict array
+        bos.write(new byte[]{(byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff});
+        for (int i = 0; i < 200_000; i++) {
+            bos.write(5); //null element
+        }
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        //without the cap this reads every element and ends in a bare EOFException
+        IOException e = assertThrows(IOException.class,
+                () -> new FLVParser().readAMFData(dis, -1));
+        assertTrue(e.getMessage().contains("exceeds"), e.getMessage());
+    }
 
     @Test
     public void testFLV() throws Exception {
