@@ -30,7 +30,7 @@ public class EvalConfig {
     private int maxFilesToAdd = -1;
     private int maxTokens = 200000;
 
-    private int maxContentLength = 5_000_000;
+    private int maxContentLength = 10_000_000;
     private int numWorkers = 4;
     private Path errorLogFile = null;
 

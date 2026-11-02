@@ -115,6 +115,13 @@ Release 4.3.0 - ???
      skipped:max-pages in tk:ocr-warnings; before, the cap left no trace and
      pdf:ocr-page-count still counted those pages (TIKA-5013).
 
+   * tika-eval Compare reports text that moved between the two extracts (a reordered
+     slide, a title written at the end of a page instead of the start): order_* columns
+     in content_comparisons and the moved_text and moved_text_by_mime reports. The
+     maxTokens and maxContentLength settings in a tika-eval config are now applied; they
+     were ignored, and the maxContentLength default is now the 10,000,000 that was in
+     effect (TIKA-5022).
+
 Release 4.2.0 - 10/25/2026
 
   BREAKING CHANGES AND DEPRECATIONS

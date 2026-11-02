@@ -21,12 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -34,6 +37,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.eval.app.db.Cols;
@@ -383,6 +387,38 @@ public class SimpleComparerTest extends TikaTest {
             }
             m.put(id, embeddedName);
         }
+    }
+
+    @Test
+    public void testMaxTokens() throws Exception {
+        comparer.setMaxTokens(5);
+        EvalFilePaths fpsA = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath());
+        EvalFilePaths fpsB = new EvalFilePaths(Paths.get("file1.pdf.json"), getResourceAsFile("/test-dirs/extractsB/file1.pdf.json").toPath());
+        comparer.compareFiles(fpsA, fpsB);
+        assertEquals("5", WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A).get(0).get(Cols.NUM_TOKENS));
+    }
+
+    @Test
+    public void testMovedSentence(@TempDir Path tmp) throws Exception {
+        Random r = new Random(5);
+        StringBuilder body = new StringBuilder();
+        for (int i = 0; i < 600; i++) {
+            body.append(" w").append(r.nextInt(3000));
+        }
+        String title = "annual report of the regional water board";
+        Path a = writeExtract(tmp.resolve("a.json"), body + " " + title);
+        Path b = writeExtract(tmp.resolve("b.json"), title + body);
+
+        comparer.compareFiles(new EvalFilePaths(Paths.get("f.pdf"), a), new EvalFilePaths(Paths.get("f.pdf"), b));
+
+        Map<Cols, String> row = WRITER.getTable(ExtractComparer.CONTENT_COMPARISONS).get(0);
+        assertEquals("1", row.get(Cols.ORDER_MOVED_SEGMENTS));
+        assertEquals(title, row.get(Cols.ORDER_MOVED_SAMPLE));
+    }
+
+    private static Path writeExtract(Path p, String content) throws IOException {
+        Files.writeString(p, "[{\"Content-Type\":\"text/plain\",\"tk:content\":\"" + content + "\"}]");
+        return p;
     }
 
     @Test
