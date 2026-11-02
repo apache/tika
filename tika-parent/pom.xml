@@ -1382,7 +1382,38 @@
               <fail>true</fail>
             </configuration>
           </execution>
+          <!-- javac release N compiles against newer jars; fail here, not at runtime with
+               UnsupportedClassVersionError -->
+          <execution>
+            <id>enforce-bytecode-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <enforceBytecodeVersion>
+                  <maxJdkVersion>${maven.compiler.release}</maxJdkVersion>
+                  <ignoredScopes>
+                    <ignoredScope>test</ignoredScope>
+                    <ignoredScope>provided</ignoredScope>
+                  </ignoredScopes>
+                  <ignoreClasses>
+                    <!-- jline's FFM terminal (Java 22) loads only on runtimes that support it -->
+                    <ignoreClass>org.jline.terminal.impl.ffm.*</ignoreClass>
+                  </ignoreClasses>
+                </enforceBytecodeVersion>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>extra-enforcer-rules</artifactId>
+            <version>1.12.1</version>
+          </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>com.diffplug.spotless</groupId>

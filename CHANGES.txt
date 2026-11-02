@@ -4,6 +4,25 @@ Release 3.4.0 - ???
     OpenSearch reporter accept verifySsl: true checks TLS certificates and hostnames against
     the JVM trust store. The default stays false (no verification), as before.
 
+  * tika-age-recogniser runs on Java 11 again: hadoop is back on 3.4.3 (3.5.0, in 3.3.3, needs
+    Java 17). The build now fails if a shipped dependency targets a newer Java than its
+    module (enforceBytecodeVersion) (TIKA-5021).
+    
+  * The SQLite and GeoPackage parsers quote table names when reading each table; a
+    name that needed quoting failed the parse, and a crafted name ran as SQL.
+    
+  * The Outlook .msg parser falls back to the Date: transport header when a message has
+    no MAPI date; the header was never matched, so such messages had no created or
+    modified date (TIKA-4959).
+    
+  * The text/html magic now requires the html tag to end, so an XML file with an
+    element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
+    to the HTML parser (TIKA-4962).
+    
+  * JSoupParser emits the text of CDATA sections again. jsoup 1.23 tokenizes CDATA in
+    HTML content as a bogus comment, which silently dropped every CDATA value in XML
+    that reaches the HTML parser (TIKA-4963).
+    
   * MP4Parser no longer allocates a box's declared size up front: a box larger than
     maxBoxSize (default 100 MB, configurable) or than the file is skipped and recorded as
     a warning, so a crafted box header cannot force a multi-GB allocation. A malformed
