@@ -527,7 +527,9 @@ public class OOXMLDocxSAXTest extends TikaTest {
         assertContains("<b>Bold</b>", xml);
         assertContains("<i>italic</i>", xml);
         assertContains("<u>underline</u>", xml);
-        assertContains("<s>strikethrough</s>", xml);
+        // the run is also subscript
+        assertContains("<s><sub>strikethrough</sub></s>", xml);
+        assertContains("<sup>superscript</sup>", xml);
     }
 
     @Test

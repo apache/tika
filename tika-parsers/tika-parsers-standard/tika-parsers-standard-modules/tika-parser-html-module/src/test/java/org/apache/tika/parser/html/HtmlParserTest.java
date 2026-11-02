@@ -1431,4 +1431,14 @@ public class HtmlParserTest extends TikaTest {
         assertContains("this is content", xml);
     }
 
+
+    @Test
+    public void testSupSubKept() throws Exception {
+        String html = "<html><body><p>E = mc<SUP>2</SUP> and H<sub>2</sub>O</p></body></html>";
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(html.getBytes(UTF_8))) {
+            xml = getXML(tis, TikaTest.AUTO_DETECT_PARSER, new Metadata()).xml;
+        }
+        assertContains("E = mc<sup>2</sup> and H<sub>2</sub>O", xml);
+    }
 }

@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.util.Objects;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.apache.poi.xwpf.usermodel.VerticalAlign;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -26,7 +27,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Single owner of all run-scoped XHTML wrapper tags, ensuring proper nesting.
  * Nesting order from outermost to innermost:
- * {@code <a href="..."><b><i><s><u>text</u></s></i></b></a>}.
+ * {@code <a href="..."><b><i><s><u><sup>text</sup></u></s></i></b></a>}
+ * ({@code <sub>} in place of {@code <sup>}).
  * <p>
  * Hyperlinks come from two OOXML sources with different lifecycles:
  * <ul>
@@ -55,6 +57,8 @@ class FormattingTagManager {
     private boolean isItalics = false;
     private boolean isStrikeThrough = false;
     private boolean isUnderline = false;
+    // "sup", "sub" or null; innermost
+    private String vertTag = null;
 
     FormattingTagManager(XHTMLContentHandler xhtml) {
         this.xhtml = xhtml;
@@ -139,6 +143,16 @@ class FormattingTagManager {
             currentSpanClass = spanClass;
         }
 
+        boolean runIsUnderlined = runProperties.getUnderline() != UnderlinePatterns.NONE;
+        String runVertTag = toVertTag(runProperties.getVerticalAlign());
+        if (vertTag != null && (!vertTag.equals(runVertTag) || runProperties.isBold() != isBold
+                || runProperties.isItalics() != isItalics
+                || runProperties.isStrikeThrough() != isStrikeThrough
+                || runIsUnderlined != isUnderline)) {
+            xhtml.endElement(vertTag);
+            vertTag = null;
+        }
+
         if (runProperties.isBold() != isBold) {
             // Close inner tags before flipping <b>. Nesting is <b><i><s><u>
             // (outermost to innermost), so close innermost first: u, s, i.
@@ -193,7 +207,6 @@ class FormattingTagManager {
             isStrikeThrough = runProperties.isStrikeThrough();
         }
 
-        boolean runIsUnderlined = runProperties.getUnderline() != UnderlinePatterns.NONE;
         if (runIsUnderlined != isUnderline) {
             if (runIsUnderlined) {
                 xhtml.startElement("u");
@@ -201,6 +214,22 @@ class FormattingTagManager {
                 xhtml.endElement("u");
             }
             isUnderline = runIsUnderlined;
+        }
+
+        if (runVertTag != null && vertTag == null) {
+            xhtml.startElement(runVertTag);
+            vertTag = runVertTag;
+        }
+    }
+
+    private static String toVertTag(VerticalAlign align) {
+        switch (align) {
+            case SUPERSCRIPT:
+                return "sup";
+            case SUBSCRIPT:
+                return "sub";
+            default:
+                return null;
         }
     }
 
@@ -252,6 +281,10 @@ class FormattingTagManager {
     }
 
     private void closeFormattingTags() throws SAXException {
+        if (vertTag != null) {
+            xhtml.endElement(vertTag);
+            vertTag = null;
+        }
         if (isUnderline) {
             xhtml.endElement("u");
             isUnderline = false;

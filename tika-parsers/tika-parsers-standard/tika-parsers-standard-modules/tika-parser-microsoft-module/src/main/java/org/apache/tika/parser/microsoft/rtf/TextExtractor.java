@@ -666,6 +666,12 @@ final class TextExtractor {
                 fieldState = 0;
                 hyperlinkAnchorDepth = -1;
             }
+            if (groupState.vert != 0) {
+                end(vertTag(groupState.vert));
+                if (!preserveStyles) {
+                    groupState.vert = 0;
+                }
+            }
             if (groupState.italic) {
                 end("i");
                 groupState.italic = preserveStyles;
@@ -705,7 +711,7 @@ final class TextExtractor {
                     end(paragraphStack.pop());
                 }
             }
-            if (preserveStyles && (groupState.bold || groupState.italic)) {
+            if (preserveStyles && (groupState.bold || groupState.italic || groupState.vert != 0)) {
                 start(P);
                 pushParagraphTag(P);
                 startStyles(groupState);
@@ -973,6 +979,7 @@ final class TextExtractor {
                 if (fieldState == 0) {
                     if (groupState.bold) {
                         pushText();
+                        endVert();
                         if (groupState.italic) {
                             end("i");
                         }
@@ -980,6 +987,7 @@ final class TextExtractor {
                         if (groupState.italic) {
                             start("i");
                         }
+                        startVert();
                         groupState.bold = false;
                     }
                 }
@@ -990,8 +998,10 @@ final class TextExtractor {
                 if (fieldState == 0) {
                     if (groupState.italic) {
                         pushText();
+                        endVert();
                         end("i");
                         groupState.italic = false;
+                        startVert();
                     }
                 }
             } else if (equals("f")) {
@@ -1212,8 +1222,9 @@ final class TextExtractor {
                     if (!groupState.bold) {
                         pushText();
                         lazyStartParagraph();
+                        endVert();
                         if (groupState.italic) {
-                            // Make sure nesting is always <b><i>
+                            // Make sure nesting is always <b><i><sup|sub>
                             end("i");
                         }
                         groupState.bold = true;
@@ -1224,8 +1235,25 @@ final class TextExtractor {
                     if (!groupState.italic) {
                         pushText();
                         lazyStartParagraph();
+                        endVert();
                         groupState.italic = true;
                         start("i");
+                        startVert();
+                    }
+                } else if (equals("super") || equals("sub")) {
+                    int vert = equals("super") ? GroupState.SUPER : GroupState.SUB;
+                    if (groupState.vert != vert) {
+                        pushText();
+                        lazyStartParagraph();
+                        endVert();
+                        groupState.vert = vert;
+                        startVert();
+                    }
+                } else if (equals("nosupersub")) {
+                    if (groupState.vert != 0) {
+                        pushText();
+                        endVert();
+                        groupState.vert = 0;
                     }
                 }
             }
@@ -1240,7 +1268,7 @@ final class TextExtractor {
                 pendingListEnd();
             }
         } else if (equals("plain")) {
-            if (groupState.italic || groupState.bold) {
+            if (groupState.italic || groupState.bold || groupState.vert != 0) {
                 // Reset styles
                 pushText();
                 endStyles(groupState);
@@ -1425,6 +1453,22 @@ final class TextExtractor {
         }
     }
 
+    private static String vertTag(int vert) {
+        return vert == GroupState.SUPER ? "sup" : "sub";
+    }
+
+    private void endVert() throws IOException, SAXException, TikaException {
+        if (groupState.vert != 0) {
+            end(vertTag(groupState.vert));
+        }
+    }
+
+    private void startVert() throws IOException, SAXException, TikaException {
+        if (groupState.vert != 0) {
+            start(vertTag(groupState.vert));
+        }
+    }
+
     private void startStyles(GroupState groupState)
             throws TikaException, IOException, SAXException {
         //don't change styles within a <a > element
@@ -1438,13 +1482,21 @@ final class TextExtractor {
         if (groupState.italic) {
             start("i");
         }
+        if (groupState.vert != 0) {
+            start(vertTag(groupState.vert));
+        }
     }
+
     private void endStyles(GroupState groupState) throws TikaException, IOException, SAXException {
         //don't change styles within a <a > element
         if (fieldState != 0) {
             return;
         }
-        // Ensure </i></b> order
+        // Ensure </sup|sub></i></b> order
+        if (groupState.vert != 0) {
+            end(vertTag(groupState.vert));
+            groupState.vert = 0;
+        }
         if (groupState.italic) {
             end("i");
             groupState.italic = false;
@@ -1577,6 +1629,13 @@ final class TextExtractor {
             }
             //only modify styles if we're not in a hyperlink
             if (fieldState == 0) {
+                // Close sup/sub if it or anything outside it changes
+                if (groupState.vert != 0 && (groupState.vert != outerGroupState.vert
+                        || groupState.italic != outerGroupState.italic
+                        || groupState.bold != outerGroupState.bold)) {
+                    end(vertTag(groupState.vert));
+                    groupState.vert = 0;
+                }
                 // Close italic, if outer does not have italic or
                 // bold changed:
                 if (groupState.italic) {
@@ -1599,6 +1658,10 @@ final class TextExtractor {
                 // Open italic
                 if (!groupState.italic && outerGroupState.italic) {
                     start("i");
+                }
+
+                if (groupState.vert == 0 && outerGroupState.vert != 0) {
+                    start(vertTag(outerGroupState.vert));
                 }
             }
             groupState = outerGroupState;

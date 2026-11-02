@@ -221,7 +221,8 @@ public class WordParserTest extends TikaTest {
         assertTrue(xml.contains("<b>Bold</b>"));
         assertTrue(xml.contains("<i>italic</i>"));
         assertTrue(xml.contains("<u>underline</u>"));
-
+        assertContains("<sup>superscript</sup>", xml);
+        assertContains("<sub>subscript", xml);
     }
 
     @Test

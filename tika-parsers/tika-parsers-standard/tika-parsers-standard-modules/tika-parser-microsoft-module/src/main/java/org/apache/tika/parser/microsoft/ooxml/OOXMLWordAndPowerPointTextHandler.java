@@ -69,6 +69,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String I = "i";
     private final static String U = "u";
     private final static String STRIKE = "strike";
+    private final static String VERT_ALIGN = "vertAlign";
     private final static String NUM_PR = "numPr";
     private final static String BR = "br";
     private final static String NO_BREAK_HYPHEN = "noBreakHyphen";
@@ -277,6 +278,12 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         //yes, I know, likely premature optimization...
         if (RPR.equals(localName)) {
             inRPr = true;
+            if (inR && DRAWING_MAIN_NS.equals(uri)) {
+                String baseline = atts.getValue("baseline");
+                if (baseline != null) {
+                    currRunProperties.setBaselineOffset(baseline);
+                }
+            }
         } else if (O_MATH.equals(localName) && M_NS.equals(uri)) {
             if (mathDepth++ == 0) {
                 bodyContentsHandler.startMath();
@@ -320,6 +327,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (U.equals(localName)) {
             if (inR && inRPr) {
                 currRunProperties.setUnderline(getStringVal(atts));
+            }
+        } else if (VERT_ALIGN.equals(localName)) {
+            if (inR && inRPr) {
+                currRunProperties.setVerticalAlign(getStringVal(atts));
             }
         } else if (TR.equals(localName)) {
             bodyContentsHandler.startTableRow();
