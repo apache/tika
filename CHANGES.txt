@@ -1,5 +1,10 @@
 Release 3.4.0 - ???
 
+  * MP4Parser no longer allocates a box's declared size up front: a box larger than
+    maxBoxSize (default 100 MB, configurable) or than the file is skipped and recorded as
+    a warning, so a crafted box header cannot force a multi-GB allocation. A malformed
+    udta sub-box length no longer throws IllegalArgumentException (TIKA-4812).
+
   * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
     up from 100. The ratio is now measured across the whole embedded tree against the
     container's bytes, so nested compression is still caught; at 100, ordinary compressed
