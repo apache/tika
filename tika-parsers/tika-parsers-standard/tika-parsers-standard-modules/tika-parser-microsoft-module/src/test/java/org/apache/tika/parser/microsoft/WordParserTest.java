@@ -432,7 +432,7 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testControlCharacter() throws Exception {
-        assertContains("<u>1.</u> <u>Introduzione</u><b> </b></a><u> </u></p>",
+        assertContains("<u>1.</u> <u>Introduzione</u> </a><u> </u></p>",
                 getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
     }
 
@@ -602,8 +602,8 @@ public class WordParserTest extends TikaTest {
         String xml = getXML("testWORD_italicsSurroundingHyperlink.doc").xml;
         xml = xml.replaceAll("\\s+", " ");
         assertContains(
-                "<body><p><i>Italic Test before link </i><a href=\"http://www.google.com\"><b><i>" +
-                        "<u>hyperlink italics</u></i></b></a><i> Italic text after " +
+                "<body><p><i>Italic Test before link</i> <a href=\"http://www.google.com\"><b><i>" +
+                        "<u>hyperlink italics</u></i></b></a> <i>Italic text after " +
                         "hyperlink</i></p>",
                 xml);
     }

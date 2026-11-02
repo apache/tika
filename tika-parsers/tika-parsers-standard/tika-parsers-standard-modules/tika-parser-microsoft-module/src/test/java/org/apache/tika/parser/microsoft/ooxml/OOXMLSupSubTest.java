@@ -54,8 +54,8 @@ public class OOXMLSupSubTest extends TikaTest {
         String xml = parse(docx("<w:document " + W + "><w:body><w:p>" + body
                 + "</w:p></w:body></w:document>", styles));
         assertContains("E = mc<sup>2</sup> and H<sub>2</sub>O, note<sup>3</sup>", xml);
-        // sup nests inside b, and closes before </b>
-        assertContains("<b> bold<sup>x</sup></b><sup>y</sup>", xml);
+        // sup nests inside b, and closes before </b>; the run's leading space sits outside <b>
+        assertContains("<sup>3</sup> <b>bold<sup>x</sup></b><sup>y</sup>", xml);
         assertNotContained("<sup> 4", xml);
     }
 

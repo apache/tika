@@ -555,6 +555,33 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testEmphasisEdgeWhitespaceAndEmptyDropped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "a");
+        startElement(handler, "b");
+        chars(handler, " Note: ");
+        endElement(handler, "b");
+        chars(handler, "b");
+        startElement(handler, "i");
+        endElement(handler, "i");
+        startElement(handler, "s");
+        chars(handler, " ");
+        endElement(handler, "s");
+        chars(handler, "c");
+        startElement(handler, "b");
+        startElement(handler, "i");
+        chars(handler, "x\u00A0");
+        endElement(handler, "i");
+        endElement(handler, "b");
+        chars(handler, "d");
+        endElement(handler, "p");
+        handler.endDocument();
+        assertContains("a **Note:** b c**_x_**\u00A0d", handler.toString());
+    }
+
+    @Test
     public void testSupSubWrittenAsInlineHtml() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();

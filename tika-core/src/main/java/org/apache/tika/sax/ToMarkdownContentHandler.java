@@ -342,6 +342,14 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "s":
             case "strike":
             case "del":
+                closeImplicitParagraph();
+                Node popped = stack.size() > 1 ? stack.peek() : null;
+                pop();
+                if (popped instanceof Emphasis || popped instanceof StrongEmphasis
+                        || popped instanceof Strikethrough) {
+                    trimDelimited(popped);
+                }
+                break;
             case "a":
                 closeImplicitParagraph();
                 pop();
@@ -614,6 +622,55 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         ensureInlineContainer();
         stack.peek().appendChild(node);
         stack.push(node);
+    }
+
+    /**
+     * Markdown delimiters cannot sit next to whitespace inside them ({@code ** x**} is
+     * literal), so moves edge whitespace outside and drops the node if nothing is left.
+     */
+    private static void trimDelimited(Node node) {
+        while (node.getFirstChild() instanceof Text) {
+            Text t = (Text) node.getFirstChild();
+            String lit = t.getLiteral();
+            String rest = lit.substring(edgeWhitespace(lit, true));
+            if (rest.length() < lit.length()) {
+                node.insertBefore(new Text(lit.substring(0, lit.length() - rest.length())));
+            }
+            if (!rest.isEmpty()) {
+                t.setLiteral(rest);
+                break;
+            }
+            t.unlink();
+        }
+        while (node.getLastChild() instanceof Text) {
+            Text t = (Text) node.getLastChild();
+            String lit = t.getLiteral();
+            String rest = lit.substring(0, lit.length() - edgeWhitespace(lit, false));
+            if (rest.length() < lit.length()) {
+                node.insertAfter(new Text(lit.substring(rest.length())));
+            }
+            if (!rest.isEmpty()) {
+                t.setLiteral(rest);
+                break;
+            }
+            t.unlink();
+        }
+        if (node.getFirstChild() == null) {
+            node.unlink();
+        }
+    }
+
+    /** CommonMark counts Unicode Zs (e.g. NBSP) as whitespace for delimiter flanking. */
+    private static int edgeWhitespace(String s, boolean leading) {
+        int n = 0;
+        while (n < s.length()) {
+            char c = s.charAt(leading ? n : s.length() - 1 - n);
+            if (!Character.isWhitespace(c) && !Character.isSpaceChar(c)) {
+                break;
+            }
+            n++;
+        }
+        return n;
     }
 
     private void pop() {
