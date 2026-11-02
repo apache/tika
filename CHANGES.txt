@@ -1,5 +1,8 @@
 Release 3.4.0 - ???
 
+  * The SQLite and GeoPackage parsers quote table names when reading each table; a
+    name that needed quoting failed the parse, and a crafted name ran as SQL.
+    
   * The Outlook .msg parser falls back to the Date: transport header when a message has
     no MAPI date; the header was never matched, so such messages had no created or
     modified date (TIKA-4959).
