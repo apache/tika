@@ -17,9 +17,15 @@
 package org.apache.tika.parser.mp4;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,6 +40,7 @@ import com.drew.metadata.mp4.media.Mp4VideoDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -43,6 +50,7 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 
 /**
@@ -318,5 +326,71 @@ public class MP4ParserTest extends TikaTest {
         assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
         assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
         assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+    }
+
+    @Test
+    public void testOversizedBoxIsSkippedNotAllocated() throws Exception {
+        //the library reader would do new byte[payload] for an accepted box. TIKA-4812
+        byte[] ftyp = ftypBox(24);
+        assertNull(majorBrand(ftyp, 8L));             //cap below the 16-byte payload: skipped
+        assertEquals("isom", majorBrand(ftyp, 1000L)); //above it: read
+    }
+
+    @Test
+    public void testBoxClaimingMoreThanTheInputIsSkipped() throws Exception {
+        //a 24-byte file whose ftyp claims ~1.5 GB, under the cap only because the cap is raised
+        byte[] ftyp = ftypBox(1_500_000_000);
+        Mp4Directory dir = walk(ftyp, Long.MAX_VALUE);
+        assertTrue(dir.getErrors().toString().contains("exceeds the input size"),
+                dir.getErrors().toString());
+    }
+
+    @Test
+    public void testNestedContainerRecursionIsBounded() throws Exception {
+        int depth = 100_000;
+        ByteBuffer buf = ByteBuffer.allocate(depth * 8);
+        for (int k = 0; k < depth; k++) {
+            buf.putInt(8 * (depth - k));
+            buf.put("moov".getBytes(StandardCharsets.ISO_8859_1));
+        }
+        assertDoesNotThrow(() -> walk(buf.array(), 1000L));
+    }
+
+    @Test
+    public void testLargeSizeBoxHeaderAccounting() throws Exception {
+        //a 64-bit largesize box has a 16-byte header; the ftyp after it must still parse
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(new byte[]{0, 0, 0, 1});
+        bos.write("udta".getBytes(StandardCharsets.ISO_8859_1));
+        bos.write(new byte[]{0, 0, 0, 0, 0, 0, 0, 24});
+        bos.write(new byte[]{0, 0, 0, 8});
+        bos.write("free".getBytes(StandardCharsets.ISO_8859_1));
+        bos.write(ftypBox(24));
+        assertEquals("isom", majorBrand(bos.toByteArray(), 1000L));
+    }
+
+    private static String majorBrand(byte[] boxes, long maxBoxSize) throws Exception {
+        Mp4Directory dir = walk(boxes, maxBoxSize);
+        return dir == null ? null : dir.getString(Mp4Directory.TAG_MAJOR_BRAND);
+    }
+
+    private static Mp4Directory walk(byte[] boxes, long maxBoxSize) {
+        com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
+        Metadata tikaMetadata = new Metadata();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), tikaMetadata);
+        TikaMp4BoxHandler handler = new TikaMp4BoxHandler(mp4Metadata, tikaMetadata, xhtml);
+        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize, boxes.length);
+        return mp4Metadata.getFirstDirectoryOfType(Mp4Directory.class);
+    }
+
+    private static byte[] ftypBox(int declaredSize) {
+        ByteBuffer buf = ByteBuffer.allocate(24);
+        buf.putInt(declaredSize);
+        buf.put("ftyp".getBytes(StandardCharsets.ISO_8859_1));
+        buf.put("isom".getBytes(StandardCharsets.ISO_8859_1)); //major brand
+        buf.putInt(0);
+        buf.put("mp41".getBytes(StandardCharsets.ISO_8859_1));
+        buf.put("mp42".getBytes(StandardCharsets.ISO_8859_1));
+        return buf.array();
     }
 }

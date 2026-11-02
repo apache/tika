@@ -1,5 +1,10 @@
 Release 3.4.0 - ???
 
+  * MP4Parser no longer allocates a box's declared size up front: a box larger than
+    maxBoxSize (default 100 MB, configurable) or than the file is skipped and recorded as
+    a warning, so a crafted box header cannot force a multi-GB allocation. A malformed
+    udta sub-box length no longer throws IllegalArgumentException (TIKA-4812).
+    
   * The tika-app GUI's Formatted Text view no longer lets a document make Swing
     construct classes or fetch URLs: only plain elements and attributes reach it, and
     remote images are not loaded (TIKA-4992).
