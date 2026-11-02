@@ -2,6 +2,59 @@ Release 3.4.0 - ???
 
   * The SQLite and GeoPackage parsers quote table names when reading each table; a
     name that needed quoting failed the parse, and a crafted name ran as SQL.
+    
+  * The Outlook .msg parser falls back to the Date: transport header when a message has
+    no MAPI date; the header was never matched, so such messages had no created or
+    modified date (TIKA-4959).
+    
+  * The text/html magic now requires the html tag to end, so an XML file with an
+    element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
+    to the HTML parser (TIKA-4962).
+    
+  * JSoupParser emits the text of CDATA sections again. jsoup 1.23 tokenizes CDATA in
+    HTML content as a bogus comment, which silently dropped every CDATA value in XML
+    that reaches the HTML parser (TIKA-4963).
+    
+  * MP4Parser no longer allocates a box's declared size up front: a box larger than
+    maxBoxSize (default 100 MB, configurable) or than the file is skipped and recorded as
+    a warning, so a crafted box header cannot force a multi-GB allocation. A malformed
+    udta sub-box length no longer throws IllegalArgumentException (TIKA-4812).
+    
+  * The tika-app GUI's Formatted Text view no longer lets a document make Swing
+    construct classes or fetch URLs: only plain elements and attributes reach it, and
+    remote images are not loaded (TIKA-4992).
+    
+  * IptcAnpaParser no longer carries the wire format across parses: an unmarked wire
+    parsed after a Reuters/AP/NYT/Bloomberg one inherited that agency's format rules
+    and publisher (TIKA-4995).
+
+  * EnviHeaderParser and IDMLParser keep per-document state local to the parse:
+    EnviHeaderParser reported a second multi-line field under the first field's key and
+    carried a previous document's description; IDMLParser's page counts accumulated
+    across parses.
+    
+  * GDALParser passes the input path to gdalinfo as one argument; a path containing
+    whitespace was split into several arguments.
+    
+  * The Kafka emitter reports success only once Kafka has acknowledged every record
+    (per acks); a rejected or timed-out record fails the emit instead of being lost
+    silently. lingerMs now defaults to 5 (was 5000), since each emit waits for its acks.
+    transactionalId is refused at load: the emitter never opened a transaction, so the
+    producer rejected every send (TIKA-5008).
+    
+  * HttpFetcher applies its configured connect, socket and connection-request timeouts
+    to fetches. A per-request config replaced the client default instead of merging
+    with it, so no timeout applied to a non-range fetch; connectTimeout set the socket
+    timeout; and the client never set a connect timeout.
+
+  * HttpFetcher refuses request headers whose name is not an RFC 7230 token or whose
+    value holds a control character, from the fetcher config, per-request fetcher config
+    or the httpRequestHeaders metadata; a CRLF in a header name injected request lines.
+    
+  * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
+    instead of relationship-id order, which put rId10 before rId2; embedded resources
+    follow the same order. Slides that are related but missing from the list are
+    extracted last and counted in msoffice:ppt:num-unlisted-slides (TIKA-5017).
 
   * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
     up from 100. The ratio is now measured across the whole embedded tree against the
