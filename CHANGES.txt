@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * tika-age-recogniser is deprecated and will be removed in 3.5.0; it depends on the
+    unmaintained age-predictor-api on Spark 2.2 / Scala 2.10. It was removed in 4.0.0
+    (TIKA-4343).
+
   * The http fetcher, the Solr and OpenSearch emitters, the Solr pipes iterator and the
     OpenSearch reporter accept verifySsl: true checks TLS certificates and hostnames against
     the JVM trust store. The default stays false (no verification), as before.
