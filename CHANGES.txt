@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * The Outlook .msg parser falls back to the Date: transport header when a message has
+    no MAPI date; the header was never matched, so such messages had no created or
+    modified date (TIKA-4959).
+
   * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
     up from 100. The ratio is now measured across the whole embedded tree against the
     container's bytes, so nested compression is still caught; at 100, ordinary compressed
