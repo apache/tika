@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * The text/html magic now requires the html tag to end, so an XML file with an
+    element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
+    to the HTML parser (TIKA-4962).
+    
   * JSoupParser emits the text of CDATA sections again. jsoup 1.23 tokenizes CDATA in
     HTML content as a bogus comment, which silently dropped every CDATA value in XML
     that reaches the HTML parser (TIKA-4963).
