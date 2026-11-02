@@ -17,13 +17,26 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -36,6 +49,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
@@ -355,6 +369,92 @@ public class OOXMLPptxSAXTest extends TikaTest {
         assertContains("MASTERFOOTERMSG", mainContent);
         assertNotContained("Click to edit Master", mainContent);
         assertNotContained("Second level", mainContent);
+    }
+
+    @Test
+    public void testSlidesInPresentationOrder() throws Exception {
+        //rId10 and rId11 (slides 9 and 10) sort before rId2 as strings
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_various2.pptx");
+        assertInOrder(metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT),
+                "This is some content", "Slide2Header", "Slide3Header", "This slide is hidden");
+        Metadata image = null;
+        for (Metadata m : metadataList) {
+            String path = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+            if (path != null && path.endsWith("image5.jpg")) {
+                image = m;
+            }
+        }
+        assertNotNull(image);
+        assertEquals("5", image.get(TikaPagedText.PAGE_NUMBER));
+    }
+
+    @Test
+    public void testSlidesFollowSlideIdList() throws Exception {
+        //reverse p:sldIdLst so presentation order disagrees with every relationship ordering
+        byte[] pptx = rewriteEntry("testPPT.pptx", "ppt/presentation.xml", xml -> {
+            Matcher m = Pattern.compile("(?s)<p:sldIdLst>(.*?)</p:sldIdLst>").matcher(xml);
+            assertTrue(m.find());
+            List<String> ids = new ArrayList<>();
+            Matcher id = Pattern.compile("<p:sldId [^>]*/>").matcher(m.group(1));
+            while (id.find()) {
+                ids.add(id.group());
+            }
+            assertEquals(3, ids.size());
+            Collections.reverse(ids);
+            return xml.substring(0, m.start(1)) + String.join("", ids) + xml.substring(m.end(1));
+        });
+        Metadata metadata;
+        try (TikaInputStream tis = TikaInputStream.get(pptx)) {
+            metadata = getRecursiveMetadata(tis, false).get(0);
+        }
+        assertInOrder(metadata.get(TikaCoreProperties.TIKA_CONTENT),
+                "Different words to test against", "This is a test file data", "Attachment Test");
+        assertNull(metadata.get(Office.NUM_UNLISTED_SLIDES));
+    }
+
+    @Test
+    public void testUnlistedSlidesGoLast() throws Exception {
+        //drop the first slide from p:sldIdLst; its relationship and part remain
+        byte[] pptx = rewriteEntry("testPPT.pptx", "ppt/presentation.xml",
+                xml -> xml.replaceFirst("<p:sldId [^>]*r:id=\"rId2\"/>", ""));
+        Metadata metadata;
+        try (TikaInputStream tis = TikaInputStream.get(pptx)) {
+            metadata = getRecursiveMetadata(tis, false).get(0);
+        }
+        assertInOrder(metadata.get(TikaCoreProperties.TIKA_CONTENT),
+                "This is a test file data", "Different words to test against", "Attachment Test");
+        assertEquals(1, metadata.getInt(Office.NUM_UNLISTED_SLIDES));
+    }
+
+    private static void assertInOrder(String content, String... needles) {
+        int body = content.indexOf("<body");
+        int last = body;
+        for (String needle : needles) {
+            int i = content.indexOf(needle, body);
+            assertTrue(i > last, needle + " out of order");
+            last = i;
+        }
+    }
+
+    private byte[] rewriteEntry(String resource, String entryName,
+                                UnaryOperator<String> rewrite) throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipArchiveInputStream zin =
+                     new ZipArchiveInputStream(getResourceAsStream("/test-documents/" + resource));
+             ZipArchiveOutputStream zout = new ZipArchiveOutputStream(bos)) {
+            ZipArchiveEntry entry;
+            while ((entry = zin.getNextEntry()) != null) {
+                byte[] data = IOUtils.toByteArray(zin);
+                if (entry.getName().equals(entryName)) {
+                    data = rewrite.apply(new String(data, StandardCharsets.UTF_8))
+                            .getBytes(StandardCharsets.UTF_8);
+                }
+                zout.putArchiveEntry(new ZipArchiveEntry(entry.getName()));
+                zout.write(data);
+                zout.closeArchiveEntry();
+            }
+        }
+        return bos.toByteArray();
     }
 
     @Test

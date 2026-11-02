@@ -50,6 +50,14 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
+     instead of application/x-sh (TIKA-4408).
+
+   * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
+     instead of relationship-id order, which put rId10 before rId2; embedded-resource
+     page numbers follow the same order. Slides that are related but missing from the
+     list are extracted last and counted in msoffice:ppt:num-unlisted-slides (TIKA-5017).
+     
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for docx (w:vertAlign,
      directly or through a character style), pptx (a:rPr baseline), doc, RTF (\super,
      \sub, \nosupersub) and HTML; they were dropped, so "x<sup>2</sup>" read "x2" and
@@ -73,6 +81,11 @@ Release 4.3.0 - ???
      instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML
      (TIKA-XXXX).
 
+   * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
+     elements, and whitespace at their edges is written outside them (<b>Note: </b>
+     becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
+     **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
+
   OTHER CHANGES
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
@@ -92,6 +105,11 @@ Release 4.3.0 - ???
    * Markdown output writes a line break inside a table cell as <br>, so the row no
      longer splits, and no longer prefixes the text after a line break or at the start
      of a paragraph with &#32; (TIKA-5012).
+
+   * Markdown output writes a table with merged cells (colspan/rowspan) as an HTML table
+     instead of a pipe table, which dropped the spans. A nested table is still flattened
+     into its cell, now with <br> between its rows and a space between its cells; its text
+     was fused with the cell's before (TIKA-5015).
 
    * A PDF with pages that pages.ocr.maxPages kept from the OCR engine records
      skipped:max-pages in tk:ocr-warnings; before, the cap left no trace and

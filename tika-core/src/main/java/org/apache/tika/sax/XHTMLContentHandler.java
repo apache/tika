@@ -16,9 +16,11 @@
  */
 package org.apache.tika.sax;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.xml.sax.Attributes;
@@ -34,6 +36,12 @@ import org.apache.tika.parser.ParseContext;
 /**
  * Content handler decorator that simplifies the task of producing XHTML
  * events for Tika content parsers.
+ * <p>
+ * Inline formatting elements ({@code b}, {@code strong}, {@code i}, {@code em},
+ * {@code sup}, {@code sub}) are written only around non-whitespace content: an empty or
+ * whitespace-only one is dropped, keeping its whitespace, and whitespace at either edge
+ * is moved outside it. {@code u} and {@code s} are left alone, since underlined or
+ * struck-through spaces are visible. Nesting is never repaired.
  */
 public class XHTMLContentHandler extends SafeContentHandler {
 
@@ -72,6 +80,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private static final Set<String> INDENT =
             unmodifiableSet("li", "dd", "dt", "td", "th", "frame");
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
+    private static final Set<String> TRIMMED_INLINE =
+            unmodifiableSet("b", "strong", "i", "em", "sup", "sub");
     /**
      * Metadata associated with the document. Used to fill in the
      * &lt;head/&gt; section.
@@ -95,6 +105,13 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private boolean headStarted = false;
     private boolean headEnded = false;
     private boolean useFrameset = false;
+    /** Trimmed inline starts not yet written: nothing but whitespace has followed them. */
+    private final List<String[]> pendingStarts = new ArrayList<>();
+    private final List<Attributes> pendingAttributes = new ArrayList<>();
+    /** Whitespace held until we know whether it belongs inside a trimmed inline element. */
+    private final StringBuilder heldWhitespace = new StringBuilder();
+    /** Trimmed inline elements written and not yet ended. */
+    private int openTrimmed = 0;
 
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         this(handler, metadata, null);
@@ -248,6 +265,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
      */
     @Override
     public void endDocument() throws SAXException {
+        flushHeld();
         lazyEndHead(useFrameset);
 
         if (useFrameset) {
@@ -279,6 +297,13 @@ public class XHTMLContentHandler extends SafeContentHandler {
                 lazyEndHead(false);
             }
 
+            if (TRIMMED_INLINE.contains(name)) {
+                pendingStarts.add(new String[]{uri, local, name});
+                pendingAttributes.add(new AttributesImpl(attributes));
+                return;
+            }
+            flushHeld();
+
             if (XHTML.equals(uri) && INDENT.contains(name)) {
                 ignorableWhitespace(TAB, 0, TAB.length);
             }
@@ -294,7 +319,25 @@ public class XHTMLContentHandler extends SafeContentHandler {
     @Override
     public void endElement(String uri, String local, String name) throws SAXException {
         if (!AUTO.contains(name)) {
+            if (TRIMMED_INLINE.contains(name)) {
+                int last = pendingStarts.size() - 1;
+                if (last >= 0 && pendingStarts.get(last)[2].equals(name)) {
+                    pendingStarts.remove(last);
+                    pendingAttributes.remove(last);
+                    return;
+                }
+                if (last < 0) {
+                    // held trailing whitespace goes out after the end tag
+                    super.endElement(uri, local, name);
+                    openTrimmed = Math.max(0, openTrimmed - 1);
+                    return;
+                }
+            }
+            flushHeld();
             super.endElement(uri, local, name);
+            if (TRIMMED_INLINE.contains(name)) {
+                openTrimmed = Math.max(0, openTrimmed - 1);
+            }
             if (XHTML.equals(uri) && ENDLINE.contains(name)) {
                 newline();
             }
@@ -307,7 +350,72 @@ public class XHTMLContentHandler extends SafeContentHandler {
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
         lazyEndHead(useFrameset);
-        super.characters(ch, start, length);
+        if (pendingStarts.isEmpty() && openTrimmed == 0 && heldWhitespace.length() == 0) {
+            super.characters(ch, start, length);
+            return;
+        }
+        int end = start + length;
+        int first = start;
+        while (first < end && isWhitespace(ch[first])) {
+            first++;
+        }
+        if (first == end) {
+            if (pendingStarts.isEmpty() && openTrimmed == 0) {
+                flushHeld();
+                super.characters(ch, start, length);
+            } else {
+                heldWhitespace.append(ch, start, length);
+            }
+            return;
+        }
+        heldWhitespace.append(ch, start, first - start);
+        flushHeld();
+        int last = end;
+        if (openTrimmed > 0) {
+            while (isWhitespace(ch[last - 1])) {
+                last--;
+            }
+        }
+        super.characters(ch, first, last - first);
+        heldWhitespace.append(ch, last, end - last);
+    }
+
+    @Override
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+        flushHeld();
+        super.ignorableWhitespace(ch, start, length);
+    }
+
+    @Override
+    public void processingInstruction(String target, String data) throws SAXException {
+        flushHeld();
+        super.processingInstruction(target, data);
+    }
+
+    @Override
+    public void skippedEntity(String name) throws SAXException {
+        flushHeld();
+        super.skippedEntity(name);
+    }
+
+    /** Writes held whitespace, then the pending starts, which held whitespace precedes. */
+    private void flushHeld() throws SAXException {
+        if (heldWhitespace.length() > 0) {
+            char[] ws = heldWhitespace.toString().toCharArray();
+            heldWhitespace.setLength(0);
+            super.characters(ws, 0, ws.length);
+        }
+        for (int i = 0; i < pendingStarts.size(); i++) {
+            String[] n = pendingStarts.get(i);
+            super.startElement(n[0], n[1], n[2], pendingAttributes.get(i));
+            openTrimmed++;
+        }
+        pendingStarts.clear();
+        pendingAttributes.clear();
+    }
+
+    private static boolean isWhitespace(char c) {
+        return Character.isWhitespace(c) || Character.isSpaceChar(c);
     }
 
     //------------------------------------------< public convenience methods >

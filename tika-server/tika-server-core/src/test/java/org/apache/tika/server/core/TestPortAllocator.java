@@ -18,29 +18,38 @@ package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Allocates ephemeral ports for tests to avoid conflicts when running
- * multiple builds simultaneously.
+ * Allocates ports for test servers.
+ * <p>
+ * Ports come from below the ephemeral range (Linux 32768-60999, Windows/macOS
+ * 49152-65535), which the OS never hands out for {@code bind(0)} or outgoing
+ * connections. An ephemeral "free" port, once released, can be taken by the server's
+ * own pipes listener before Jetty binds it. Each JVM starts at a random offset so
+ * parallel test JVMs rarely meet; a port is checked free before it is returned.
  */
 public final class TestPortAllocator {
+
+    static final int LOW = 20000;
+    static final int HIGH = 32000;
+
+    private static final AtomicInteger NEXT =
+            new AtomicInteger(ThreadLocalRandom.current().nextInt(HIGH - LOW));
 
     private TestPortAllocator() {
     }
 
-    /**
-     * Finds and returns an available port.
-     * <p>
-     * Note: There is a small race window between closing the ServerSocket
-     * and the test actually binding to the port. In practice, this is
-     * rarely an issue since ephemeral ports are drawn from a large pool.
-     */
     public static int findFreePort() {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            socket.setReuseAddress(true);
-            return socket.getLocalPort();
-        } catch (IOException e) {
-            throw new RuntimeException("Could not find free port", e);
+        for (int i = 0; i < HIGH - LOW; i++) {
+            int port = LOW + Math.floorMod(NEXT.getAndIncrement(), HIGH - LOW);
+            try (ServerSocket socket = new ServerSocket(port)) {
+                return port;
+            } catch (IOException e) {
+                // in use; try the next
+            }
         }
+        throw new IllegalStateException("No free port in " + LOW + "-" + HIGH);
     }
 }
