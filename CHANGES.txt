@@ -1,5 +1,8 @@
 Release 3.4.0 - ???
 
+  * GDALParser passes the input path to gdalinfo as one argument; a path containing
+    whitespace was split into several arguments.
+
   * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
     up from 100. The ratio is now measured across the whole embedded tree against the
     container's bytes, so nested compression is still caught; at 100, ordinary compressed
