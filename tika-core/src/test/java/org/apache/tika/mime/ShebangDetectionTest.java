@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import org.apache.tika.Tika;
 
-class PythonShebangDetectionTest {
+class ShebangDetectionTest {
 
     private final Tika tika = new Tika();
 
@@ -38,9 +38,21 @@ class PythonShebangDetectionTest {
                 Arguments.of("#!/usr/bin/env python3", "print('hello')", "text/x-python"),
                 Arguments.of("#! /usr/bin/env python3", "print('hello')", "text/x-python"),
                 Arguments.of("#!/usr/bin/env python3.11", "print('hello')", "text/x-python"),
+                Arguments.of("#!/bin/env python3", "print('hello')", "text/x-python"),
                 Arguments.of("#!/usr/bin/python3", "print('hello')", "text/x-python"),
                 Arguments.of("#!/bin/python3", "print('hello')", "text/x-python"),
+                Arguments.of("#!/usr/bin/env perl", "print \"hello\\n\";", "text/x-perl"),
+                Arguments.of("#! /usr/bin/perl -w", "print \"hello\\n\";", "text/x-perl"),
+                Arguments.of("#!/usr/bin/env ruby", "puts 'hello'", "text/x-ruby"),
+                Arguments.of("#!/usr/local/bin/ruby", "puts 'hello'", "text/x-ruby"),
+                Arguments.of("#!/usr/bin/env node", "console.log('hello');", "text/javascript"),
+                Arguments.of("#!/usr/bin/env php", "<?php echo 'hello';", "text/x-php"),
+                Arguments.of("#!/usr/bin/env lua", "print('hello')", "text/x-lua"),
+                Arguments.of("#!/usr/bin/env tclsh", "puts hello", "text/x-tcl"),
+                Arguments.of("#!/usr/bin/wish", "button .b", "text/x-tcl"),
                 Arguments.of("#!/bin/sh", "echo '/bin/env python3'", "application/x-sh"),
+                Arguments.of("#! /bin/sh", "echo hello", "application/x-sh"),
+                Arguments.of("#!\t/bin/sh", "echo hello", "application/x-sh"),
                 Arguments.of("#!/usr/bin/env bash", "echo hello", "application/x-sh")
         );
     }
