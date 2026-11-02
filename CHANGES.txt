@@ -5,6 +5,12 @@ Release 3.4.0 - ???
     follow the same order. Slides that are related but missing from the list are
     extracted last and counted in msoffice:ppt:num-unlisted-slides (TIKA-5017).
 
+  * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
+    up from 100. The ratio is now measured across the whole embedded tree against the
+    container's bytes, so nested compression is still caught; at 100, ordinary compressed
+    logs and text tripped it. Set maximumCompressionRatio to 100 to restore the old limit
+    (TIKA-4985).
+
   * A RAR entry junrar fails to extract is recorded as
     X-TIKA:EXCEPTION:embedded_stream_exception on the container; what was extracted
     before the failure is kept and the rest of the archive is parsed (junrar 8.1.2,
