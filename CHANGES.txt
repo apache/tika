@@ -50,6 +50,9 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
+     instead of application/x-sh (TIKA-4408).
+
    * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
      instead of relationship-id order, which put rId10 before rId2; embedded-resource
      page numbers follow the same order. Slides that are related but missing from the
