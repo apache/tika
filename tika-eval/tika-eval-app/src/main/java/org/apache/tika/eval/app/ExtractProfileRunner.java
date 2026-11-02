@@ -155,6 +155,8 @@ public class ExtractProfileRunner {
             ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
             ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir, extractReader, builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer),
                     pipesReport);
+            extractProfiler.setMaxTokens(evalConfig.getMaxTokens());
+            extractProfiler.setMaxContentLength(evalConfig.getMaxContentLength());
             executorCompletionService.submit(new ProfileWorker(queue, extractProfiler, processed));
         }
 

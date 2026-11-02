@@ -1308,6 +1308,40 @@
       GROUP BY range
     </sql>
   </report>
+  <report reportName="MovedText"
+          reportFilename="content/moved_text.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select c.file_path,
+      ma.mime_string as MIME_STRING_A,
+      cc.order_anchors, cc.order_moved_segments, cc.order_moved_tokens,
+      cc.order_longest_move, cc.order_moved_sample, cc.dice_coefficient
+      from content_comparisons cc
+      join profiles_a pa on pa.id = cc.id
+      join containers c on c.container_id = pa.container_id
+      join mimes ma on ma.mime_id = pa.mime_id
+      where cc.order_moved_segments > 0
+      order by cc.order_moved_tokens desc
+      limit 100000
+    </sql>
+  </report>
+  <report reportName="MovedTextByMime"
+          reportFilename="content/moved_text_by_mime.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select ma.mime_string as MIME_STRING_A,
+      count(1) as SCORED,
+      sum(case when cc.order_moved_segments > 0 then 1 else 0 end) as WITH_MOVES
+      from content_comparisons cc
+      join profiles_a pa on pa.id = cc.id
+      join mimes ma on ma.mime_id = pa.mime_id
+      where cc.order_anchors is not null
+      group by ma.mime_string
+      order by WITH_MOVES desc
+    </sql>
+  </report>
   <report reportName="contentDiffsWExceptions"
           reportFilename="content/content_diffs_with_exceptions.xlsx"
           format="xlsx"

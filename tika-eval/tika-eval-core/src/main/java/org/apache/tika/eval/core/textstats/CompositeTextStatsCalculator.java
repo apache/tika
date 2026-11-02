@@ -39,6 +39,7 @@ public class CompositeTextStatsCalculator {
     private final List<TokenCountStatsCalculator> tokenCountStatCalculators = new ArrayList<>();
     private final List<StringStatsCalculator> stringStatCalculators = new ArrayList<>();
     private final List<BytesRefCalculator> bytesRefCalculators = new ArrayList<>();
+    private boolean keepSequence;
 
     public CompositeTextStatsCalculator(List<TextStatsCalculator> calculators) {
         this(calculators, AnalyzerManager.newInstance(DEFAULT_MAX_TOKENS),
@@ -63,6 +64,8 @@ public class CompositeTextStatsCalculator {
                 tokenCountStatCalculators.add((TokenCountStatsCalculator) t);
             } else if (t instanceof BytesRefCalculator) {
                 bytesRefCalculators.add((BytesRefCalculator) t);
+            } else if (t instanceof TokenSequence) {
+                keepSequence = true;
             } else {
                 throw new IllegalArgumentException("I regret I don't yet handle: " + t.getClass());
             }
@@ -77,7 +80,7 @@ public class CompositeTextStatsCalculator {
 
         TokenCounts tokenCounts = null;
         if (!tokenCountStatCalculators.isEmpty() || !languageAwareTokenCountStats.isEmpty() ||
-                !bytesRefCalculators.isEmpty()) {
+                !bytesRefCalculators.isEmpty() || keepSequence) {
             tokenCounts = tokenize(txt, results);
         }
 
@@ -98,8 +101,14 @@ public class CompositeTextStatsCalculator {
 
     private TokenCounts tokenize(String txt, Map<Class, Object> results) {
         TokenCounts counts = new TokenCounts();
+        List<String> sequence = keepSequence ? new ArrayList<>() : null;
         if (bytesRefCalculators.isEmpty()) {
-            analyzerManager.tokenize(txt, counts::increment);
+            analyzerManager.tokenize(txt, token -> {
+                counts.increment(token);
+                if (sequence != null) {
+                    sequence.add(token);
+                }
+            });
         } else {
             List<BytesRefCalculator.BytesRefCalcInstance> brcis = new ArrayList<>();
             for (BytesRefCalculator brf : bytesRefCalculators) {
@@ -108,6 +117,9 @@ public class CompositeTextStatsCalculator {
             int[] tokenIndex = {0};
             analyzerManager.tokenize(txt, token -> {
                 counts.increment(token);
+                if (sequence != null) {
+                    sequence.add(token);
+                }
                 byte[] utf8 = token.getBytes(StandardCharsets.UTF_8);
                 for (BytesRefCalculator.BytesRefCalcInstance brci : brcis) {
                     if (tokenIndex[0] > 0) {
@@ -120,6 +132,9 @@ public class CompositeTextStatsCalculator {
             for (BytesRefCalculator.BytesRefCalcInstance brc : brcis) {
                 results.put(brc.getOuterClass(), brc.finish());
             }
+        }
+        if (sequence != null) {
+            results.put(TokenSequence.class, sequence.toArray(new String[0]));
         }
         return counts;
     }

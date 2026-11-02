@@ -40,10 +40,12 @@ import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.eval.app.io.PipesReport;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
+import org.apache.tika.eval.core.textstats.TokenSequence;
 import org.apache.tika.eval.core.tokens.ContrastStatistics;
 import org.apache.tika.eval.core.tokens.TokenContraster;
 import org.apache.tika.eval.core.tokens.TokenCounts;
 import org.apache.tika.eval.core.tokens.TokenIntPair;
+import org.apache.tika.eval.core.tokens.TokenOrder;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -64,7 +66,10 @@ public class ExtractComparer extends ProfilerBase {
     public static TableInfo CONTENT_COMPARISONS =
             new TableInfo("content_comparisons", new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A, Types.VARCHAR, 1024),
                     new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_B, Types.VARCHAR, 1024), new ColInfo(Cols.TOP_10_MORE_IN_A, Types.VARCHAR, 1024),
-                    new ColInfo(Cols.TOP_10_MORE_IN_B, Types.VARCHAR, 1024), new ColInfo(Cols.DICE_COEFFICIENT, Types.FLOAT), new ColInfo(Cols.OVERLAP, Types.FLOAT));
+                    new ColInfo(Cols.TOP_10_MORE_IN_B, Types.VARCHAR, 1024), new ColInfo(Cols.DICE_COEFFICIENT, Types.FLOAT), new ColInfo(Cols.OVERLAP, Types.FLOAT),
+                    new ColInfo(Cols.ORDER_ANCHORS, Types.INTEGER), new ColInfo(Cols.ORDER_MOVED_SEGMENTS, Types.INTEGER),
+                    new ColInfo(Cols.ORDER_MOVED_TOKENS, Types.INTEGER), new ColInfo(Cols.ORDER_LONGEST_MOVE, Types.INTEGER),
+                    new ColInfo(Cols.ORDER_MOVED_SAMPLE, Types.VARCHAR, 256));
     public static TableInfo PROFILES_A = new TableInfo("profiles_a", ExtractProfiler.PROFILE_TABLE.getColInfos());
     public static TableInfo PROFILES_B = new TableInfo("profiles_b", ExtractProfiler.PROFILE_TABLE.getColInfos());
     public static TableInfo EMBEDDED_FILE_PATH_TABLE_A = new TableInfo("emb_path_a", ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
@@ -263,6 +268,7 @@ public class ExtractComparer extends ProfilerBase {
                         ContrastStatistics contrastStatistics = tokenContraster.calculateContrastStatistics(tokenCountsA, tokenCountsB);
 
                         writeContrasts(data, contrastStatistics);
+                        writeOrder(data, (String[]) tokenStatsA.get(TokenSequence.class), (String[]) tokenStatsB.get(TokenSequence.class));
                         writer.writeRow(CONTENT_COMPARISONS, data);
                     }
                 }
@@ -489,6 +495,28 @@ public class ExtractComparer extends ProfilerBase {
         data.put(Cols.OVERLAP, Double.toString(contrastStatistics.getOverlap()));
         data.put(Cols.DICE_COEFFICIENT, Double.toString(contrastStatistics.getDiceCoefficient()));
 
+    }
+
+    private static void writeOrder(Map<Cols, String> data, String[] tokensA, String[] tokensB) {
+        if (tokensA == null || tokensB == null) {
+            return;
+        }
+        TokenOrder.Result order = TokenOrder.compare(tokensA, tokensB);
+        if (order == null) {
+            return;
+        }
+        data.put(Cols.ORDER_ANCHORS, Integer.toString(order.getAnchors()));
+        data.put(Cols.ORDER_MOVED_SEGMENTS, Integer.toString(order.getMovedSegments()));
+        data.put(Cols.ORDER_MOVED_TOKENS, Integer.toString(order.getMovedTokens()));
+        data.put(Cols.ORDER_LONGEST_MOVE, Integer.toString(order.getLongestRun()));
+        if (order.getSample() != null) {
+            data.put(Cols.ORDER_MOVED_SAMPLE, order.getSample());
+        }
+    }
+
+    @Override
+    protected boolean keepTokenSequence() {
+        return true;
     }
 
     private void writeContrastString(Map<Cols, String> data, Cols col, TokenIntPair[] tokenIntPairs) {
