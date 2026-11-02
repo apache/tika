@@ -457,7 +457,7 @@
     <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
     <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.10</spring.version>
-    <sqlite.version>3.53.4.0</sqlite.version>
+    <sqlite.version>3.54.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
