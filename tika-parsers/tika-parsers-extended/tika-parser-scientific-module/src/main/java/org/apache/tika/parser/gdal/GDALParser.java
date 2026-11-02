@@ -176,6 +176,15 @@ public class GDALParser implements Parser {
         return pCommand;
     }
 
+    // Split before substituting so whitespace in the input path stays inside one argument.
+    static String[] buildCommandLine(String command, String inputPath) {
+        String[] args = command.split("\\s+", -1);
+        for (int i = 0; i < args.length; i++) {
+            args[i] = args[i].replace(INPUT_FILE_TOKEN, inputPath);
+        }
+        return args;
+    }
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -194,7 +203,7 @@ public class GDALParser implements Parser {
         TemporaryResources tmp = new TemporaryResources();
         TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
 
-        String[] runCommand = processCommand(tis).split("\\s+", -1);
+        String[] runCommand = buildCommandLine(this.command, tis.getFile().getPath());
 
         long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
         FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand),
