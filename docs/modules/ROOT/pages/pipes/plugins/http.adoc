@@ -181,6 +181,12 @@ alter what is fetched. Prefer adding your CA to the JVM truststore over turning 
   can reach, including loopback, link-local, or RFC1918 addresses. Set `maxRedirects` to
   `0` (the default) to follow no redirects at all.
 
+* **Credentials stay on the host a fetch started at.** A redirect to another host, port or
+  scheme drops the `Authorization` and `Cookie` headers, which covers the JWT, and a `401`
+  from that host is not answered with `userName` and `password`. That includes an `http` to
+  `https` upgrade, so put the `https` URL in the fetch key. Other `httpRequestHeaders` are
+  still sent, so keep secrets out of custom headers if `maxRedirects` is not `0`.
+
 [#notes]
 == Notes
 
