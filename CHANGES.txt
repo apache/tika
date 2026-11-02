@@ -15,6 +15,12 @@ Release 4.3.0 - ???
 
   SERVER, PIPES AND OPERATIONS
 
+   * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,
+     Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
+     configured password, after a redirect to another host, port or scheme. That includes
+     http to https, so use the https URL in the fetch key. Applies only with
+     maxRedirects > 0 (TIKA-XXXX).
+
    * tika-server no longer requires a "server" block in its config file; an absent block
      means the server defaults, as "server": {} did. A tika-app config, or the documented
      Docker example { "text-recognizers": [] }, now works as is (TIKA-XXXX).
