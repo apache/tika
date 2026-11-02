@@ -289,12 +289,21 @@ public class HttpClientFactory {
         addProxy(builder);
         return builder.setConnectionManager(manager)
                 .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
-                .setDefaultRequestConfig(RequestConfig.custom().setTargetPreferredAuthSchemes(
-                        Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
-                        .setConnectionRequestTimeout(requestTimeout)
-                        .setConnectionRequestTimeout(connectTimeout).setSocketTimeout(socketTimeout)
-                        .build()).setKeepAliveStrategy(getKeepAliveStrategy())
+                .setDefaultRequestConfig(getDefaultRequestConfig())
+                .setKeepAliveStrategy(getKeepAliveStrategy())
                 .setSSLSocketFactory(sslsf).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .build();
+    }
+
+    /**
+     * The request config {@link #build()} installs as the client default. A config set on a
+     * request replaces that default rather than merging with it, so start one from a copy of this.
+     */
+    public RequestConfig getDefaultRequestConfig() {
+        return RequestConfig.custom().setTargetPreferredAuthSchemes(
+                        Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
+                .setConnectionRequestTimeout(requestTimeout)
+                .setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout)
                 .build();
     }
 
