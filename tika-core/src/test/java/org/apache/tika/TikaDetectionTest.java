@@ -17,6 +17,7 @@
 package org.apache.tika;
 
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
@@ -879,6 +880,18 @@ public class TikaDetectionTest {
         assertEquals("application/x-grib", tika.detect("x.grb1"));
         assertEquals("application/x-grib", tika.detect("x.grb2"));
         assertEquals("application/dif+xml", tika.detect("x.dif"));
+    }
+
+    /** Magic values escaping a space as "\ " (TIKA-4408). */
+    @Test
+    public void testEscapedSpaceMagic() {
+        assertEquals("text/x-diff", tika.detect("diff -u a b\n--- a\n+++ b\n".getBytes(UTF_8)));
+        assertEquals("text/x-diff", tika.detect("diff -c a b\n*** a\n--- b\n".getBytes(UTF_8)));
+        assertEquals("text/plain", tika.detect("diff of two drafts\n".getBytes(UTF_8)));
+        assertEquals("text/plain", tika.detect("*** Draft ***\n".getBytes(UTF_8)));
+        assertEquals("text/plain", tika.detect("Forward to the board\n".getBytes(UTF_8)));
+        assertEquals("application/x-kdelnk",
+                tika.detect("[KDE Desktop Entry]\nName=x\n".getBytes(UTF_8)));
     }
 
 }

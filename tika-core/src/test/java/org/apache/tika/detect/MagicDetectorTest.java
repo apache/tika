@@ -69,6 +69,14 @@ public class MagicDetectorTest extends TikaTest {
     }
 
     @Test
+    public void testParseStringEscapes() throws Exception {
+        MediaType type = new MediaType("text", "x-test");
+        Detector detector = MagicDetector.parse(type, "string", "0", "a\\ b\\tc\\\"\\\\\\x41\\101", null);
+        assertDetect(detector, type, "a b\tc\"\\AA");
+        assertDetect(detector, MediaType.OCTET_STREAM, "a\u0000 b\tc\"\\AA");
+    }
+
+    @Test
     public void testDetectOffsetRange() throws Exception {
         MediaType html = new MediaType("text", "html");
         Detector detector = new MagicDetector(html, "<html".getBytes(US_ASCII), null, 0, 64);

@@ -53,6 +53,14 @@ Release 4.3.0 - ???
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
+   * Perl, Ruby, Node, PHP, Lua and Tcl scripts are detected by their shebang line
+     (#!/usr/bin/env ruby, #!/usr/local/bin/node, ...) instead of as application/x-sh.
+     Magic values with "\ " or "\t" now match a space or tab; the decoder wrote a NUL
+     byte instead, so about 25 rules never matched, among them Word 6 and Excel 5 at
+     offset 2080, BibTeX, KDE desktop entries and "#! /bin/sh". Of those, the text/x-diff
+     rules "*** " and "Only in " and the message/rfc822 rules "Forward to" and "Pipe to"
+     are dropped, and "diff " needs a "--- " or "*** " line within 1 KB (TIKA-4408).
+
    * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
      instead of relationship-id order, which put rId10 before rId2; embedded-resource
      page numbers follow the same order. Slides that are related but missing from the

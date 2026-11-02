@@ -402,6 +402,17 @@
     <!--  the HTML priority=20 magic incorrectly. So, for those only, -->
     <!--  we list "magic" for those specific files -->
     <magic priority="50">
+      <!-- node scripts -->
+      <match value="#!/bin/node" type="string" offset="0"/>
+      <match value="#! /bin/node" type="string" offset="0"/>
+      <match value="#!/usr/bin/node" type="string" offset="0"/>
+      <match value="#! /usr/bin/node" type="string" offset="0"/>
+      <match value="#!/usr/local/bin/node" type="string" offset="0"/>
+      <match value="#! /usr/local/bin/node" type="string" offset="0"/>
+      <match value="#!/bin/env node" type="string" offset="0"/>
+      <match value="#! /bin/env node" type="string" offset="0"/>
+      <match value="#!/usr/bin/env node" type="string" offset="0"/>
+      <match value="#! /usr/bin/env node" type="string" offset="0"/>
       <!-- jQuery -->
       <match value="/* jQuery " type="string" offset="0"/>
       <match value="/*! jQuery " type="string" offset="0"/>
@@ -7511,8 +7522,6 @@
       <match value="Relay-Version:" type="stringignorecase" offset="0"/>
       <match value="#!\ rnews" type="string" offset="0"/>
       <match value="N#!\ rnews" type="string" offset="0"/>
-      <match value="Forward\ to" type="string" offset="0"/>
-      <match value="Pipe\ to" type="string" offset="0"/>
       <match value="Return-Path:" type="stringignorecase" offset="0"/>
       <match value="Message-ID:" type="stringignorecase" offset="0"/>
       <match value="X-Mailer:" type="string" offset="0"/>
@@ -8327,10 +8336,11 @@
 
   <mime-type type="text/x-diff">
     <magic priority="50">
-      <match value="diff\ " type="string" offset="0"/>
-      <match value="***\ " type="string" offset="0"/>
-      <match value="Only\ in\ " type="string" offset="0"/>
-      <match value="Common\ subdirectories:\ " type="string" offset="0"/>
+      <match value="diff " type="string" offset="0">
+        <match value="\n--- " type="string" offset="0:1024"/>
+        <match value="\n*** " type="string" offset="0:1024"/>
+      </match>
+      <match value="Common subdirectories: " type="string" offset="0"/>
       <match value="Index:" type="string" offset="0"/>
     </magic>
     <glob pattern="*.diff"/>
@@ -8455,6 +8465,18 @@
 
   <mime-type type="text/x-lua">
     <_comment>Lua source code</_comment>
+    <magic priority="50">
+      <match value="#!/bin/lua" type="string" offset="0"/>
+      <match value="#! /bin/lua" type="string" offset="0"/>
+      <match value="#!/usr/bin/lua" type="string" offset="0"/>
+      <match value="#! /usr/bin/lua" type="string" offset="0"/>
+      <match value="#!/usr/local/bin/lua" type="string" offset="0"/>
+      <match value="#! /usr/local/bin/lua" type="string" offset="0"/>
+      <match value="#!/bin/env lua" type="string" offset="0"/>
+      <match value="#! /bin/env lua" type="string" offset="0"/>
+      <match value="#!/usr/bin/env lua" type="string" offset="0"/>
+      <match value="#! /usr/bin/env lua" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.lua"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
@@ -8539,11 +8561,17 @@
   <mime-type type="text/x-perl">
     <_comment>Perl script</_comment>
     <magic priority="50">
-      <match value="eval \&quot;exec /usr/local/bin/perl" type="string" offset="0"/>
+      <match value="eval &quot;exec /usr/local/bin/perl" type="string" offset="0"/>
       <match value="#!/bin/perl" type="string" offset="0"/>
-      <match value="#!/bin/env perl" type="string" offset="0"/>
+      <match value="#! /bin/perl" type="string" offset="0"/>
       <match value="#!/usr/bin/perl" type="string" offset="0"/>
+      <match value="#! /usr/bin/perl" type="string" offset="0"/>
       <match value="#!/usr/local/bin/perl" type="string" offset="0"/>
+      <match value="#! /usr/local/bin/perl" type="string" offset="0"/>
+      <match value="#!/bin/env perl" type="string" offset="0"/>
+      <match value="#! /bin/env perl" type="string" offset="0"/>
+      <match value="#!/usr/bin/env perl" type="string" offset="0"/>
+      <match value="#! /usr/bin/env perl" type="string" offset="0"/>
     </magic>
     <glob pattern="*.pl"/>
     <glob pattern="*.pm"/>
@@ -8556,6 +8584,16 @@
     <_comment>PHP script</_comment>
     <magic priority="50">
       <match value="&lt;?php" type="string" offset="0"/>
+      <match value="#!/bin/php" type="string" offset="0"/>
+      <match value="#! /bin/php" type="string" offset="0"/>
+      <match value="#!/usr/bin/php" type="string" offset="0"/>
+      <match value="#! /usr/bin/php" type="string" offset="0"/>
+      <match value="#!/usr/local/bin/php" type="string" offset="0"/>
+      <match value="#! /usr/local/bin/php" type="string" offset="0"/>
+      <match value="#!/bin/env php" type="string" offset="0"/>
+      <match value="#! /bin/env php" type="string" offset="0"/>
+      <match value="#!/usr/bin/env php" type="string" offset="0"/>
+      <match value="#! /usr/bin/env php" type="string" offset="0"/>
     </magic>
     <glob pattern="*.php"/>
     <glob pattern="*.php3"/>
@@ -8584,6 +8622,8 @@
       <match value="eval &quot;exec /usr/local/bin/python" type="string" offset="0"/>
       <match value="#!/usr/bin/env python" type="string" offset="0"/>
       <match value="#! /usr/bin/env python" type="string" offset="0"/>
+      <match value="#!/bin/env python" type="string" offset="0"/>
+      <match value="#! /bin/env python" type="string" offset="0"/>
     </magic>
     <glob pattern="*.py"/>
     <sub-class-of type="text/plain"/>
@@ -8605,6 +8645,18 @@
 
   <mime-type type="text/x-ruby">
     <_comment>Ruby source code</_comment>
+    <magic priority="50">
+      <match value="#!/bin/ruby" type="string" offset="0"/>
+      <match value="#! /bin/ruby" type="string" offset="0"/>
+      <match value="#!/usr/bin/ruby" type="string" offset="0"/>
+      <match value="#! /usr/bin/ruby" type="string" offset="0"/>
+      <match value="#!/usr/local/bin/ruby" type="string" offset="0"/>
+      <match value="#! /usr/local/bin/ruby" type="string" offset="0"/>
+      <match value="#!/bin/env ruby" type="string" offset="0"/>
+      <match value="#! /bin/env ruby" type="string" offset="0"/>
+      <match value="#!/usr/bin/env ruby" type="string" offset="0"/>
+      <match value="#! /usr/bin/env ruby" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.rb"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
@@ -8653,6 +8705,28 @@
   <mime-type type="text/x-tcl">
     <alias type="application/x-tcl"/>
     <_comment>Tcl script</_comment>
+    <magic priority="50">
+      <match value="#!/bin/tclsh" type="string" offset="0"/>
+      <match value="#! /bin/tclsh" type="string" offset="0"/>
+      <match value="#!/usr/bin/tclsh" type="string" offset="0"/>
+      <match value="#! /usr/bin/tclsh" type="string" offset="0"/>
+      <match value="#!/usr/local/bin/tclsh" type="string" offset="0"/>
+      <match value="#! /usr/local/bin/tclsh" type="string" offset="0"/>
+      <match value="#!/bin/env tclsh" type="string" offset="0"/>
+      <match value="#! /bin/env tclsh" type="string" offset="0"/>
+      <match value="#!/usr/bin/env tclsh" type="string" offset="0"/>
+      <match value="#! /usr/bin/env tclsh" type="string" offset="0"/>
+      <match value="#!/bin/wish" type="string" offset="0"/>
+      <match value="#! /bin/wish" type="string" offset="0"/>
+      <match value="#!/usr/bin/wish" type="string" offset="0"/>
+      <match value="#! /usr/bin/wish" type="string" offset="0"/>
+      <match value="#!/usr/local/bin/wish" type="string" offset="0"/>
+      <match value="#! /usr/local/bin/wish" type="string" offset="0"/>
+      <match value="#!/bin/env wish" type="string" offset="0"/>
+      <match value="#! /bin/env wish" type="string" offset="0"/>
+      <match value="#!/usr/bin/env wish" type="string" offset="0"/>
+      <match value="#! /usr/bin/env wish" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.itk"/>
     <glob pattern="*.tcl"/>
     <glob pattern="*.tk"/>
