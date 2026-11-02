@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -94,6 +95,10 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     }
 
     private static final ObjectMapper OM = new ObjectMapper();
+
+    // RFC 7230 token
+    private static final Pattern HEADER_NAME = Pattern.compile("[!#$%&'*+.^_`|~0-9A-Za-z-]+");
+
     private HttpFetcherConfig httpFetcherConfig = new HttpFetcherConfig();
     private HttpClientFactory httpClientFactory = new HttpClientFactory();
 
@@ -161,7 +166,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig = RequestConfig
-                .custom()
+                .copy(httpClientFactory.getDefaultRequestConfig())
                 .setMaxRedirects(httpFetcherConfig.getMaxRedirects())
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
@@ -171,7 +176,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         return execute(get, metadata, httpClient, true);
     }
 
-    private void setHttpRequestHeaders(Metadata metadata, HttpGet get) {
+    private void setHttpRequestHeaders(Metadata metadata, HttpGet get) throws TikaException {
         if (!StringUtils.isBlank(userAgent)) {
             get.setHeader(USER_AGENT, userAgent);
         }
@@ -190,13 +195,31 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         }
     }
 
-    private static void parseHeaderAndPutOnRequest(HttpGet get, String httpRequestHeader) {
+    private static void parseHeaderAndPutOnRequest(HttpGet get, String httpRequestHeader)
+            throws TikaException {
         String[] parts = httpRequestHeader
                 .trim().split(":", 2);
         if (parts.length >= 2) {
             String key = parts[0].trim();
             String value = parts[1].trim();
+            checkHeader(key, value);
             get.setHeader(key, value);
+        }
+    }
+
+    /**
+     * httpcore folds CR and LF in a value into spaces but writes the name as given, so a
+     * name from per-request config that carries CRLF would inject request lines.
+     */
+    private static void checkHeader(String name, String value) throws TikaException {
+        if (!HEADER_NAME.matcher(name).matches()) {
+            throw new TikaException("Invalid HTTP header name: " + name);
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if ((c < 0x20 && c != '\t') || c == 0x7f) {
+                throw new TikaException("Invalid control character in HTTP header " + name);
+            }
         }
     }
 
@@ -225,14 +248,18 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             httpGet.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }
         if (additionalFetcherConfig != null && additionalFetcherConfig.getHttpRequestHeaders() != null) {
-            additionalFetcherConfig.getHttpRequestHeaders()
-                    .getHeaders()
-                    .forEach(httpGet::addHeader);
+            for (Map.Entry<String, String> e : additionalFetcherConfig.getHttpRequestHeaders()
+                    .getHeaders().entries()) {
+                checkHeader(e.getKey(), e.getValue());
+                httpGet.addHeader(e.getKey(), e.getValue());
+            }
         }
         if (httpFetcherConfig.getHttpRequestHeaders() != null) {
-            httpFetcherConfig.getHttpRequestHeaders()
-                    .getHeaders()
-                    .forEach(httpGet::addHeader);
+            for (Map.Entry<String, String> e : httpFetcherConfig.getHttpRequestHeaders()
+                    .getHeaders().entries()) {
+                checkHeader(e.getKey(), e.getValue());
+                httpGet.addHeader(e.getKey(), e.getValue());
+            }
         }
         if (jwtGenerator != null) {
             try {
@@ -243,7 +270,8 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         }
     }
 
-    private static void placeHeaderOnGetRequest(HttpGet get, String httpRequestHeader) {
+    private static void placeHeaderOnGetRequest(HttpGet get, String httpRequestHeader)
+            throws TikaException {
         int idxOfEquals = httpRequestHeader.indexOf(':');
         if (idxOfEquals == -1) {
             return;
@@ -254,6 +282,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         String headerValue = httpRequestHeader
                 .substring(idxOfEquals + 1)
                 .trim();
+        checkHeader(headerKey, headerValue);
         get.setHeader(headerKey, headerValue);
     }
 
@@ -625,7 +654,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             httpClientFactory.setRequestTimeout(httpFetcherConfig.getRequestTimeout());
         }
         if (httpFetcherConfig.getConnectTimeout() != null) {
-            httpClientFactory.setSocketTimeout(httpFetcherConfig.getConnectTimeout());
+            httpClientFactory.setConnectTimeout(httpFetcherConfig.getConnectTimeout());
         }
         if (httpFetcherConfig.getMaxConnections() != null) {
             httpClientFactory.setMaxConnections(httpFetcherConfig.getMaxConnections());
