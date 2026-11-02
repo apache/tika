@@ -1,5 +1,14 @@
 Release 3.4.0 - ???
 
+  * IptcAnpaParser no longer carries the wire format across parses: an unmarked wire
+    parsed after a Reuters/AP/NYT/Bloomberg one inherited that agency's format rules
+    and publisher (TIKA-4995).
+
+  * EnviHeaderParser and IDMLParser keep per-document state local to the parse:
+    EnviHeaderParser reported a second multi-line field under the first field's key and
+    carried a previous document's description; IDMLParser's page counts accumulated
+    across parses.
+    
   * GDALParser passes the input path to gdalinfo as one argument; a path containing
     whitespace was split into several arguments.
     
