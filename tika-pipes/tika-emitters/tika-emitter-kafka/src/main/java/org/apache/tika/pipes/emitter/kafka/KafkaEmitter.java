@@ -19,16 +19,20 @@ package org.apache.tika.pipes.emitter.kafka;
 import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +45,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.emitter.AbstractEmitter;
+import org.apache.tika.pipes.emitter.EmitData;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 
 /**
@@ -56,7 +61,7 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
     String bootstrapServers;
 
     String acks = "all";
-    int lingerMs = 5000;
+    int lingerMs = 5;
     int batchSize = 16384;
     int bufferMemory = 32 * 1024 * 1024;
     String compressionType = "none";
@@ -77,7 +82,7 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
     String keySerializer;
     String valueSerializer;
 
-    private Producer<String, String> producer;
+    Producer<String, String> producer;
 
     @Field
     public void setBootstrapServers(String bootstrapServers) {
@@ -199,6 +204,26 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
+        List<Future<RecordMetadata>> sent = new ArrayList<>();
+        send(emitKey, metadataList, sent);
+        awaitAcks(sent);
+    }
+
+    /** Sends every record first, then waits once: one round trip for the batch, not per item. */
+    @Override
+    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
+        List<Future<RecordMetadata>> sent = new ArrayList<>();
+        for (EmitData d : emitData) {
+            if (d.getMetadataList() == null || d.getMetadataList().isEmpty()) {
+                throw new TikaEmitterException("metadata list must not be null or of size 0");
+            }
+            send(d.getEmitKey().getEmitKey(), d.getMetadataList(), sent);
+        }
+        awaitAcks(sent);
+    }
+
+    private void send(String emitKey, List<Metadata> metadataList,
+                      List<Future<RecordMetadata>> sent) throws IOException {
         for (Metadata metadata : metadataList) {
             LOGGER.debug("about to emit to target topic: ({}) path:({})", topic, emitKey);
 
@@ -213,7 +238,22 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
                 fields.put(n, vals[0]);
             }
 
-            producer.send(new ProducerRecord<>(topic, emitKey, OM.writeValueAsString(fields)));
+            sent.add(producer.send(
+                    new ProducerRecord<>(topic, emitKey, OM.writeValueAsString(fields))));
+        }
+    }
+
+    // send() only queues the record: success is the broker's ack, bounded by deliveryTimeoutMs
+    private static void awaitAcks(List<Future<RecordMetadata>> sent) throws TikaEmitterException {
+        for (Future<RecordMetadata> f : sent) {
+            try {
+                f.get();
+            } catch (ExecutionException e) {
+                throw new TikaEmitterException("Kafka did not accept the record", e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new TikaEmitterException("interrupted waiting for Kafka to accept the record", e);
+            }
         }
     }
 
@@ -225,6 +265,11 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
+        // the emitter never opens a transaction, so the producer refuses every send
+        if (transactionalId != null) {
+            throw new TikaConfigException("'transactionalId' is not supported: the Kafka "
+                    + "emitter does not use transactions");
+        }
 
         // create instance for properties to access producer configs   
         Properties props = new Properties();
