@@ -847,18 +847,30 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         stack.peek().appendChild(raw);
     }
 
-    /** Writes the close tag next to its open one; if a block intervened, drops the open. */
+    /**
+     * Writes the close tag next to its open one; drops the open if a block intervened or
+     * the pair would hold only whitespace.
+     */
     private void closeRawInline(String name) {
         HtmlInline open = rawInlineOpen.peek();
         if (open == null || !open.getLiteral().equals("<" + name + ">")) {
             return;
         }
         rawInlineOpen.pop();
-        if (open.getParent() == stack.peek()) {
+        if (open.getParent() == stack.peek() && !onlyWhitespaceAfter(open)) {
             stack.peek().appendChild(rawInline("</" + name + ">"));
         } else {
             open.unlink();
         }
+    }
+
+    private static boolean onlyWhitespaceAfter(Node node) {
+        for (Node n = node.getNext(); n != null; n = n.getNext()) {
+            if (!(n instanceof Text) || !((Text) n).getLiteral().isBlank()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static HtmlInline rawInline(String literal) {
