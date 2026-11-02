@@ -24,7 +24,11 @@ import org.apache.tika.config.Param;
 
 /**
  * Stores URL for AgePredictor
+ *
+ * @deprecated unmaintained (age-predictor-api 1.0 on Spark 2.2 / Scala 2.10); removed in 3.5.0
+ * (TIKA-4343).
  */
+@Deprecated
 public class AgeRecogniserConfig {
 
     private String pathClassifyModel = null;

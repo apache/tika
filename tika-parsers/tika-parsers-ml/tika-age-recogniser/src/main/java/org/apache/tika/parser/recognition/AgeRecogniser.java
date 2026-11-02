@@ -50,7 +50,11 @@ import org.apache.tika.parser.Parser;
  * <ul>
  * <li>Author Age</li>
  * </ul>
+ *
+ * @deprecated unmaintained (age-predictor-api 1.0 on Spark 2.2 / Scala 2.10); removed in 3.5.0
+ * (TIKA-4343).
  */
+@Deprecated
 public class AgeRecogniser implements Parser, Initializable {
 
     public static final String MD_KEY_ESTIMATED_AGE_RANGE = "Estimated-Author-Age-Range";

@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * tika-age-recogniser is deprecated and will be removed in 3.5.0; it depends on the
+    unmaintained age-predictor-api on Spark 2.2 / Scala 2.10. It was removed in 4.0.0
+    (TIKA-4343).
+    
   * FLVParser bounds AMF metadata nesting (64) and element counts (100,000): a crafted FLV
     no longer overflows the stack or exhausts memory. A truncated ID3v2 frame yields only the
     bytes present instead of zero padding, and a partial frame header at the end of a tag
