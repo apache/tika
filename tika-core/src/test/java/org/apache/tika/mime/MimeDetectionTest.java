@@ -88,6 +88,40 @@ public class MimeDetectionTest {
         testFile("application/xml", "truncated-utf16-xml.xyz");
     }
 
+    /** The html magic needs the tag to end: an XML element such as htmlPath is not html. */
+    @Test
+    public void testHtmlMagicNeedsTagEnd() throws Exception {
+        String pad = " ".repeat(200);
+        String[] notHtml = {
+                "<htmlPath><![CDATA[TmplData\\tmpl.html]]></htmlPath>",
+                "<flashTemplate><info>" + pad + "<htmlPath>x</htmlPath></info></flashTemplate>",
+                "<root>" + pad + "<htmlContent>x</htmlContent></root>"
+        };
+        for (String xml : notHtml) {
+            assertEquals(MediaType.TEXT_PLAIN, detect(xml, null), xml);
+            assertEquals(MediaType.APPLICATION_XML, detect(xml, "flashTemplate.xml"), xml);
+        }
+        String[] html = {
+                "<html><body>x</body></html>",
+                "<HTML>\n<body>x</body></HTML>",
+                "<html\nlang=\"en\"><body>x</body></html>",
+                "garbage\n".repeat(30) + "<html><body>x</body></html>"
+        };
+        for (String h : html) {
+            assertEquals(MediaType.TEXT_HTML, detect(h, null), h);
+        }
+    }
+
+    private static MediaType detect(String content, String name) throws IOException {
+        Metadata metadata = new Metadata();
+        if (name != null) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+        }
+        try (InputStream is = new ByteArrayInputStream(content.getBytes(UTF_8))) {
+            return MIME_TYPES.detect(is, metadata);
+        }
+    }
+
     @Test
     public void testDetectionWithoutContent() throws IOException {
         testUrlWithoutContent("text/html", "test.html");

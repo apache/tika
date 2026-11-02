@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * The text/html magic now requires the html tag to end, so an XML file with an
+    element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
+    to the HTML parser (TIKA-4962).
+
   * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
     up from 100. The ratio is now measured across the whole embedded tree against the
     container's bytes, so nested compression is still caught; at 100, ordinary compressed
