@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * The tika-app GUI's Formatted Text view no longer lets a document make Swing
+    construct classes or fetch URLs: only plain elements and attributes reach it, and
+    remote images are not loaded (TIKA-4992).
+
   * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
     up from 100. The ratio is now measured across the whole embedded tree against the
     container's bytes, so nested compression is still caught; at 100, ordinary compressed
