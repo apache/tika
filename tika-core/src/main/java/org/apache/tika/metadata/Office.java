@@ -225,6 +225,8 @@ public interface Office {
 
     Property HAS_ANIMATIONS = Property.internalBoolean("msoffice:ppt:has-animations");
 
+    Property NUM_UNLISTED_SLIDES = Property.internalInteger("msoffice:ppt:num-unlisted-slides");
+
     //w:vanish or isVanish or isFldVanish
     Property HAS_HIDDEN_TEXT = Property.internalBoolean("msoffice:doc:has-hidden-text");
 
