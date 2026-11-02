@@ -437,9 +437,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         } else {
             if (headers != null && headers.size() > 0) {
                 for (Map.Entry<String, String[]> header : headers.entrySet()) {
-                    String headerKey = header.getKey();
-                    if (headerKey.toLowerCase(Locale.ROOT).startsWith("date:")) {
-                        String date = headerKey.substring(headerKey.indexOf(':') + 1).trim();
+                    String[] values = header.getValue();
+                    if (header.getKey().equalsIgnoreCase("date") && values.length > 0) {
+                        String date = values[0];
 
                         // See if we can parse it as a normal mail date
                         try {

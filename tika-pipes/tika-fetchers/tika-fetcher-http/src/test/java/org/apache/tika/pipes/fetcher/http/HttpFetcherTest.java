@@ -20,11 +20,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -49,6 +55,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -267,6 +274,82 @@ class HttpFetcherTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testSocketTimeoutAppliesToRequests() throws Exception {
+        HttpFetcherConfig config = new HttpFetcherConfig();
+        config.setSocketTimeout(500);
+        config.setOverallTimeout(10_000L);
+        HttpFetcher fetcher = new HttpFetcher(config);
+        fetcher.initialize(Collections.emptyMap());
+        // the backlog completes the handshake; nothing ever answers the request
+        try (ServerSocket silent = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+            String url = "http://127.0.0.1:" + silent.getLocalPort() + "/";
+            assertThrows(SocketTimeoutException.class,
+                    () -> fetcher.fetch(url, new Metadata(), new ParseContext()));
+            assertThrows(SocketTimeoutException.class,
+                    () -> fetcher.fetch(url, 0, 10, new Metadata(), new ParseContext()));
+        }
+    }
+
+    @Test
+    public void testConnectTimeoutIsNotSocketTimeout() throws Exception {
+        HttpFetcherConfig config = new HttpFetcherConfig();
+        config.setConnectTimeout(1234);
+        HttpClientFactory clientFactory = mock(HttpClientFactory.class);
+        when(clientFactory.copy()).thenReturn(clientFactory);
+        HttpFetcher fetcher = new HttpFetcher(config);
+        fetcher.setHttpClientFactory(clientFactory);
+        fetcher.initialize(Collections.emptyMap());
+        verify(clientFactory).setConnectTimeout(1234);
+        verify(clientFactory, never()).setSocketTimeout(1234);
+
+        HttpClientFactory factory = new HttpClientFactory();
+        factory.setConnectTimeout(1234);
+        factory.setRequestTimeout(4321);
+        RequestConfig requestConfig = factory.getDefaultRequestConfig();
+        assertEquals(1234, requestConfig.getConnectTimeout());
+        assertEquals(4321, requestConfig.getConnectionRequestTimeout());
+    }
+
+    /**
+     * httpcore writes a header name as given (only a value has CR and LF folded), so a
+     * per-request header name carrying CRLF would inject request lines.
+     */
+    @Test
+    public void testHeadersWithCrLfAreRefused() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        HttpResponse response = buildMockResponse(HttpStatus.SC_OK,
+                IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
+        when(httpClient.execute(any(HttpUriRequest.class), any(HttpContext.class))).thenReturn(response);
+        httpFetcher.setHttpClient(httpClient);
+
+        assertThrows(TikaException.class, () -> httpFetcher.fetch("http://localhost", new Metadata(),
+                headersContext("X-Test\r\nInjected: yes\r\n\r\nPOST /evil HTTP/1.1\r\nHost: h", "v")));
+        assertThrows(TikaException.class, () -> httpFetcher.fetch("http://localhost", new Metadata(),
+                headersContext("X-Test", "v\r\nInjected: yes")));
+
+        Metadata metadata = new Metadata();
+        metadata.set(Property.externalText("httpRequestHeaders"), "X-Test\r\nInjected: yes: v");
+        assertThrows(TikaException.class,
+                () -> httpFetcher.fetch("http://localhost", metadata, new ParseContext()));
+
+        Mockito.verifyNoInteractions(httpClient);
+    }
+
+    private static ParseContext headersContext(String name, String value) throws Exception {
+        HttpFetcherConfig requestConfig = new HttpFetcherConfig();
+        requestConfig.setHttpRequestHeaders(new HttpHeaders());
+        Map<String, Collection<String>> headers = new HashMap<>();
+        headers.put(name, List.of(value));
+        requestConfig.getHttpRequestHeaders().setMap(headers);
+        FetcherConfigContainer container = new FetcherConfigContainer();
+        container.setConfigClassName(HttpFetcherConfig.class.getName());
+        container.setJson(new ObjectMapper().writeValueAsString(requestConfig));
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(FetcherConfigContainer.class, container);
+        return parseContext;
+    }
+
     FetcherManager getFetcherManager(String path) throws Exception {
         return FetcherManager.load(Paths.get(HttpFetcherTest.class
                 .getResource("/" + path)
@@ -282,6 +365,7 @@ class HttpFetcherTest extends TikaTest {
         when(httpClient.execute(any(HttpUriRequest.class), any(HttpContext.class))).thenReturn(response);
         when(clientFactory.build()).thenReturn(httpClient);
         when(clientFactory.copy()).thenReturn(clientFactory);
+        when(clientFactory.getDefaultRequestConfig()).thenReturn(RequestConfig.DEFAULT);
 
         httpFetcher.setHttpClientFactory(clientFactory);
         httpFetcher.setHttpFetcherConfig(httpFetcherConfig);
