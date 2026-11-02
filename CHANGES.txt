@@ -1,5 +1,14 @@
 Release 3.4.0 - ???
 
+  * HttpFetcher applies its configured connect, socket and connection-request timeouts
+    to fetches. A per-request config replaced the client default instead of merging
+    with it, so no timeout applied to a non-range fetch; connectTimeout set the socket
+    timeout; and the client never set a connect timeout.
+
+  * HttpFetcher refuses request headers whose name is not an RFC 7230 token or whose
+    value holds a control character, from the fetcher config, per-request fetcher config
+    or the httpRequestHeaders metadata; a CRLF in a header name injected request lines.
+    
   * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
     instead of relationship-id order, which put rId10 before rId2; embedded resources
     follow the same order. Slides that are related but missing from the list are
