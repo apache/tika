@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * The Outlook .msg parser falls back to the Date: transport header when a message has
+    no MAPI date; the header was never matched, so such messages had no created or
+    modified date (TIKA-4959).
+    
   * The text/html magic now requires the html tag to end, so an XML file with an
     element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
     to the HTML parser (TIKA-4962).
