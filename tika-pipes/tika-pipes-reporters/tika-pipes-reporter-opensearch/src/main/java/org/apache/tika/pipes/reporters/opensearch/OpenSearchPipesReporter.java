@@ -166,6 +166,12 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
         httpClientFactory.setProxyPort(proxyPort);
     }
 
+    /** Verify TLS certificates and hostnames; off by default. */
+    @Field
+    public void setVerifySsl(boolean verifySsl) {
+        httpClientFactory.setVerifySsl(verifySsl);
+    }
+
     @Field
     public void setIncludeStatuses(List<String> statusList) {
         includeStatus.addAll(statusList);

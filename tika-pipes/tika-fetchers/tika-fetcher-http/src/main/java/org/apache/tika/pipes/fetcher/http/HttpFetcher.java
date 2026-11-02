@@ -497,6 +497,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         httpFetcherConfig.setProxyPort(proxyPort);
     }
 
+    /** Verify TLS certificates and hostnames; off by default. */
+    @Field
+    public void setVerifySsl(boolean verifySsl) {
+        httpFetcherConfig.setVerifySsl(verifySsl);
+    }
+
     @Field
     public void setConnectTimeout(int connectTimeout) {
         httpFetcherConfig.setConnectTimeout(connectTimeout);
@@ -673,6 +679,9 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (!StringUtils.isBlank(httpFetcherConfig.getProxyHost())) {
             httpClientFactory.setProxyHost(httpFetcherConfig.getProxyHost());
             httpClientFactory.setProxyPort(httpFetcherConfig.getProxyPort());
+        }
+        if (httpFetcherConfig.getVerifySsl() != null) {
+            httpClientFactory.setVerifySsl(httpFetcherConfig.getVerifySsl());
         }
         httpClient = httpClientFactory.build();
         HttpClientFactory cp = httpClientFactory.copy();
