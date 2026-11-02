@@ -1,5 +1,8 @@
 Release 3.4.0 - ???
 
+  * The SQLite and GeoPackage parsers quote table names when reading each table; a
+    name that needed quoting failed the parse, and a crafted name ran as SQL.
+
   * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
     up from 100. The ratio is now measured across the whole embedded tree against the
     container's bytes, so nested compression is still caught; at 100, ordinary compressed
