@@ -1,5 +1,10 @@
 Release 3.4.0 - ???
 
+  * FLVParser bounds AMF metadata nesting (64) and element counts (100,000): a crafted FLV
+    no longer overflows the stack or exhausts memory. A truncated ID3v2 frame yields only the
+    bytes present instead of zero padding, and a partial frame header at the end of a tag
+    no longer throws ArrayIndexOutOfBoundsException (TIKA-4812).
+
   * The http fetcher, the Solr and OpenSearch emitters, the Solr pipes iterator and the
     OpenSearch reporter accept verifySsl: true checks TLS certificates and hostnames against
     the JVM trust store. The default stays false (no verification), as before.
