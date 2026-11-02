@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * tika-age-recogniser runs on Java 11 again: hadoop is back on 3.4.3 (3.5.0, in 3.3.3, needs
+    Java 17). The build now fails if a shipped dependency targets a newer Java than its
+    module (enforceBytecodeVersion) (TIKA-5021).
+    
   * The SQLite and GeoPackage parsers quote table names when reading each table; a
     name that needed quoting failed the parse, and a crafted name ran as SQL.
     
