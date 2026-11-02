@@ -169,6 +169,12 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
         httpClientFactory.setProxyPort(proxyPort);
     }
 
+    /** Verify TLS certificates and hostnames; off by default. */
+    @Field
+    public void setVerifySsl(boolean verifySsl) {
+        httpClientFactory.setVerifySsl(verifySsl);
+    }
+
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         String fetcherName = getFetcherName();

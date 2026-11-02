@@ -291,6 +291,12 @@ public class SolrEmitter extends AbstractEmitter implements Initializable {
         httpClientFactory.setProxyPort(proxyPort);
     }
 
+    /** Verify TLS certificates and hostnames; off by default. */
+    @Field
+    public void setVerifySsl(boolean verifySsl) {
+        httpClientFactory.setVerifySsl(verifySsl);
+    }
+
     /**
      * If using the {@link AttachmentStrategy#PARENT_CHILD}, this is the field name
      * used to store the child documents.  Note that we artificially flatten all embedded

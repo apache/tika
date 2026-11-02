@@ -28,6 +28,7 @@ public class HttpFetcherConfig extends AbstractConfig {
     private String authScheme;
     private String proxyHost;
     private Integer proxyPort;
+    private Boolean verifySsl;
     private Integer maxConnectionsPerRoute = 1000;
     private Integer maxConnections = 2000;
     private Integer requestTimeout = 120000;
@@ -98,6 +99,15 @@ public class HttpFetcherConfig extends AbstractConfig {
 
     public HttpFetcherConfig setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
+        return this;
+    }
+
+    public Boolean getVerifySsl() {
+        return verifySsl;
+    }
+
+    public HttpFetcherConfig setVerifySsl(Boolean verifySsl) {
+        this.verifySsl = verifySsl;
         return this;
     }
 

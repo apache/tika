@@ -187,6 +187,12 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         httpClientFactory.setProxyPort(proxyPort);
     }
 
+    /** Verify TLS certificates and hostnames; off by default. */
+    @Field
+    public void setVerifySsl(boolean verifySsl) {
+        httpClientFactory.setVerifySsl(verifySsl);
+    }
+
     public void setUpdateStrategy(UpdateStrategy updateStrategy) {
         this.updateStrategy = updateStrategy;
     }

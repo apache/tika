@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * The http fetcher, the Solr and OpenSearch emitters, the Solr pipes iterator and the
+    OpenSearch reporter accept verifySsl: true checks TLS certificates and hostnames against
+    the JVM trust store. The default stays false (no verification), as before.
+
   * tika-age-recogniser runs on Java 11 again: hadoop is back on 3.4.3 (3.5.0, in 3.3.3, needs
     Java 17). The build now fails if a shipped dependency targets a newer Java than its
     module (enforceBytecodeVersion) (TIKA-5021).

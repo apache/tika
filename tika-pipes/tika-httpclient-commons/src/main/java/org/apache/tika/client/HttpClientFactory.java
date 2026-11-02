@@ -35,6 +35,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.Header;
@@ -82,8 +83,8 @@ import org.apache.tika.utils.StringUtils;
 /**
  * This holds quite a bit of state and is not thread safe.  Beware!
  * <p>
- * Also, we're currently ignoring the SSL checks.  Please open a ticket/PR
- * if you need robust SSL.
+ * By default TLS certificates and hostnames are not checked. Call
+ * {@link #setVerifySsl(boolean)} with {@code true} to verify them against the JVM trust store.
  */
 public class HttpClientFactory {
 
@@ -109,6 +110,7 @@ public class HttpClientFactory {
     private String authScheme = "basic"; //ntlm or basic
     private boolean credentialsAESEncrypted = false;
     private boolean disableContentCompression = false;
+    private boolean verifySsl = false;
 
     public String getProxyHost() {
         return proxyHost;
@@ -237,6 +239,14 @@ public class HttpClientFactory {
         this.disableContentCompression = disableContentCompression;
     }
 
+    public boolean isVerifySsl() {
+        return verifySsl;
+    }
+
+    public void setVerifySsl(boolean verifySsl) {
+        this.verifySsl = verifySsl;
+    }
+
     public HttpClientFactory copy() throws TikaConfigException {
         HttpClientFactory cp = new HttpClientFactory();
         cp.setAllowedHostsForRedirect(new HashSet<>(allowedHostsForRedirect));
@@ -253,24 +263,32 @@ public class HttpClientFactory {
         cp.setProxyPort(proxyPort);
         cp.setRequestTimeout(requestTimeout);
         cp.setSocketTimeout(socketTimeout);
+        cp.setVerifySsl(verifySsl);
         return cp;
     }
 
 
     public HttpClient build() throws TikaConfigException {
-        LOG.info("http client does not verify ssl at this point.  " +
-                "If you need that, please open a ticket.");
-        TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
-        SSLContext sslContext = null;
-        try {
-            sslContext =
-                    SSLContexts.custom().loadTrustMaterial(
-                            null, acceptingTrustStrategy).build();
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-            throw new TikaConfigException("", e);
+        HostnameVerifier hostnameVerifier;
+        SSLConnectionSocketFactory sslsf;
+        if (verifySsl) {
+            hostnameVerifier = SSLConnectionSocketFactory.getDefaultHostnameVerifier();
+            sslsf = new SSLConnectionSocketFactory(SSLContexts.createDefault(), hostnameVerifier);
+        } else {
+            LOG.info("http client does not verify TLS certificates or hostnames; " +
+                    "set verifySsl to true to enable verification");
+            TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
+            SSLContext sslContext;
+            try {
+                sslContext =
+                        SSLContexts.custom().loadTrustMaterial(
+                                null, acceptingTrustStrategy).build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                throw new TikaConfigException("", e);
+            }
+            hostnameVerifier = NoopHostnameVerifier.INSTANCE;
+            sslsf = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
         }
-        SSLConnectionSocketFactory sslsf =
-                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry =
                 RegistryBuilder.<ConnectionSocketFactory>create().register("https", sslsf)
@@ -291,7 +309,7 @@ public class HttpClientFactory {
                 .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
                 .setDefaultRequestConfig(getDefaultRequestConfig())
                 .setKeepAliveStrategy(getKeepAliveStrategy())
-                .setSSLSocketFactory(sslsf).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .setSSLSocketFactory(sslsf).setSSLHostnameVerifier(hostnameVerifier)
                 .build();
     }
 
