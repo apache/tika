@@ -1,5 +1,13 @@
 Release 3.4.0 - ???
 
+  * The http fetcher, the Solr and OpenSearch emitters and the Solr pipes iterator no longer
+    send Authorization or Cookie headers, or answer a 401 with the configured password,
+    after a redirect to another host, port or scheme. That includes http to https, so use
+    the https URL in the fetch key. Applies only with maxRedirects > 0 (TIKA-XXXX).
+
+  * The http fetcher with authScheme basic or ntlm no longer fails to initialize with
+    "Username may not be null" (TIKA-XXXX).
+
   * tika-age-recogniser is deprecated and will be removed in 3.5.0; it depends on the
     unmaintained age-predictor-api on Spark 2.2 / Scala 2.10. It was removed in 4.0.0
     (TIKA-4343).
