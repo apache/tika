@@ -102,6 +102,13 @@ Release 4.3.0 - ???
 
   OTHER CHANGES
 
+   * The junk detector no longer scores text in scripts its model has no usable table
+     for (Yi, Mongolian, Canadian syllabics, Cherokee, Adlam and 37 others) as
+     junk: it scored -3 to -19 before. TextQualityScore gains getCoverage(), and
+     tika-eval reports languageness for such text as unknown. Text with no letters
+     (whitespace, digits, symbols) now scores -1 instead of +3, below clean prose
+     (TIKA-5027).
+
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
      list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
      and checks tk:parsed-by-full-set, not pdf:ocr-page-count, to confirm OCR ran. A test
