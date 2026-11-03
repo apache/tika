@@ -28,7 +28,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.Test;
 
 /**
- * A {@code server} field set with {@code TIKA_SERVER_<FIELD>} or {@code --serverSetting}
+ * A {@code server} field set with {@code TIKA_SERVER_SETTING_<FIELD>} or {@code --serverSetting}
  * instead of the config file, over the file's own value.
  */
 public class ServerSettingsIntegrationTest extends IntegrationTestBase {

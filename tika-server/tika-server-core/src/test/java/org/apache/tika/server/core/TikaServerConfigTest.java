@@ -168,12 +168,17 @@ public class TikaServerConfigTest extends TikaTest {
                 TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_READ_MILLIS", " 7000 ",
                 TikaServerConfig.SETTINGS_ENV_PREFIX + "REQUEST_LOG_LEVEL", "debug",
                 "TIKA_SERVER", "ignored",
-                "TIKA_VERSION", "ignored");
+                "TIKA_VERSION", "ignored",
+                // what Kubernetes gives every pod for a Service named tika-server
+                "TIKA_SERVER_PORT", "tcp://10.0.0.1:9998",
+                "TIKA_SERVER_SERVICE_HOST", "10.0.0.1",
+                "TIKA_SERVER_PORT_9998_TCP_ADDR", "10.0.0.1");
 
         TikaServerConfig config = TikaServerConfig.load(commandLine, null, env);
         assertEquals(4294967296L, config.getMaxRequestSizeBytes(), "the option wins over the variable");
         assertTrue(config.isAllowHttp2());
         assertEquals(7000L, config.getMaxRequestReadMillis());
+        assertEquals(TikaServerConfig.DEFAULT_PORT, config.getPort(), "Kubernetes variables are not settings");
         assertEquals("debug", config.getRequestLogLevel());
 
         config = TikaServerConfig.load(new DefaultParser().parse(options, new String[]{}), null, env);
@@ -200,13 +205,13 @@ public class TikaServerConfigTest extends TikaTest {
 
         TikaConfigException ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
                 empty, null, Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_BYTES", "1")));
-        assertContains("TIKA_SERVER_MAX_REQUEST_BYTES", ex.getMessage());
+        assertContains("TIKA_SERVER_SETTING_MAX_REQUEST_BYTES", ex.getMessage());
         assertContains("no field 'maxRequestBytes'", ex.getMessage());
         assertContains("maxRequestSizeBytes", ex.getMessage());
 
         ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
                 empty, null, Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_SIZE_BYTES", "4g")));
-        assertContains("TIKA_SERVER_MAX_REQUEST_SIZE_BYTES", ex.getMessage());
+        assertContains("TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES", ex.getMessage());
         assertContains("'4g' for maxRequestSizeBytes", ex.getMessage());
 
         ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(

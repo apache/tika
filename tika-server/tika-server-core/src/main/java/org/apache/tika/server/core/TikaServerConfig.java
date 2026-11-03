@@ -58,10 +58,13 @@ public class TikaServerConfig {
 
     /**
      * Prefix of the environment variables that set a field of the {@code server} block:
-     * {@code TIKA_SERVER_MAX_REQUEST_SIZE_BYTES=4294967296} is {@code "maxRequestSizeBytes":
+     * {@code TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES=4294967296} is {@code "maxRequestSizeBytes":
      * 4294967296}, read at startup like {@code --serverSetting maxRequestSizeBytes=4294967296}.
+     * Not {@code TIKA_SERVER_}: Kubernetes gives every pod {@code TIKA_SERVER_PORT},
+     * {@code TIKA_SERVER_SERVICE_HOST} and more for a Service named {@code tika-server}, and
+     * those must neither set a field nor fail the start.
      */
-    public static final String SETTINGS_ENV_PREFIX = "TIKA_SERVER_";
+    public static final String SETTINGS_ENV_PREFIX = "TIKA_SERVER_SETTING_";
 
     /** The {@code --serverSetting <field>=<value>} option, repeatable. */
     static final String SETTING_OPTION = "serverSetting";
@@ -246,7 +249,7 @@ public class TikaServerConfig {
     /**
      * The {@code server} fields given as {@code --serverSetting <field>=<value>} or as
      * {@value #SETTINGS_ENV_PREFIX}{@code <FIELD>} in the environment, the option winning over
-     * the variable for the same field. {@code TIKA_SERVER_MAX_REQUEST_SIZE_BYTES} names
+     * the variable for the same field. {@code TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES} names
      * {@code maxRequestSizeBytes}; the variable's name is upper snake case of the field's.
      */
     private static Map<String, Setting> serverSettings(CommandLine commandLine,
