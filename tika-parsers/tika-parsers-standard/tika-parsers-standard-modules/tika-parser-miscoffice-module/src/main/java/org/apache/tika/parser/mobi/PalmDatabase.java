@@ -17,6 +17,7 @@
 package org.apache.tika.parser.mobi;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
@@ -37,6 +38,7 @@ final class PalmDatabase {
 
     private final byte[] file;
     private final int[] recordOffsets;
+    private final int declaredRecordCount;
 
     /** A record's bytes in place: the file, where the record starts and how long it is. */
     record Slice(byte[] data, int offset, int length) {
@@ -47,9 +49,10 @@ final class PalmDatabase {
         }
     }
 
-    private PalmDatabase(byte[] file, int[] recordOffsets) {
+    private PalmDatabase(byte[] file, int[] recordOffsets, int declaredRecordCount) {
         this.file = file;
         this.recordOffsets = recordOffsets;
+        this.declaredRecordCount = declaredRecordCount;
     }
 
     static PalmDatabase read(byte[] file) throws TikaException {
@@ -62,17 +65,31 @@ final class PalmDatabase {
                     + " records do not fit the file");
         }
         int[] offsets = new int[count];
+        int present = 0;
         int previous = HEADER_SIZE + count * RECORD_ENTRY_SIZE;
         for (int i = 0; i < count; i++) {
             long offset = EndianUtils.getUIntBE(file, HEADER_SIZE + i * RECORD_ENTRY_SIZE);
-            if (offset < previous || offset > file.length) {
+            if (offset < previous) {
                 throw new TikaException("Not a Palm Database: record " + i
-                        + " starts at " + offset + ", out of order or past the end");
+                        + " starts at " + offset + ", before the record before it");
+            }
+            if (offset >= file.length) {
+                // a truncated file: this record and the ones after it are gone
+                break;
             }
             offsets[i] = (int) offset;
             previous = (int) offset;
+            present++;
         }
-        return new PalmDatabase(file, offsets);
+        if (present == 0) {
+            throw new TikaException("Not a Palm Database: record 0 starts past the end");
+        }
+        return new PalmDatabase(file, Arrays.copyOf(offsets, present), count);
+    }
+
+    /** How many records the table lists; more than {@link #recordCount()} in a truncated file. */
+    int declaredRecordCount() {
+        return declaredRecordCount;
     }
 
     /** The 8-byte type and creator, {@code BOOKMOBI} for a Mobipocket book. */

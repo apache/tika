@@ -246,6 +246,32 @@ public class MobiParserTest extends TikaTest {
     }
 
     /**
+     * A hybrid cut right after its cover, as a download that stopped leaves it: the table
+     * still lists every record, the file holds the first four. Title and cover come out,
+     * the KF8 half and the text records behind the cut do not, and the metadata say so.
+     */
+    @Test
+    public void testTruncatedFileKeepsWhatIsThere() throws Exception {
+        byte[] whole = fixture("testMOBI_hybrid.mobi");
+        int cut = PalmDatabase.read(whole).slice(4).offset();
+        List<Metadata> list;
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(
+                Arrays.copyOf(whole, cut)))) {
+            list = getRecursiveMetadata(tis, true);
+        }
+        Metadata metadata = list.get(0);
+        assertEquals("The Hybrid Book", metadata.get(TikaCoreProperties.TITLE));
+        assertContains("The old half", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("false", metadata.get(Mobi.HYBRID));
+        assertContains("The file is truncated: 4 of 10 records",
+                metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals(3, list.size());
+        assertEquals("cover.jpeg", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
      * Random byte flips over every fixture: the parser may refuse the file with a
      * TikaException or make the best of it, but it may not fail with anything else.
      */

@@ -139,6 +139,11 @@ public class MobiParser implements Parser {
                     + pdb.typeAndCreator());
         }
         MobiHeader header = MobiHeader.read(pdb);
+        if (pdb.recordCount() < pdb.declaredRecordCount()) {
+            EmbeddedDocumentUtil.recordException(new TikaException("The file is truncated: "
+                    + pdb.recordCount() + " of " + pdb.declaredRecordCount()
+                    + " records are there; what they hold is read"), metadata, context);
+        }
         Kf8Half kf8Half = kf8Half(pdb, header, metadata, context);
         extractMetadata(header, kf8Half != null, metadata);
 
