@@ -261,6 +261,11 @@
 ** `application/vnd.mif`
 ** `application/x-maker`
 ** `application/x-mif`
+* `org.apache.tika.parser.mkv.` link:{tika-javadoc-url}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser]
+** `application/x-matroska`
+** `audio/x-matroska`
+** `video/webm`
+** `video/x-matroska`
 * `org.apache.tika.parser.mp3.` link:{tika-javadoc-url}/org/apache/tika/parser/mp3/Mp3Parser.html[Mp3Parser]
 ** `audio/mpeg`
 * `org.apache.tika.parser.mp4.` link:{tika-javadoc-url}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser]
