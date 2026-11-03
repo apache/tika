@@ -67,8 +67,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * parser. The KF8 text is taken as its records hold it, without reassembling skeletons and
  * fragments. A hybrid file, a version 6 book with a KF8 book behind a BOUNDARY record,
  * yields the first as the document and the second as an embedded document. An encrypted
- * book still yields its metadata and images, since those are not encrypted, and then ends
- * in an {@link EncryptedDocumentException}.
+ * book yields its metadata and images, which are not encrypted, and records the locked text
+ * as an {@link EncryptedDocumentException} warning rather than throwing it, so that the
+ * unpack endpoints still answer with the cover.
  */
 @TikaComponent
 public class MobiParser implements Parser {
@@ -149,11 +150,15 @@ public class MobiParser implements Parser {
             if (kf8Half != null) {
                 extractKf8Half(pdb, kf8Half, xhtml, context);
             }
-            if (header.encryption() != MobiHeader.Encryption.NONE) {
-                throw new EncryptedDocumentException("The text is encrypted (Mobipocket "
-                        + "encryption " + header.encryption().label() + ")");
+            if (header.encryption() == MobiHeader.Encryption.NONE) {
+                extractText(pdb, header, xhtml, metadata, context, maxTextLength);
+            } else {
+                // not thrown: the metadata and the images are complete, only the text is
+                // locked, and a thrown exception would cost the client the cover (422)
+                EmbeddedDocumentUtil.recordException(new EncryptedDocumentException(
+                        "The text is encrypted (Mobipocket encryption " + header.encryption().label()
+                                + "); metadata and images only"), metadata, context);
             }
-            extractText(pdb, header, xhtml, metadata, context, maxTextLength);
         } finally {
             xhtml.endDocument();
         }

@@ -173,19 +173,17 @@ public class MobiParserTest extends TikaTest {
 
     @Test
     public void testEncryptedBookKeepsMetadataAndCover() throws Exception {
-        Metadata metadata = new Metadata();
-        try (InputStream stream = getResourceAsStream("/test-documents/testMOBI_encrypted.mobi");
-                TikaInputStream tis = TikaInputStream.get(stream)) {
-            assertThrows(EncryptedDocumentException.class, () -> new MobiParser()
-                    .parse(tis, new DefaultHandler(), metadata, new ParseContext()));
-        }
+        List<Metadata> list = getRecursiveMetadata("testMOBI_encrypted.mobi");
+        Metadata metadata = list.get(0);
         assertEquals("The Test Book", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Ada Example", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("mobipocket", metadata.get(Mobi.ENCRYPTION));
-
-        List<Metadata> list = getRecursiveMetadata("testMOBI_encrypted.mobi", true);
+        assertNull(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        String warning = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertContains(EncryptedDocumentException.class.getName(), warning);
+        assertContains("metadata and images only", warning);
+        assertNotContained("Chapter", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(4, list.size());
-        assertNotNull(list.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }

@@ -59,7 +59,8 @@ Release 4.3.0 - ???
    * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
      cover as the THUMBNAIL embedded document, the other images, and the text, stored,
      PalmDOC- or HUFF/CDIC-compressed, through the HTML parser; a hybrid file yields its
-     KF8 book as an embedded document, an encrypted book its metadata and images. New
+     KF8 book as an embedded document, an encrypted book its metadata and images with
+     the locked text recorded as a warning. New
      keys mobi:version, mobi:compression, mobi:encryption, mobi:cde-type, mobi:hybrid;
      maxTextLength caps the text (64 MB). application/vnd.amazon.mobi8-ebook (*.azw3)
      is new, and with application/vnd.amazon.ebook a sub-type of
