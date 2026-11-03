@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.io.ByteOrderMark;
@@ -60,7 +61,8 @@ public class BOMDetectorTest extends TikaTest {
                     cnt++;
                     c = tis.read();
                 }
-                assertEquals(100 + bom.getBytes().length, cnt);
+                assertEquals(100 * " ".getBytes(Charset.forName(bom.getCharsetName())).length
+                        + bom.getBytes().length, cnt);
             }
         }
     }
@@ -82,11 +84,60 @@ public class BOMDetectorTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testHintNotDeclaration() throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(withBom(ByteOrderMark.UTF_8,
+                "caf\u00e9".getBytes(StandardCharsets.UTF_8)))) {
+            EncodingResult r = new BOMDetector().detect(tis, new Metadata(), new ParseContext()).get(0);
+            assertEquals(EncodingResult.ResultType.STATISTICAL, r.getResultType());
+        }
+    }
+
+    @Test
+    public void testLyingBom() throws Exception {
+        EncodingDetector detector = new BOMDetector();
+        byte[] latin1 = "caf\u00e9 cr\u00e8me br\u00fbl\u00e9e".getBytes(StandardCharsets.ISO_8859_1);
+        // UTF-8 BOM before a windows-1252 body: not valid UTF-8
+        try (TikaInputStream tis = TikaInputStream.get(withBom(ByteOrderMark.UTF_8, latin1))) {
+            assertTrue(detector.detect(tis, new Metadata(), new ParseContext()).isEmpty());
+        }
+        // UTF-16LE BOM before a lone low surrogate
+        try (TikaInputStream tis = TikaInputStream.get(withBom(ByteOrderMark.UTF_16LE,
+                new byte[]{0x41, 0x00, 0x00, (byte) 0xDC, 0x42, 0x00}))) {
+            assertTrue(detector.detect(tis, new Metadata(), new ParseContext()).isEmpty());
+        }
+        // UTF-32LE BOM whose body isn't UTF-32 falls through to UTF-16LE (FF FE, then U+0000 ...)
+        byte[] le16 = "\u0000abc".getBytes(StandardCharsets.UTF_16LE);
+        try (TikaInputStream tis = TikaInputStream.get(withBom(ByteOrderMark.UTF_16LE, le16))) {
+            assertEquals(StandardCharsets.UTF_16LE,
+                    detector.detect(tis, new Metadata(), new ParseContext()).get(0).getCharset());
+        }
+    }
+
+    @Test
+    public void testTruncatedSequenceAtProbeEnd() throws Exception {
+        byte[] body = new byte[8189]; // BOM + body = the 8192-byte probe
+        java.util.Arrays.fill(body, (byte) 'a');
+        body[body.length - 1] = (byte) 0xE2; // first byte of a 3-byte UTF-8 sequence, cut off
+        try (TikaInputStream tis = TikaInputStream.get(withBom(ByteOrderMark.UTF_8, body))) {
+            assertEquals(StandardCharsets.UTF_8,
+                    new BOMDetector().detect(tis, new Metadata(), new ParseContext()).get(0).getCharset());
+        }
+    }
+
+    private static byte[] withBom(ByteOrderMark bom, byte[] body) {
+        byte[] out = java.util.Arrays.copyOf(bom.getBytes(), bom.length() + body.length);
+        System.arraycopy(body, 0, out, bom.length(), body.length);
+        return out;
+    }
+
+    /** BOM plus 100 spaces encoded in the BOM's own charset. */
     private UnsynchronizedByteArrayOutputStream createStream(ByteOrderMark bom) throws IOException {
         UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
         IOUtils.write(bom.getBytes(), bos);
+        byte[] space = " ".getBytes(Charset.forName(bom.getCharsetName()));
         for (int i = 0; i < 100; i++) {
-            bos.write(' ');
+            bos.write(space);
         }
         return bos;
     }

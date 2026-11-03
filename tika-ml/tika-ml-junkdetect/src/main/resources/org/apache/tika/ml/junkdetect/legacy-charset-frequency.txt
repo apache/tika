@@ -1,0 +1,31 @@
+# Pages per charset among legacy-charset (non-Unicode) web pages: voter consensus over
+# Common Crawl HTML pages with high bytes, train split only (sha1("cc-html:"+sha256) mod 10 in 2..8).
+# The sample was selected for legacy charsets, so UTF-8/UTF-16 counts are omitted: not representative.
+windows-1252	269192
+windows-1251	140964
+GB18030	100349
+windows-31j	78567
+x-windows-949	45662
+EUC-JP	28190
+windows-1250	21318
+ISO-8859-2	16652
+Big5-HKSCS	12678
+windows-1254	10891
+TIS-620	3626
+windows-1256	2749
+windows-1255	1651
+KOI8-R	1382
+ISO-8859-7	1344
+x-windows-874	595
+windows-1253	459
+ISO-8859-13	425
+windows-1257	345
+x-MacCyrillic	15
+KOI8-U	15
+ISO-8859-5	15
+ISO-8859-6	15
+ISO-8859-8	9
+IBM866	4
+ISO-8859-4	3
+windows-1258	2
+IBM865	1

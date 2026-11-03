@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.detect.BOMDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingProbeCache;
@@ -184,6 +185,13 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      *  CjkDecodeValidator#MIN_HIGH_BYTES}). */
     private static final int MIN_TOLERATED_UTF8_SEQUENCES = 30;
 
+    /**
+     * Long probes: errors tolerated per valid multi-byte sequence, literal U+FFFD (EF BF BD,
+     * damage from an earlier conversion) not counted as evidence. cc-html train: real UTF-8 at
+     * most 0.066, nearest legacy page 0.32.
+     */
+    private static final double UTF8_ERRORS_PER_SEQUENCE = 0.10;
+
     /** Windows-1252: the WHATWG-canonical default for unlabeled Western content. */
     private static final String WIN1252 = "windows-1252";
 
@@ -236,6 +244,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * structural checks, which need byte alignment intact.
      */
     public List<EncodingResult> detect(byte[] probe, Metadata metadata) {
+        // BOMDetector reports the BOM; here its bytes are noise (EF BB BF alone is valid
+        // multi-byte UTF-8, and they feed the bigram model).  A BOM is a hint, not proof.
+        int bom = probe == null ? 0 : BOMDetector.bomLength(probe);
+        if (bom > 0) {
+            probe = java.util.Arrays.copyOfRange(probe, bom, probe.length);
+        }
         if (LOG.isTraceEnabled()) {
             int probeLen = probe == null ? 0 : probe.length;
             int highBytes = probe == null ? 0 : HighByteLetterStats.countHighBytes(probe);
@@ -352,7 +366,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             // Length-aware: absolute floor for short probes, rate for long ones.
             int maxTolerated = Math.max(UTF8_MAX_TOLERATED_ERRORS,
                     (int) (probe.length * UTF8_MALFORMED_TOLERANCE));
-            if (errors > 0 && errors <= maxTolerated) {
+            int evidence = utf8Stats.sequences() - countReplacementChars(probe);
+            boolean perSequence = evidence >= MIN_TOLERATED_UTF8_SEQUENCES
+                    && errors <= evidence * UTF8_ERRORS_PER_SEQUENCE;
+            if (errors > 0 && (errors <= maxTolerated || perSequence)) {
                 utf8Tolerated = true;
                 LOG.trace("mojibuster utf8 NOT_UTF8 tolerated: {} error events in {}B ({}%)",
                         errors, probe.length,
@@ -529,6 +546,17 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * whose bytes happen to be all &lt; 0x80 (all-Cyrillic UTF-16-LE
      * would satisfy the high-byte test alone).
      */
+    private static int countReplacementChars(byte[] probe) {
+        int n = 0;
+        for (int i = 0; i + 2 < probe.length; i++) {
+            if (probe[i] == (byte) 0xEF && probe[i + 1] == (byte) 0xBF && probe[i + 2] == (byte) 0xBD) {
+                n++;
+                i += 2;
+            }
+        }
+        return n;
+    }
+
     private static boolean isPureAscii(byte[] probe) {
         for (byte b : probe) {
             int c = b & 0xFF;

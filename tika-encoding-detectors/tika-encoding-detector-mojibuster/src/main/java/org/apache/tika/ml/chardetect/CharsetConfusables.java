@@ -116,9 +116,6 @@ public final class CharsetConfusables {
         m.put("ISO-8859-15", "windows-1252");
         m.put("ISO-8859-2",  "windows-1250");
         m.put("ISO-8859-4",  "windows-1257");
-        m.put("ISO-8859-5",  "windows-1251");
-        m.put("ISO-8859-6",  "windows-1256");
-        m.put("ISO-8859-7",  "windows-1253");
         m.put("ISO-8859-8",  "windows-1255");
         m.put("ISO-8859-9",  "windows-1254");
         m.put("ISO-8859-13", "windows-1257");
@@ -190,8 +187,8 @@ public final class CharsetConfusables {
                 // Central / Eastern European
                 group("ISO-8859-2", "windows-1250"),
 
-                // Cyrillic: differ only in C1 range
-                group("ISO-8859-5", "windows-1251"),
+                // ISO-8859-5 / windows-1251 and ISO-8859-6 / windows-1256 are NOT
+                // confusables: the letters sit at different bytes (TIKA-5019).
 
                 // KOI8 family: share all 32 basic Russian Cyrillic letters at
                 // identical byte positions.  Pure Russian text is byte-identical
@@ -218,11 +215,8 @@ public final class CharsetConfusables {
                 // Ё should treat KOI8-R/KOI8-U as distinct.
                 group("KOI8-R", "KOI8-U"),
 
-                // Arabic
-                group("ISO-8859-6", "windows-1256"),
-
                 // Greek
-                group("ISO-8859-7", "windows-1253"),
+                // ISO-8859-7 vs windows-1253: NOT confusable, 0xB6 is Ά vs ¶ (TIKA-5019)
 
                 // Hebrew
                 group("ISO-8859-8", "windows-1255"),
