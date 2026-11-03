@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -153,6 +154,83 @@ public class TikaServerConfigTest extends TikaTest {
 
         config = TikaServerConfig.load(new DefaultParser().parse(options, new String[]{}), null);
         assertTrue(config.getPresets().isEmpty());
+    }
+
+    @Test
+    public void testServerSettingsFromCommandLineAndEnvironment() throws Exception {
+        Options options = new Options()
+                .addOption(Option.builder().longOpt(TikaServerConfig.SETTING_OPTION).hasArg().get());
+        CommandLine commandLine = new DefaultParser().parse(options, new String[]{
+                "--" + TikaServerConfig.SETTING_OPTION, "maxRequestSizeBytes=4294967296",
+                "--" + TikaServerConfig.SETTING_OPTION, "allowHttp2=true"});
+        Map<String, String> env = Map.of(
+                TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_SIZE_BYTES", "1",
+                TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_READ_MILLIS", " 7000 ",
+                TikaServerConfig.SETTINGS_ENV_PREFIX + "REQUEST_LOG_LEVEL", "debug",
+                "TIKA_SERVER", "ignored",
+                "TIKA_VERSION", "ignored");
+
+        TikaServerConfig config = TikaServerConfig.load(commandLine, null, env);
+        assertEquals(4294967296L, config.getMaxRequestSizeBytes(), "the option wins over the variable");
+        assertTrue(config.isAllowHttp2());
+        assertEquals(7000L, config.getMaxRequestReadMillis());
+        assertEquals("debug", config.getRequestLogLevel());
+
+        config = TikaServerConfig.load(new DefaultParser().parse(options, new String[]{}), null, env);
+        assertEquals(1L, config.getMaxRequestSizeBytes());
+    }
+
+    @Test
+    public void testServerSettingsOverrideTheFile(@TempDir Path dir) throws Exception {
+        Path path = Files.writeString(dir.resolve("limits.json"),
+                "{\"server\": {\"maxRequestSizeBytes\": 1000, \"maxRequestReadMillis\": 2000}}");
+        Options options = new Options().addOption(Option.builder("c").longOpt("config").hasArg().get());
+        CommandLine commandLine = new DefaultParser().parse(options,
+                new String[]{"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())});
+
+        TikaServerConfig config = TikaServerConfig.load(commandLine, null,
+                Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_SIZE_BYTES", "3000"));
+        assertEquals(3000L, config.getMaxRequestSizeBytes());
+        assertEquals(2000L, config.getMaxRequestReadMillis(), "the file keeps what nothing overrides");
+    }
+
+    @Test
+    public void testServerSettingsAreChecked() throws Exception {
+        CommandLine empty = new DefaultParser().parse(new Options(), new String[]{});
+
+        TikaConfigException ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
+                empty, null, Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_BYTES", "1")));
+        assertContains("TIKA_SERVER_MAX_REQUEST_BYTES", ex.getMessage());
+        assertContains("no field 'maxRequestBytes'", ex.getMessage());
+        assertContains("maxRequestSizeBytes", ex.getMessage());
+
+        ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
+                empty, null, Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_SIZE_BYTES", "4g")));
+        assertContains("TIKA_SERVER_MAX_REQUEST_SIZE_BYTES", ex.getMessage());
+        assertContains("'4g' for maxRequestSizeBytes", ex.getMessage());
+
+        ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
+                empty, null, Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "REQUEST_LOG_LEVEL", "loud")));
+        assertContains("requestLogLevel must be one of", ex.getMessage());
+
+        ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
+                empty, null, Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "CONFIG_PATH", "/x.json")));
+        assertContains("-c option", ex.getMessage());
+
+        Options options = new Options()
+                .addOption(Option.builder().longOpt(TikaServerConfig.SETTING_OPTION).hasArg().get());
+        ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
+                new DefaultParser().parse(options,
+                        new String[]{"--" + TikaServerConfig.SETTING_OPTION, "maxRequestSizeBytes"}),
+                null, Map.of()));
+        assertContains("<field>=<value>", ex.getMessage());
+    }
+
+    @Test
+    public void testFieldName() {
+        assertEquals("maxRequestSizeBytes", TikaServerConfig.fieldName("MAX_REQUEST_SIZE_BYTES"));
+        assertEquals("port", TikaServerConfig.fieldName("PORT"));
+        assertEquals("allowHttp2", TikaServerConfig.fieldName("ALLOW_HTTP2"));
     }
 
     @Test

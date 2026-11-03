@@ -15,6 +15,12 @@ Release 4.3.0 - ???
 
   SERVER, PIPES AND OPERATIONS
 
+   * tika-server sets any field of the config's "server" block from the command line
+     (--serverSetting <field>=<value>, repeatable) and the environment (TIKA_SERVER_<FIELD>,
+     e.g. TIKA_SERVER_MAX_REQUEST_SIZE_BYTES), over the file's own value, so raising the
+     1 GiB request body limit no longer needs a config file. The 413 names the limit and
+     where to raise it (TIKA-5025).
+
    * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,
      Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
      configured password, after a redirect to another host, port or scheme. That includes
