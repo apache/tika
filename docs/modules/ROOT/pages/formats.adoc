@@ -239,7 +239,11 @@ link:{api}/org/apache/tika/parser/video/FLVParser.html[FLVParser] supports the
 Flash video format with a simple parsing algorithm.
 link:{api}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser] covers the MP4
 family (MP4, QuickTime, 3GPP, ...), extracting video metadata and any audio
-stream metadata. For the Ogg family,
+stream metadata. Its text subtitle tracks (`tx3g`/`mov_text`) become embedded
+WebVTT documents (`track-<id>.vtt`, with the track's `dc:language`). It does this
+when the input is a file, in memory, or a stream of known length up to 64 MB; a
+longer or unsized stream is not spooled to disk for it. Set `extractSubtitles` to
+false to turn it off. For the Ogg family,
 link:{api}/org/apache/tika/parser/ogg/OggParser.html[OggParser] and
 link:{api}/org/apache/tika/parser/ogg/TheoraParser.html[TheoraParser] extract a
 limited amount of metadata.
