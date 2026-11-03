@@ -56,6 +56,18 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * MP4Parser extracts text subtitle tracks (tx3g/mov_text, QuickTime text) as
+     embedded text/vtt documents named track-<id>.vtt, with the track language as
+     dc:language; chapter tracks are skipped. Samples are read through the sample
+     tables by seeking, so the media data is not read. Only when the input is a file,
+     in memory, or a stream of known length up to 64 MB. Off with extractSubtitles
+     (TIKA-5030).
+
+   * New MatroskaParser for Matroska and WebM, which previously had no parser: it
+     extracts SubRip, ASS/SSA and WebVTT text subtitle tracks the same way, with the
+     track name as dc:title, in one forward pass (no spooling). No container metadata
+     yet (TIKA-5030).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
