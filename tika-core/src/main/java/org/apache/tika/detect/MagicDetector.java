@@ -323,6 +323,13 @@ public class MagicDetector implements Detector {
                 } else if (value.charAt(i + 1) == 'n') {
                     decoded.write('\n');
                     i++;
+                } else if (value.charAt(i + 1) == 't') {
+                    decoded.write('\t');
+                    i++;
+                } else if (!Character.isDigit(value.charAt(i + 1))) {
+                    // e.g. "\ ": the char itself; this used to write a NUL before it
+                    decoded.write(value.charAt(i + 1));
+                    i++;
                 } else {
                     int j = i + 1;
                     while ((j < i + 4) && (j < value.length()) &&

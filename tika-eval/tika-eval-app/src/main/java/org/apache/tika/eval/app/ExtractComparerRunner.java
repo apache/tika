@@ -218,6 +218,8 @@ public class ExtractComparerRunner {
             ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
             ExtractComparer extractComparer = new ExtractComparer(inputDir, extractsA, extractsB, extractReader,
                     builder.getDBWriter(builder.getNonRefTableInfos(), jdbcUtil, mimeBuffer), pipesReportA, pipesReportB);
+            extractComparer.setMaxTokens(evalConfig.getMaxTokens());
+            extractComparer.setMaxContentLength(evalConfig.getMaxContentLength());
             executorCompletionService.submit(new ComparerWorker(queue, extractComparer, processed));
         }
 

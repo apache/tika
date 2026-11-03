@@ -555,6 +555,33 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testEmphasisEdgeWhitespaceAndEmptyDropped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "a");
+        startElement(handler, "b");
+        chars(handler, " Note: ");
+        endElement(handler, "b");
+        chars(handler, "b");
+        startElement(handler, "i");
+        endElement(handler, "i");
+        startElement(handler, "s");
+        chars(handler, " ");
+        endElement(handler, "s");
+        chars(handler, "c");
+        startElement(handler, "b");
+        startElement(handler, "i");
+        chars(handler, "x\u00A0");
+        endElement(handler, "i");
+        endElement(handler, "b");
+        chars(handler, "d");
+        endElement(handler, "p");
+        handler.endDocument();
+        assertContains("a **Note:** b c**_x_**\u00A0d", handler.toString());
+    }
+
+    @Test
     public void testSupSubWrittenAsInlineHtml() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
@@ -579,6 +606,31 @@ public class ToMarkdownContentHandlerTest {
         endElement(handler, "p");
         handler.endDocument();
         assertContains("x<sup>2\\*</sup> H<sub>**2**</sub>O `ab`", handler.toString());
+    }
+
+    @Test
+    public void testEmptyAndBlankSupSubDropped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "a");
+        startElement(handler, "sup");
+        endElement(handler, "sup");
+        chars(handler, "b");
+        startElement(handler, "sub");
+        chars(handler, " ");
+        endElement(handler, "sub");
+        chars(handler, "c");
+        startElement(handler, "sup");
+        startElement(handler, "sub");
+        endElement(handler, "sub");
+        endElement(handler, "sup");
+        chars(handler, "d");
+        endElement(handler, "p");
+        handler.endDocument();
+        String md = handler.toString();
+        assertFalse(md.contains("sup>") || md.contains("sub>"), md);
+        assertContains("ab c", md);
     }
 
     @Test

@@ -58,6 +58,7 @@ import org.apache.tika.eval.core.textstats.ReplacementCharCounter;
 import org.apache.tika.eval.core.textstats.TextStatsCalculator;
 import org.apache.tika.eval.core.textstats.TokenEntropy;
 import org.apache.tika.eval.core.textstats.TokenLengths;
+import org.apache.tika.eval.core.textstats.TokenSequence;
 import org.apache.tika.eval.core.textstats.TopNTokens;
 import org.apache.tika.eval.core.textstats.UnicodeBlockCounter;
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
@@ -333,8 +334,16 @@ public abstract class ProfilerBase {
         calculators.add(new ReplacementCharCounter());
         calculators.add(new NonAsciiCharCounter());
         calculators.add(new UnicodeBlockCounter(maxContentLengthForLangId));
+        if (keepTokenSequence()) {
+            calculators.add(new TokenSequence());
+        }
 
         return new CompositeTextStatsCalculator(calculators, analyzerManager, langIder);
+    }
+
+    /** Whether text stats include the {@link TokenSequence}; called from the constructor. */
+    protected boolean keepTokenSequence() {
+        return false;
     }
 
     /**
@@ -356,14 +365,10 @@ public abstract class ProfilerBase {
         LanguageIDWrapper.setMaxTextLength(maxContentLengthForLangId);
     }
 
-    /**
-     * Add a LimitTokenCountFilterFactory if &gt; -1
-     *
-     * @param maxTokens
-     */
+    /** Tokens past this many per document are not counted. */
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
-        initAnalyzersAndTokenCounter(maxTokens, new LanguageIDWrapper());
+        this.compositeTextStatsCalculator = initAnalyzersAndTokenCounter(maxTokens, LANG_ID);
     }
 
     protected static void putPipesResult(Map<Cols, String> row, PipesReport report, EvalFilePaths fps, Cols statusCol, Cols messageCol) {

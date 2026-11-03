@@ -15,6 +15,12 @@ Release 4.3.0 - ???
 
   SERVER, PIPES AND OPERATIONS
 
+   * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,
+     Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
+     configured password, after a redirect to another host, port or scheme. That includes
+     http to https, so use the https URL in the fetch key. Applies only with
+     maxRedirects > 0 (TIKA-XXXX).
+
    * tika-server no longer requires a "server" block in its config file; an absent block
      means the server defaults, as "server": {} did. A tika-app config, or the documented
      Docker example { "text-recognizers": [] }, now works as is (TIKA-XXXX).
@@ -49,6 +55,17 @@ Release 4.3.0 - ???
      mixing values across rows and committing each other's batches (TIKA-5007).
 
   EXTRACTION AND FORMATS
+
+   * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
+     instead of application/x-sh (TIKA-4408).
+
+   * Perl, Ruby, Node, PHP, Lua and Tcl scripts are detected by their shebang line
+     (#!/usr/bin/env ruby, #!/usr/local/bin/node, ...) instead of as application/x-sh.
+     Magic values with "\ " or "\t" now match a space or tab; the decoder wrote a NUL
+     byte instead, so about 25 rules never matched, among them Word 6 and Excel 5 at
+     offset 2080, BibTeX, KDE desktop entries and "#! /bin/sh". Of those, the text/x-diff
+     rules "*** " and "Only in " and the message/rfc822 rules "Forward to" and "Pipe to"
+     are dropped, and "diff " needs a "--- " or "*** " line within 1 KB (TIKA-4408).
 
    * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
      instead of relationship-id order, which put rId10 before rId2; embedded-resource
@@ -91,6 +108,10 @@ Release 4.3.0 - ???
      declaration names the same charset, rather than letting text-quality scoring override
      two agreeing signals; and UTF-8 with sparse corruption (up to one bad sequence per
      ten valid ones, existing U+FFFD not counted) is read as UTF-8 (TIKA-5019).
+   * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
+     elements, and whitespace at their edges is written outside them (<b>Note: </b>
+     becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
+     **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
 
   OTHER CHANGES
 
@@ -120,6 +141,13 @@ Release 4.3.0 - ???
    * A PDF with pages that pages.ocr.maxPages kept from the OCR engine records
      skipped:max-pages in tk:ocr-warnings; before, the cap left no trace and
      pdf:ocr-page-count still counted those pages (TIKA-5013).
+
+   * tika-eval Compare reports text that moved between the two extracts (a reordered
+     slide, a title written at the end of a page instead of the start): order_* columns
+     in content_comparisons and the moved_text and moved_text_by_mime reports. The
+     maxTokens and maxContentLength settings in a tika-eval config are now applied; they
+     were ignored, and the maxContentLength default is now the 10,000,000 that was in
+     effect (TIKA-5022).
 
 Release 4.2.0 - 10/25/2026
 
