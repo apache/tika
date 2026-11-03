@@ -120,6 +120,14 @@ EPUB format used for many digital books.
 link:{api}/org/apache/tika/parser/xml/FictionBookParser.html[FictionBookParser]
 supports the XML-based FictionBook (`.fb2`) publishing format.
 
+link:{api}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser] reads Mobipocket
+books and their Kindle descendants (`.mobi`, `.prc`, `.azw`, and the KF8 generation
+`.azw3`): the EXTH metadata, the cover as the thumbnail and the other images as embedded
+documents, and the text, whether stored, PalmDOC- or HUFF/CDIC-compressed. A hybrid file
+carries its KF8 book as an embedded document behind the version 6 one. An encrypted book
+yields its metadata and images only. The text is cut at `maxTextLength` (64 MB by default)
+whatever the header declares.
+
 == Rich Text Format
 
 link:{api}/org/apache/tika/parser/microsoft/rtf/RTFParser.html[RTFParser]

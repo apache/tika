@@ -1250,7 +1250,15 @@
     <glob pattern="*.azs"/>
   </mime-type>
   <mime-type type="application/vnd.amazon.ebook">
+    <_comment>Kindle Ebook</_comment>
     <glob pattern="*.azw"/>
+    <sub-class-of type="application/x-mobipocket-ebook"/>
+  </mime-type>
+  <mime-type type="application/vnd.amazon.mobi8-ebook">
+    <acronym>KF8</acronym>
+    <_comment>Kindle Format 8 Ebook</_comment>
+    <glob pattern="*.azw3"/>
+    <sub-class-of type="application/x-mobipocket-ebook"/>
   </mime-type>
   <mime-type type="application/vnd.americandynamics.acc">
     <glob pattern="*.acc"/>
