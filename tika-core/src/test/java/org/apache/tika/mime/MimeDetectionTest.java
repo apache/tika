@@ -318,6 +318,28 @@ public class MimeDetectionTest {
     }
 
     @Test
+    public void testMpegTransportStream() throws Exception {
+        MediaType ts = MediaType.video("mp2t");
+        assertDetected(ts, packets(0, 188, 5));
+        assertDetected(ts, packets(4, 192, 5));
+        assertDetected(MediaType.OCTET_STREAM, packets(0, 188, 4));
+    }
+
+    @Test
+    public void testMarcWithBlankBibliographicLevel() throws Exception {
+        assertDetected(MediaType.application("marc"),
+                "01252na  a2200325   4500001001300000".getBytes(US_ASCII));
+    }
+
+    private static byte[] packets(int first, int size, int count) {
+        byte[] b = new byte[1024];
+        for (int i = 0; i < count; i++) {
+            b[first + i * size] = 0x47;
+        }
+        return b;
+    }
+
+    @Test
     public void testSubRipLineEndings() throws Exception {
         MediaType srt = MediaType.application("x-subrip");
         for (String eol : new String[]{"\n", "\r", "\r\n"}) {

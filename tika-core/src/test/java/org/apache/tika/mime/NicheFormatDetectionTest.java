@@ -93,6 +93,41 @@ public class NicheFormatDetectionTest {
                 "Paint Shop Pro Image File\n\u001a\u0000\u0000\u0000\u0000\u0000");
     }
 
+    @Test
+    public void testElastoManiaLevel() throws Exception {
+        MediaType lev = MediaType.application("x-elasto-mania-level");
+        assertDetected(lev, "POT14\u0000\u0000");
+        assertDetected(lev, "POT06\u0000\u0000");
+    }
+
+    @Test
+    public void testBinaryPgpKeys() throws Exception {
+        MediaType keys = MediaType.application("pgp-keys");
+        // public key, 2-byte length, RSA
+        assertDetected(keys, "\u0099\u0001\r\u0004ABCD\u0001");
+        // secret key, 1-byte length, EdDSA
+        assertDetected(keys, "\u0094X\u0004ABCD\u0016");
+        assertDetected(MediaType.OCTET_STREAM, "\u0099\u0001\r\u0004ABCD\u0007");
+    }
+
+    @Test
+    public void testRetroArchivesAndGames() throws Exception {
+        assertDetected(MediaType.application("x-stuffit"), "SIT!\u0000\u0003\u0000$abrLau");
+        assertDetected(MediaType.application("vnd.symbian.install"), "z\u001a \u0010\u0000\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-ms-reader"), "ITOLITLS\u0001\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-lrzip"), "LRZI\u0000\u0006");
+        assertDetected(MediaType.application("x-glulx"), "Glul\u0000\u0003\u0001\u0000");
+        assertDetected(MediaType.video("x-flc"), "abcd\u0012¯\u0016\u0000ABCD\b\u0000");
+        assertDetected(MediaType.video("x-fli"), "abcd\u0011¯\u0016\u0000ABCD\b\u0000");
+    }
+
+    @Test
+    public void testAudioModulesAndApe() throws Exception {
+        assertDetected(MediaType.audio("x-ape"), "MAC \u0096\u000f4\u0000");
+        assertDetected(MediaType.audio("x-s3m"), "unknown" + "\u0000".repeat(21) + "\u001a\u0010"
+                + "\u0000".repeat(14) + "SCRM");
+    }
+
     private static void assertDetected(MediaType expected, String latin1) throws IOException {
         byte[] bytes = new byte[64];
         byte[] header = latin1.getBytes(ISO_8859_1);

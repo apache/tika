@@ -598,7 +598,8 @@
       <match value="[0-9]{5,5}" type="regex" offset="0">
         <match value="45" type="string" offset="20">
           <!-- bibliographic -->
-          <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
+          <!-- leader/07 is often left blank -->
+          <match value="[acdnp][acdefgijkmoprt][abcdims ]" type="regex" offset="5"/>
           <!-- authority-->
           <match value="[acdnosx]z" type="regex" offset="5"/>
           <!-- holdings -->
@@ -902,7 +903,44 @@
     <glob pattern="*.gpg"/>
   </mime-type>
 
-  <mime-type type="application/pgp-keys"/>
+  <mime-type type="application/pgp-keys">
+    <magic priority="50">
+      <!-- binary old-format v4 key packet (RFC 4880 5.5): public (tag 6) or secret (tag 5)
+           key with a 1- or 2-byte length, version, 4-byte time, then RSA/DSA/Elgamal/ECDH/ECDSA/EdDSA -->
+      <match value="0x94" type="string" offset="0">
+        <match value="0x04" type="string" offset="2">
+          <match value="0x01" type="string" offset="7"/>
+          <match value="0x11" mask="0xFE" type="string" offset="7"/>
+          <match value="0x12" mask="0xFE" type="string" offset="7"/>
+          <match value="0x16" type="string" offset="7"/>
+        </match>
+      </match>
+      <match value="0x98" type="string" offset="0">
+        <match value="0x04" type="string" offset="2">
+          <match value="0x01" type="string" offset="7"/>
+          <match value="0x11" mask="0xFE" type="string" offset="7"/>
+          <match value="0x12" mask="0xFE" type="string" offset="7"/>
+          <match value="0x16" type="string" offset="7"/>
+        </match>
+      </match>
+      <match value="0x95" type="string" offset="0">
+        <match value="0x04" type="string" offset="3">
+          <match value="0x01" type="string" offset="8"/>
+          <match value="0x11" mask="0xFE" type="string" offset="8"/>
+          <match value="0x12" mask="0xFE" type="string" offset="8"/>
+          <match value="0x16" type="string" offset="8"/>
+        </match>
+      </match>
+      <match value="0x99" type="string" offset="0">
+        <match value="0x04" type="string" offset="3">
+          <match value="0x01" type="string" offset="8"/>
+          <match value="0x11" mask="0xFE" type="string" offset="8"/>
+          <match value="0x12" mask="0xFE" type="string" offset="8"/>
+          <match value="0x16" type="string" offset="8"/>
+        </match>
+      </match>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/pgp-signature">
     <magic priority="50">
@@ -3098,6 +3136,8 @@
   <mime-type type="application/vnd.symbian.install">
     <magic priority="50">
       <match value="0x10000419" type="little32" offset="8" />
+      <!-- SIS 9.x (sisx): UID1 -->
+      <match value="0x10201A7A" type="little32" offset="0" />
     </magic>
     <glob pattern="*.sis"/>
     <glob pattern="*.sisx"/>
@@ -4095,6 +4135,15 @@
     <glob pattern="*.dvi"/>
   </mime-type>
 
+  <mime-type type="application/x-elasto-mania-level">
+    <_comment>Elasto Mania level</_comment>
+    <magic priority="50">
+      <!-- Elma; POT06 is Across -->
+      <match value="POT14" type="string" offset="0"/>
+      <match value="POT06" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lev"/>
+  </mime-type>
   <mime-type type="application/x-elc">
     <_comment>Emacs Lisp bytecode</_comment>
     <magic priority="50">
@@ -4333,6 +4382,14 @@
     <glob pattern="*.spl"/>
   </mime-type>
 
+  <mime-type type="application/x-glulx">
+    <_comment>Glulx game</_comment>
+    <magic priority="50">
+      <match value="Glul\x00\x02" type="string" offset="0"/>
+      <match value="Glul\x00\x03" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ulx"/>
+  </mime-type>
   <mime-type type="application/x-gnucash">
     <glob pattern="*.gnucash" />
   </mime-type>
@@ -4561,6 +4618,13 @@
     </magic>
   </mime-type>
   
+  <mime-type type="application/x-lrzip">
+    <_comment>Long Range ZIP</_comment>
+    <magic priority="50">
+      <match value="LRZI\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lrz"/>
+  </mime-type>
   <mime-type type="application/x-lz4">
      <_comment>First match LZ4 Frame</_comment>
      <_comment>Second match Legacy Frame</_comment>
@@ -5559,6 +5623,9 @@
   <mime-type type="application/x-stuffit">
     <magic priority="50">
       <match value="StuffIt" type="string" offset="0"/>
+      <match value="SIT!" type="string" offset="0">
+        <match value="rLau" type="string" offset="10"/>
+      </match>
     </magic>
     <glob pattern="*.sit"/>
   </mime-type>
@@ -6299,6 +6366,15 @@
     <glob pattern="*.gslib"/>
     <glob pattern="*.minigsf"/>
   </mime-type>
+  <mime-type type="audio/x-s3m">
+    <_comment>Scream Tracker 3 module</_comment>
+    <magic priority="50">
+      <match value="0x1A10" type="string" offset="28">
+        <match value="SCRM" type="string" offset="44"/>
+      </match>
+    </magic>
+    <glob pattern="*.s3m"/>
+  </mime-type>
   <mime-type type="audio/x-sap">
     <_comment>Slight Atari Player</_comment>
     <tika:link>https://asap.sourceforge.net/sap-format.html</tika:link>
@@ -6447,6 +6523,17 @@
   <mime-type type="audio/vnd.sealedmedia.softseal.mpeg"/>
   <mime-type type="audio/vnd.vmx.cvsd"/>
   <mime-type type="audio/vorbis-config"/>
+  <mime-type type="audio/x-ape">
+    <_comment>Monkey's Audio</_comment>
+    <magic priority="50">
+      <!-- then format version 3.80-4.xx -->
+      <match value="MAC " type="string" offset="0">
+        <match value="0x0E" type="string" offset="5"/>
+        <match value="0x0F" type="string" offset="5"/>
+      </match>
+    </magic>
+    <glob pattern="*.ape"/>
+  </mime-type>
   <mime-type type="audio/x-aac">
     <alias type="audio/aac"/>
     <glob pattern="*.aac"/>
@@ -9034,7 +9121,32 @@
 
   <mime-type type="video/mp1s"/>
   <mime-type type="video/mp2p"/>
-  <mime-type type="video/mp2t"/>
+  <mime-type type="video/mp2t">
+    <magic priority="50">
+      <!-- sync byte on five consecutive 188-byte packets, or 192-byte M2TS packets -->
+      <match value="0x47" type="string" offset="0">
+        <match value="0x47" type="string" offset="188">
+          <match value="0x47" type="string" offset="376">
+            <match value="0x47" type="string" offset="564">
+              <match value="0x47" type="string" offset="752"/>
+            </match>
+          </match>
+        </match>
+      </match>
+      <match value="0x47" type="string" offset="4">
+        <match value="0x47" type="string" offset="196">
+          <match value="0x47" type="string" offset="388">
+            <match value="0x47" type="string" offset="580">
+              <match value="0x47" type="string" offset="772"/>
+            </match>
+          </match>
+        </match>
+      </match>
+    </magic>
+    <!-- not *.ts (TypeScript) or *.mts (model/vnd.mts) -->
+    <glob pattern="*.m2ts"/>
+    <glob pattern="*.m2t"/>
+  </mime-type>
 
   <mime-type type="video/mp4">
     <magic priority="60">
@@ -9217,10 +9329,21 @@
   </mime-type>
 
   <mime-type type="video/x-flc">
+    <magic priority="50">
+      <!-- frame type, then 8-bit depth -->
+      <match value="0xAF12" type="little16" offset="4">
+        <match value="0x0008" type="little16" offset="12"/>
+      </match>
+    </magic>
     <glob pattern="*.flc"/>
   </mime-type>
 
   <mime-type type="video/x-fli">
+    <magic priority="50">
+      <match value="0xAF11" type="little16" offset="4">
+        <match value="0x0008" type="little16" offset="12"/>
+      </match>
+    </magic>
     <glob pattern="*.fli"/>
   </mime-type>
 
@@ -9260,6 +9383,13 @@
     <magic>
        <match value="0x3026b275" type="big32" offset="0" />
     </magic>
+  </mime-type>
+  <mime-type type="application/x-ms-reader">
+    <_comment>Microsoft Reader eBook</_comment>
+    <magic priority="50">
+      <match value="ITOLITLS\x01\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lit"/>
   </mime-type>
   <mime-type type="application/x-ms-asx">
     <_comment>Windows Media Metafile</_comment>

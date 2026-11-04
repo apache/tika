@@ -90,6 +90,12 @@ Release 4.3.0 - ???
      left only the filename to match. A new test fails the build on tika-mimetypes.xml
      rules that load but can never match as written (TIKA-5029).
 
+   * Elasto Mania levels, binary OpenPGP keys, StuffIt (SIT!) archives, MPEG transport
+     streams (video/mp2t, now also *.m2ts and *.m2t), Symbian 9 installers, FLC and FLI
+     animations, Microsoft Reader e-books, lrzip archives, Glulx games, Scream Tracker 3
+     modules and Monkey's Audio files are detected by content, and so are MARC records
+     with a blank bibliographic level; they were application/octet-stream (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
