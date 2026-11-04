@@ -382,6 +382,20 @@ public final class HashedJunkModel {
      * bucket-count difference.  0 when the texts hash to the same bag of buckets.
      */
     public double pairwiseLogit(String a, String b) {
+        long[] dl = pairwiseDotAndL1(a, b);
+        return dl[1] == 0 ? 0 : pairScale * (double) dl[0] / dl[1];
+    }
+
+    /**
+     * How much the two texts differ: the L1 norm of their bucket-count difference, i.e. the
+     * number of n-grams one has and the other lacks.  The pairwise logit averages over these, so
+     * it says nothing about how many there are.
+     */
+    public long pairwiseDifference(String a, String b) {
+        return pairwiseDotAndL1(a, b)[1];
+    }
+
+    private long[] pairwiseDotAndL1(String a, String b) {
         int[] x = buckets(a);
         int[] y = buckets(b);
         long dot = 0;
@@ -404,7 +418,7 @@ public final class HashedJunkModel {
             dot += d * pairWeights[bucket];
             l1 += Math.abs(d);
         }
-        return l1 == 0 ? 0 : pairScale * (double) dot / l1;
+        return new long[]{dot, l1};
     }
 
     /** Pairwise-logit margin below which the junk filter defers to a declared anchor. */

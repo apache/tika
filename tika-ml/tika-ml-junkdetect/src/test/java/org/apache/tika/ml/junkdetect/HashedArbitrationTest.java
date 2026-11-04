@@ -59,6 +59,7 @@ public class HashedArbitrationTest {
             }
         }
         assertEquals(model.pairwiseLogit(texts.get(best), runnerText), d.getLogit(), 0);
+        assertEquals(model.pairwiseDifference(texts.get(best), runnerText), d.getDifference());
         assertTrue(d.getLogit() >= 0);
         assertNull(d.getAnchor());
         assertEquals(best, d.pick(Double.MAX_VALUE));
@@ -89,6 +90,7 @@ public class HashedArbitrationTest {
         HashedArbitration.Decision d = HashedArbitration.decide(model, texts, L1, null);
         assertEquals(W1252, d.getChampion());
         assertTrue(Double.isNaN(d.getLogit()));
+        assertEquals(0, d.getDifference());
         assertEquals(W1252, d.pick(Double.MAX_VALUE));
         assertThrows(IllegalArgumentException.class,
                 () -> HashedArbitration.decide(model, new LinkedHashMap<>(), null, null));

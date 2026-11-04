@@ -53,7 +53,7 @@ public class DecodeCorruptionDiscriminationTest {
     }
 
     private static float languageness(String s) {
-        return jd.scoreWithFeatureComponents(s).logit;
+        return jd.score(s).getZScore();
     }
 
     /** Clean German prose: "Die naechste Stunde beginnt am Montag um neun Uhr im
@@ -121,9 +121,9 @@ public class DecodeCorruptionDiscriminationTest {
     void allCapsCyrillicOutscoresGibberishDecode() {
         // The real 150k regression (corpus file 1A68D...): all-caps Russian
         // "MUZEJ BUDUSchEGO" was scored BELOW a KOI8-R gibberish decode, so the
-        // detector chose the gibberish.  The case-fold must rank the all-caps real
-        // Russian like its lowercase form, above the gibberish.  ASCII source: the
-        // Russian is written with Unicode escapes.
+        // detector chose the gibberish.  The trainer's upper-case copies teach the
+        // model that all caps is clean text.  ASCII source: the Russian is written
+        // with Unicode escapes.
         String allCaps = "\u041C\u0423\u0417\u0415\u0419 \u0411\u0423\u0414\u0423\u0429\u0415\u0413\u041E";
         String lower = "\u043C\u0443\u0437\u0435\u0439 \u0431\u0443\u0434\u0443\u0449\u0435\u0433\u043E";
         String gibberish = "\u043B\u0441\u0433\u0435\u0438 \u0430\u0441\u0434\u0441\u044B\u0435\u0446\u043D";
@@ -133,8 +133,9 @@ public class DecodeCorruptionDiscriminationTest {
         assertTrue(lAll > lJunk,
                 "all-caps real Russian must outscore KOI8-R gibberish; allCaps=" + lAll
                 + " gibberish=" + lJunk);
-        assertTrue(Math.abs(lAll - lLower) < 0.6f,
-                "all-caps must score ~= lowercase; allCaps=" + lAll + " lower=" + lLower);
+        // all caps reads as clean text, not junk; it need not score like lowercase
+        assertTrue(lAll > 0 && lAll > lJunk + 1,
+                "all-caps must read as clean; allCaps=" + lAll + " lower=" + lLower + " gibberish=" + lJunk);
     }
 
     private static String toTitleCase(String s) {

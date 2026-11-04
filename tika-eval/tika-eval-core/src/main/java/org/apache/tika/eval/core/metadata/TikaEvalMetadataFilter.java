@@ -35,8 +35,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilterBase;
+import org.apache.tika.ml.junkdetect.HashedJunkModel;
 import org.apache.tika.ml.junkdetect.JunkDetector;
-import org.apache.tika.quality.TextQualityScore;
 
 @TikaComponent
 public class TikaEvalMetadataFilter extends MetadataFilterBase {
@@ -64,7 +64,26 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
 
     public static Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS + "oov");
 
+    /**
+     * Junk-detector languageness of the content: positive = reads as clean text, negative =
+     * junk (mojibake, broken fonts, garbage). {@value #UNKNOWN_LANGUAGENESS} when it cannot be
+     * judged: no letters, or letters only in scripts the model was not trained on.
+     */
     public static Property LANGUAGENESS = Property.externalReal(TIKA_EVAL_NS + "languageness");
+
+    /**
+     * Languageness of the worst 200-character window (the whole content if shorter): finds a
+     * damaged island in an otherwise clean document. {@value #UNKNOWN_LANGUAGENESS} as above.
+     */
+    public static Property LANGUAGENESS_MIN = Property.externalReal(TIKA_EVAL_NS + "languagenessMin");
+
+    /**
+     * Share of the content's letters in scripts the junk detector was trained on, in [0, 1];
+     * -1 for content without letters.
+     */
+    public static Property LANGUAGENESS_COVERAGE = Property.externalReal(TIKA_EVAL_NS + "languagenessCoverage");
+
+    public static final float UNKNOWN_LANGUAGENESS = -99f;
 
     static CompositeTextStatsCalculator TEXT_STATS_CALCULATOR;
     private static final JunkDetector JUNK_DETECTOR;
@@ -125,14 +144,28 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
             metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());
         }
 
-        // Junk-detector z-score: + clean, − mojibake / wrong-encoding.
-        // Replaces the GLM-based languageness removed in TIKA-4720.
-        if (JUNK_DETECTOR != null) {
-            TextQualityScore q = JUNK_DETECTOR.score(content);
-            metadata.set(LANGUAGENESS, q.isUnknown() || q.isUnmodeled() ? -99.0f : q.getZScore());
-        } else {
-            metadata.set(LANGUAGENESS, -99.0f);
+        float[] l = languageness(content);
+        metadata.set(LANGUAGENESS, l[0]);
+        metadata.set(LANGUAGENESS_MIN, l[1]);
+        metadata.set(LANGUAGENESS_COVERAGE, l[2]);
+    }
+
+    /**
+     * {languageness, worst-window languageness, coverage} of {@code content}, with the
+     * sentinels documented on {@link #LANGUAGENESS}, {@link #LANGUAGENESS_MIN} and
+     * {@link #LANGUAGENESS_COVERAGE}; all unknown when the model failed to load.
+     */
+    public static float[] languageness(String content) {
+        if (JUNK_DETECTOR == null || content == null || content.isEmpty()) {
+            return new float[]{UNKNOWN_LANGUAGENESS, UNKNOWN_LANGUAGENESS, -1f};
         }
+        HashedJunkModel.Score s = JUNK_DETECTOR.getModel().score(content);
+        double coverage = s.getCoverage();
+        if (!(coverage > 0)) {
+            return new float[]{UNKNOWN_LANGUAGENESS, UNKNOWN_LANGUAGENESS, Double.isNaN(coverage) ? -1f : 0f};
+        }
+        double min = Double.isNaN(s.getWindowMin()) ? s.getLogit() : s.getWindowMin();
+        return new float[]{(float) s.getLogit(), (float) min, (float) coverage};
     }
 
 }

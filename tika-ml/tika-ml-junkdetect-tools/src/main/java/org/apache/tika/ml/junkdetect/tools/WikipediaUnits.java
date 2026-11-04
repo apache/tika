@@ -126,6 +126,26 @@ final class WikipediaUnits {
         return out;
     }
 
+    /**
+     * {@code units} plus an upper-case copy of every unit whose text hash is 0 modulo
+     * {@code modulus} and whose upper case differs; 0 returns {@code units} unchanged.
+     */
+    static List<Unit> withUpperCase(List<Unit> units, int modulus) {
+        if (modulus == 0) {
+            return units;
+        }
+        List<Unit> out = new ArrayList<>(units);
+        for (Unit u : units) {
+            if (Math.floorMod(hash(u.text), modulus) == 0) {
+                String up = u.text.toUpperCase(Locale.ROOT);
+                if (!up.equals(u.text)) {
+                    out.add(new Unit(u.script, u.language, u.doc, up));
+                }
+            }
+        }
+        return out;
+    }
+
     static List<String> lines(Path gz) throws IOException {
         List<String> r = new ArrayList<>();
         try (BufferedReader b = new BufferedReader(new InputStreamReader(

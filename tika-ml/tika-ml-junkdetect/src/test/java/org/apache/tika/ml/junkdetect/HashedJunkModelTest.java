@@ -139,7 +139,14 @@ public class HashedJunkModelTest {
             String a = randomText(r);
             String b = randomText(r);
             assertEquals(m.compare(a, b), m.pairValue(a) - m.pairValue(b), 1e-9);
+            // the logit is the comparison averaged over the n-grams the two texts don't share
+            long diff = m.pairwiseDifference(a, b);
+            assertEquals(m.compare(a, b), m.pairwiseLogit(a, b) * diff, 1e-6);
+            assertEquals(diff, m.pairwiseDifference(b, a));
         }
+        assertEquals(0, m.pairwiseDifference("same text", "same text"));
+        // one changed character: 1-3-grams through it on each side
+        assertEquals(12, m.pairwiseDifference("Preis 5 \u20ac pro", "Preis 5 \u00a4 pro"));
     }
 
     @Test

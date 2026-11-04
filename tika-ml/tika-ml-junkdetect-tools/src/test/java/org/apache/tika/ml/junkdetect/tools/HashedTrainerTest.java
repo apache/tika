@@ -119,10 +119,17 @@ public class HashedTrainerTest {
         assertEquals(0.0, TrainHashedJunkModel.chooseThreshold(points(1.5, 9, 0)), "an empty first band stops");
         List<double[]> all = new java.util.ArrayList<>();
         for (int b = 0; b < 10; b++) {
-            all.addAll(points(b + 0.5, 3, 1));
+            all.addAll(points(b + 0.5, 30, 5));
         }
         assertEquals(HashedTrainingConfig.DEFER_MAX, TrainHashedJunkModel.chooseThreshold(all));
         assertEquals(0.0, TrainHashedJunkModel.chooseThreshold(List.of()));
+        // 11-04 run 4: (0,1] +18/-4 kept, (1,2] +8/-4 is exactly 2:1 but only 12 pages
+        List<double[]> run4 = new java.util.ArrayList<>();
+        run4.addAll(points(0.5, 18, 4));
+        run4.addAll(points(1.5, 8, 4));
+        assertEquals(1.0, TrainHashedJunkModel.chooseThreshold(run4));
+        assertEquals(0.0, TrainHashedJunkModel.chooseThreshold(points(0.5, 2, 0)), "two pages prove nothing");
+        assertEquals(0.39, TrainHashedJunkModel.wilsonLower(8, 12, 1.96), 0.01);
     }
 
     /** Sentences rewritten by the builder (space runs, escapes, width forms) keep their language. */
@@ -136,6 +143,33 @@ public class HashedTrainerTest {
         for (WikipediaUnits.Unit u : units) {
             assertEquals(u.script.equals("CYRILLIC") ? "rus" : "fra", u.language);
         }
+    }
+
+    /** Kana are their own Unicode scripts; a HAN-bucket unit must make them trained, too. */
+    @Test
+    public void trainedScriptsAreCountedFromTheTrainingLetters() {
+        List<WikipediaUnits.Unit> units = List.of(
+                new WikipediaUnits.Unit("HAN", "jpn", false, "東京はにほんのしゅとです コンピュータ"),
+                new WikipediaUnits.Unit("LATIN", "fra", false, "le ministère de la culture"),
+                new WikipediaUnits.Unit("LATIN", "fra", false, "\u0627"));
+        assertEquals(Set.of(Character.UnicodeScript.HAN, Character.UnicodeScript.HIRAGANA,
+                Character.UnicodeScript.KATAKANA, Character.UnicodeScript.LATIN),
+                TrainHashedJunkModel.trainedScripts(units, 2));
+    }
+
+    @Test
+    public void upperCaseCopiesAreAddedForAFixedShare() {
+        List<WikipediaUnits.Unit> units = new java.util.ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            units.add(new WikipediaUnits.Unit("CYRILLIC", "rus", false, "музей будущего " + i));
+        }
+        List<WikipediaUnits.Unit> out = WikipediaUnits.withUpperCase(units, 10);
+        assertTrue(out.size() > 1050 && out.size() < 1150, "added " + (out.size() - 1000));
+        assertEquals(units, out.subList(0, 1000));
+        for (WikipediaUnits.Unit u : out.subList(1000, out.size())) {
+            assertTrue(u.text.startsWith("МУЗЕЙ БУДУЩЕГО "), u.text);
+        }
+        assertEquals(units, WikipediaUnits.withUpperCase(units, 0));
     }
 
     @Test
@@ -196,7 +230,8 @@ public class HashedTrainerTest {
         assertNotNull(m);
         assertTrue(r.deferThreshold >= 0 && r.deferThreshold <= HashedTrainingConfig.DEFER_MAX);
         assertEquals((float) r.deferThreshold, m.getDeferThreshold());
-        assertEquals(Set.of(Character.UnicodeScript.CYRILLIC, Character.UnicodeScript.LATIN), m.getTrainedScripts());
+        assertTrue(m.getTrainedScripts().containsAll(Set.of(Character.UnicodeScript.CYRILLIC, Character.UnicodeScript.LATIN)),
+                m.getTrainedScripts().toString());
         for (String k : new String[]{"pairs_wiki", "pairs_gold_chain_even", "pairs_gold_decoders_odd",
                 "pairs_real_decision_fit", "defer_sweep_curve", "point_clean_web", "chain"}) {
             assertTrue(r.report.containsKey(k), k + " missing from " + r.report);

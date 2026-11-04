@@ -29,9 +29,9 @@ import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.ml.junkdetect.HashedJunkModel;
 import org.apache.tika.ml.junkdetect.JunkFilterEncodingDetector;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.quality.TextQualityDetector;
 
 /**
  * Runs the real encoding-detector chain on some bytes and returns what the junk filter would
@@ -82,7 +82,7 @@ final class ChainProbe {
     private static final class Recorder implements MetaEncodingDetector {
         private static final long serialVersionUID = 1L;
         private final JunkFilterEncodingDetector filter =
-                new JunkFilterEncodingDetector((TextQualityDetector) null);
+                new JunkFilterEncodingDetector((HashedJunkModel) null);
 
         @Override
         public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,

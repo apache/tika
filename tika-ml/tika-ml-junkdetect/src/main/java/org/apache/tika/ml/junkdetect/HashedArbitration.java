@@ -72,7 +72,8 @@ public final class HashedArbitration {
             }
         }
         double logit = runnerText == null ? Double.NaN : model.pairwiseLogit(championText, runnerText);
-        return new Decision(champion, logit, structural != null ? structural : declared,
+        long difference = runnerText == null ? 0 : model.pairwiseDifference(championText, runnerText);
+        return new Decision(champion, logit, difference, structural != null ? structural : declared,
                 model.getDeferThreshold());
     }
 
@@ -80,12 +81,14 @@ public final class HashedArbitration {
     public static final class Decision {
         private final Charset champion;
         private final double logit;
+        private final long difference;
         private final Charset anchor;
         private final double threshold;
 
-        Decision(Charset champion, double logit, Charset anchor, double threshold) {
+        Decision(Charset champion, double logit, long difference, Charset anchor, double threshold) {
             this.champion = champion;
             this.logit = logit;
+            this.difference = difference;
             this.anchor = anchor;
             this.threshold = threshold;
         }
@@ -97,6 +100,11 @@ public final class HashedArbitration {
         /** Champion over the runner-up; NaN when every candidate decodes to the same text. */
         public double getLogit() {
             return logit;
+        }
+
+        /** N-grams the champion and the runner-up do not share ({@link HashedJunkModel#pairwiseDifference}). */
+        public long getDifference() {
+            return difference;
         }
 
         /** Structural anchor, else declared, else {@code null}. */

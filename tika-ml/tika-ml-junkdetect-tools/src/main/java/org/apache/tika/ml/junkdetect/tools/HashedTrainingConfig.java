@@ -55,6 +55,20 @@ public final class HashedTrainingConfig {
      */
     public static final double MAX_MISSING_LANGUAGE = 0.01;
 
+    /**
+     * One Wikipedia unit in this many is also trained in upper case (both heads), so all-caps
+     * headings read as clean text.  Wikipedia has almost none; case folding the features
+     * instead would lose the mixed-case junk signal.  0 turns it off.
+     */
+    public static final int UPPER_CASE_MODULUS = 10;
+
+    /**
+     * A script counts as trained (its letters are "covered") when the Wikipedia training units
+     * hold at least this many of its letters.  Counted, not taken from bucket names: Japanese
+     * kana live in the HAN bucket but are their own Unicode scripts.
+     */
+    public static final int MIN_TRAINED_SCRIPT_LETTERS = 2000;
+
     /** Synthetic wrong decodes paired with each Wikipedia unit. */
     public static final int WIKI_WRONG_DECODES = 4;
 
@@ -126,6 +140,12 @@ public final class HashedTrainingConfig {
 
     /** A band is kept only if its deferrals fix at least this many pages per page they break. */
     public static final double DEFER_MIN_RATIO = 2.0;
+
+    /**
+     * ... and only if, at this normal quantile, the Wilson lower bound of the share of its pages
+     * that deferring fixes is above one half: a band of a dozen pages cannot move the threshold.
+     */
+    public static final double DEFER_CONFIDENCE_Z = 1.96;
 
     private HashedTrainingConfig() {
     }

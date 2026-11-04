@@ -38,7 +38,7 @@ import java.util.Map;
  *
  * <p>Chain: the source corpus carries a {@code manifest.tsv};
  * {@link BuildJunkTrainingData} copies its name and digest into
- * {@value #SOURCE_FILE} in the built directory; {@link TrainJunkModel} writes
+ * {@value #SOURCE_FILE} in the built directory; {@link TrainHashedJunkModel} writes
  * {@code <model>.provenance} with the model digest and everything upstream.
  */
 public final class TrainingProvenance {

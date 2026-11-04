@@ -22,7 +22,6 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -101,6 +100,8 @@ public final class TrainHashedJunkModel {
     /** What a run produced. */
     static final class Result {
         HashedJunkModel model;
+        /** The odd-half pairwise model the threshold was swept with (pairwise head only). */
+        HashedJunkModel crossFit;
         double deferThreshold;
         final Map<String, String> report = new LinkedHashMap<>();
         final List<Deferral> deferrals = new ArrayList<>();
@@ -138,13 +139,16 @@ public final class TrainHashedJunkModel {
         try (OutputStream os = Files.newOutputStream(out)) {
             r.model.write(os);
         }
+        try (OutputStream os = Files.newOutputStream(out.resolveSibling(out.getFileName() + ".crossfit.bin"))) {
+            r.crossFit.write(os);
+        }
         Path sweep = out.resolveSibling(out.getFileName() + ".defer-sweep.tsv");
         List<String> rows = new ArrayList<>();
-        rows.add("path\tlabel\tchampion\tanchor\tlogit\tdeferring");
+        rows.add("path\tlabel\tchampion\tanchor\tlogit\tdifference\tdeferring");
         Path goldDir = in.gold.toAbsolutePath().getParent();
         for (Deferral d : r.deferrals) {
             rows.add(String.join("\t", goldDir.relativize(d.page.path.toAbsolutePath()).toString(),
-                    String.join(",", d.page.labels), d.champion, d.anchor, fmt(d.logit),
+                    String.join(",", d.page.labels), d.champion, d.anchor, fmt(d.logit), String.valueOf(d.difference),
                     d.anchorRight ? "fixes" : "breaks"));
         }
         Files.write(sweep, rows, StandardCharsets.UTF_8);
@@ -174,15 +178,18 @@ public final class TrainHashedJunkModel {
 
         // ---- Wikipedia units
         Map<Long, String> lang = WikipediaUnits.languageMap(in.corpus);
-        List<WikipediaUnits.Unit> pairUnits = WikipediaUnits.units(in.built, "train", p.wikiSentences,
+        List<WikipediaUnits.Unit> pairSample = WikipediaUnits.units(in.built, "train", p.wikiSentences,
                 p.wikiDocs, p.wikiDocChars, lang, HashedTrainingConfig.WIKI_PAIR_SEED);
-        List<WikipediaUnits.Unit> pointUnits = WikipediaUnits.units(in.built, "train", p.wikiSentences,
+        List<WikipediaUnits.Unit> pointSample = WikipediaUnits.units(in.built, "train", p.wikiSentences,
                 p.wikiDocs, p.wikiDocChars, lang, HashedTrainingConfig.WIKI_POINT_SEED);
         lang = null;
-        double missing = missingLanguage(pairUnits);
-        res.report.put("wiki_units", String.valueOf(pairUnits.size()));
+        double missing = missingLanguage(pairSample);
+        List<WikipediaUnits.Unit> pairUnits = WikipediaUnits.withUpperCase(pairSample, HashedTrainingConfig.UPPER_CASE_MODULUS);
+        List<WikipediaUnits.Unit> pointUnits = WikipediaUnits.withUpperCase(pointSample, HashedTrainingConfig.UPPER_CASE_MODULUS);
+        res.report.put("wiki_units", String.valueOf(pairSample.size()));
+        res.report.put("wiki_units_upper_case_added", String.valueOf(pairUnits.size() - pairSample.size()));
         res.report.put("wiki_units_without_language", fmt(missing));
-        log.printf(Locale.ROOT, "wikipedia units %d (%.4f without a language) [%ds]%n", pairUnits.size(),
+        log.printf(Locale.ROOT, "wikipedia units %d (%.4f without a language) [%ds]%n", pairSample.size(),
                 missing, secs(t0));
         if (missing > p.maxMissingLanguage) {
             throw new IllegalStateException(String.format(Locale.ROOT,
@@ -232,6 +239,7 @@ public final class TrainHashedJunkModel {
         wSwap = null;
         HashedJunkModel swap = HashedJunkModel.create(p.log2Size, p.maxN, qSwap.scale, qSwap.q, 0f,
                 1f, 0f, new byte[1 << p.log2Size], Set.of());
+        res.crossFit = swap;
         double t = sweepThreshold(swap, even, chain, res, log);
         res.deferThreshold = t;
         log.printf(Locale.ROOT, "deferral threshold %.2f [%ds]%n", t, secs(t0));
@@ -250,7 +258,7 @@ public final class TrainHashedJunkModel {
         Quantized qPoint = quantize(Arrays.copyOf(wPoint, size));
         wPoint = null;
 
-        Set<Character.UnicodeScript> scripts = trainedScripts(in.built);
+        Set<Character.UnicodeScript> scripts = trainedScripts(pairSample, HashedTrainingConfig.MIN_TRAINED_SCRIPT_LETTERS);
         res.report.put("trained_scripts", scripts.toString());
         res.model = HashedJunkModel.create(p.log2Size, p.maxN, qPair.scale, qPair.q, (float) t,
                 qPoint.scale, bias, qPoint.q, scripts);
@@ -480,13 +488,16 @@ public final class TrainHashedJunkModel {
         final String champion;
         final String anchor;
         final double logit;
+        final long difference;
         final boolean anchorRight;
 
-        Deferral(GoldPage page, String champion, String anchor, double logit, boolean anchorRight) {
+        Deferral(GoldPage page, String champion, String anchor, double logit, long difference,
+                 boolean anchorRight) {
             this.page = page;
             this.champion = champion;
             this.anchor = anchor;
             this.logit = logit;
+            this.difference = difference;
             this.anchorRight = anchorRight;
         }
     }
@@ -517,7 +528,8 @@ public final class TrainHashedJunkModel {
             boolean champOk = good.contains(c.getTexts().get(d.getChampion()));
             boolean anchorOk = good.contains(c.getTexts().get(d.getAnchor()));
             return champOk == anchorOk ? null
-                    : new Deferral(g, d.getChampion().name(), d.getAnchor().name(), d.getLogit(), anchorOk);
+                    : new Deferral(g, d.getChampion().name(), d.getAnchor().name(), d.getLogit(),
+                    d.getDifference(), anchorOk);
         });
         List<double[]> pts = new ArrayList<>();
         for (Deferral d : rec) {
@@ -546,8 +558,9 @@ public final class TrainHashedJunkModel {
     /**
      * Raises the threshold one {@link HashedTrainingConfig#DEFER_BAND} at a time while the pages
      * whose margin falls in the new band are fixed at least
-     * {@link HashedTrainingConfig#DEFER_MIN_RATIO} times as often as broken; stops at the first band
-     * that is not (an empty band included).  Maximizing the net instead chases label noise: past the
+     * {@link HashedTrainingConfig#DEFER_MIN_RATIO} times as often as broken and, with confidence
+     * {@link HashedTrainingConfig#DEFER_CONFIDENCE_Z}, more often than not; stops at the first band
+     * that fails (an empty band included).  Maximizing the net instead chases label noise: past the
      * first bands, extra deferrals fix about as many pages as they break.
      *
      * @param points {logit, +1 if deferring fixes the page, -1 if it breaks it}
@@ -557,12 +570,25 @@ public final class TrainHashedJunkModel {
         double band = HashedTrainingConfig.DEFER_BAND;
         for (double hi = band; hi <= HashedTrainingConfig.DEFER_MAX + 1e-9; hi += band) {
             int[] fb = count(points, hi - band, hi);
-            if (fb[0] <= fb[1] || fb[0] < HashedTrainingConfig.DEFER_MIN_RATIO * fb[1]) {
+            if (fb[0] <= fb[1] || fb[0] < HashedTrainingConfig.DEFER_MIN_RATIO * fb[1]
+                    || wilsonLower(fb[0], fb[0] + fb[1], HashedTrainingConfig.DEFER_CONFIDENCE_Z) <= 0.5) {
                 break;
             }
             t = hi;
         }
         return t;
+    }
+
+    /** Wilson score interval lower bound of {@code k} successes in {@code n}. */
+    static double wilsonLower(int k, int n, double z) {
+        if (n == 0) {
+            return 0;
+        }
+        double p = k / (double) n;
+        double z2 = z * z;
+        double centre = p + z2 / (2 * n);
+        double half = z * Math.sqrt(p * (1 - p) / n + z2 / (4.0 * n * n));
+        return (centre - half) / (1 + z2 / n);
     }
 
     /** {fixed, broken} among points with lo <= logit < hi. */
@@ -640,17 +666,27 @@ public final class TrainHashedJunkModel {
         return w;
     }
 
-    /** Scripts with a built train file; their letters count as covered. */
-    static Set<Character.UnicodeScript> trainedScripts(Path built) throws IOException {
-        Set<Character.UnicodeScript> s = EnumSet.noneOf(Character.UnicodeScript.class);
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(built, "*.train.gz")) {
-            for (Path f : ds) {
-                String name = f.getFileName().toString().replace(".train.gz", "").toUpperCase(Locale.ROOT);
-                try {
-                    s.add(Character.UnicodeScript.valueOf(name));
-                } catch (IllegalArgumentException e) {
-                    throw new IOException("built file " + f + " is not named after a Unicode script", e);
+    /**
+     * Scripts with at least {@code minLetters} letters in {@code units}; their letters count as
+     * covered.  COMMON, INHERITED and UNKNOWN are never counted.
+     */
+    static Set<Character.UnicodeScript> trainedScripts(List<WikipediaUnits.Unit> units, int minLetters) {
+        long[] n = new long[Character.UnicodeScript.values().length];
+        for (WikipediaUnits.Unit u : units) {
+            String t = u.text;
+            for (int i = 0; i < t.length(); ) {
+                int cp = t.codePointAt(i);
+                i += Character.charCount(cp);
+                if (Character.isLetter(cp)) {
+                    n[Character.UnicodeScript.of(cp).ordinal()]++;
                 }
+            }
+        }
+        Set<Character.UnicodeScript> s = EnumSet.noneOf(Character.UnicodeScript.class);
+        for (Character.UnicodeScript sc : Character.UnicodeScript.values()) {
+            if (n[sc.ordinal()] >= minLetters && sc != Character.UnicodeScript.COMMON
+                    && sc != Character.UnicodeScript.INHERITED && sc != Character.UnicodeScript.UNKNOWN) {
+                s.add(sc);
             }
         }
         return s;

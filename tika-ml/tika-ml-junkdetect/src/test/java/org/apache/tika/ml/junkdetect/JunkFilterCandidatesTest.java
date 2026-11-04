@@ -31,7 +31,6 @@ import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.quality.TextQualityDetector;
 
 /** {@link JunkFilterEncodingDetector#candidates} reports what {@link JunkFilterEncodingDetector#detect} acts on. */
 public class JunkFilterCandidatesTest {
@@ -41,7 +40,7 @@ public class JunkFilterCandidatesTest {
     private static final Charset L1 = StandardCharsets.ISO_8859_1;
 
     private final JunkFilterEncodingDetector filter =
-            new JunkFilterEncodingDetector((TextQualityDetector) null);
+            new JunkFilterEncodingDetector((HashedJunkModel) null);
 
     private static EncodingDetectorContext context(EncodingResult... results) {
         EncodingDetectorContext ctx = new EncodingDetectorContext();
@@ -85,7 +84,7 @@ public class JunkFilterCandidatesTest {
 
         ParseContext pc = new ParseContext();
         pc.set(EncodingDetectorContext.class, ctx);
-        JunkFilterEncodingDetector withModel = new JunkFilterEncodingDetector(JunkDetector.loadFromClasspath());
+        JunkFilterEncodingDetector withModel = new JunkFilterEncodingDetector(JunkDetector.loadFromClasspath().getModel());
         try (TikaInputStream tis = TikaInputStream.get(b)) {
             List<EncodingResult> out = withModel.detect(tis, new Metadata(), pc);
             assertEquals(W1252, out.get(0).getCharset());
