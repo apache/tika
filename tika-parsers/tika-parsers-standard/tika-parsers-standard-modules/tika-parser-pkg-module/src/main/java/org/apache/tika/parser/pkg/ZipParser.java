@@ -196,7 +196,7 @@ public class ZipParser extends AbstractArchiveParser {
                 "application/vnd.adobe.indesign-idml-package",
                 "application/x-wacz", "application/x-vnd.datapackage+zip",
                 "application/x-extension-fcstd", "application/x-krita",
-                "application/x-procreate", "image/openraster"
+                "application/x-procreate", "application/x-sketch", "image/openraster"
         }) {
             zipSpecializations.add(MediaType.parse(mediaTypeString));
         }

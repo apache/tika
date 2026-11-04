@@ -5278,6 +5278,13 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="application/x-sketch">
+    <_comment>Sketch document</_comment>
+    <tika:link>https://developer.sketch.com/file-format/</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sketch"/>
+  </mime-type>
+
   <mime-type type="application/x-shar">
     <glob pattern="*.shar"/>
   </mime-type>

@@ -46,7 +46,8 @@ final class ZipPreview {
             MediaType.application("x-krita"), entry("preview.png"),
             MediaType.image("openraster"), entry("Thumbnails/thumbnail.png"),
             MediaType.application("x-extension-fcstd"), entry("thumbnails/Thumbnail.png"),
-            MediaType.application("x-procreate"), entry("QuickLook/Thumbnail.png"));
+            MediaType.application("x-procreate"), entry("QuickLook/Thumbnail.png"),
+            MediaType.application("x-sketch"), entry("previews/preview.png"));
 
     private ZipPreview() {
     }

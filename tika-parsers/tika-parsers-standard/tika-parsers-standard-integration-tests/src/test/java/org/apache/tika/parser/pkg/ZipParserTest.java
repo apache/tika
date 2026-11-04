@@ -174,6 +174,8 @@ public class ZipParserTest extends AbstractPkgTest {
                         "Document.xml"},
                 {"art.procreate", "application/x-procreate", "QuickLook/Thumbnail.png",
                         "Signature/Signature.png"},
+                {"design.sketch", "application/x-sketch", "previews/preview.png",
+                        "images/0.png"},
         };
         for (String[] c : cases) {
             Map<String, Metadata> entries = entriesByName(zip(new String[]{c[3], c[2]}, png), c[0]);
