@@ -62,6 +62,14 @@ Release 4.3.0 - ???
      THUMBNAIL and the 160x120 THMB thumbnail is INLINE, so the thumbnail preset serves
      a preview (TIKA-5042).
 
+   * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
+     <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
+     cleaned of markup; WebVTT NOTE blocks become <div class="note"> and a Language
+     header sets dc:language. Both were parsed as plain text before, timings and
+     markup included. Magic fixes: SubRip with CRLF line endings (typo in the rule);
+     WebVTT with a title or tab after "WEBVTT", with a UTF-8 BOM and a title, or in
+     UTF-16 (TIKA-5028).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
@@ -107,6 +115,13 @@ Release 4.3.0 - ???
      **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
 
   OTHER CHANGES
+
+   * The junk detector no longer scores text in scripts its model has no usable table
+     for (Yi, Mongolian, Canadian syllabics, Cherokee, Adlam and 37 others) as
+     junk: it scored -3 to -19 before. TextQualityScore gains getCoverage(), and
+     tika-eval reports languageness for such text as unknown. Text with no letters
+     (whitespace, digits, symbols) now scores -1 instead of +3, below clean prose
+     (TIKA-5027).
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
      list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
