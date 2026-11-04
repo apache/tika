@@ -263,7 +263,7 @@ providing a formatted form of the code along with simple metadata.
 
 link:{api}/org/apache/tika/parser/jupyter/JupyterParser.html[JupyterParser]
 reads Jupyter notebooks (`.ipynb`): the cell sources and plain-text outputs as
-text and the image outputs as embedded documents. The thumbnail is chosen the
+text and the image outputs and cell attachments as embedded documents. The thumbnail is chosen the
 way https://nbsphinx.readthedocs.io/en/latest/subdir/gallery.html[nbsphinx]
 chooses a gallery thumbnail: the output of a cell marked `nbsphinx-thumbnail`,
 otherwise the last image in the notebook.

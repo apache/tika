@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JacksonException;
@@ -47,7 +48,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * followed by its plain-text outputs (streams, results, errors). The image
  * outputs are embedded documents; the one {@link NbsphinxThumbnail} picks is the
  * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}, the others are
- * {@link TikaCoreProperties.EmbeddedResourceType#INLINE}. Kernel, language and
+ * {@link TikaCoreProperties.EmbeddedResourceType#INLINE}, as are the images a
+ * markdown or raw cell carries as attachments. An output without PNG, JPEG or SVG
+ * gives its GIF, WebP or BMP image, which nbsphinx does not consider for the
+ * thumbnail. Kernel, language and
  * format version go to the {@link Jupyter} keys.
  */
 @TikaComponent
@@ -62,6 +66,9 @@ public class JupyterParser implements Parser {
     static final int MAX_DOCUMENT_LENGTH = 256 * 1024 * 1024;
     /** One string, a cell's source or an encoded image, is read up to this length. */
     static final int MAX_STRING_LENGTH = 64 * 1024 * 1024;
+
+    /** Images an output or attachment may hold besides the thumbnail types, in this order. */
+    private static final List<String> OTHER_IMAGES = List.of("image/gif", "image/webp", "image/bmp");
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -98,6 +105,14 @@ public class JupyterParser implements Parser {
             if (cell.source() != null && !cell.source().isEmpty()) {
                 xhtml.element("code".equals(cell.type()) ? "pre" : "p", cell.source());
             }
+            for (var attachment : cell.attachments().entrySet()) {
+                String imageType = anyImageType(attachment.getValue());
+                if (imageType != null) {
+                    emitImage(attachment.getValue().get(imageType), imageType, false,
+                            inlineImages++, attachment.getKey(), extractor, xhtml, metadata,
+                            context);
+                }
+            }
             List<Notebook.Output> outputs = cell.outputs();
             for (int j = 0; j < outputs.size(); j++) {
                 Notebook.Output output = outputs.get(j);
@@ -106,19 +121,34 @@ public class JupyterParser implements Parser {
                 if (text != null && !text.isEmpty()) {
                     xhtml.element("pre", text);
                 }
-                String imageType = NbsphinxThumbnail.imageType(output);
+                String imageType = anyImageType(output.data());
                 if (imageType != null) {
                     boolean isThumbnail = thumbnail.isAt(i, j);
                     emitImage(output.data().get(imageType), imageType, isThumbnail,
-                            isThumbnail ? 0 : inlineImages++, extractor, xhtml, metadata, context);
+                            isThumbnail ? 0 : inlineImages++, null, extractor, xhtml, metadata,
+                            context);
                 }
             }
         }
         xhtml.endDocument();
     }
 
+    private static String anyImageType(Map<String, String> data) {
+        for (String mimeType : NbsphinxThumbnail.IMAGE_PRIORITY) {
+            if (data.get(mimeType) != null) {
+                return mimeType;
+            }
+        }
+        for (String mimeType : OTHER_IMAGES) {
+            if (data.get(mimeType) != null) {
+                return mimeType;
+            }
+        }
+        return null;
+    }
+
     private static void emitImage(String data, String mimeType, boolean thumbnail, int index,
-                                  EmbeddedDocumentExtractor extractor,
+                                  String name, EmbeddedDocumentExtractor extractor,
                                   XHTMLContentHandler xhtml, Metadata parentMetadata,
                                   ParseContext context) throws IOException, SAXException {
         byte[] bytes;
@@ -138,9 +168,13 @@ public class JupyterParser implements Parser {
         imageMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, thumbnail
                 ? TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString()
                 : TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-        EmbeddedDocumentUtil.setGeneratedResourceName(imageMetadata, thumbnail
-                ? EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL
-                : EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE, index, mimeType);
+        if (name != null && !name.isEmpty()) {
+            imageMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+        } else {
+            EmbeddedDocumentUtil.setGeneratedResourceName(imageMetadata, thumbnail
+                    ? EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL
+                    : EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE, index, mimeType);
+        }
         if (!extractor.shouldParseEmbedded(imageMetadata, context)) {
             return;
         }

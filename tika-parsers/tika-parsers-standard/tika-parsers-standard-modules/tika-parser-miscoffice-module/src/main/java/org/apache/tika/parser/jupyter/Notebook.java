@@ -43,9 +43,9 @@ final class Notebook {
 
     static final String THUMBNAIL_MARKER = "nbsphinx-thumbnail";
 
-    /** Output data kept: the image types a thumbnail can be, and plain text. */
+    /** Output data kept: the image types a thumbnail can be, other images, and plain text. */
     static final Set<String> KEPT_DATA = Set.of("image/svg+xml", "image/png", "image/jpeg",
-            "text/plain");
+            "image/gif", "image/webp", "image/bmp", "text/plain");
 
     private final List<Cell> cells = new ArrayList<>();
     private String kernel;
@@ -65,7 +65,12 @@ final class Notebook {
     record Output(String type, Map<String, String> data, String text) {
     }
 
-    record Cell(String type, String source, Marker marker, List<Output> outputs) {
+    /**
+     * {@code attachments} are the files a markdown or raw cell carries, by name, each
+     * with its data by MIME type.
+     */
+    record Cell(String type, String source, Marker marker, List<Output> outputs,
+                Map<String, Map<String, String>> attachments) {
     }
 
     List<Cell> cells() {
@@ -123,6 +128,7 @@ final class Notebook {
             String source = null;
             Marker marker = null;
             List<Output> outputs = List.of();
+            Map<String, Map<String, String>> attachments = Map.of();
             while (p.nextToken() == JsonToken.FIELD_NAME) {
                 String name = p.currentName();
                 JsonToken token = p.nextToken();
@@ -131,10 +137,11 @@ final class Notebook {
                     case "source" -> source = textValue(p, token);
                     case "metadata" -> marker = readMarker(p, token);
                     case "outputs" -> outputs = readOutputs(p, token);
+                    case "attachments" -> attachments = readAttachments(p, token);
                     default -> p.skipChildren();
                 }
             }
-            cells.add(new Cell(type, source, marker, outputs));
+            cells.add(new Cell(type, source, marker, outputs, attachments));
         }
     }
 
@@ -228,6 +235,22 @@ final class Notebook {
             outputs.add(new Output(type, data, text));
         }
         return outputs;
+    }
+
+    private static Map<String, Map<String, String>> readAttachments(JsonParser p, JsonToken value)
+            throws IOException {
+        Map<String, Map<String, String>> attachments = new LinkedHashMap<>();
+        if (value != JsonToken.START_OBJECT) {
+            p.skipChildren();
+            return attachments;
+        }
+        while (p.nextToken() == JsonToken.FIELD_NAME) {
+            String name = p.currentName();
+            Map<String, String> data = new LinkedHashMap<>();
+            readData(p, p.nextToken(), data);
+            attachments.put(name, data);
+        }
+        return attachments;
     }
 
     private static void readData(JsonParser p, JsonToken value, Map<String, String> data)

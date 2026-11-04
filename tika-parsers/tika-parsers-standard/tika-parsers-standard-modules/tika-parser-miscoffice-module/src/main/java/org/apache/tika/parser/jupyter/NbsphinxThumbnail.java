@@ -38,16 +38,17 @@ import java.util.Set;
  *   <li>Without a marker, the last image in the notebook: code cells from the
  *   last, their outputs from the last, the first output that holds an image.</li>
  * </ol>
- * Within an output, the image is SVG, else PNG, else JPEG, the order of
- * nbsphinx's {@code DISPLAY_DATA_PRIORITY_HTML} restricted to its
- * {@code THUMBNAIL_MIME_TYPES}.
+ * An output counts as an image when it holds SVG, PNG or JPEG, nbsphinx's
+ * {@code THUMBNAIL_MIME_TYPES}, so the cell and output chosen are nbsphinx's. Where
+ * an output holds the same figure in several of them, nbsphinx takes SVG first; here
+ * PNG, then JPEG, then SVG are taken, as not every consumer of a thumbnail renders SVG.
  *
  * @see <a href="https://nbsphinx.readthedocs.io/en/latest/subdir/gallery.html">nbsphinx
  * thumbnail galleries</a>
  */
 final class NbsphinxThumbnail {
 
-    static final List<String> IMAGE_PRIORITY = List.of("image/svg+xml", "image/png", "image/jpeg");
+    static final List<String> IMAGE_PRIORITY = List.of("image/png", "image/jpeg", "image/svg+xml");
 
     private static final Set<String> IMAGE_OUTPUT_TYPES = Set.of("display_data", "execute_result");
 

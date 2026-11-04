@@ -42,6 +42,7 @@ public class JupyterParserTest extends TikaTest {
             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString();
     private static final String INLINE = TikaCoreProperties.EmbeddedResourceType.INLINE.toString();
     private static final String PNG = "\"image/png\": \"iVBORw0KGgo=\"";
+    private static final String GIF = "\"image/gif\": \"R0lGODlhAQABAAAAACw=\"";
     private static final String SVG = "\"image/svg+xml\": \"<svg xmlns='http://www.w3.org/2000/svg'/>\"";
 
     @Test
@@ -99,10 +100,40 @@ public class JupyterParserTest extends TikaTest {
     }
 
     @Test
-    public void testSvgBeforePng() throws Exception {
-        List<Metadata> list = parse(notebook(code("{}", image(PNG + ", " + SVG))));
+    public void testRasterBeforeSvg() throws Exception {
+        List<Metadata> list = parse(notebook(code("{}", image(SVG + ", " + PNG))));
+        assertEquals(2, list.size(), "one figure, one image");
+        assertEquals("image/png", list.get(1).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(THUMBNAIL, list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testSvgOnly() throws Exception {
+        List<Metadata> list = parse(notebook(code("{}", image(SVG))));
         assertEquals("image/svg+xml", list.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertEquals(THUMBNAIL, list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testOtherImageTypesAreNeverTheThumbnail() throws Exception {
+        List<Metadata> list = parse(notebook(code("{}", image(PNG)),
+                code("{}", image(GIF))));
+        assertEquals(THUMBNAIL, list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("image/gif", list.get(2).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(INLINE, list.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testAttachments() throws Exception {
+        String cell = "{\"cell_type\": \"markdown\", \"metadata\": {}, "
+                + "\"attachments\": {\"diagram.png\": {" + PNG + "}, "
+                + "\"notes.txt\": {\"text/plain\": \"n\"}}, "
+                + "\"source\": \"![d](attachment:diagram.png)\"}";
+        List<Metadata> list = parse(notebook(cell, code("{}", image(PNG))));
+        assertEquals(3, list.size());
+        assertEquals("diagram.png", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals(INLINE, list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(THUMBNAIL, list.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     @Test
