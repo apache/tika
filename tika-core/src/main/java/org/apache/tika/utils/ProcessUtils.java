@@ -20,6 +20,7 @@ package org.apache.tika.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -52,8 +53,47 @@ public class ProcessUtils {
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            PROCESS_MAP.forEachValue(1, Process::destroyForcibly);
+            PROCESS_MAP.forEachValue(1, ProcessUtils::destroyForciblyWithDescendants);
         }));
+    }
+
+    private record Descendant(ProcessHandle handle, Instant start) {
+    }
+
+    /**
+     * Forcibly destroys {@code process} and the descendants it has at the time of the call.
+     * A descendant whose pid has since been reused is skipped.
+     *
+     * @param process the process to destroy
+     */
+    public static void destroyForciblyWithDescendants(Process process) {
+        List<Descendant> descendants = listDescendants(process);
+        process.destroyForcibly();
+        for (Descendant d : descendants) {
+            Optional<Instant> start = ProcessHandle.of(d.handle().pid())
+                    .flatMap(h -> h.info().startInstant());
+            if (start.isPresent() && start.get().equals(d.start())) {
+                d.handle().destroyForcibly();
+            }
+        }
+    }
+
+    private static List<Descendant> listDescendants(Process process) {
+        ProcessHandle handle;
+        try {
+            handle = process.toHandle();
+        } catch (UnsupportedOperationException e) {
+            LOG.debug("cannot list the descendants of {}; destroying only the process", process, e);
+            return List.of();
+        }
+        if (!handle.isAlive()) {
+            return List.of();
+        }
+        List<Descendant> descendants = new ArrayList<>();
+        handle.descendants().forEach(h -> h.info().startInstant()
+                .ifPresent(start -> descendants.add(new Descendant(h, start))));
+        // isAlive() checks the start time, so the walk did not follow a reused pid
+        return handle.isAlive() ? descendants : List.of();
     }
 
     private static String register(Process p) {
@@ -214,7 +254,7 @@ public class ProcessUtils {
                     outThread.join(1000);
                     errThread.join(1000);
                 } else {
-                    p.destroyForcibly();
+                    destroyForciblyWithDescendants(p);
                     outThread.join(1000);
                     errThread.join(1000);
                     boolean completed = p.waitFor(500, TimeUnit.MILLISECONDS);
@@ -249,7 +289,7 @@ public class ProcessUtils {
             return result;
         } finally {
             if (p != null) {
-                p.destroyForcibly();
+                destroyForciblyWithDescendants(p);
             }
             if (id != null) {
                 release(id);
@@ -332,7 +372,7 @@ public class ProcessUtils {
                     exitValue = p.exitValue();
                     errThread.join(1000);
                 } else {
-                    p.destroyForcibly();
+                    destroyForciblyWithDescendants(p);
                     errThread.join(1000);
                 }
             } catch (InterruptedException e) {
@@ -354,7 +394,7 @@ public class ProcessUtils {
             return result;
         } finally {
             if (p != null) {
-                p.destroyForcibly();
+                destroyForciblyWithDescendants(p);
             }
             if (id != null) {
                 release(id);
