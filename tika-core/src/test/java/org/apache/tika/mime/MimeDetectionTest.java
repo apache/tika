@@ -317,6 +317,14 @@ public class MimeDetectionTest {
         assertDetected(asx, "<Asx Version=\"3.0\"><Entry>".getBytes(US_ASCII));
     }
 
+    @Test
+    public void testSubRipLineEndings() throws Exception {
+        MediaType srt = MediaType.application("x-subrip");
+        for (String eol : new String[]{"\n", "\r", "\r\n"}) {
+            assertDetected(srt, ("1" + eol + "00:00:01,000 --> 00:00:02,000" + eol + "Hi").getBytes(US_ASCII));
+        }
+    }
+
     private static byte[] header(int offset, String ascii) {
         byte[] header = new byte[128];
         byte[] value = ascii.getBytes(US_ASCII);

@@ -86,6 +86,10 @@ Release 4.3.0 - ???
      application/x-ms-asx; they were application/octet-stream or text/plain. A PDF or
      XHTML document with such a fragment in front keeps its type (TIKA-5029).
 
+   * SubRip subtitles with CRLF line endings are detected by content; a typo in the rule
+     left only the filename to match. A new test fails the build on tika-mimetypes.xml
+     rules that load but can never match as written (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
