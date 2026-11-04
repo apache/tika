@@ -81,6 +81,8 @@ public class BlenderParserTest extends TikaTest {
         assertEquals("application/x-blender", detect(gzip(blend), null));
         assertEquals("application/x-blender", detect(Zstd.compress(blend), null));
         assertEquals("application/x-blender", detect(gzip(blend), "scene.blend"));
+        assertEquals("application/x-blender", detect(new byte[16], "scene.blend"));
+        assertEquals("application/x-blender", detect(new byte[16], "scene.blender"));
         byte[] other = "BLENDEX and more".getBytes(StandardCharsets.US_ASCII);
         assertEquals("application/gzip", detect(gzip(other), "scene.blend"));
         assertEquals("application/zstd", detect(Zstd.compress(other), "scene.blend"));
