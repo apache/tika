@@ -17,6 +17,7 @@
 package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
@@ -108,5 +109,17 @@ public class PSDParserTest extends TikaTest {
     @Test
     public void testNoThumbnail() throws Exception {
         assertEquals(1, getRecursiveMetadata("testPSD.psd").size());
+    }
+
+    @Test
+    public void testOversizedThumbnailIsSkippedWithWarning() throws Exception {
+        PSDParser.PSDParserConfig config = new PSDParser.PSDParserConfig();
+        config.setMaxDataLengthBytes(1000);
+        List<Metadata> metadataList = getRecursiveMetadata("testPSD2.psd",
+                new PSDParser(config), new Metadata(), new ParseContext(), false);
+        assertEquals(1, metadataList.size());
+        assertContains("exceeds 1000",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertNotNull(metadataList.get(0).get(TIFF.IMAGE_WIDTH));
     }
 }

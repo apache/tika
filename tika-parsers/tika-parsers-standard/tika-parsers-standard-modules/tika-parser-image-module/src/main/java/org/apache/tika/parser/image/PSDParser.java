@@ -175,7 +175,14 @@ public class PSDParser implements Parser {
                         UnsynchronizedByteArrayInputStream.builder().setByteArray(rb.data).get(),
                         metadata, context);
             } else if (rb.id == ResourceBlock.ID_THUMBNAIL_RESOURCE) {
-                thumbnail = jpegThumbnail(rb.data);
+                if (rb.skipped) {
+                    EmbeddedDocumentUtil.recordException(new TikaMemoryLimitException(
+                            "thumbnail resource of " + rb.dataLength + " bytes exceeds " +
+                                    defaultConfig.getMaxDataLengthBytes() + "; skipped"),
+                            metadata, context);
+                } else {
+                    thumbnail = jpegThumbnail(rb.data);
+                }
             }
             blocks++;
         }
@@ -254,6 +261,8 @@ public class PSDParser implements Parser {
         private String name;
         private byte[] data;
         private int totalLength;
+        private int dataLength;
+        private boolean skipped;
 
         private ResourceBlock(InputStream tis, int maxDataLengthBytes)
                 throws IOException, TikaException {
@@ -306,8 +315,10 @@ public class PSDParser implements Parser {
             }
             totalLength = 4 + 2 + nameLen + 4 + dataLen;
             // Do we have use for the data segment?
+            dataLength = dataLen;
             if (id == ID_THUMBNAIL_RESOURCE && dataLen > maxDataLengthBytes) {
-                //an oversized thumbnail is skipped, not a reason to fail the file
+                //the thumbnail is an extra; the caller records a warning instead of failing
+                skipped = true;
                 data = new byte[0];
                 IOUtils.skipFully(tis, dataLen);
             } else if (captureData(id)) {
