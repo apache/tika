@@ -75,6 +75,11 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     private static List<Emitted> extract(byte[] mp4, Metadata container) throws Exception {
+        return extract(mp4, container, new Mp4SubtitleExtractor());
+    }
+
+    private static List<Emitted> extract(byte[] mp4, Metadata container,
+                                         Mp4SubtitleExtractor extractor) throws Exception {
         Capture capture = new Capture();
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, capture);
@@ -82,7 +87,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 new XHTMLContentHandler(new DefaultHandler(), container, context);
         xhtml.startDocument();
         try (TikaInputStream tis = TikaInputStream.get(mp4)) {
-            new Mp4SubtitleExtractor().extract(tis, container, xhtml, context);
+            extractor.extract(tis, container, xhtml, context);
         }
         xhtml.endDocument();
         return capture.docs;
@@ -331,6 +336,349 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         return box("moof", box("mfhd", u32(0), u32(4)), video, mine);
     }
 
+    // display-order 608 pairs of a pop-on "HELLO", one per frame (controls doubled)
+    private static final int[][] HELLO = {
+            {0x14, 0x20}, {0x14, 0x20}, {0x14, 0x60}, {0x14, 0x60}, {'H', 'E'}, {'L', 'L'},
+            {'O', 0}, {0x14, 0x2F}, {0x14, 0x2F}, {0x14, 0x2C}, {0x14, 0x2C}};
+
+    @Test
+    public void testCaptionsFromAvcSeiInPresentationOrder() throws Exception {
+        // decode order swaps frames 4 and 5 ("LL" before "HE"); ctts puts them back
+        int[] decodeOrder = {0, 1, 2, 3, 5, 4, 6, 8, 7, 9, 10};
+        byte[][] samples = new byte[decodeOrder.length][];
+        long[][] ctts = new long[decodeOrder.length][];
+        for (int k = 0; k < decodeOrder.length; k++) {
+            int[] p = HELLO[decodeOrder[k]];
+            samples[k] = cat(nal(seiNal(cc608(p[0], p[1]))), nal(new byte[]{0x65, (byte) 0x88}));
+            ctts[k] = new long[]{1, (decodeOrder[k] - k) * 1000L + 2000};
+        }
+        List<Emitted> docs = extract(videoMp4("avc1", avcC(), samples, ctts, 1000), new Metadata());
+        assertEquals(1, docs.size());
+        assertEquals("track-1-cc1.vtt", docs.get(0).metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("WEBVTT\n\n00:00:09.000 --> 00:00:11.000\nHELLO\n", docs.get(0).body());
+    }
+
+    @Test
+    public void testDoubledControlAcrossReorderedFrames() throws Exception {
+        // EOC doubled on presentation frames 9 and 10 after padding, stored in decode order
+        // 10, 9: it must still act once, not swap the caption straight back off the screen
+        int pad = 0x80;
+        int[][] display = {{0x14, 0x20}, {0x14, 0x20}, {0x14, 0x60}, {0x14, 0x60}, {'H', 'E'},
+                {'L', 'L'}, {'O', 0}, {pad, pad}, {pad, pad}, {0x14, 0x2F}, {0x14, 0x2F},
+                {pad, pad}, {pad, pad}, {pad, pad}, {0x14, 0x2C}, {0x14, 0x2C}};
+        int[] decodeOrder = {0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 9, 11, 12, 13, 14, 15};
+        byte[][] samples = new byte[decodeOrder.length][];
+        long[][] ctts = new long[decodeOrder.length][];
+        for (int k = 0; k < decodeOrder.length; k++) {
+            int[] p = display[decodeOrder[k]];
+            samples[k] = cat(nal(seiNal(cc608(p[0], p[1]))), nal(new byte[]{0x65, (byte) 0x88}));
+            ctts[k] = new long[]{1, (decodeOrder[k] - k) * 1000L + 2000};
+        }
+        List<Emitted> docs = extract(videoMp4("avc1", avcC(), samples, ctts, 1000), new Metadata());
+        assertEquals("WEBVTT\n\n00:00:11.000 --> 00:00:16.000\nHELLO\n", docs.get(0).body());
+    }
+
+    @Test
+    public void testCaptionsFromC608Track() throws Exception {
+        byte[][] samples = new byte[HELLO.length][];
+        for (int k = 0; k < HELLO.length; k++) {
+            samples[k] = box("cdat", new byte[]{(byte) parity(HELLO[k][0]),
+                    (byte) parity(HELLO[k][1])});
+        }
+        List<Emitted> docs = extract(videoMp4("c608", new byte[0], samples, null, 1000),
+                new Metadata());
+        assertEquals(1, docs.size());
+        assertEquals("WEBVTT\n\n00:00:07.000 --> 00:00:09.000\nHELLO\n", docs.get(0).body());
+    }
+
+    @Test
+    public void testProbeFindsPaddingAndMissesShortGaps() throws Exception {
+        // 1000 frames of 33 ms; "HELLO" at frames 700-710. With padding cc_data from frame 600
+        // the probe window near 20 s sees caption data and the full pass finds the text.
+        byte[] padded = captionedAt(600, 700);
+        List<Emitted> docs = extract(padded, new Metadata());
+        assertEquals(1, docs.size());
+        // the full pass restarts at time zero: HELLO's EOC is frame 707, its EDM frame 709
+        assertEquals("WEBVTT\n\n00:00:23.331 --> 00:00:23.397\nHELLO\n", docs.get(0).body());
+        // with no padding the run falls between probe windows: only a full scan finds it
+        byte[] bare = captionedAt(Integer.MAX_VALUE, 700);
+        assertEquals(0, extract(bare, new Metadata()).size());
+        assertEquals(1, extract(bare, new Metadata(), new Mp4SubtitleExtractor(true, true, true))
+                .size());
+    }
+
+    private static byte[] captionedAt(int paddingFrom, int helloAt) throws IOException {
+        byte[][] samples = new byte[1000][];
+        for (int k = 0; k < samples.length; k++) {
+            byte[] slice = nal(new byte[]{0x65, (byte) 0x88});
+            if (k >= helloAt && k < helloAt + HELLO.length) {
+                int[] p = HELLO[k - helloAt];
+                samples[k] = cat(nal(seiNal(cc608(p[0], p[1]))), slice);
+            } else if (k >= paddingFrom) {
+                samples[k] = cat(nal(seiNal(cc608(0x80, 0x80))), slice);
+            } else {
+                samples[k] = slice;
+            }
+        }
+        return videoMp4("avc1", avcC(), samples, null, 33);
+    }
+
+    @Test
+    public void testCaptionsOffLeavesVideoAlone() throws Exception {
+        byte[][] samples = new byte[HELLO.length][];
+        for (int k = 0; k < HELLO.length; k++) {
+            samples[k] = nal(seiNal(cc608(HELLO[k][0], HELLO[k][1])));
+        }
+        byte[] mp4 = videoMp4("avc1", avcC(), samples, null, 1000);
+        assertEquals(0, extract(mp4, new Metadata(), new Mp4SubtitleExtractor(true, false, false))
+                .size());
+    }
+
+    private static final String HELLO_VTT = "WEBVTT\n\n00:00:07.000 --> 00:00:09.000\nHELLO\n";
+
+    private static byte[][] helloSamples(java.util.function.Function<int[], byte[]> sample) {
+        byte[][] samples = new byte[HELLO.length][];
+        for (int k = 0; k < HELLO.length; k++) {
+            samples[k] = sample.apply(HELLO[k]);
+        }
+        return samples;
+    }
+
+    @Test
+    public void testCaptionsFromHevcSei() throws Exception {
+        // HEVC: 2-byte NAL headers, prefix SEI type 39 (0x4E01), slice type 1 (0x0201)
+        byte[][] samples = helloSamples(p -> cat(
+                nal(seiNal(new byte[]{0x4E, 0x01}, cc608(p[0], p[1]))),
+                nal(new byte[]{0x02, 0x01, (byte) 0x80})));
+        List<Emitted> docs = extract(videoMp4("hvc1", hvcC(), samples, null, 1000),
+                new Metadata());
+        assertEquals(1, docs.size());
+        assertEquals(HELLO_VTT, docs.get(0).body());
+    }
+
+    @Test
+    public void testNalLengthSizes() throws Exception {
+        byte[][] samples = helloSamples(p -> cat(nal2(seiNal(cc608(p[0], p[1]))),
+                nal2(new byte[]{0x65, (byte) 0x88})));
+        assertEquals(HELLO_VTT,
+                extract(videoMp4("avc1", avcC(2), samples, null, 1000), new Metadata()).get(0)
+                        .body());
+        // a length size of 3 is not allowed: well-formed 3-byte lengths are still not read
+        byte[][] three = helloSamples(p -> cat(nal3(seiNal(cc608(p[0], p[1]))),
+                nal3(new byte[]{0x65, (byte) 0x88})));
+        assertEquals(0, extract(videoMp4("avc1", avcC(3), three, null, 1000), new Metadata())
+                .size());
+    }
+
+    @Test
+    public void testSeiAfterManyNals() throws Exception {
+        // twelve 30-byte filler NALs (type 12) before the caption SEI, as on HDR keyframes:
+        // past the old limit of 8, and across several header windows
+        byte[] filler = new byte[30];
+        filler[0] = 0x0C;
+        byte[] fillers = new byte[0];
+        for (int i = 0; i < 12; i++) {
+            fillers = cat(fillers, nal(filler));
+        }
+        byte[] prefix = fillers;
+        byte[][] samples = helloSamples(p -> cat(prefix, nal(seiNal(cc608(p[0], p[1]))),
+                nal(new byte[]{0x65, (byte) 0x88})));
+        assertEquals(HELLO_VTT, extract(videoMp4("avc1", avcC(), samples, null, 1000),
+                new Metadata()).get(0).body());
+    }
+
+    @Test
+    public void testSeiAfterTheSliceIsIgnored() throws Exception {
+        byte[][] samples = helloSamples(p -> cat(nal(new byte[]{0x65, (byte) 0x88}),
+                nal(seiNal(cc608(p[0], p[1])))));
+        assertEquals(0, extract(videoMp4("avc1", avcC(), samples, null, 1000), new Metadata())
+                .size());
+    }
+
+    @Test
+    public void testC608FieldTwoIsCc3() throws Exception {
+        byte[][] samples = helloSamples(p -> box("cdt2", new byte[]{(byte) parity(p[0]),
+                (byte) parity(p[1])}));
+        List<Emitted> docs = extract(videoMp4("c608", new byte[0], samples, null, 1000),
+                new Metadata());
+        assertEquals("track-1-cc3.vtt",
+                docs.get(0).metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
+
+    @Test
+    public void testCaptionsInFragments() throws Exception {
+        // moov with an empty avc1 track, then one moof whose trun carries sizes, durations
+        // and composition offsets for the swapped decode order
+        int[] decodeOrder = {0, 1, 2, 3, 5, 4, 6, 8, 7, 9, 10};
+        byte[][] samples = new byte[decodeOrder.length][];
+        ByteArrayOutputStream entries = new ByteArrayOutputStream();
+        for (int k = 0; k < decodeOrder.length; k++) {
+            int[] p = HELLO[decodeOrder[k]];
+            samples[k] = cat(nal(seiNal(cc608(p[0], p[1]))), nal(new byte[]{0x65, (byte) 0x88}));
+            entries.writeBytes(u32(1000));
+            entries.writeBytes(u32(samples[k].length));
+            entries.writeBytes(u32((decodeOrder[k] - k) * 1000L + 2000));
+        }
+        byte[] empty = videoMp4("avc1", avcC(), new byte[0][], null, 1000);
+        // drop the empty mdat's moov-less prefix: reuse its ftyp+mdat+moov, add mvex to moov
+        byte[] mvex = box("mvex", box("trex", u32(0), u32(1), u32(1), u32(0), u32(0), u32(0)));
+        byte[] head = withMvex(empty, mvex);
+        byte[] moof = fragMoof(0, decodeOrder.length, entries.toByteArray());
+        moof = fragMoof(moof.length + 8, decodeOrder.length, entries.toByteArray());
+        List<Emitted> docs = extract(cat(head, moof, box("mdat", cat(samples))), new Metadata());
+        assertEquals(1, docs.size());
+        assertEquals("WEBVTT\n\n00:00:09.000 --> 00:00:11.000\nHELLO\n", docs.get(0).body());
+    }
+
+    private static byte[] fragMoof(int dataOffset, int count, byte[] entries) {
+        byte[] traf = box("traf", box("tfhd", u32(0x020000), u32(1)),
+                box("tfdt", u32(0), u32(0)),
+                box("trun", u32(0x000B01), u32(count), u32(dataOffset), entries));
+        return box("moof", box("mfhd", u32(0), u32(1)), traf);
+    }
+
+    // appends mvex to the last top-level box (moov) of an ftyp+mdat+moov file
+    private static byte[] withMvex(byte[] mp4, byte[] mvex) {
+        int moovAt = mp4.length;
+        for (int pos = 0; pos + 8 <= mp4.length; ) {
+            int size = ByteBuffer.wrap(mp4, pos, 4).getInt();
+            if (new String(mp4, pos + 4, 4, StandardCharsets.US_ASCII).equals("moov")) {
+                moovAt = pos;
+            }
+            pos += size;
+        }
+        byte[] moovBody = Arrays.copyOfRange(mp4, moovAt + 8, mp4.length);
+        return cat(Arrays.copyOf(mp4, moovAt), box("moov", moovBody, mvex));
+    }
+
+    @Test
+    public void testCaptionSettingsThroughMp4Parser() throws Exception {
+        byte[][] samples = helloSamples(p -> cat(nal(seiNal(cc608(p[0], p[1]))),
+                nal(new byte[]{0x65, (byte) 0x88})));
+        byte[] mp4 = videoMp4("avc1", avcC(), samples, null, 1000);
+        MP4Parser parser = new MP4Parser();
+        assertEquals(2, getRecursiveMetadata(TikaInputStream.get(mp4), parser, new Metadata(),
+                new ParseContext(), true).size());
+        parser.setExtractClosedCaptions(false);
+        assertEquals(1, getRecursiveMetadata(TikaInputStream.get(mp4), parser, new Metadata(),
+                new ParseContext(), true).size());
+        parser.setExtractClosedCaptions(true);
+        parser.setExtractSubtitles(false);
+        assertEquals(1, getRecursiveMetadata(TikaInputStream.get(mp4), parser, new Metadata(),
+                new ParseContext(), true).size());
+
+        Parser configured = TikaLoader
+                .load(getConfigPath(Mp4SubtitleExtractorTest.class,
+                        "tika-config-mp4-no-captions.json"))
+                .loadParsers();
+        Metadata m = new Metadata();
+        m.set(HttpHeaders.CONTENT_TYPE, "video/mp4");
+        assertEquals(1, getRecursiveMetadata(TikaInputStream.get(mp4), configured, m,
+                new ParseContext(), true).size());
+    }
+
+    /** ftyp, mdat, then moov with one video track (timescale 1000), one sample per chunk. */
+    private static byte[] videoMp4(String format, byte[] entryChildren, byte[][] samples,
+                                   long[][] ctts, long delta) throws IOException {
+        byte[] ftyp = box("ftyp", ascii("isom"), u32(0), ascii("isom"));
+        byte[] mdat = box("mdat", cat(samples));
+        long offset = ftyp.length + 8L;
+        ByteArrayOutputStream stsz = new ByteArrayOutputStream();
+        ByteArrayOutputStream stco = new ByteArrayOutputStream();
+        for (byte[] sample : samples) {
+            stsz.writeBytes(u32(sample.length));
+            stco.writeBytes(u32(offset));
+            offset += sample.length;
+        }
+        boolean visual = !format.equals("c608");
+        // VisualSampleEntry fields after reserved + data_reference_index: 70 bytes
+        byte[] entry = box(format, new byte[6], new byte[]{0, 1},
+                visual ? new byte[70] : new byte[0], entryChildren);
+        ByteArrayOutputStream cttsBody = new ByteArrayOutputStream();
+        if (ctts != null) {
+            for (long[] e : ctts) {
+                cttsBody.writeBytes(u32(e[0]));
+                cttsBody.writeBytes(u32(e[1]));
+            }
+        }
+        byte[] stbl = box("stbl", box("stsd", u32(0), u32(1), entry),
+                box("stts", u32(0), u32(1), u32(samples.length), u32(delta)),
+                ctts == null ? new byte[0] : box("ctts", u32(0), u32(ctts.length),
+                        cttsBody.toByteArray()),
+                box("stsc", u32(0), u32(1), u32(1), u32(1), u32(1)),
+                box("stsz", u32(0), u32(0), u32(samples.length), stsz.toByteArray()),
+                box("stco", u32(0), u32(samples.length), stco.toByteArray()));
+        byte[] tkhd = new byte[84];
+        ByteBuffer.wrap(tkhd).putInt(12, 1);
+        byte[] mdhd = cat(u32(0), u32(0), u32(0), u32(1000), u32(0), new byte[]{0x55, (byte) 0xC4, 0, 0});
+        byte[] hdlr = cat(u32(0), u32(0), ascii(visual ? "vide" : "clcp"), new byte[13]);
+        byte[] trak = box("trak", box("tkhd", tkhd),
+                box("mdia", box("mdhd", mdhd), box("hdlr", hdlr), box("minf", stbl)));
+        return cat(ftyp, mdat, box("moov", box("mvhd", new byte[100]), trak));
+    }
+
+    // avcC with lengthSizeMinusOne = 3
+    private static byte[] avcC() {
+        return avcC(4);
+    }
+
+    private static byte[] avcC(int lengthSize) {
+        return box("avcC", new byte[]{1, 0x64, 0, 0x1F, (byte) (0xFC | (lengthSize - 1)),
+                (byte) 0xE0, 0});
+    }
+
+    // hvcC: lengthSizeMinusOne in the low bits of byte 21
+    private static byte[] hvcC() {
+        byte[] p = new byte[23];
+        p[0] = 1;
+        p[21] = 0x03;
+        return box("hvcC", p);
+    }
+
+    private static byte[] nal(byte[] body) {
+        return cat(u32(body.length), body);
+    }
+
+    private static byte[] nal3(byte[] body) {
+        return cat(new byte[]{0, (byte) (body.length >> 8), (byte) body.length}, body);
+    }
+
+    private static byte[] nal2(byte[] body) {
+        return cat(new byte[]{(byte) (body.length >> 8), (byte) body.length}, body);
+    }
+
+    // SEI NAL with one T.35 GA94 cc_data message; emulation prevention applied
+    private static byte[] seiNal(byte[] ccData) {
+        return seiNal(new byte[]{0x06}, ccData);
+    }
+
+    private static byte[] seiNal(byte[] header, byte[] ccData) {
+        byte[] t35 = cat(new byte[]{(byte) 0xB5, 0x00, 0x31, 'G', 'A', '9', '4', 0x03}, ccData);
+        byte[] rbsp = cat(header, new byte[]{4, (byte) t35.length}, t35,
+                new byte[]{(byte) 0x80});
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int zeros = 0;
+        for (int i = 0; i < rbsp.length; i++) {
+            int v = rbsp[i] & 0xFF;
+            if (zeros >= 2 && v <= 3) {
+                out.write(3);
+                zeros = 0;
+            }
+            out.write(v);
+            zeros = v == 0 ? zeros + 1 : 0;
+        }
+        return out.toByteArray();
+    }
+
+    private static byte[] cc608(int b1, int b2) {
+        return new byte[]{0x40 | 1, (byte) 0xFF, (byte) 0xFC, (byte) parity(b1),
+                (byte) parity(b2)};
+    }
+
+    private static int parity(int c) {
+        return Integer.bitCount(c & 0x7F) % 2 == 0 ? (c & 0x7F) | 0x80 : c & 0x7F;
+    }
+
     private static byte[] fullMoof(long base, int size1, int size2) {
         byte[] tfhd = box("tfhd", u32(0x000009), u32(2), u64(base), u32(3000));
         // data-offset, first-sample-flags, then duration, size, flags, composition offset
@@ -407,10 +755,11 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
+    @ValueSource(strings = {"text", "fragmented", "captions"})
     @Timeout(60)
-    public void testCorruptedBytes(boolean fragmented) throws Exception {
-        byte[] good = fragmented ? fragmented(5, 1) : new Builder().build(true);
+    public void testCorruptedBytes(String kind) throws Exception {
+        byte[] good = kind.equals("fragmented") ? fragmented(5, 1)
+                : kind.equals("captions") ? captionedAt(0, 20) : new Builder().build(true);
         long seed = new Random().nextLong();
         Random r = new Random(seed);
         for (int i = 0; i < 2000; i++) {

@@ -92,6 +92,14 @@ public final class SubtitleTrack {
         return vtt.length();
     }
 
+    public String getName() {
+        return name;
+    }
+
+    String vtt() {
+        return vtt.toString();
+    }
+
     public int getCueCount() {
         return cues;
     }

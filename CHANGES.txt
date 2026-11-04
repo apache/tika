@@ -70,6 +70,15 @@ Release 4.3.0 - ???
      track name as dc:title, in one forward pass (no spooling). No container metadata
      yet (TIKA-5030).
 
+   * MP4Parser extracts CEA-608 closed captions (CC1-CC4) as embedded text/vtt
+     documents named track-<id>-cc1.vtt ..., from QuickTime c608 tracks and from the
+     SEI messages of H.264 and HEVC video, reordered to presentation time. Only NAL
+     headers and SEI bodies are read, no video is decoded; a video track is probed
+     (first 300 frames, then 8 frames every 5 seconds) and read in full only if caption
+     data turns up. Roll-up lines are emitted once. Off with extractClosedCaptions (or
+     with extractSubtitles, which turns off both);
+     fullCaptionScan skips the probe (TIKA-5039).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 

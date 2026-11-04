@@ -90,6 +90,8 @@ public class MP4Parser implements Parser {
 
     private long maxBoxSize = DEFAULT_MAX_BOX_SIZE;
     private boolean extractSubtitles = true;
+    private boolean extractClosedCaptions = true;
+    private boolean fullCaptionScan;
 
     //subtitles need random access: a streamed input above this is not spooled for them
     private static final long MAX_SUBTITLE_SPOOL_BYTES = 64L * 1024L * 1024L;
@@ -128,8 +130,9 @@ public class MP4Parser implements Parser {
     }
 
     /**
-     * Whether text subtitle tracks are extracted as embedded {@code text/vtt} documents.
-     * Default true. Only when random access is cheap: the input is a file, or is (or can be
+     * Whether text subtitle tracks, and with {@link #isExtractClosedCaptions()} closed
+     * captions, are extracted as embedded {@code text/vtt} documents. Default true; false turns
+     * off both and the random access they need. Only when random access is cheap: the input is a file, or is (or can be
      * held) in memory, or is a stream of known length up to 64 MB; a longer or unsized
      * stream is not spooled to look for subtitles.
      */
@@ -141,6 +144,35 @@ public class MP4Parser implements Parser {
         this.extractSubtitles = extractSubtitles;
     }
 
+    /**
+     * Whether CEA-608 closed captions are extracted as embedded {@code text/vtt} documents
+     * ({@code track-<id>-cc1.vtt} ...), from QuickTime {@code c608} tracks and from the SEI
+     * messages of H.264 and HEVC video. Default true; applies only while
+     * {@link #isExtractSubtitles()} is true. Unless {@link #isFullCaptionScan()}, a video track is
+     * probed first (its first 300 frames and a few frames every 5 seconds) and read in full
+     * only if caption data turns up.
+     */
+    public boolean isExtractClosedCaptions() {
+        return extractClosedCaptions;
+    }
+
+    public void setExtractClosedCaptions(boolean extractClosedCaptions) {
+        this.extractClosedCaptions = extractClosedCaptions;
+    }
+
+    /**
+     * Whether every video frame is read for captions, skipping the probe. Default false: a
+     * caption run shorter than the probe spacing (5 seconds) in an otherwise uncaptioned
+     * track can be missed.
+     */
+    public boolean isFullCaptionScan() {
+        return fullCaptionScan;
+    }
+
+    public void setFullCaptionScan(boolean fullCaptionScan) {
+        this.fullCaptionScan = fullCaptionScan;
+    }
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
@@ -150,7 +182,8 @@ public class MP4Parser implements Parser {
         if (extractSubtitles && cheapRandomAccess(tis)) {
             //before the streaming walk below: random access needs the stream unread
             try {
-                new Mp4SubtitleExtractor().extract(tis, metadata, xhtml, context);
+                new Mp4SubtitleExtractor(true, extractClosedCaptions, fullCaptionScan)
+                        .extract(tis, metadata, xhtml, context);
             } catch (IOException | TikaException e) {
                 EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
