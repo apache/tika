@@ -2983,13 +2983,15 @@
   <mime-type type="application/x-subrip">
     <_comment>SubRip (srt) subtitles</_comment>
     <magic priority="50">
-      <!-- 1[CR|LF|CRLF]00 -->
+      <!-- 1[CR|LF|CRLF|CRCRLF]00 -->
       <match value="0x310A3030" type="string" offset="0"/>
       <match value="0x310D3030" type="string" offset="0"/>
-      <match value="0x310D0A13030" type="string" offset="0"/>
+      <match value="0x310D0A3030" type="string" offset="0"/>
+      <match value="0x310D0D0A3030" type="string" offset="0"/>
       <match value="0xEFBBBF310A3030" type="string" offset="0"/>
       <match value="0xEFBBBF310D3030" type="string" offset="0"/>
-      <match value="0xEFBBBF310D0A13030" type="string" offset="0"/>
+      <match value="0xEFBBBF310D0A3030" type="string" offset="0"/>
+      <match value="0xEFBBBF310D0D0A3030" type="string" offset="0"/>
     </magic>
     <glob pattern="*.srt"/>
     <sub-class-of type="text/plain"/>
@@ -8188,37 +8190,30 @@
   <mime-type type="text/vtt">
     <_comment>Web Video Text Tracks Format</_comment>
     <acronym>WebVTT</acronym>
+    <!-- "WEBVTT" then a space, tab or line terminator; UTF-8 BOM optional -->
     <magic priority="40">
-      <!-- Simple Form -->
-      <match value="WEBVTT\r" type="string" offset="0"/>
       <match value="WEBVTT\n" type="string" offset="0"/>
-      <!-- With Byte Order Mark -->
-      <match value="0xfeff" offset="0">
-         <match value="WEBVTT\r" type="string" offset="2"/>
-         <match value="WEBVTT\n" type="string" offset="2"/>
+      <match value="WEBVTT\r" type="string" offset="0"/>
+      <match value="WEBVTT " type="string" offset="0"/>
+      <match value="WEBVTT\t" type="string" offset="0"/>
+      <match value="0xefbbbf" type="string" offset="0">
+        <match value="WEBVTT\n" type="string" offset="3"/>
+        <match value="WEBVTT\r" type="string" offset="3"/>
+        <match value="WEBVTT " type="string" offset="3"/>
+        <match value="WEBVTT\t" type="string" offset="3"/>
       </match>
-      <match value="0xfeff" offset="0">
-         <match value="WEBVTT\r" type="string" offset="2"/>
-         <match value="WEBVTT\n" type="string" offset="2"/>
+      <!-- UTF-16 is outside the spec, but some editors write it -->
+      <match value="0xfeff005700450042005600540054" type="string" offset="0">
+        <match value="0x000a" type="string" offset="14"/>
+        <match value="0x000d" type="string" offset="14"/>
+        <match value="0x0020" type="string" offset="14"/>
+        <match value="0x0009" type="string" offset="14"/>
       </match>
-      <match value="0xefbbbf" offset="0">
-         <match value="WEBVTT\r" type="string" offset="3"/>
-         <match value="WEBVTT\n" type="string" offset="3"/>
-      </match>
-      <!-- Common Header -->
-      <match value="WEBVTT FILE\r" type="string" offset="0"/>
-      <match value="WEBVTT FILE\n" type="string" offset="0"/>
-    </magic>
-    <magic priority="30">
-      <!-- With a custom header - needs a lower priority -->
-      <match value="WEBVTT " type="string" offset="0">
-        <match value="\n\n" type="string" offset="10:50" />
-      </match>
-      <match value="WEBVTT " type="string" offset="0">
-        <match value="\r\r" type="string" offset="10:50" />
-      </match>
-      <match value="WEBVTT " type="string" offset="0">
-        <match value="\r\n\r\n" type="string" offset="10:50" />
+      <match value="0xfffe570045004200560054005400" type="string" offset="0">
+        <match value="0x0a00" type="string" offset="14"/>
+        <match value="0x0d00" type="string" offset="14"/>
+        <match value="0x2000" type="string" offset="14"/>
+        <match value="0x0900" type="string" offset="14"/>
       </match>
     </magic>
     <glob pattern="*.vtt"/>
