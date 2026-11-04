@@ -42,6 +42,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMP;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -54,6 +55,7 @@ public class Cr3ParserTest extends TikaTest {
 
     private static final String METADATA_UUID = "85c0b687820f11e08111f4ce462b6a48";
     private static final String PREVIEW_UUID = "eaf42b5e1c984b88b9fbb7dc406e4d16";
+    private static final String XMP_UUID = "be7acfcb97a942e89c71999491e3afac";
 
     private static final short ASCII = 2;
     private static final short SHORT = 3;
@@ -103,6 +105,47 @@ public class Cr3ParserTest extends TikaTest {
         assertEquals(1, embedded.size());
         assertEquals("INLINE", embedded.get(0).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Canon EOS R7", metadata.get(TIFF.EQUIPMENT_MODEL));
+    }
+
+    /** The XMP box as the camera writes it: a packet with the rating, padded to 64 KB. */
+    @Test
+    public void testXmpRating() throws Exception {
+        String packet = "<?xpacket begin='\uFEFF' id='W5M0MpCehiHzreSzNTczkc9d'?>"
+                + "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF "
+                + "xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
+                + "<rdf:Description rdf:about=\"\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\">"
+                + "<xmp:Rating>4</xmp:Rating></rdf:Description></rdf:RDF></x:xmpmeta>";
+        byte[] padded = Arrays.copyOf(packet.getBytes(StandardCharsets.UTF_8), 65536 - 20);
+        Arrays.fill(padded, packet.getBytes(StandardCharsets.UTF_8).length, padded.length, (byte) ' ');
+        ByteArrayOutputStream xmpUuid = new ByteArrayOutputStream();
+        xmpUuid.write(hex(XMP_UUID));
+        xmpUuid.write(padded);
+        xmpUuid.write(ascii("<?xpacket end='w'?>"));
+        ByteArrayOutputStream file = new ByteArrayOutputStream();
+        file.write(cr3(jpeg(16, 12), jpeg(48, 32)));
+        file.write(box("uuid", xmpUuid.toByteArray()));
+        Metadata metadata = new Metadata();
+        List<Metadata> embedded = new ArrayList<>();
+        parse(file.toByteArray(), metadata, embedded, new ArrayList<>());
+        assertEquals("4", metadata.get(XMP.RATING));
+        assertEquals("Canon EOS R7", metadata.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals(2, embedded.size());
+    }
+
+    @Test
+    public void testBadXmpKeepsTheRest() throws Exception {
+        ByteArrayOutputStream xmpUuid = new ByteArrayOutputStream();
+        xmpUuid.write(hex(XMP_UUID));
+        xmpUuid.write(ascii("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF"));
+        ByteArrayOutputStream file = new ByteArrayOutputStream();
+        file.write(cr3(jpeg(16, 12), jpeg(48, 32)));
+        file.write(box("uuid", xmpUuid.toByteArray()));
+        Metadata metadata = new Metadata();
+        List<Metadata> embedded = new ArrayList<>();
+        parse(file.toByteArray(), metadata, embedded, new ArrayList<>());
+        assertNull(metadata.get(XMP.RATING));
+        assertEquals("Canon EOS R7", metadata.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals(2, embedded.size());
     }
 
     @Test

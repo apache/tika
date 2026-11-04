@@ -54,6 +54,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.xmp.XmpExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -69,6 +70,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *   eight bytes, a {@code PRVW} record with the large JPEG preview (1620 pixels wide
  *   on current bodies), emitted as the
  *   {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}</li>
+ *   <li>{@code be7acfcb-97a9-42e8-9c71-999491e3afac} at the top level holds an XMP packet,
+ *   with the rating given in the camera or in Canon's software</li>
  * </ul>
  * The {@code THMB} and {@code PRVW} records carry width and height and the JPEG
  * length ahead of the JPEG, which starts 24 bytes into the record.
@@ -83,6 +86,7 @@ public class Cr3Parser implements Parser {
 
     private static final byte[] METADATA_UUID = uuid("85c0b687820f11e08111f4ce462b6a48");
     private static final byte[] PREVIEW_UUID = uuid("eaf42b5e1c984b88b9fbb7dc406e4d16");
+    private static final byte[] XMP_UUID = uuid("be7acfcb97a942e89c71999491e3afac");
     private static final int UUID_LENGTH = 16;
     /** The preview box's children start after eight bytes of its own. */
     private static final int PREVIEW_CHILDREN_OFFSET = 8;
@@ -92,6 +96,8 @@ public class Cr3Parser implements Parser {
     private static final int MAX_TIFF_BLOCK = 4 * 1024 * 1024;
     /** A preview above this size is not read; real ones are some hundred KB. */
     private static final int MAX_PREVIEW = 64 * 1024 * 1024;
+    /** An XMP packet above this size is not read; Canon writes one of 64 KB, padding included. */
+    private static final int MAX_XMP = 1024 * 1024;
 
     private final ImageMetadataConfig defaultConfig;
 
@@ -123,6 +129,7 @@ public class Cr3Parser implements Parser {
         com.drew.metadata.Metadata exif = new com.drew.metadata.Metadata();
         Jpeg thumbnail = null;
         Jpeg preview = null;
+        byte[] xmp = null;
         try (FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
             long length = channel.size();
             long offset = 0;
@@ -136,10 +143,24 @@ public class Cr3Parser implements Parser {
                 } else if (box.is("uuid") && box.hasUuid(channel, PREVIEW_UUID)) {
                     preview = readRecord(channel, box.payload + UUID_LENGTH + PREVIEW_CHILDREN_OFFSET,
                             box.end, "PRVW", 10, 16);
+                } else if (box.is("uuid") && box.hasUuid(channel, XMP_UUID)) {
+                    long xmpLength = box.end - box.payload - UUID_LENGTH;
+                    if (xmpLength > 0 && xmpLength <= MAX_XMP) {
+                        xmp = readBytes(channel, box.payload + UUID_LENGTH, (int) xmpLength);
+                    }
                 }
                 offset = box.end;
             }
 
+            if (xmp != null) {
+                try {
+                    new XmpExtractor().extract(xmp, metadata, context);
+                } catch (SecurityException e) {
+                    throw e;
+                } catch (IOException | SAXException | TikaException | RuntimeException e) {
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
+                }
+            }
             try {
                 new ImageMetadataExtractor(metadata,
                         ImageMetadataConfig.resolve(context, "cr3-parser", defaultConfig))
