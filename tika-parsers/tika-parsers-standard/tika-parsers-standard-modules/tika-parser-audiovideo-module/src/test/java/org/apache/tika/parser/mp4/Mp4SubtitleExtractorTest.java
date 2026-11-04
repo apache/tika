@@ -244,6 +244,93 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 .contains("tfhd shorter"), container.toString());
     }
 
+    @Test
+    public void testBlankSamplesChargeTheDecodeBudget() throws Exception {
+        // 5000 samples of 64 KB of spaces at one offset: blank text, but 320 MB to decode
+        int n = 5000;
+        byte[] ftyp = box("ftyp", ascii("isom"), u32(0), ascii("isom"));
+        byte[] blank = new byte[0xFFFF];
+        Arrays.fill(blank, (byte) ' ');
+        byte[] mdat = box("mdat", Builder.sample(blank));
+        int[] sizes = new int[n];
+        Arrays.fill(sizes, blank.length + 2);
+        long[] chunks = new long[n];
+        Arrays.fill(chunks, ftyp.length + 8L);
+        byte[] subs = Builder.trak(2, "sbtl", ENG, new long[][]{{n, 1000}}, new int[]{1}, 1,
+                sizes, -1, chunks, false, null);
+        Metadata container = new Metadata();
+        extract(cat(ftyp, mdat, box("moov", box("mvhd", new byte[100]), subs)), container);
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("exceeds"), container.toString());
+    }
+
+    @Test
+    public void testOtherTracksDamageStaysTheirs() throws Exception {
+        // a video traf with a short tfhd, then in the same moof a subtitle traf based at the
+        // moof, and a later moof: both subtitle cues survive
+        byte[] four = Builder.sample("frag four".getBytes(StandardCharsets.UTF_8));
+        byte[] damaged = damagedThenMine(0, four.length);
+        damaged = damagedThenMine(damaged.length + 8, four.length);
+        byte[] five = Builder.sample("frag five".getBytes(StandardCharsets.UTF_8));
+        byte[] later = moof2(0, five.length);
+        later = moof2(later.length + 8, five.length);
+        Metadata container = new Metadata();
+        List<Emitted> docs = extract(cat(fragmented(5, 1), damaged, box("mdat", four), later,
+                box("mdat", five)), container);
+        assertEquals(1, docs.size());
+        String body = docs.get(0).body();
+        assertTrue(body.contains("frag three") && body.contains("frag four")
+                && body.contains("frag five"), body);
+    }
+
+    @Test
+    public void testTrafAfterDamageIsSkippedNotMisread() throws Exception {
+        // our traf has no base of its own and follows a damaged video traf: its data cannot be
+        // located, so it is skipped with a warning; the next moof starts fresh
+        byte[] lost = Builder.sample("lost".getBytes(StandardCharsets.UTF_8));
+        byte[] video = box("traf", box("tfhd", u32(0x000001), u32(1)));
+        byte[] mine = box("traf", box("tfhd", u32(0), u32(2)),
+                box("trun", u32(0x000200), u32(1), u32(lost.length)));
+        byte[] damaged = box("moof", box("mfhd", u32(0), u32(4)), video, mine);
+        byte[] five = Builder.sample("frag five".getBytes(StandardCharsets.UTF_8));
+        byte[] later = moof2(0, five.length);
+        later = moof2(later.length + 8, five.length);
+        Metadata container = new Metadata();
+        List<Emitted> docs = extract(cat(fragmented(5, 1), damaged, box("mdat", lost), later,
+                box("mdat", five)), container);
+        String body = docs.get(0).body();
+        assertTrue(body.contains("frag five") && !body.contains("lost"), body);
+        assertTrue(String.join(" ", container.getValues(
+                TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)).contains("follows a damaged"),
+                container.toString());
+    }
+
+    private static byte[] damagedThenMine(int dataOffset, int size) {
+        byte[] video = box("traf", box("tfhd", u32(0x000001), u32(1)));
+        byte[] mine = box("traf", box("tfhd", u32(0x020000), u32(2)),
+                box("trun", u32(0x000201), u32(1), u32(dataOffset), u32(size)));
+        return box("moof", box("mfhd", u32(0), u32(4)), video, mine);
+    }
+
+    @Test
+    public void testOversizedVideoRunDoesNotEndSubtitles() throws Exception {
+        // a valid video trun over the 16 MB table limit, then a subtitle traf based at the moof
+        byte[] four = Builder.sample("frag four".getBytes(StandardCharsets.UTF_8));
+        byte[] big = box("trun", u32(0), u32(0), new byte[Mp4SubtitleExtractor.MAX_TABLE_BYTES]);
+        byte[] moof = bigThenMine(big, 0, four.length);
+        moof = bigThenMine(big, moof.length + 8, four.length);
+        List<Emitted> docs = extract(cat(fragmented(5, 1), moof, box("mdat", four)),
+                new Metadata());
+        assertTrue(docs.get(0).body().contains("frag four"), docs.get(0).body());
+    }
+
+    private static byte[] bigThenMine(byte[] bigTrun, int dataOffset, int size) {
+        byte[] video = box("traf", box("tfhd", u32(0x020000), u32(1)), bigTrun);
+        byte[] mine = box("traf", box("tfhd", u32(0x020000), u32(2)),
+                box("trun", u32(0x000201), u32(1), u32(dataOffset), u32(size)));
+        return box("moof", box("mfhd", u32(0), u32(4)), video, mine);
+    }
+
     private static byte[] fullMoof(long base, int size1, int size2) {
         byte[] tfhd = box("tfhd", u32(0x000009), u32(2), u64(base), u32(3000));
         // data-offset, first-sample-flags, then duration, size, flags, composition offset

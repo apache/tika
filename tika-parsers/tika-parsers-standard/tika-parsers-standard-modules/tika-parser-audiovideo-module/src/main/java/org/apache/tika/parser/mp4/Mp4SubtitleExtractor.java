@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +54,8 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
     static final int MAX_SAMPLES = 1_000_000;
     // a sample table above this is not loaded; a text track's tables are kilobytes
     static final int MAX_TABLE_BYTES = 16 * 1024 * 1024;
+    // sample text decoded per file, blank or not: bounds the work; real tracks are megabytes
+    static final long MAX_DECODED_BYTES = 256L * 1024 * 1024;
     private static final int MAX_CHILDREN = 100_000;
     // uint16 length prefix plus the longest text it can declare
     private static final int MAX_SAMPLE_READ = 2 + 0xFFFF;
@@ -91,6 +94,24 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
             }
         }
         Set<Long> chapterTracks = chapterTracks(ch, traks);
+        long[] budget = {MAX_DECODED_BYTES};
+        Set<String> fragmentWarnings = new LinkedHashSet<>();
+        try {
+            extractTracks(ch, traks, chapterTracks, moofs, trex, budget, fragmentWarnings,
+                    containerMetadata, xhtml, context);
+        } finally {
+            for (String w : fragmentWarnings) {
+                EmbeddedDocumentUtil.recordException(new TikaException(w), containerMetadata,
+                        context);
+            }
+        }
+    }
+
+    private void extractTracks(SeekableByteChannel ch, List<Box> traks, Set<Long> chapterTracks,
+                               List<Box> moofs, Map<Long, long[]> trex, long[] budget,
+                               Set<String> fragmentWarnings, Metadata containerMetadata,
+                               XHTMLContentHandler xhtml, ParseContext context)
+            throws IOException, SAXException {
         int found = 0;
         for (Box trak : traks) {
             Track track;
@@ -110,6 +131,8 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                 return;
             }
             SubtitleTrack out = new SubtitleTrack("track-" + track.id + ".vtt", track.language);
+            track.budget = budget;
+            track.fragmentWarnings = fragmentWarnings;
             try {
                 track.readCues(ch, out);
                 if (!moofs.isEmpty()) {
@@ -124,6 +147,12 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                         containerMetadata, context);
             }
             out.emit(xhtml, context);
+            if (budget[0] < 0) {
+                EmbeddedDocumentUtil.recordException(new TikaException("subtitle text exceeds "
+                        + MAX_DECODED_BYTES + " bytes; the rest skipped"), containerMetadata,
+                        context);
+                return;
+            }
         }
     }
 
@@ -174,6 +203,10 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
         boolean co64;
         // set once the track takes no more cues
         boolean full;
+        // text bytes this file may still decode, shared by its tracks; negative once spent
+        long[] budget;
+        // why fragment data was skipped, shared by the file's tracks so each is said once
+        Set<String> fragmentWarnings;
         // running decode time and sample count, carried from stbl into the fragments
         long time;
         int samplesRead;
@@ -298,6 +331,7 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                         }
                         long size = sizes.get(sample);
                         if (!cue(ch, offset, size, duration, fileSize, out)) {
+                            full = true;
                             return;
                         }
                         offset += size;
@@ -310,12 +344,15 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
             }
         }
 
-        /** Emits one sample and advances {@link #time}; false once the track is full. */
+        /**
+         * Emits one sample and advances {@link #time}; false once the track is full or the
+         * file's decode budget is spent.
+         */
         private boolean cue(SeekableByteChannel ch, long offset, long size, long duration,
                             long fileSize, SubtitleTrack out) throws IOException {
             if (offset >= 0 && size >= 2 && offset <= fileSize - 2) {
-                String text = sampleText(ch, offset, Math.min(size, MAX_SAMPLE_READ));
-                if (!out.addCue(millis(time), millis(time + duration), text)) {
+                String text = sampleText(ch, offset, Math.min(size, MAX_SAMPLE_READ), budget);
+                if (text == null || !out.addCue(millis(time), millis(time + duration), text)) {
                     return false;
                 }
             }
@@ -329,12 +366,22 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                 // without an explicit base, the first traf's data starts at the moof and
                 // each later one where the previous ended (ISO 14496-12 8.8.7.1)
                 long dataEnd = moof.start();
+                boolean endKnown = true;
                 for (Box traf : children(ch, moof.payload(), moof.end())) {
-                    if (traf.is("traf")) {
-                        dataEnd = readTraf(ch, traf, moof.start(), dataEnd, trex, out);
-                        if (full) {
-                            return;
+                    if (!traf.is("traf")) {
+                        continue;
+                    }
+                    try {
+                        dataEnd = readTraf(ch, traf, moof.start(), dataEnd, endKnown, trex, out);
+                        endKnown = true;
+                    } catch (Unlocated e) {
+                        endKnown = false;
+                        if (e.getMessage() != null && fragmentWarnings.size() < MAX_TRACKS) {
+                            fragmentWarnings.add(e.getMessage());
                         }
+                    }
+                    if (full) {
+                        return;
                     }
                 }
             }
@@ -342,70 +389,83 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
 
         /**
          * Emits the samples of {@code traf} if it belongs to this track; returns where its
-         * data ends. A traf whose boxes are shorter than their flags declare is damaged: the
-         * IOException ends this track's fragments.
+         * data ends. Damage in this track's boxes is an IOException that ends its fragments;
+         * damage in another track's only loses where that traf's data ends ({@link Unlocated}).
          */
         private long readTraf(SeekableByteChannel ch, Box traf, long moofStart, long prevEnd,
-                              long[] trex, SubtitleTrack out) throws IOException {
+                              boolean prevKnown, long[] trex, SubtitleTrack out)
+                throws IOException {
             List<Box> boxes = children(ch, traf.payload(), traf.end());
-            long trackId = -1;
-            long base = prevEnd;
-            long defDuration = trex == null ? 0 : trex[0];
-            long defSize = trex == null ? 0 : trex[1];
-            long decodeTime = -1;
+            Box tfhd = null;
             for (Box b : boxes) {
                 if (b.is("tfhd")) {
-                    byte[] p = payload(ch, b, 40);
-                    int flags = p.length >= 4 ? flags(p) : 0;
-                    int need = 8 + ((flags & 0x01) != 0 ? 8 : 0) + ((flags & 0x02) != 0 ? 4 : 0)
-                            + ((flags & 0x08) != 0 ? 4 : 0) + ((flags & 0x10) != 0 ? 4 : 0)
-                            + ((flags & 0x20) != 0 ? 4 : 0);
-                    if (p.length < need) {
-                        throw new IOException("MP4 tfhd shorter than its flags declare");
-                    }
-                    trackId = u32(p, 4);
-                    int i = 8;
-                    if ((flags & 0x01) != 0) {
-                        base = s64(p, i);
-                        i += 8;
-                    } else if ((flags & 0x20000) != 0) {
-                        base = moofStart;
-                    }
-                    if ((flags & 0x02) != 0) {
-                        i += 4;
-                    }
-                    if ((flags & 0x08) != 0) {
-                        defDuration = u32(p, i);
-                        i += 4;
-                    }
-                    if ((flags & 0x10) != 0) {
-                        defSize = u32(p, i);
-                    }
-                } else if (b.is("tfdt")) {
-                    byte[] p = payload(ch, b, 12);
-                    if (p.length < (p.length > 0 && p[0] == 1 ? 12 : 8)) {
-                        throw new IOException("MP4 tfdt shorter than its version declares");
-                    }
-                    decodeTime = p[0] == 1 ? s64(p, 4) : u32(p, 4);
+                    tfhd = b;
+                    break;
                 }
             }
-            if (trackId < 0) {
-                throw new IOException("MP4 traf without tfhd");
+            byte[] p = tfhd == null ? new byte[0] : payload(ch, tfhd, 40);
+            if (p.length < 8) {
+                throw new Unlocated("MP4 traf without a usable tfhd");
             }
-            SubtitleTrack target = trackId == id ? out : null;
-            if (target != null && decodeTime >= 0) {
-                time = decodeTime;
+            int flags = flags(p);
+            long trackId = u32(p, 4);
+            boolean mine = trackId == id;
+            int need = 8 + ((flags & 0x01) != 0 ? 8 : 0) + ((flags & 0x02) != 0 ? 4 : 0)
+                    + ((flags & 0x08) != 0 ? 4 : 0) + ((flags & 0x10) != 0 ? 4 : 0)
+                    + ((flags & 0x20) != 0 ? 4 : 0);
+            if (p.length < need) {
+                throw damage(mine, "MP4 tfhd shorter than its flags declare");
+            }
+            long base;
+            int i = 8;
+            if ((flags & 0x01) != 0) {
+                base = s64(p, i);
+                i += 8;
+            } else if ((flags & 0x20000) != 0) {
+                base = moofStart;
+            } else if (prevKnown) {
+                base = prevEnd;
+            } else {
+                throw new Unlocated(mine ? "MP4 fragment data of track " + id
+                        + " follows a damaged or oversized traf; skipped" : null);
+            }
+            long defDuration = trex == null ? 0 : trex[0];
+            long defSize = trex == null ? 0 : trex[1];
+            if ((flags & 0x02) != 0) {
+                i += 4;
+            }
+            if ((flags & 0x08) != 0) {
+                defDuration = u32(p, i);
+                i += 4;
+            }
+            if ((flags & 0x10) != 0) {
+                defSize = u32(p, i);
+            }
+            if (mine) {
+                for (Box b : boxes) {
+                    if (b.is("tfdt")) {
+                        byte[] t = payload(ch, b, 12);
+                        if (t.length < (t.length > 0 && t[0] == 1 ? 12 : 8)) {
+                            throw new IOException("MP4 tfdt shorter than its version declares");
+                        }
+                        time = t[0] == 1 ? s64(t, 4) : u32(t, 4);
+                    }
+                }
             }
             long next = base;
             for (Box b : boxes) {
                 if (b.is("trun")) {
-                    next = readTrun(ch, b, base, next, defDuration, defSize, target);
+                    next = readTrun(ch, b, base, next, defDuration, defSize, mine ? out : null);
                     if (full) {
                         return next;
                     }
                 }
             }
             return next;
+        }
+
+        private static IOException damage(boolean mine, String message) {
+            return mine ? new IOException(message) : new Unlocated(message);
         }
 
         /**
@@ -415,9 +475,12 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
         private long readTrun(SeekableByteChannel ch, Box trun, long base, long next,
                               long defDuration, long defSize, SubtitleTrack out)
                 throws IOException {
-            if (trun.end() - trun.payload() > MAX_TABLE_BYTES) {
-                throw new IOException("MP4 trun of " + (trun.end() - trun.payload())
-                        + " bytes exceeds the subtitle table limit of " + MAX_TABLE_BYTES);
+            long boxBytes = trun.end() - trun.payload();
+            if (boxBytes > MAX_TABLE_BYTES) {
+                // valid in a long video fragment; for another track only its end is lost
+                String message = "MP4 trun of " + boxBytes
+                        + " bytes exceeds the subtitle table limit of " + MAX_TABLE_BYTES;
+                throw out == null ? new Unlocated(null) : new IOException(message);
             }
             byte[] p = payload(ch, trun, MAX_TABLE_BYTES);
             int flags = p.length >= 4 ? flags(p) : 0;
@@ -425,7 +488,7 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
             int width = 4 * Integer.bitCount(flags & 0xF00);
             long count = p.length >= 8 ? u32(p, 4) : 0;
             if (p.length < i || (long) (p.length - i) < count * width) {
-                throw new IOException("MP4 trun shorter than its sample count declares");
+                throw damage(out != null, "MP4 trun shorter than its sample count declares");
             }
             long offset = (flags & 0x01) != 0 ? base + (int) u32(p, 8) : next;
             if (width == 0 && out == null) {
@@ -461,6 +524,15 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
 
         private long millis(long units) {
             return units / timescale * 1000 + (units % timescale) * 1000 / timescale;
+        }
+    }
+
+    /** Another track's traf whose data end is unknown; a null message is not worth a warning. */
+    private static final class Unlocated extends IOException {
+        private static final long serialVersionUID = 1L;
+
+        Unlocated(String message) {
+            super(message);
         }
     }
 
@@ -514,11 +586,25 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
      * Only the declared text is read, so an empty sample costs two bytes whatever its size.
      */
     static String sampleText(SeekableByteChannel ch, long offset, long size) throws IOException {
+        return sampleText(ch, offset, size, null);
+    }
+
+    /** As {@link #sampleText(SeekableByteChannel, long, long)}; null once the budget is spent. */
+    static String sampleText(SeekableByteChannel ch, long offset, long size, long[] budget)
+            throws IOException {
         byte[] h = read(ch, offset, 2);
         long available = Math.min(size, ch.size() - offset) - 2;
         int len = (int) Math.min(((h[0] & 0xFF) << 8) | (h[1] & 0xFF), available);
         if (len <= 0) {
             return "";
+        }
+        if (budget != null) {
+            // charged before decoding: whitespace that cueText drops still costs its bytes
+            if (budget[0] < len) {
+                budget[0] = -1;
+                return null;
+            }
+            budget[0] -= len;
         }
         byte[] b = read(ch, offset + 2, len);
         if (len >= 2 && (b[0] & 0xFF) == 0xFE && (b[1] & 0xFF) == 0xFF) {

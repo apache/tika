@@ -52,8 +52,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class MkvSubtitleExtractor implements SubtitleExtractor {
 
     static final int MAX_TRACKS = 64;
-    // across all tracks of a file: every track is held until the pass ends
+    // kept cue text across all tracks of a file: every track is held until the pass ends
     static final int MAX_TOTAL_CHARS = 16 * 1024 * 1024;
+    // decoded bytes per file, markup included, before filters drop any: bounds the work
+    static final long MAX_DECODED_BYTES = 256L * 1024 * 1024;
     static final int MAX_BLOCK_BYTES = 1024 * 1024;
     // Info, Tracks: metadata, kilobytes in practice
     static final long MAX_HEADER_ELEMENT_BYTES = 16L * 1024 * 1024;
@@ -128,6 +130,7 @@ public class MkvSubtitleExtractor implements SubtitleExtractor {
         private final ParseContext context;
         private long timecodeScale = 1_000_000;
         private long clusterTime;
+        private long decodedBytes;
         private int totalChars;
         private boolean budgetSpent;
 
@@ -305,7 +308,7 @@ public class MkvSubtitleExtractor implements SubtitleExtractor {
             }
             Track t = trackNumber < 0 ? null : tracks.get(trackNumber);
             long dataSize = remaining - 3;
-            if (t == null || dataSize < 0 || dataSize > MAX_BLOCK_BYTES) {
+            if (t == null || budgetSpent || dataSize < 0 || dataSize > MAX_BLOCK_BYTES) {
                 src.skip(remaining);
                 return null;
             }
@@ -316,12 +319,35 @@ public class MkvSubtitleExtractor implements SubtitleExtractor {
                 return null;
             }
             byte[] data = src.readBytes(dataSize, MAX_BLOCK_BYTES);
-            String text = decode(t, data);
-            if (text == null) {
+            // charged per block on the decoded bytes, before any filter can drop them
+            long rawSize = t.compAlgo == 3 && t.compSettings != null
+                    ? (long) t.compSettings.length + data.length : data.length;
+            if (t.compAlgo != 0 && !charge(rawSize)) {
                 return null;
             }
+            byte[] raw = raw(t, data);
+            if (raw == null || (t.compAlgo == 0 && !charge(raw.length))) {
+                return null;
+            }
+            String text = text(t, raw);
             long relative = (short) (((h[0] & 0xFF) << 8) | (h[1] & 0xFF));
             return new Cue(t, clusterTime + relative, text);
+        }
+
+        /** False once the file's decode budget is spent; the first overrun is recorded. */
+        private boolean charge(long bytes) {
+            if (budgetSpent) {
+                return false;
+            }
+            if (decodedBytes + bytes > MAX_DECODED_BYTES) {
+                budgetSpent = true;
+                EmbeddedDocumentUtil.recordException(new TikaException("subtitle text exceeds "
+                        + MAX_DECODED_BYTES + " decoded bytes; the rest skipped"),
+                        containerMetadata, context);
+                return false;
+            }
+            decodedBytes += bytes;
+            return true;
         }
 
         private void addCue(Cue cue, long duration) {
@@ -370,18 +396,25 @@ public class MkvSubtitleExtractor implements SubtitleExtractor {
 
     /** Cue text from one block, or null if it cannot be decoded. */
     static String decode(Track t, byte[] data) {
-        byte[] raw = data;
+        byte[] raw = raw(t, data);
+        return raw == null ? null : text(t, raw);
+    }
+
+    /** The block's bytes with compression undone, or null if they cannot be inflated. */
+    static byte[] raw(Track t, byte[] data) {
         if (t.compAlgo == 0) {
-            raw = inflate(data);
-            if (raw == null) {
-                return null;
-            }
-        } else if (t.compAlgo == 3 && t.compSettings != null) {
+            return inflate(data);
+        }
+        if (t.compAlgo == 3 && t.compSettings != null) {
             byte[] joined = new byte[t.compSettings.length + data.length];
             System.arraycopy(t.compSettings, 0, joined, 0, t.compSettings.length);
             System.arraycopy(data, 0, joined, t.compSettings.length, data.length);
-            raw = joined;
+            return joined;
         }
+        return data;
+    }
+
+    static String text(Track t, byte[] raw) {
         String text = new String(raw, StandardCharsets.UTF_8);
         switch (t.kind) {
             case ASS:

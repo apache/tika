@@ -202,6 +202,50 @@ public class MkvSubtitleExtractorTest extends TikaTest {
         assertEquals("", MkvSubtitleExtractor.assText("0,0,Default"));
     }
 
+    @Test
+    public void testBlankStrippedHeaderStillCharged() throws Exception {
+        // 8 MB of spaces as the stripped header: every 1-byte block decodes to 8 MB of blanks
+        byte[] spaces = new byte[8 * 1024 * 1024];
+        Arrays.fill(spaces, (byte) ' ');
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
+        byte[] tracks = el(0x1654AE6B, track(1, "S_TEXT/UTF8", null, null, null,
+                el(0x6240, el(0x5034, el(0x4254, uint(3)), el(0x4255, spaces)))));
+        ByteArrayOutputStream blocks = new ByteArrayOutputStream();
+        for (int i = 0; i < 100; i++) {
+            blocks.writeBytes(el(0xA3, block(1, i, utf8(" "))));
+        }
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)), blocks.toByteArray());
+        byte[] mkv = cat(ebml, el(0x18538067, tracks, cluster));
+        Metadata container = new Metadata();
+        assertEquals(0, extract(mkv, true, container).size());
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("exceeds"), container.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testFilteredAwayTextStillCharged(boolean grouped) throws Exception {
+        // an ASS track whose 8 MB stripped header has no fields: every 1-byte block decodes
+        // 8 MB that the filter drops; SimpleBlocks, or Blocks all in one BlockGroup
+        byte[] header = new byte[8 * 1024 * 1024];
+        Arrays.fill(header, (byte) 'x');
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
+        byte[] tracks = el(0x1654AE6B, track(1, "S_TEXT/ASS", null, null, null,
+                el(0x6240, el(0x5034, el(0x4254, uint(3)), el(0x4255, header)))));
+        ByteArrayOutputStream blocks = new ByteArrayOutputStream();
+        for (int i = 0; i < 100; i++) {
+            blocks.writeBytes(grouped ? el(0xA1, block(1, i, utf8("x")))
+                    : el(0xA3, block(1, i, utf8("x"))));
+        }
+        byte[] body = grouped ? el(0xA0, blocks.toByteArray()) : blocks.toByteArray();
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)), body);
+        Metadata container = new Metadata();
+        assertEquals(0, extract(cat(ebml, el(0x18538067, tracks, cluster)), true, container)
+                .size());
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("exceeds"), container.toString());
+    }
+
     /**
      * EBML header, then a Segment and first Cluster of unknown size (as live muxers write
      * them), a second Cluster of known size. Tracks: 1 video, 2 SRT (fre, named), 3 ASS
