@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -201,6 +202,121 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         List<Emitted> docs = extract(cat(parts), new Metadata());
         assertEquals(1, docs.size());
         assertTrue(docs.get(0).body().contains("frag three"), docs.get(0).body());
+    }
+
+    @Test
+    public void testStblThenFragments() throws Exception {
+        // stbl holds "zero"; the fragment's traf has an explicit base and a default duration
+        // after it, then a run with every per-sample field and a second run that continues
+        byte[] ftyp = box("ftyp", ascii("iso6"), u32(0), ascii("iso6"));
+        byte[] zero = Builder.sample("zero".getBytes(StandardCharsets.UTF_8));
+        byte[] mdat0 = box("mdat", zero);
+        long zeroOffset = ftyp.length + 8L;
+        byte[] subs = Builder.trak(2, "sbtl", ENG, new long[][]{{1, 1000}}, new int[]{1}, 1,
+                new int[]{zero.length}, -1, new long[]{zeroOffset}, false, null);
+        byte[] moov = box("moov", box("mvhd", new byte[100]), subs,
+                box("mvex", box("trex", u32(0), u32(2), u32(1), u32(1000), u32(0), u32(0))));
+        byte[] one = Builder.sample("one".getBytes(StandardCharsets.UTF_8));
+        byte[] two = Builder.sample("two".getBytes(StandardCharsets.UTF_8));
+        long head = ftyp.length + mdat0.length + moov.length;
+        byte[] moof = fullMoof(0, one.length, two.length);
+        moof = fullMoof(head + moof.length + 8, one.length, two.length);
+        byte[] mp4 = cat(ftyp, mdat0, moov, moof, box("mdat", one, two));
+
+        List<Emitted> docs = extract(mp4, new Metadata());
+        assertEquals(1, docs.size());
+        assertEquals("WEBVTT\n"
+                + "\n00:00:00.000 --> 00:00:01.000\nzero\n"
+                + "\n00:00:01.000 --> 00:00:01.500\none\n"
+                + "\n00:00:01.500 --> 00:00:04.500\ntwo\n", docs.get(0).body());
+    }
+
+    @Test
+    public void testShortTfhdIsDamageNotGuesswork() throws Exception {
+        // the flags promise a base offset the box does not hold: earlier cues stay, a warning
+        byte[] damaged = box("moof", box("mfhd", u32(0), u32(3)),
+                box("traf", box("tfhd", u32(0x000001), u32(2))));
+        Metadata container = new Metadata();
+        List<Emitted> docs = extract(cat(fragmented(5, 1), damaged), container);
+        assertEquals(1, docs.size());
+        assertTrue(docs.get(0).body().contains("frag three"), docs.get(0).body());
+        assertTrue(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
+                .contains("tfhd shorter"), container.toString());
+    }
+
+    private static byte[] fullMoof(long base, int size1, int size2) {
+        byte[] tfhd = box("tfhd", u32(0x000009), u32(2), u64(base), u32(3000));
+        // data-offset, first-sample-flags, then duration, size, flags, composition offset
+        byte[] run1 = box("trun", u32(0x000F05), u32(1), u32(0), u32(0), u32(500), u32(size1),
+                u32(0), u32(0));
+        byte[] run2 = box("trun", u32(0x000200), u32(1), u32(size2));
+        return box("moof", box("mfhd", u32(0), u32(1)), box("traf", tfhd, run1, run2));
+    }
+
+    @Test
+    public void testSampleReadIsBoundedByDeclaredText() throws Exception {
+        // a sample may declare 64 KB; only the 2-byte length and the text it names are read
+        byte[] data = cat(Builder.sample(new byte[0]), new byte[0xFFFF],
+                Builder.sample("hi".getBytes(StandardCharsets.UTF_8)), new byte[0xFFFF]);
+        try (TikaInputStream tis = TikaInputStream.get(data);
+                CountingChannel ch = new CountingChannel(tis.getSeekableByteChannel())) {
+            assertEquals("", Mp4SubtitleExtractor.sampleText(ch, 0, 0xFFFF + 2));
+            assertEquals(2, ch.read);
+            assertEquals("hi", Mp4SubtitleExtractor.sampleText(ch, 0xFFFF + 2, 0xFFFF + 2));
+            assertEquals(2 + 4, ch.read);
+        }
+    }
+
+    private static final class CountingChannel implements SeekableByteChannel {
+        private final SeekableByteChannel delegate;
+        long read;
+
+        CountingChannel(SeekableByteChannel delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public int read(ByteBuffer dst) throws IOException {
+            int n = delegate.read(dst);
+            read += Math.max(n, 0);
+            return n;
+        }
+
+        @Override
+        public int write(ByteBuffer src) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long position() throws IOException {
+            return delegate.position();
+        }
+
+        @Override
+        public SeekableByteChannel position(long p) throws IOException {
+            delegate.position(p);
+            return this;
+        }
+
+        @Override
+        public long size() throws IOException {
+            return delegate.size();
+        }
+
+        @Override
+        public SeekableByteChannel truncate(long size) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isOpen() {
+            return delegate.isOpen();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
     }
 
     @ParameterizedTest
