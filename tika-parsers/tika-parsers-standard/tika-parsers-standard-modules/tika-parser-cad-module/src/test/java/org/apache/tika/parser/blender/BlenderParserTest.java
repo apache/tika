@@ -17,12 +17,18 @@
 package org.apache.tika.parser.blender;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -37,11 +43,13 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.blender.BlenderDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 
 public class BlenderParserTest extends TikaTest {
@@ -86,6 +94,57 @@ public class BlenderParserTest extends TikaTest {
         byte[] other = "BLENDEX and more".getBytes(StandardCharsets.US_ASCII);
         assertEquals("application/gzip", detect(gzip(other), "scene.blend"));
         assertEquals("application/zstd", detect(Zstd.compress(other), "scene.blend"));
+    }
+
+    /**
+     * Without zstd-jni, a zstd-compressed file is not taken for a Blender file and fails
+     * nothing; gzip still works.
+     */
+    @Test
+    public void testWithoutZstdJni() throws Exception {
+        byte[] blend = blend(Header.POINTER8, true);
+        try (WithoutZstdJni loader = new WithoutZstdJni()) {
+            Class<?> compression = loader.loadClass(BlendCompression.class.getName());
+            Method open = compression.getMethod("open", InputStream.class);
+            assertNull(open.invoke(null, new ByteArrayInputStream(Zstd.compress(blend))));
+            assertNotNull(open.invoke(null, new ByteArrayInputStream(gzip(blend))));
+
+            Object detector = loader.loadClass(BlenderDetector.class.getName())
+                    .getConstructor().newInstance();
+            Method detect = detector.getClass().getMethod("detect", TikaInputStream.class,
+                    Metadata.class, ParseContext.class);
+            try (TikaInputStream zstd = TikaInputStream.get(Zstd.compress(blend));
+                    TikaInputStream gz = TikaInputStream.get(gzip(blend))) {
+                assertEquals(MediaType.OCTET_STREAM,
+                        detect.invoke(detector, zstd, new Metadata(), new ParseContext()));
+                assertEquals(MediaType.application("x-blender"),
+                        detect.invoke(detector, gz, new Metadata(), new ParseContext()));
+            }
+        }
+    }
+
+    /** Loads the Blender classes itself and has no zstd-jni; the rest comes from the parent. */
+    private static final class WithoutZstdJni extends URLClassLoader {
+        WithoutZstdJni() {
+            super(new URL[]{BlendCompression.class.getProtectionDomain().getCodeSource()
+                    .getLocation()}, BlenderParserTest.class.getClassLoader());
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve)
+                throws ClassNotFoundException {
+            if (name.startsWith("com.github.luben.")) {
+                throw new ClassNotFoundException(name);
+            }
+            if (name.startsWith("org.apache.tika.parser.blender.")
+                    || name.startsWith("org.apache.tika.detect.blender.")) {
+                synchronized (getClassLoadingLock(name)) {
+                    Class<?> c = findLoadedClass(name);
+                    return c != null ? c : findClass(name);
+                }
+            }
+            return super.loadClass(name, resolve);
+        }
     }
 
     @Test

@@ -47,13 +47,19 @@ public final class BlendCompression {
         }
         if (head.length == 4 && (head[0] & 0xff) == 0x28 && (head[1] & 0xff) == 0xb5
                 && (head[2] & 0xff) == 0x2f && (head[3] & 0xff) == 0xfd) {
-            return ZSTD_AVAILABLE ? zstd(in) : null;
+            return ZSTD_AVAILABLE ? Zstd.open(in) : null;
         }
         return in;
     }
 
-    private static InputStream zstd(InputStream in) throws IOException {
-        return new com.github.luben.zstd.ZstdInputStream(in);
+    /**
+     * Holds the only reference to zstd-jni: verifying a method that returns its stream loads
+     * the class, so the method lives in a class that is loaded only when zstd-jni is there.
+     */
+    private static final class Zstd {
+        static InputStream open(InputStream in) throws IOException {
+            return new com.github.luben.zstd.ZstdInputStream(in);
+        }
     }
 
     private static boolean zstdAvailable() {
