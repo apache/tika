@@ -241,6 +241,85 @@ public class ZipParserTest extends AbstractPkgTest {
         assertNull(entries.get("001.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
+    /**
+     * 3MF names its thumbnail by the package's thumbnail relationship, wherever it lies; a
+     * model part's own thumbnail is not the package's.
+     */
+    @Test
+    public void test3MFPackageThumbnail() throws Exception {
+        Map<String, Metadata> entries = entriesByName(threeMF("/Metadata/thumbnail.png",
+                "Metadata/thumbnail.png", "Thumbnails/box.png"), "box.3mf");
+        assertEquals("model/3mf", entries.get("").get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                entries.get("Metadata/thumbnail.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertNull(entries.get("Thumbnails/box.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+
+        entries = entriesByName(threeMF("Previews/front.png", "Previews/front.png"), "a.3mf");
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                entries.get("Previews/front.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE),
+                "a relative target counts from the package root");
+    }
+
+    @Test
+    public void test3MFWithoutThumbnailRelationship() throws Exception {
+        Map<String, Metadata> entries =
+                entriesByName(threeMF(null, "Metadata/thumbnail.png"), "box.3mf");
+        assertEquals("model/3mf", entries.get("").get(HttpHeaders.CONTENT_TYPE));
+        assertNull(entries.get("Metadata/thumbnail.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE),
+                "the usual path alone is not the thumbnail");
+
+        entries = entriesByName(threeMF("/Metadata/missing.png", "Metadata/thumbnail.png"),
+                "box.3mf");
+        assertNull(entries.get("Metadata/thumbnail.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertNull(entries.get("").get(TikaCoreProperties.CONTAINER_EXCEPTION));
+    }
+
+    /**
+     * A 3MF package: content types, the package relationships (the model and, if given, the
+     * thumbnail), the model with a relationship to a thumbnail of its own, and the images.
+     */
+    private static byte[] threeMF(String thumbnailTarget, String... images) throws IOException {
+        String types = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
+                + "<Default Extension=\"rels\" "
+                + "ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>"
+                + "<Default Extension=\"model\" "
+                + "ContentType=\"application/vnd.ms-package.3dmanufacturing-3dmodel+xml\"/>"
+                + "<Default Extension=\"png\" ContentType=\"image/png\"/></Types>";
+        String rels = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+                + "<Relationship Type=\"http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel\" "
+                + "Target=\"/3D/3dmodel.model\" Id=\"rel0\"/>"
+                + (thumbnailTarget == null ? "" : "<Relationship Type=\"http://schemas.openxmlformats"
+                + ".org/package/2006/relationships/metadata/thumbnail\" Target=\"" + thumbnailTarget
+                + "\" Id=\"rel1\"/>")
+                + "</Relationships>";
+        String modelRels = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+                + "<Relationship Type=\"http://schemas.openxmlformats.org/package/2006/relationships"
+                + "/metadata/thumbnail\" Target=\"/Thumbnails/box.png\" Id=\"rel2\"/></Relationships>";
+        String model = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<model unit=\"millimeter\" xmlns=\"http://schemas.microsoft.com/3dmanufacturing/core/2015/02\">"
+                + "<resources/><build/></model>";
+        byte[] png = png();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(bos)) {
+            String[][] parts = {{"[Content_Types].xml", types}, {"_rels/.rels", rels},
+                    {"3D/3dmodel.model", model}, {"3D/_rels/3dmodel.model.rels", modelRels}};
+            for (String[] part : parts) {
+                zos.putNextEntry(new ZipEntry(part[0]));
+                zos.write(part[1].getBytes(UTF_8));
+                zos.closeEntry();
+            }
+            for (String image : images) {
+                zos.putNextEntry(new ZipEntry(image));
+                zos.write(png);
+                zos.closeEntry();
+            }
+        }
+        return bos.toByteArray();
+    }
+
     private Map<String, Metadata> entriesByName(byte[] zip, String fileName) throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
