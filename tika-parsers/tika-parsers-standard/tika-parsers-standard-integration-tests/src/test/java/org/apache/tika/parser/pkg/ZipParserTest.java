@@ -16,13 +16,23 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -139,5 +149,57 @@ public class ZipParserTest extends AbstractPkgTest {
                                   Metadata metadata, ParseContext parseContext, boolean outputHtml) {
             throw new UnsupportedOperationException("should never be called");
         }
+    }
+
+    @Test
+    public void testComicBookCoverIsThumbnail() throws Exception {
+        byte[] png = png();
+        byte[] cbz = zip(new String[]{"002.png", "ComicInfo.xml", "__MACOSX/._000.png",
+                ".000.png", "001.png"}, png);
+        Map<String, Metadata> entries = entriesByName(cbz, "comic.cbz");
+        assertEquals("application/vnd.comicbook+zip",
+                entries.get("").get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                entries.get("001.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertNull(entries.get("002.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testPlainZipHasNoThumbnail() throws Exception {
+        Map<String, Metadata> entries =
+                entriesByName(zip(new String[]{"001.png"}, png()), "images.zip");
+        assertNull(entries.get("001.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    private Map<String, Metadata> entriesByName(byte[] zip, String fileName) throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
+        Map<String, Metadata> byName = new HashMap<>();
+        try (TikaInputStream tis = TikaInputStream.get(zip)) {
+            List<Metadata> list = getRecursiveMetadata(tis, metadata, new ParseContext(), false);
+            byName.put("", list.get(0));
+            for (Metadata m : list.subList(1, list.size())) {
+                byName.put(m.get(TikaCoreProperties.RESOURCE_NAME_KEY), m);
+            }
+        }
+        return byName;
+    }
+
+    private static byte[] zip(String[] names, byte[] png) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(bos)) {
+            for (String name : names) {
+                zos.putNextEntry(new ZipEntry(name));
+                zos.write(name.endsWith(".xml") ? "<ComicInfo/>".getBytes(UTF_8) : png);
+                zos.closeEntry();
+            }
+        }
+        return bos.toByteArray();
+    }
+
+    private static byte[] png() throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(4, 6, BufferedImage.TYPE_INT_RGB), "png", bos);
+        return bos.toByteArray();
     }
 }
