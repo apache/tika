@@ -42,9 +42,11 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.blender.BlenderDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -160,6 +162,50 @@ public class BlenderParserTest extends TikaTest {
         int test = indexOf(file, "TEST") + 4 + 4 + 8 + 4 + 4;
         ByteBuffer.wrap(file).order(ByteOrder.LITTLE_ENDIAN).putInt(test, 100000);
         assertThrows(TikaException.class, () -> parseDirectly(file));
+    }
+
+    /** A preview larger than the cap, its block as long as it claims. */
+    @Test
+    public void testOversizedPreview() throws Exception {
+        int side = BlenderParser.MAX_THUMBNAIL_SIDE + 1;
+        ByteBuffer out = ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN);
+        out.put("BLENDER-v402TEST".getBytes(StandardCharsets.US_ASCII))
+                .putInt(8 + 4 * side * side).putLong(0).putInt(0).putInt(1)
+                .putInt(side).putInt(side);
+        byte[] file = Arrays.copyOf(out.array(), out.position());
+        assertThrows(TikaMemoryLimitException.class, () -> parseDirectly(file));
+    }
+
+    /**
+     * A block before the preview claiming more than is skipped, as in a compressed file it
+     * would have to be uncompressed: no preview, no failure, and the stream is not read on.
+     */
+    @Test
+    public void testLongBlockBeforeThePreview() throws Exception {
+        for (Header header : Header.values()) {
+            byte[] file = blend(header, true);
+            int rend = indexOf(file, "REND");
+            ByteBuffer buffer = ByteBuffer.wrap(file).order(header == Header.POINTER4_BIG_ENDIAN
+                    ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+            if (header == Header.LARGE_BLOCKS) {
+                buffer.putLong(rend + 16, Long.MAX_VALUE / 2);
+            } else {
+                buffer.putInt(rend + 4, 0x7fffffff);
+            }
+            assertNull(BlenderParser.readThumbnail(
+                    BlendCompression.open(new ByteArrayInputStream(gzip(file)))),
+                    header.toString());
+            assertEquals(1, parse(gzip(file)).size());
+        }
+    }
+
+    @Test
+    public void testEmbeddedLimits() throws Exception {
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedLimits.class, new EmbeddedLimits(10, false, 0, false));
+        try (TikaInputStream tis = TikaInputStream.get(blend(Header.POINTER8, true))) {
+            assertEquals(1, getRecursiveMetadata(tis, new Metadata(), context, true).size());
+        }
     }
 
     @Test

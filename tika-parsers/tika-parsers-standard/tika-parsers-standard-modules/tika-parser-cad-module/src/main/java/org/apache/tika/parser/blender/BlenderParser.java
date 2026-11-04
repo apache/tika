@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
@@ -76,6 +77,12 @@ public class BlenderParser implements Parser {
 
     /** Blender's previews are 128 pixels wide; this bounds the memory a bad header costs. */
     static final int MAX_THUMBNAIL_SIDE = 1024;
+
+    /**
+     * How much is skipped to reach the preview; the REND block before it is some 70 bytes.
+     * Skipping a compressed file means uncompressing it, so a bad length must not lead far.
+     */
+    static final long MAX_SKIPPED_BYTES = 1024 * 1024;
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -131,6 +138,7 @@ public class BlenderParser implements Parser {
             pointerSize = 8;
             largeBlocks = true;
         }
+        long skipped = 0;
         for (int i = 0; i < MAX_BLOCKS; i++) {
             String code = ascii(in, 4);
             long length;
@@ -151,6 +159,10 @@ public class BlenderParser implements Parser {
             if ("ENDB".equals(code)) {
                 return null;
             }
+            skipped += length;
+            if (skipped > MAX_SKIPPED_BYTES) {
+                return null;
+            }
             IOUtils.skipFully(in, length);
         }
         return null;
@@ -160,10 +172,13 @@ public class BlenderParser implements Parser {
             throws IOException, TikaException {
         int width = readInt(in, littleEndian);
         int height = readInt(in, littleEndian);
-        if (width <= 0 || height <= 0 || width > MAX_THUMBNAIL_SIDE
-                || height > MAX_THUMBNAIL_SIDE || 8L + 4L * width * height > length) {
+        if (width <= 0 || height <= 0 || 8L + 4L * width * height > length) {
             throw new TikaException("Bad preview size " + width + "x" + height + " in a "
                     + length + "-byte block");
+        }
+        if (width > MAX_THUMBNAIL_SIDE || height > MAX_THUMBNAIL_SIDE) {
+            throw new TikaMemoryLimitException(4L * width * height,
+                    4L * MAX_THUMBNAIL_SIDE * MAX_THUMBNAIL_SIDE);
         }
         byte[] rgba = IOUtils.toByteArray(in, 4 * width * height);
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
