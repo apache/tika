@@ -13,6 +13,14 @@ Release 4.3.0 - ???
      the forks never saw such a fetcher, so every fetch through it failed. Use file or
      ignite (TIKA-5001).
 
+   * A mime-types XML file that defines the same type twice, directly or through an
+     alias, fails to load with "Duplicate definition of ..."; the second definition's
+     magic and globs were silently added to the first, so tightening a rule in one copy
+     had no effect. A custom-mimetypes.xml that repeats a type within itself now stops
+     Tika from loading its types; merge the repeated blocks into one. A custom file may
+     still add globs or magic to a type defined in tika-mimetypes.xml. The eleven
+     duplicates in tika-mimetypes.xml are merged; detection is unchanged (TIKA-5029).
+
   SERVER, PIPES AND OPERATIONS
 
    * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,

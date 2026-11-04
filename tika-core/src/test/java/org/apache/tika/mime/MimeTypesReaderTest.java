@@ -417,6 +417,41 @@ public class MimeTypesReaderTest {
         assertThrows(IllegalArgumentException.class, () -> MimeTypes.getDefaultMimeTypes(new CustomClassLoader()));
     }
 
+    @Test
+    public void testDuplicateDefinitionFailsLoad() {
+        String dup = "<mime-info><mime-type type=\"application/x-dup\"><glob pattern=\"*.dup\"/>"
+                + "</mime-type><mime-type type=\"application/x-dup\"/></mime-info>";
+        MimeTypeException e = assertThrows(MimeTypeException.class,
+                () -> MimeTypesFactory.create(stream(dup)));
+        assertTrue(e.getCause().getMessage().contains("application/x-dup"), e.getCause().getMessage());
+
+        // a second definition through an alias is the same type
+        String viaAlias = "<mime-info><mime-type type=\"application/x-dup\">"
+                + "<alias type=\"application/x-dup-alias\"/></mime-type>"
+                + "<mime-type type=\"application/x-dup-alias\"/></mime-info>";
+        assertThrows(MimeTypeException.class, () -> MimeTypesFactory.create(stream(viaAlias)));
+    }
+
+    @Test
+    public void testLaterFileMayExtendType() throws Exception {
+        String core = "<mime-info><mime-type type=\"application/x-dup\"><glob pattern=\"*.dup\"/>"
+                + "</mime-type></mime-info>";
+        String custom = "<mime-info><mime-type type=\"application/x-dup\"><glob pattern=\"*.dup2\"/>"
+                + "</mime-type></mime-info>";
+        MimeTypes types = MimeTypesFactory.create(stream(core), stream(custom));
+        assertEquals(List.of(".dup", ".dup2"), types.forName("application/x-dup").getExtensions());
+    }
+
+    @Test
+    public void testDefaultMimeTypesHaveNoDuplicates() throws Exception {
+        // fails the load, so reaching here is the assertion
+        assertNotNull(MimeTypesFactory.create("tika-mimetypes.xml"));
+    }
+
+    private static ByteArrayInputStream stream(String xml) {
+        return new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+    }
+
     private static class CustomClassLoader extends ClassLoader {
     }
 }

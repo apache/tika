@@ -678,11 +678,6 @@
   <mime-type type="application/mediaservercontrol+xml">
     <glob pattern="*.mscml"/>
   </mime-type>
-  <mime-type type="application/vnd.mif">
-    <_comment>Adobe MIF File</_comment>
-    <glob pattern="*.mif"/>
-    <sub-class-of type="text/plain"/>
-  </mime-type>
   <mime-type type="application/mikey"/>
   <mime-type type="application/moss-keys"/>
   <mime-type type="application/moss-signature"/>
@@ -2025,6 +2020,7 @@
   <mime-type type="application/vnd.minisoft-hp3000-save"/>
   <mime-type type="application/vnd.mitsubishi.misty-guard.trustweb"/>
   <mime-type type="application/vnd.mobius.daf">
+    <sub-class-of type="text/plain"/>
     <glob pattern="*.daf"/>
   </mime-type>
   <mime-type type="application/vnd.mobius.dis">
@@ -2995,10 +2991,6 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
   
-  <mime-type type="application/vnd.sun.xml.writer">
-    <sub-class-of type="application/zip"/>
-    <glob pattern="*.sxw"/>
-  </mime-type>
   <!-- can't currently find any diff in contents btwn writer
     and template. Must rely on extension -->
   <mime-type type="application/vnd.sun.xml.writer.template">
@@ -3023,20 +3015,11 @@
   </mime-type>
 
   <mime-type type="application/vnd.street-stream"/>
-  <mime-type type="application/vnd.sun.xml.calc">
-    <glob pattern="*.sxc"/>
-  </mime-type>
   <mime-type type="application/vnd.sun.xml.calc.template">
     <glob pattern="*.stc"/>
   </mime-type>
-  <mime-type type="application/vnd.sun.xml.draw">
-    <glob pattern="*.sxd"/>
-  </mime-type>
   <mime-type type="application/vnd.sun.xml.draw.template">
     <glob pattern="*.std"/>
-  </mime-type>
-  <mime-type type="application/vnd.sun.xml.impress">
-    <glob pattern="*.sxi"/>
   </mime-type>
   <mime-type type="application/vnd.sun.xml.impress.template">
     <glob pattern="*.sti"/>
@@ -3059,9 +3042,6 @@
 
   <mime-type type="application/vnd.sun.xml.writer.global">
     <glob pattern="*.sxg"/>
-  </mime-type>
-  <mime-type type="application/vnd.sun.xml.writer.template">
-    <glob pattern="*.stw"/>
   </mime-type>
   <mime-type type="application/vnd.sun.wadl+xml"/>
   <mime-type type="application/vnd.sus-calendar">
@@ -3089,6 +3069,7 @@
   </mime-type>
   <mime-type type="application/vnd.syncml.dm+xml">
     <glob pattern="*.xdm"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
   <mime-type type="application/vnd.syncml.dm.notification"/>
   <mime-type type="application/vnd.syncml.ds.notification"/>
@@ -5342,14 +5323,6 @@
     </magic>
     <sub-class-of type="application/x-sqlite3"/>
   </mime-type>
-  <mime-type type="application/x-fossil-checkout">
-    <magic priority="60">
-      <match value="SQLite format 3\x00" type="string" offset="0">
-        <match value="0x0f055112" type="string" offset="68"/>
-      </match>
-    </magic>
-    <sub-class-of type="application/x-sqlite3"/>
-  </mime-type>
   <mime-type type="application/x-fossil-global-conf">
     <magic priority="60">
       <match value="SQLite format 3\x00" type="string" offset="0">
@@ -6795,6 +6768,7 @@
     </magic>
     <glob pattern="*.ntf"/>
     <glob pattern="*.nitf"/>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
   </mime-type>
 
   <mime-type type="image/png">
@@ -6805,6 +6779,7 @@
     </magic>
     <glob pattern="*.png"/>
   </mime-type>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
 
   <mime-type type="image/prs.btif">
     <glob pattern="*.btif"/>
@@ -6816,6 +6791,7 @@
     <acronym>SVG</acronym>
     <_comment>Scalable Vector Graphics</_comment>
     <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg"/>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="50">
       <!-- Version of 0x0001 is PSD -->
       <match value="&lt;svg" type="string" offset="0">
@@ -7059,38 +7035,6 @@
              mask="0xFFFFFFFF00000000FFFFFFFF"/>
     </magic>
     <glob pattern="*.webp"/>
-  </mime-type>
-
-  <mime-type type="image/heic">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftypheic" type="string" offset="4"/>
-      <match value="ftypheix" type="string" offset="4"/>
-    </magic>
-    <glob pattern="*.heic"/>
-  </mime-type>
-
-  <mime-type type="image/heif">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftypmif1" type="string" offset="4"/>
-    </magic>
-    <glob pattern="*.heif"/>
-  </mime-type>
-
-  <mime-type type="image/heif-sequence">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftypmsf1" type="string" offset="4"/>
-    </magic>
-  </mime-type>
-
-  <mime-type type="image/heic-sequence">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftyphevc" type="string" offset="4"/>
-      <match value="ftyphevx" type="string" offset="4"/>
-    </magic>
   </mime-type>
 
   <mime-type type="image/wmf">
