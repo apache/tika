@@ -3897,6 +3897,33 @@
       <glob pattern="*.cda"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-fec">
+    <_comment>US Federal Election Commission electronic filing</_comment>
+    <tika:link>https://www.fec.gov/help-candidates-and-committees/filing-reports/fecfile-software/</tika:link>
+    <sub-class-of type="text/plain"/>
+    <magic priority="50">
+      <!-- header record, fields separated by FS (0x1C) -->
+      <match value="HDR\x1cFEC\x1c" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.fec"/>
+  </mime-type>
+  <mime-type type="application/x-garmin-gdb">
+    <_comment>Garmin MapSource GPS database</_comment>
+    <!-- no *.gdb glob: InterBase/Firebird and others use it -->
+    <magic priority="50">
+      <match value="MsRcf\x00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-gettext-translation">
+    <_comment>GNU gettext message catalog</_comment>
+    <magic priority="50">
+      <!-- magic in either byte order, then file format revision 0 -->
+      <match value="0xDE12049500000000" type="string" offset="0"/>
+      <match value="0x950412DE00000000" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.mo"/>
+    <glob pattern="*.gmo"/>
+  </mime-type>
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
     <magic priority="50">
@@ -4823,6 +4850,19 @@
   </mime-type>
   <mime-type type="application/x-msclip">
     <glob pattern="*.clp"/>
+  </mime-type>
+
+  <mime-type type="application/x-mpq">
+    <_comment>Blizzard MPQ archive</_comment>
+    <magic priority="50">
+      <!-- archive header with its v1-v4 header size, or the user-data header that precedes one -->
+      <match value="MPQ\x1a\x20\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1a\x2c\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1a\x44\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1a\xd0\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1b" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.mpq"/>
   </mime-type>
 
   <mime-type type="application/x-msdownload">
@@ -5797,6 +5837,37 @@
 <!-- <glob pattern="*.xmap"/> -->
   </mime-type>
 
+  <mime-type type="application/x-vcdiff">
+    <_comment>VCDIFF delta (RFC 3284)</_comment>
+    <magic priority="50">
+      <!-- header bytes, version 0, then Hdr_Indicator with only its low 3 bits defined -->
+      <match value="0xD6C3C40000" mask="0xFFFFFFFFF8" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.vcdiff"/>
+  </mime-type>
+  <mime-type type="application/x-warcraft3-map">
+    <_comment>Warcraft III map</_comment>
+    <sub-class-of type="application/x-mpq"/>
+    <magic priority="50">
+      <match value="HM3W\x00\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.w3m"/>
+    <glob pattern="*.w3x"/>
+  </mime-type>
+  <mime-type type="application/x-warcraft3-replay">
+    <_comment>Warcraft III replay</_comment>
+    <magic priority="50">
+      <match value="Warcraft III recorded game\x1a" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.w3g"/>
+  </mime-type>
+  <mime-type type="application/x-xdelta">
+    <_comment>Xdelta 1 patch</_comment>
+    <magic priority="50">
+      <match value="%XDZ00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-xz">
     <glob pattern="*.xz"/>
     <magic priority="50">
@@ -6292,9 +6363,19 @@
   <mime-type type="audio/pcmu"/>
 
   <mime-type type="audio/prs.sid">
+    <_comment>Commodore 64 SID tune</_comment>
     <magic priority="50">
-      <match value="PSID" type="string" offset="0"/>
+      <!-- PSID/RSID, then version 1-4 -->
+      <match value="PSID\x00\x01" type="string" offset="0"/>
+      <match value="PSID\x00\x02" type="string" offset="0"/>
+      <match value="PSID\x00\x03" type="string" offset="0"/>
+      <match value="PSID\x00\x04" type="string" offset="0"/>
+      <match value="RSID\x00\x02" type="string" offset="0"/>
+      <match value="RSID\x00\x03" type="string" offset="0"/>
+      <match value="RSID\x00\x04" type="string" offset="0"/>
     </magic>
+    <glob pattern="*.sid"/>
+    <glob pattern="*.psid"/>
   </mime-type>
 
   <mime-type type="audio/qcelp"/>
@@ -7240,6 +7321,14 @@
     <magic priority="50">
       <match value="IIN1" type="string" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="image/x-paintshoppro">
+    <_comment>Paint Shop Pro image</_comment>
+    <magic priority="50">
+      <match value="Paint Shop Pro Image File\x0a\x1a" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.pspimage"/>
   </mime-type>
 
   <mime-type type="image/x-pict">

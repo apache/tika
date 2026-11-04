@@ -73,6 +73,13 @@ Release 4.3.0 - ???
      detected (only 0x00020002 was), and torrent files whose first key is not "announce"
      are detected (TIKA-5029).
 
+   * US FEC electronic filings (application/x-fec, a kind of text/plain, so their text is
+     extracted), gettext message catalogs, Garmin MapSource databases, Blizzard MPQ
+     archives and Warcraft III maps and replays, VCDIFF and Xdelta patches and Paint Shop
+     Pro images are detected by content; they were application/octet-stream. SID tunes
+     in RSID format are detected, and PSID needs a valid version after the magic
+     (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
