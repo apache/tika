@@ -56,6 +56,14 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
+     <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
+     cleaned of markup; WebVTT NOTE blocks become <div class="note"> and a Language
+     header sets dc:language. Both were parsed as plain text before, timings and
+     markup included. Magic fixes: SubRip with CRLF line endings (typo in the rule);
+     WebVTT with a title or tab after "WEBVTT", with a UTF-8 BOM and a title, or in
+     UTF-16 (TIKA-5028).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
