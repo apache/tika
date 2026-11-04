@@ -60,16 +60,18 @@ public class MimeTypesLintTest {
                 "<match value=\"0x0102\" mask=\"0xFF\" type=\"string\" offset=\"0\"/>" +
                 "<match value=\"x\" type=\"string\" offset=\"8:4\"/>" +
                 "<match value=\"x\" type=\"string\" offset=\"0:65536\"/>" +
+                "<match value=\"\\xd2\\x04\" type=\"regex\" offset=\"0\"/>" +
                 "</magic><sub-class-of type=\"application/x-undefined\"/></mime-type>" +
                 "<mime-type type=\"application/x-b\">" +
                 "<alias type=\"application/x-b-alias\"/><magic>" +
                 "<match value=\"(?i)&lt;html[\\\\s&gt;]\" type=\"regex\" offset=\"0\"/>" +
+                "<match value=\"\\\\xd2\\x04\" type=\"regex\" offset=\"0\"/>" +
                 "<match value=\"\\x00\\n\\\\a\\101\" type=\"string\" offset=\"0\"/>" +
                 "</magic><sub-class-of type=\"application/x-a\"/></mime-type>" +
                 "<mime-type type=\"application/x-c\"><sub-class-of type=\"application/x-b-alias\"/>" +
                 "</mime-type></mime-info>";
         List<String> problems = lint(new ByteArrayInputStream(xml.getBytes(UTF_8)));
-        assertEquals(8, problems.size(), String.join("\n", problems));
+        assertEquals(9, problems.size(), String.join("\n", problems));
         for (String p : problems) {
             assertTrue(p.startsWith("application/x-a "), p);
         }
@@ -127,6 +129,11 @@ public class MimeTypesLintTest {
                     continue;
                 }
                 char c = value.charAt(++k);
+                if (c == 'x' && kind.equals("regex") && k + 2 < value.length()
+                        && Integer.parseInt(value.substring(k + 1, k + 3), 16) >= 0x80) {
+                    // the pattern is compiled from UTF-8, so a raw high byte becomes U+FFFD
+                    problems.add(where + "\\x" + value.substring(k + 1, k + 3) + " in a regex needs \\\\x");
+                }
                 if (c == '\\' || c == 'x' || c == 'n' || c == 'r' || c == 't' || Character.isDigit(c)) {
                     continue;
                 }

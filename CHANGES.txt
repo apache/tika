@@ -108,6 +108,11 @@ Release 4.3.0 - ???
      and Ed25519 certificates were missed) and RFC 3161 time-stamp replies are detected
      by content; they were application/octet-stream (TIKA-5029).
 
+   * glTF binary models, Blender scenes, Autodesk FBX (binary), Jw_cad and FastCAD drawings,
+     Valve Source maps, Unreal Tournament compressed packages, SoundFont 2 banks, zsync
+     control files and PhysioNet WFDB annotations are detected by content; they were
+     application/octet-stream in a recent Common Crawl sample (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 

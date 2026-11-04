@@ -169,6 +169,28 @@ public class NicheFormatDetectionTest {
         assertDetected(MediaType.application("x-casio-fxi"), fxi.toString());
     }
 
+    @Test
+    public void testModelAndCadFormats() throws Exception {
+        assertDetected(MediaType.parse("model/gltf-binary"), "glTF\u0002\u0000\u0000\u0000ð@\u001c\u0000");
+        assertDetected(MediaType.application("x-blender"), "BLENDER-v300REND");
+        assertDetected(MediaType.application("x-blender"), "BLENDER_v244REND");
+        assertDetected(MediaType.application("x-fbx"), "Kaydara FBX Binary  \u0000\u001a\u0000");
+        assertDetected(MediaType.application("x-jw-cad"), "JwwData.¼\u0002\u0000\u0000");
+        assertDetected(MediaType.application("x-fastcad"), "FCW (FastCAD for Windows) 6.20.0\r\n\u001a");
+        assertDetected(MediaType.application("x-source-bsp"), "VBSP\u0014\u0000\u0000\u0000");
+        assertDetected(MediaType.OCTET_STREAM, "VBSP\u0002\u0000\u0000\u0000");
+    }
+
+    @Test
+    public void testGameAudioAndDataFormats() throws Exception {
+        assertDetected(MediaType.application("x-unreal-uz"),
+                "Ò\u0004\u0000\u0000\u0011FCommandoReg.utx\u0000¡É");
+        assertDetected(MediaType.audio("x-soundfont"), "RIFF\u0000\u0010\u0000\u0000sfbkLIST");
+        assertDetected(MediaType.application("x-zsync"), "zsync: 0.6.2\nFilename: x.tcz\n");
+        assertDetected(MediaType.application("x-wfdb-annotation"),
+                "\u0000X\u0017ü## time resolution: 250\u0000\u0000");
+    }
+
     private static void assertDetected(MediaType expected, String latin1) throws IOException {
         byte[] bytes = new byte[64];
         byte[] header = latin1.getBytes(ISO_8859_1);

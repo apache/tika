@@ -3914,6 +3914,14 @@
     </magic>
     <glob pattern="*.torrent"/>
   </mime-type>
+  <mime-type type="application/x-blender">
+    <_comment>Blender scene</_comment>
+    <magic priority="50">
+      <!-- then pointer size (_ 32-bit, - 64-bit), endianness, version -->
+      <match value="BLENDER[_-][vV][0-9]" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.blend"/>
+  </mime-type>
 
   <mime-type type="application/x-bplist">
     <!-- this is the binary verision of x-plist -->
@@ -4256,6 +4264,13 @@
       </match>
     </magic>
   </mime-type>
+  <mime-type type="application/x-fbx">
+    <_comment>Autodesk FBX (binary)</_comment>
+    <magic priority="50">
+      <match value="Kaydara FBX Binary  \x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.fbx"/>
+  </mime-type>
 
   <mime-type type="application/x-killustrator">
     <_comment>KIllustrator File</_comment>
@@ -4284,6 +4299,13 @@
         <match value="0x0002" type="string" offset="16"/>
       </match>
     </magic>
+  </mime-type>
+  <mime-type type="application/x-fastcad">
+    <_comment>FastCAD drawing</_comment>
+    <magic priority="50">
+      <match value="FCW (FastCAD for Windows)" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.fcw"/>
   </mime-type>
   <mime-type type="application/x-sharedlib">
     <sub-class-of type="application/x-elf"/>
@@ -4629,6 +4651,15 @@
     <magic priority="50">
       <match value="JigsawDownload template" offset="0"/>
     </magic>
+  </mime-type>
+  <mime-type type="application/x-jw-cad">
+    <_comment>Jw_cad drawing</_comment>
+    <magic priority="50">
+      <match value="JwwData." type="string" offset="0"/>
+      <match value="JwsData." type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jww"/>
+    <glob pattern="*.jws"/>
   </mime-type>
   <mime-type type="application/x-kdelnk">
     <magic priority="50">
@@ -5529,6 +5560,16 @@
     </magic>
     <glob pattern="*.sz"/>
   </mime-type>
+  <mime-type type="application/x-source-bsp">
+    <_comment>Valve Source engine map</_comment>
+    <magic priority="50">
+      <!-- then version 0x10-0x1f (Half-Life 2 .. CS:GO use 19-21) -->
+      <match value="VBSP" type="string" offset="0">
+        <match value="0x11" mask="0xF0" type="string" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.bsp"/>
+  </mime-type>
   <mime-type type="application/x-spectrum-rzx">
     <_comment>ZX Spectrum input recording (RZX)</_comment>
     <magic priority="50">
@@ -5890,6 +5931,15 @@
     </magic>
     <glob pattern="*.uc2"/>
   </mime-type>
+  <mime-type type="application/x-unreal-uz">
+    <_comment>Unreal Tournament compressed package</_comment>
+    <magic priority="50">
+      <!-- UZ (1234) or UZ2 (5678), then the original file name: compact length, name, NUL -->
+      <match value="(?s)(?:\\xd2\\x04|\\x2e\\x16)\\x00\\x00[\\x02-\\x3f][\\x20-\\x7e]+\\.u[a-z]{0,2}\\x00" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.uz"/>
+    <glob pattern="*.uz2"/>
+  </mime-type>
   <mime-type type="application/x-ustar">
     <glob pattern="*.ustar"/>
   </mime-type>
@@ -5916,6 +5966,16 @@
   <mime-type type="application/x-webarchive">
     <sub-class-of type="application/x-bplist"/>
     <glob pattern="*.webarchive"/>
+  </mime-type>
+  <mime-type type="application/x-wfdb-annotation">
+    <_comment>PhysioNet WFDB annotation</_comment>
+    <magic priority="50">
+      <!-- NOTE annotation (type 22) carrying the "## time resolution" aux string -->
+      <match value="0x0058" type="string" offset="0">
+        <match value="## time resolution: " type="string" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.atr"/>
   </mime-type>
 
   <mime-type type="application/x-x509-cert">
@@ -6069,6 +6129,13 @@
       <match value="0xfdc4a7dc" type="little32" offset="20"/>
     </magic>
     <glob pattern="*.zoo"/>
+  </mime-type>
+  <mime-type type="application/x-zsync">
+    <_comment>zsync control file</_comment>
+    <magic priority="50">
+      <match value="zsync: " type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.zsync"/>
   </mime-type>
 
   <mime-type type="application/x400-bp"/>
@@ -6507,6 +6574,15 @@
       <match value="SAP\r\n" type="string" offset="0"/>
     </magic>
     <glob pattern="*.sap"/>
+  </mime-type>
+  <mime-type type="audio/x-soundfont">
+    <_comment>SoundFont 2 bank</_comment>
+    <magic priority="50">
+      <match value="RIFF" type="string" offset="0">
+        <match value="sfbk" type="string" offset="8"/>
+      </match>
+    </magic>
+    <glob pattern="*.sf2"/>
   </mime-type>
   <mime-type type="audio/x-oggflac">
     <_comment>Ogg Packaged Free Lossless Audio Codec</_comment>
@@ -8042,6 +8118,13 @@
     <glob pattern="*.e57"/>
   </mime-type>
   <mime-type type="model/example"/>
+  <mime-type type="model/gltf-binary">
+    <_comment>glTF binary</_comment>
+    <magic priority="50">
+      <match value="glTF\x02\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.glb"/>
+  </mime-type>
   <mime-type type="model/iges">
     <_comment>Initial Graphics Exchange Specification Format</_comment>
     <glob pattern="*.igs"/>
