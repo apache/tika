@@ -1024,6 +1024,13 @@
   </mime-type>
   <mime-type type="application/pkix-crl">
     <glob pattern="*.crl"/>
+    <magic priority="50">
+      <!-- DER v2 CertificateList: SEQUENCE { SEQUENCE { INTEGER 1, AlgorithmIdentifier { OID ...
+           any signature algorithm; long-form outer length, short or long inner.
+           A v1 certificate with serial 1 starts the same way; its validity SEQUENCE { Time, Time }
+           (never in a CRL) rules it out -->
+      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x02\\x01\\x01\\x30[\\x00-\\x7f]\\x06(?!.{0,512}?\\x30(?:\\x1e\\x17\\x0d|\\x20(?:\\x17\\x0d|\\x18\\x0f)|\\x22\\x18\\x0f))" type="regex" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/pkix-pkipath">
     <glob pattern="*.pkipath"/>
@@ -1245,7 +1252,14 @@
     <glob pattern="*.ssml"/>
   </mime-type>
   <mime-type type="application/timestamp-query"/>
-  <mime-type type="application/timestamp-reply"/>
+  <mime-type type="application/timestamp-reply">
+    <magic priority="50">
+      <!-- RFC 3161 TimeStampResp: SEQUENCE { PKIStatusInfo { INTEGER status, ... },
+           then the token, a CMS signedData ContentInfo -->
+      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30[\\x03-\\x7f]\\x02\\x01[\\x00-\\x05].{0,160}?\\x06\\x09\\x2a\\x86\\x48\\x86\\xf7\\x0d\\x01\\x07\\x02" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.tsr"/>
+  </mime-type>
   <mime-type type="application/tve-trigger"/>
   <mime-type type="application/ulpfec"/>
   <mime-type type="application/vemmi"/>
@@ -3930,6 +3944,14 @@
     <sub-class-of type="application/xml"/>
   </mime-type>
 
+  <mime-type type="application/x-casio-fxi">
+    <_comment>Casio calculator data (Yellow Computing FX-Interface)</_comment>
+    <magic priority="50">
+      <!-- "FX-INTERFACE" XOR 0xE7 -->
+      <match value="0xA1BFCAAEA9B3A2B5A1A6A4A2" type="string" offset="3"/>
+    </magic>
+    <glob pattern="*.fxi"/>
+  </mime-type>
   <mime-type type="application/x-cdf">
     <_comment>CD Audio</_comment>
     <magic priority="50">
@@ -3953,6 +3975,14 @@
     <magic priority="50">
       <match value="MsRcf\x00" type="string" offset="0"/>
     </magic>
+  </mime-type>
+  <mime-type type="application/x-gbx">
+    <_comment>Nadeo GameBox (TrackMania, ManiaPlanet)</_comment>
+    <magic priority="50">
+      <!-- version 3-6, then format and compression flags -->
+      <match value="GBX[\x03-\x06]\x00[BT][UC][UC]" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.gbx"/>
   </mime-type>
   <mime-type type="application/x-gettext-translation">
     <_comment>GNU gettext message catalog</_comment>
@@ -4044,6 +4074,21 @@
       <match value="Cr24" type="string" offset="0"/>
     </magic>
     <glob pattern="*.crx"/>
+  </mime-type>
+  <mime-type type="application/x-clamav-database">
+    <_comment>ClamAV signature database</_comment>
+    <magic priority="50">
+      <match value="ClamAV-VDB:" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.cvd"/>
+    <glob pattern="*.cld"/>
+  </mime-type>
+  <mime-type type="application/x-clamav-diff">
+    <_comment>ClamAV signature database update</_comment>
+    <magic priority="50">
+      <match value="ClamAV-Diff:" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.cdiff"/>
   </mime-type>
 
   <mime-type type="application/x-compress">
@@ -4291,6 +4336,12 @@
     </match>
     </magic>
     <glob pattern="*.fp7" />
+  </mime-type>
+  <mime-type type="application/x-finale">
+    <_comment>Finale notation (Enigma binary)</_comment>
+    <magic priority="50">
+      <match value="ENIGMA BINARY FILE" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-font-bdf">
@@ -4647,6 +4698,13 @@
     <_comment>LZMA compressed archive</_comment>
     <glob pattern="*.lzma"/>
   </mime-type>
+  <mime-type type="application/x-lzx">
+    <_comment>Amiga LZX archive</_comment>
+    <magic priority="50">
+      <match value="LZX\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lzx"/>
+  </mime-type>
   <mime-type type="application/x-mach-o">
     <_comment>Mach-O</_comment>
     <tika:link>https://www.nationalarchives.gov.uk/PRONOM/fmt/692</tika:link>
@@ -4849,6 +4907,14 @@
     <_comment>Apple Xcode Memgraph</_comment>
     <sub-class-of type="application/x-bplist"/>
     <glob pattern="*.memgraph"/>
+  </mime-type>
+  <mime-type type="application/x-mikrotik-npk">
+    <_comment>MikroTik RouterOS package</_comment>
+    <magic priority="50">
+      <match value="0x1EF1D0BA" type="string" offset="0"/>
+      <match value="0xFB0F10A1" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.npk"/>
   </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
@@ -5111,6 +5177,23 @@
       <match value="0x43444601" type="string" offset="0"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-nufx">
+    <_comment>NuFX (ShrinkIt) archive</_comment>
+    <magic priority="50">
+      <match value="0x4EF546E96CE5" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.shk"/>
+  </mime-type>
+  <mime-type type="application/x-nwc">
+    <_comment>NoteWorthy Composer song</_comment>
+    <magic priority="50">
+      <!-- compressed: zlib stream follows -->
+      <match value="[NWZ]\x00\x78" type="string" offset="0"/>
+      <match value="[NoteWorthy ArtWare]" type="string" offset="0"/>
+      <match value="[NoteWorthy Composer]" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.nwc"/>
+  </mime-type>
   <mime-type type="application/x-parquet">
     <glob pattern="*.parquet"/>
     <magic priority="50">
@@ -5155,6 +5238,20 @@
     <magic priority="50">
       <match value="0M3C" type="string" offset="8" />
     </magic>
+  </mime-type>
+  <mime-type type="application/x-ps3-package">
+    <_comment>PlayStation 3/PSP package</_comment>
+    <magic priority="50">
+      <!-- then package type: 0x80000001 retail, 0x00000001 debug -->
+      <match value="0x7F504B4700000001" mask="0xFFFFFFFF7FFFFFFF" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-ps3-theme">
+    <_comment>PlayStation 3 theme</_comment>
+    <magic priority="50">
+      <match value="P3TF\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.p3t"/>
   </mime-type>
 
   <mime-type type="application/x-quattro-pro">
@@ -5432,6 +5529,13 @@
     </magic>
     <glob pattern="*.sz"/>
   </mime-type>
+  <mime-type type="application/x-spectrum-rzx">
+    <_comment>ZX Spectrum input recording (RZX)</_comment>
+    <magic priority="50">
+      <match value="RZX!\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.rzx"/>
+  </mime-type>
 
   <mime-type type="application/x-sfdu">
     <_comment>Standard Formatted Data Units (SFDUs) data</_comment>
@@ -5700,6 +5804,13 @@
     </magic>
     <!-- do we want to use this for such a rare format?   <glob pattern="*.rpy"/> -->
   </mime-type>
+  <mime-type type="application/x-trainz-cdp">
+    <_comment>Trainz content package</_comment>
+    <magic priority="50">
+      <match value="ACS$\x01\x00\x00\x00\x00\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.cdp"/>
+  </mime-type>
 
   <!-- =================================================================== -->
   <!-- Microsoft Office binary file formats                                -->
@@ -5822,6 +5933,11 @@
   <mime-type type="application/x-x509-cert;format=der">
     <sub-class-of type="application/x-x509-cert"/>
     <glob pattern="*.der"/>
+    <magic priority="50">
+      <!-- Certificate { TBSCertificate { [0] version v1-v3, serialNumber INTEGER ...
+           any signature algorithm (SM2, Ed25519, ...) -->
+      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:\\x81.|\\x82..|\\x83...)\\xa0\\x03\\x02\\x01[\\x00-\\x02]\\x02" type="regex" offset="0"/>
+    </magic>
     <magic priority="50">
       <match value="0x3080" type="string"
               mask="0xFFF8" offset="0">
@@ -6365,6 +6481,15 @@
     <glob pattern="*.gsf"/> -->
     <glob pattern="*.gslib"/>
     <glob pattern="*.minigsf"/>
+  </mime-type>
+  <mime-type type="audio/x-rex2">
+    <_comment>Propellerhead ReCycle REX2 loop</_comment>
+    <magic priority="50">
+      <match value="CAT " type="string" offset="0">
+        <match value="REX2HEAD" type="string" offset="8"/>
+      </match>
+    </magic>
+    <glob pattern="*.rx2"/>
   </mime-type>
   <mime-type type="audio/x-s3m">
     <_comment>Scream Tracker 3 module</_comment>
@@ -7489,6 +7614,14 @@
       </match>
     </magic>
     <glob pattern="*.ppm"/>
+  </mime-type>
+  <mime-type type="image/x-quake-sprite">
+    <_comment>Quake (v1) / Half-Life (v2) sprite</_comment>
+    <magic priority="50">
+      <match value="IDSP\x01\x00\x00\x00" type="string" offset="0"/>
+      <match value="IDSP\x02\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.spr"/>
   </mime-type>
   <mime-type type="image/x-portable-arbitrarymap">
     <sub-class-of type="image/x-portable-anymap"/>
@@ -9464,6 +9597,16 @@
   <mime-type type="audio/x-matroska">
     <sub-class-of type="application/x-matroska"/>
     <glob pattern="*.mka" />
+  </mime-type>
+  <mime-type type="audio/x-mfi">
+    <_comment>i-mode MFi melody</_comment>
+    <magic priority="50">
+      <!-- then lengths, types, track count and the first chunk name -->
+      <match value="melo" type="string" offset="0">
+        <match value="[a-z]{4}" type="regex" offset="13"/>
+      </match>
+    </magic>
+    <glob pattern="*.mld"/>
   </mime-type>
 
   <mime-type type="video/webm">

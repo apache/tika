@@ -128,6 +128,47 @@ public class NicheFormatDetectionTest {
                 + "\u0000".repeat(14) + "SCRM");
     }
 
+    @Test
+    public void testMusicAndAudioFormats() throws Exception {
+        assertDetected(MediaType.application("x-nwc"), "[NWZ]\u0000xÚ");
+        assertDetected(MediaType.application("x-nwc"), "[NoteWorthy ArtWare]\u0000");
+        assertDetected(MediaType.application("x-finale"), "ENIGMA BINARY FILE\u0000");
+        assertDetected(MediaType.audio("x-rex2"), "CAT \u0000\t\u0000\u0000REX2HEAD");
+        assertDetected(MediaType.audio("x-mfi"), "melo\u0000\u0000\u0011#\u0000]\u0001\u0001\u0004vers");
+        assertDetected(MediaType.OCTET_STREAM, "melody\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000");
+    }
+
+    @Test
+    public void testGameAndConsoleFormats() throws Exception {
+        assertDetected(MediaType.application("x-gbx"), "GBX\u0006\u0000BUCR");
+        assertDetected(MediaType.application("x-gbx"), "GBX\u0003\u0000BUC");
+        assertDetected(MediaType.OCTET_STREAM, "GBX\t\u0000BUCR");
+        assertDetected(MediaType.application("x-ps3-package"), "\u007fPKG\u0080\u0000\u0000\u0001");
+        assertDetected(MediaType.application("x-ps3-package"), "\u007fPKG\u0000\u0000\u0000\u0001");
+        assertDetected(MediaType.application("x-ps3-theme"), "P3TF\u0000\u0000\u0001\u0010");
+        assertDetected(MediaType.application("x-trainz-cdp"), "ACS$\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-spectrum-rzx"), "RZX!\u0000\f");
+        assertDetected(MediaType.image("x-quake-sprite"), "IDSP\u0002\u0000\u0000\u0000");
+    }
+
+    @Test
+    public void testArchivesAndPackages() throws Exception {
+        assertDetected(MediaType.application("x-nufx"), "NõFélå§³");
+        assertDetected(MediaType.application("x-lzx"), "LZX\u0000\f\u0000\n\u0004");
+        assertDetected(MediaType.application("x-mikrotik-npk"), "\u001eñÐº");
+        assertDetected(MediaType.application("x-clamav-diff"), "ClamAV-Diff:119:526:");
+        assertDetected(MediaType.application("x-clamav-database"), "ClamAV-VDB:01 Jan 2020");
+    }
+
+    @Test
+    public void testCasioFxInterface() throws Exception {
+        StringBuilder fxi = new StringBuilder("20");
+        for (char c : "\u001fFX-INTERFACE - YELLOW COMPUTING".toCharArray()) {
+            fxi.append((char) (c ^ 0xe7));
+        }
+        assertDetected(MediaType.application("x-casio-fxi"), fxi.toString());
+    }
+
     private static void assertDetected(MediaType expected, String latin1) throws IOException {
         byte[] bytes = new byte[64];
         byte[] header = latin1.getBytes(ISO_8859_1);

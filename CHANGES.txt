@@ -96,6 +96,18 @@ Release 4.3.0 - ???
      modules and Monkey's Audio files are detected by content, and so are MARC records
      with a blank bibliographic level; they were application/octet-stream (TIKA-5029).
 
+   * NoteWorthy Composer songs, Finale (Enigma binary) scores, ReCycle REX2 loops, i-mode
+     MFi melodies, TrackMania/ManiaPlanet GameBox files, PlayStation 3 packages and themes,
+     Trainz content packages, ZX Spectrum RZX recordings, Quake and Half-Life sprites,
+     NuFX (ShrinkIt) and Amiga LZX archives, MikroTik RouterOS packages and ClamAV
+     signature databases and updates, and Casio FX-Interface files are detected by
+     content; they were application/octet-stream (TIKA-5029).
+
+   * DER certificate revocation lists (application/pkix-crl), DER X.509 certificates
+     signed with any algorithm (only some RSA, DSA and ECDSA ones were matched, so SM2
+     and Ed25519 certificates were missed) and RFC 3161 time-stamp replies are detected
+     by content; they were application/octet-stream (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
