@@ -19,7 +19,6 @@ package org.apache.tika.parser.subtitle;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -115,30 +114,65 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    static boolean isTiming(String line) {
-        return line != null && line.contains("-->") && TIMING.matcher(line).find();
-    }
-
     /** {@code HH:MM:SS.mmm} for a time {@link #TIMING} matched, or null if out of range. */
     static String normalizeTime(String raw) {
-        String[] parts = raw.split("[:.,]");
-        boolean fraction = raw.indexOf('.') >= 0 || raw.indexOf(',') >= 0 || parts.length == 4;
-        int whole = fraction ? parts.length - 1 : parts.length;
-        String ms = fraction ? (parts[parts.length - 1] + "00").substring(0, 3) : "000";
-        long h = whole == 3 ? Long.parseLong(parts[0]) : 0;
-        int m = Integer.parseInt(parts[whole - 2]);
-        int s = Integer.parseInt(parts[whole - 1]);
+        // TIMING guarantees 2-4 digit fields separated by ':', '.' or ','
+        int[] starts = new int[4];
+        int[] ends = new int[4];
+        int n = 0;
+        boolean fraction = false;
+        for (int i = 0; i <= raw.length(); i++) {
+            if (i == raw.length() || !isDigit(raw.charAt(i))) {
+                ends[n++] = i;
+                if (i < raw.length()) {
+                    fraction |= raw.charAt(i) != ':';
+                    starts[n] = i + 1;
+                }
+            }
+        }
+        fraction |= n == 4;
+        int whole = fraction ? n - 1 : n;
+        long h = whole == 3 ? Long.parseLong(raw, starts[0], ends[0], 10) : 0;
+        int m = Integer.parseInt(raw, starts[whole - 2], ends[whole - 2], 10);
+        int s = Integer.parseInt(raw, starts[whole - 1], ends[whole - 1], 10);
         if (m > 59 || s > 59) {
             return null;
         }
-        return String.format(Locale.ROOT, "%02d:%02d:%02d.%s", h, m, s, ms);
+        StringBuilder sb = new StringBuilder(16);
+        pad2(sb, h).append(':');
+        pad2(sb, m).append(':');
+        pad2(sb, s).append('.');
+        if (fraction) {
+            sb.append(raw, starts[n - 1], ends[n - 1]);
+            for (int i = ends[n - 1] - starts[n - 1]; i < 3; i++) {
+                sb.append('0');
+            }
+        } else {
+            sb.append("000");
+        }
+        return sb.toString();
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private static StringBuilder pad2(StringBuilder sb, long v) {
+        return (v < 10 ? sb.append('0') : sb).append(v);
     }
 
     static String clean(String line, boolean vtt) {
+        boolean tag = line.indexOf('<') >= 0;
         if (vtt) {
+            if (!tag) {
+                return decodeEntities(line);
+            }
             return decodeEntities(VTT_TAG.matcher(line).replaceAll(""));
         }
-        return SSA_OVERRIDE.matcher(SRT_TAG.matcher(line).replaceAll("")).replaceAll("");
+        if (tag) {
+            line = SRT_TAG.matcher(line).replaceAll("");
+        }
+        return line.indexOf('{') < 0 ? line : SSA_OVERRIDE.matcher(line).replaceAll("");
     }
 
     private static String decodeEntities(String s) {
@@ -189,6 +223,9 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
         private String pendingId;
         private boolean divOpen;
         private boolean pOpen;
+        // each line is checked as the look-ahead, then again as the current line
+        private String timingLine;
+        private Matcher timingMatch;
 
         CueWriter(XHTMLContentHandler xhtml, Metadata metadata, boolean vtt) {
             this.xhtml = xhtml;
@@ -261,8 +298,8 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
                 default:
                     break;
             }
-            Matcher timing = TIMING.matcher(line);
-            if (line.contains("-->") && timing.find()) {
+            Matcher timing = timing(line);
+            if (timing != null) {
                 closeDiv();
                 block = Block.CUE;
                 pendingCue = new AttributesImpl();
@@ -275,12 +312,24 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
                     pendingCue.addAttribute("", "data-id", "data-id", "CDATA", pendingId);
                     pendingId = null;
                 }
-            } else if (isTiming(next)) {
+            } else if (timing(next) != null) {
                 // a line right before a timing line is that cue's identifier
                 pendingId = line.strip();
             } else {
                 text(line);
             }
+        }
+
+        /** The {@link #TIMING} match for {@code s}, or null; cached for the last line asked. */
+        private Matcher timing(String s) {
+            if (s != timingLine) {
+                timingLine = s;
+                timingMatch = s != null && s.contains("-->") ? TIMING.matcher(s) : null;
+                if (timingMatch != null && !timingMatch.find()) {
+                    timingMatch = null;
+                }
+            }
+            return timingMatch;
         }
 
         private void addTime(String name, String raw) {
