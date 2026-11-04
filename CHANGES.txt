@@ -100,6 +100,11 @@ Release 4.3.0 - ???
      becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
      **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
 
+   * The junk detector, which arbitrates between candidate charsets, decodes numeric
+     character references in HTML as browsers do: &#128;-&#159; are the windows-1252
+     characters (&#150; is an en dash, not a C1 control), and &#0;, surrogates and values
+     past U+10FFFF are U+FFFD. One pass, so &#38;#x41; stays &#x41; (TIKA-5044).
+
   OTHER CHANGES
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
