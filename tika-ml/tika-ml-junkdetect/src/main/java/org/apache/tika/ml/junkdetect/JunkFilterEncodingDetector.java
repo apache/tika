@@ -541,7 +541,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
      * Keeps the first STATISTICAL candidate over {@code champion} when a DECLARATIVE candidate
      * names the same charset: two independent signals agreeing beat a quality argmax, whose
      * sibling margins here are typically ~0.005 (cc-html train: 79 fixed, 0 broken).  The BOM
-     * result is not the statistical model's pick, so it is skipped.
+     * result is not the statistical model's pick, so it is skipped; a STRUCTURAL champion is kept.
      */
     private static Charset keepStatisticalTop(EncodingDetectorContext context, Charset champion,
                                               Map<Charset, Double> scoreByCharset) {
@@ -564,6 +564,10 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             for (EncodingResult er : r.getEncodingResults()) {
                 declared |= er.getResultType() == EncodingResult.ResultType.DECLARATIVE
                         && er.getCharset().equals(top);
+                if (er.getResultType() == EncodingResult.ResultType.STRUCTURAL
+                        && er.getCharset().equals(champion)) {
+                    return champion;
+                }
             }
         }
         return declared ? top : champion;
@@ -572,12 +576,15 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     /**
      * True if some detector produced a confident non-declarative signal: any
      * STRUCTURAL result (byte-grammar proof), or any STATISTICAL result above
-     * {@link #NO_INFO_CONFIDENCE}.  When false, the statistical layer has
+     * {@link #NO_INFO_CONFIDENCE}; the BOM hint does not count.  When false, the statistical layer has
      * effectively abstained (only its "I don't know" fallback), so a
      * declaration should be trusted over a quality argmax.
      */
     private static boolean hasConfidentNonDeclarative(EncodingDetectorContext context) {
         for (EncodingDetectorContext.Result r : context.getResults()) {
+            if (isBomResult(r)) {
+                continue;
+            }
             for (EncodingResult er : r.getEncodingResults()) {
                 EncodingResult.ResultType t = er.getResultType();
                 if (t == EncodingResult.ResultType.STRUCTURAL) {

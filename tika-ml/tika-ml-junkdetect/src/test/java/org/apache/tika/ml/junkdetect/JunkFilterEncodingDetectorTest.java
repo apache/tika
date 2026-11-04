@@ -554,24 +554,112 @@ public class JunkFilterEncodingDetectorTest {
         ParseContext pc = new ParseContext();
         pc.set(EncodingDetectorContext.class, ctx);
 
-        // quality prefers the windows-1252 decode ("cafÃ©")
-        TextQualityDetector prefers1252 = new TextQualityDetector() {
-            @Override
-            public TextQualityScore score(String text) {
-                return new TextQualityScore(text.indexOf('\u00c3') >= 0 ? -1f : -5f,
-                        Float.NaN, Float.NaN, Float.NaN, "LATIN");
-            }
-
-            @Override
-            public TextQualityComparison compare(String labelA, String candidateA,
-                                                 String labelB, String candidateB) {
-                throw new UnsupportedOperationException();
-            }
-        };
+        // quality prefers the windows-1252 decode ("caf\u00c3\u00a9")
+        TextQualityDetector prefers1252 = new ContainsStub('\u00c3');
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             List<EncodingResult> out = new JunkFilterEncodingDetector(prefers1252)
                     .detect(tis, new Metadata(), pc);
             assertEquals(win1252, out.get(0).getCharset());
         }
+    }
+
+    /** Scores text containing {@code marker} as clean, anything else as junk. */
+    private static final class ContainsStub implements TextQualityDetector {
+        private final char marker;
+
+        ContainsStub(char marker) {
+            this.marker = marker;
+        }
+
+        @Override
+        public TextQualityScore score(String text) {
+            return new TextQualityScore(text.indexOf(marker) >= 0 ? -1f : -5f,
+                    Float.NaN, Float.NaN, Float.NaN, "LATIN");
+        }
+
+        @Override
+        public TextQualityComparison compare(String labelA, String candidateA,
+                                             String labelB, String candidateB) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static List<EncodingResult> detect(byte[] bytes, TextQualityDetector quality,
+                                               EncodingDetectorContext ctx) throws Exception {
+        ParseContext pc = new ParseContext();
+        pc.set(EncodingDetectorContext.class, ctx);
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            return new JunkFilterEncodingDetector(quality).detect(tis, new Metadata(), pc);
+        }
+    }
+
+    private static EncodingResult result(Charset cs, float conf, EncodingResult.ResultType t) {
+        return new EncodingResult(cs, conf, cs.name(), t);
+    }
+
+    /** Argmax picks windows-1252; Mojibuster's top and the meta tag agree on windows-1251. */
+    @Test
+    public void declarationAgreeingWithStatisticalTopBeatsArgmax() throws Exception {
+        Charset win1251 = Charset.forName("windows-1251");
+        Charset win1252 = Charset.forName("windows-1252");
+        byte[] bytes = "caf\u00e9 cr\u00e8me br\u00fbl\u00e9e".getBytes(win1252);
+        TextQualityDetector prefers1252 = new ContainsStub('\u00e9');
+
+        EncodingDetectorContext noMeta = new EncodingDetectorContext();
+        noMeta.addResult(List.of(result(win1251, 0.8f, EncodingResult.ResultType.STATISTICAL),
+                result(win1252, 0.5f, EncodingResult.ResultType.STATISTICAL)),
+                "MojibusterEncodingDetector");
+        assertEquals(win1252, detect(bytes, prefers1252, noMeta).get(0).getCharset());
+
+        EncodingDetectorContext withMeta = new EncodingDetectorContext();
+        withMeta.addResult(List.of(result(win1251, 1.0f, EncodingResult.ResultType.DECLARATIVE)),
+                "HtmlEncodingDetector");
+        withMeta.addResult(List.of(result(win1251, 0.8f, EncodingResult.ResultType.STATISTICAL),
+                result(win1252, 0.5f, EncodingResult.ResultType.STATISTICAL)),
+                "MojibusterEncodingDetector");
+        assertEquals(win1251, detect(bytes, prefers1252, withMeta).get(0).getCharset());
+    }
+
+    /** A statistical pick plus a matching meta tag must not beat structurally valid UTF-8. */
+    @Test
+    public void declarationAgreeingWithStatisticalPickKeepsStructuralChampion() throws Exception {
+        Charset utf8 = StandardCharsets.UTF_8;
+        Charset win1252 = Charset.forName("windows-1252");
+        byte[] bytes = "caf\u00e9 cr\u00e8me br\u00fbl\u00e9e".getBytes(utf8);
+
+        EncodingDetectorContext ctx = new EncodingDetectorContext();
+        ctx.addResult(List.of(result(win1252, 1.0f, EncodingResult.ResultType.DECLARATIVE)),
+                "HtmlEncodingDetector");
+        ctx.addResult(List.of(result(utf8, 1.0f, EncodingResult.ResultType.STRUCTURAL)),
+                "MojibusterEncodingDetector");
+        ctx.addResult(List.of(result(win1252, 0.6f, EncodingResult.ResultType.STATISTICAL)),
+                "Icu4jEncodingDetector");
+        assertEquals(utf8, detect(bytes, new ContainsStub('\u00e9'), ctx).get(0).getCharset());
+    }
+
+    /** An accepted BOM is not a confident statistical answer: with Mojibuster abstaining, the
+     *  declaration wins. */
+    @Test
+    public void bomDoesNotBlockDeferToDeclaration() throws Exception {
+        Charset utf8 = StandardCharsets.UTF_8;
+        Charset iso2 = Charset.forName("ISO-8859-2");
+        Charset win1252 = Charset.forName("windows-1252");
+        byte[] body = "caf\u00e9 cr\u00e8me br\u00fbl\u00e9e".getBytes(utf8);
+        byte[] bytes = new byte[body.length + 3];
+        bytes[0] = (byte) 0xEF;
+        bytes[1] = (byte) 0xBB;
+        bytes[2] = (byte) 0xBF;
+        System.arraycopy(body, 0, bytes, 3, body.length);
+
+        EncodingDetectorContext ctx = new EncodingDetectorContext();
+        ctx.addResult(List.of(result(utf8, 0.9f, EncodingResult.ResultType.STATISTICAL)),
+                BOMDetector.class.getSimpleName());
+        ctx.addResult(List.of(result(iso2, 1.0f, EncodingResult.ResultType.DECLARATIVE)),
+                "HtmlEncodingDetector");
+        ctx.addResult(List.of(result(win1252, 0.1f, EncodingResult.ResultType.STATISTICAL)),
+                "MojibusterEncodingDetector");
+        List<EncodingResult> out = detect(bytes, new ContainsStub('\u00e9'), ctx);
+        assertEquals(iso2, out.get(0).getCharset());
+        assertEquals("junk-filter-defer-no-info", ctx.getArbitrationInfo());
     }
 }

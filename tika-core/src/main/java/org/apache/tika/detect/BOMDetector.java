@@ -24,6 +24,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -83,17 +84,25 @@ public class BOMDetector implements EncodingDetector {
     @Override
     public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
                                        ParseContext parseContext) throws IOException {
+        byte[] head = new byte[4];
+        tis.mark(head.length);
+        int headRead;
+        try {
+            headRead = IOUtils.read(tis, head);
+        } finally {
+            tis.reset();
+        }
+        if (headRead < MIN_BYTES || bomLength(Arrays.copyOf(head, headRead)) == 0) {
+            return Collections.emptyList();
+        }
         tis.mark(PROBE_BYTES);
         byte[] bytes;
         boolean endOfInput;
         try {
             byte[] buf = new byte[PROBE_BYTES];
             int numRead = IOUtils.read(tis, buf);
-            if (numRead < MIN_BYTES) {
-                return Collections.emptyList();
-            }
             endOfInput = numRead < PROBE_BYTES;
-            bytes = numRead == buf.length ? buf : java.util.Arrays.copyOf(buf, numRead);
+            bytes = numRead == buf.length ? buf : Arrays.copyOf(buf, numRead);
         } finally {
             tis.reset();
         }
@@ -158,7 +167,7 @@ public class BOMDetector implements EncodingDetector {
         } finally {
             tis.reset();
         }
-        head = java.util.Arrays.copyOf(head, n);
+        head = Arrays.copyOf(head, n);
         int skip = 0;
         // FF FE 00 00 is both the UTF-32LE BOM and the UTF-16LE BOM: keep it if either is ours
         for (int i = 0; i < BOMS.length; i++) {

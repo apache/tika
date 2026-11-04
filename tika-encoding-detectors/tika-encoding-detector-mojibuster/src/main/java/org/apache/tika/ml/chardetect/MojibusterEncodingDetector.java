@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -250,7 +251,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         byte[] withBom = probe;
         int bom = probe == null ? 0 : BOMDetector.bomLength(probe);
         if (bom > 0) {
-            probe = java.util.Arrays.copyOfRange(probe, bom, probe.length);
+            probe = Arrays.copyOfRange(probe, bom, probe.length);
         }
         if (LOG.isTraceEnabled()) {
             int probeLen = probe == null ? 0 : probe.length;
@@ -542,12 +543,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 || (cp >= 0x3000 && cp <= 0x303F); // CJK symbols/punctuation
     }
 
-    /**
-     * Pure 7-bit ASCII test: no bytes &ge; 0x80 and no null bytes.
-     * Null-byte exclusion prevents misclassifying UTF-16/32 content
-     * whose bytes happen to be all &lt; 0x80 (all-Cyrillic UTF-16-LE
-     * would satisfy the high-byte test alone).
-     */
     private static int countReplacementChars(byte[] probe) {
         int n = 0;
         for (int i = 0; i + 2 < probe.length; i++) {
@@ -559,6 +554,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         return n;
     }
 
+    /**
+     * Pure 7-bit ASCII test: no bytes &ge; 0x80 and no null bytes.
+     * Null-byte exclusion prevents misclassifying UTF-16/32 content
+     * whose bytes happen to be all &lt; 0x80 (all-Cyrillic UTF-16-LE
+     * would satisfy the high-byte test alone).
+     */
     private static boolean isPureAscii(byte[] probe) {
         for (byte b : probe) {
             int c = b & 0xFF;
