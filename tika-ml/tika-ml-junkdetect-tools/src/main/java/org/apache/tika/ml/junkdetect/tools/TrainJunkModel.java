@@ -204,7 +204,9 @@ public class TrainJunkModel {
         Path output = null;
         String gitCommit = null;
         for (int i = 0; i < args.length; i++) {
-            if (i + 1 >= args.length) {
+            boolean known = args[i].equals("--data-dir") || args[i].equals("--output")
+                    || args[i].equals("--git-commit");
+            if (known && i + 1 >= args.length) {
                 System.err.println("ERROR: " + args[i] + " needs a value");
                 System.exit(1);
             }
