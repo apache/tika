@@ -38,13 +38,11 @@ import org.apache.tika.mime.MediaType;
  */
 final class ZipPreview {
 
-    static final MediaType COMIC_BOOK = MediaType.application("vnd.comicbook+zip");
-
     private static final Set<String> IMAGE_EXTENSIONS =
             Set.of("jpg", "jpeg", "png", "gif", "webp", "bmp", "avif", "jxl");
 
     private static final Map<MediaType, Function<ZipFile, String>> SELECTORS = Map.of(
-            COMIC_BOOK, ZipPreview::firstImageByName,
+            MediaType.application("vnd.comicbook+zip"), ZipPreview::firstImageByName,
             MediaType.application("x-krita"), entry("preview.png"),
             MediaType.image("openraster"), entry("Thumbnails/thumbnail.png"),
             MediaType.application("x-extension-fcstd"), entry("thumbnails/Thumbnail.png"),
