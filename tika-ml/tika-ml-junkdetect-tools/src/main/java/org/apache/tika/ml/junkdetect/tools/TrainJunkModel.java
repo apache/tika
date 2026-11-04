@@ -277,10 +277,9 @@ public class TrainJunkModel {
         // file via forEachScriptBigram (the SAME tokenizer inference uses): the
         // text is split into maximal same-script LETTER runs (marks attach), each
         // run wrapped TOKEN_START..TOKEN_END, and the within-run bigrams (incl. the
-        // ^/$ edges) tallied to the run's script.  Non-letters are boundaries and
-        // emit nothing, so the trained tables hold exactly the bigrams inference
-        // scores.  The COMMON bucket is now effectively vestigial (only the rare
-        // COMMON-scripted letter lands there).
+        // ^/$ edges) tallied to the run's script.  In-run punctuation/symbols/digits
+        // attach as glue; whitespace and anomalies end a run.  The trained tables
+        // therefore hold exactly the bigrams inference scores.
         // -----------------------------------------------------------------------
         System.out.println("\n--- Phase 1: bucket-by-script F1 tables ---");
         Map<String, HashMap<Long, long[]>> pairsByScript = new HashMap<>();
