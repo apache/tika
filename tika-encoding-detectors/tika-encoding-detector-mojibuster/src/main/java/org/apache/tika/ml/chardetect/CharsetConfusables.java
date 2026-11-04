@@ -115,7 +115,6 @@ public final class CharsetConfusables {
         m.put("ISO-8859-1",  "windows-1252");
         m.put("ISO-8859-15", "windows-1252");
         m.put("ISO-8859-2",  "windows-1250");
-        m.put("ISO-8859-4",  "windows-1257");
         m.put("ISO-8859-8",  "windows-1255");
         m.put("ISO-8859-9",  "windows-1254");
         m.put("ISO-8859-13", "windows-1257");
@@ -224,8 +223,9 @@ public final class CharsetConfusables {
                 // Turkish / Latin-5
                 group("ISO-8859-9", "windows-1254"),
 
-                // Baltic
-                group("ISO-8859-4", "ISO-8859-13", "windows-1257"),
+                // Baltic.  ISO-8859-4 is not a member: most of its letters sit at
+                // other bytes than in ISO-8859-13 / windows-1257.
+                group("ISO-8859-13", "windows-1257"),
 
                 // UTF-16 without BOM: byte-for-byte indistinguishable
                 group("UTF-16-LE", "UTF-16-BE"),

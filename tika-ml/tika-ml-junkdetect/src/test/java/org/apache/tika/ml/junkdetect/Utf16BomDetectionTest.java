@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -58,6 +59,20 @@ public class Utf16BomDetectionTest {
         bos.write(text().getBytes(cs));
         List<EncodingResult> results;
         try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+            results = new DefaultEncodingDetector().detect(tis, new Metadata(), new ParseContext());
+        }
+        assertFalse(results.isEmpty());
+        assertEquals(cs.name(), results.get(0).getDecodeAs().name());
+    }
+
+    // TODO BOM-less UTF-16 with U+xx00 code units: UTF-16 specialist rework (see utf16-hashed)
+    @Disabled
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-16LE", "UTF-16BE"})
+    public void noBomUtf16WithEmoji(String charset) throws Exception {
+        Charset cs = Charset.forName(charset);
+        List<EncodingResult> results;
+        try (TikaInputStream tis = TikaInputStream.get(text().getBytes(cs))) {
             results = new DefaultEncodingDetector().detect(tis, new Metadata(), new ParseContext());
         }
         assertFalse(results.isEmpty());

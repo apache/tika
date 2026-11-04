@@ -102,7 +102,8 @@ Release 4.3.0 - ???
      over ISO-8859-2 for Western text (TIKA-5019).
 
    * Charset detection treats a byte-order mark as a strong hint, not a declaration: it
-     is honored only when the bytes after it decode in that charset (TIKA-5019).
+     is honored only when the bytes after it decode in that charset, and a rejected BOM
+     is dropped rather than left in the text as junk characters (TIKA-5019).
 
    * Charset detection keeps the statistical detector's pick when an HTML or HTTP charset
      declaration names the same charset, rather than letting text-quality scoring override

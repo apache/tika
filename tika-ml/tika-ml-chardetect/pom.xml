@@ -58,21 +58,24 @@
       <version>${revision}</version>
     </dependency>
 
-    <!-- Full 4.x default encoding chain for ScoreCharsetEvalData -->
+    <!-- Full 4.x default encoding chain for ScoreCharsetEvalData; tools only, not passed on -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-ml-junkdetect</artifactId>
       <version>${revision}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-encoding-detector-html</artifactId>
       <version>${revision}</version>
+      <optional>true</optional>
     </dependency>
     <!-- JSONL reading/writing for BuildCharsetEvalData -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <!-- Test dependencies -->

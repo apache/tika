@@ -85,12 +85,14 @@ public class BOMDetector implements EncodingDetector {
                                        ParseContext parseContext) throws IOException {
         tis.mark(PROBE_BYTES);
         byte[] bytes;
+        boolean endOfInput;
         try {
             byte[] buf = new byte[PROBE_BYTES];
             int numRead = IOUtils.read(tis, buf);
             if (numRead < MIN_BYTES) {
                 return Collections.emptyList();
             }
+            endOfInput = numRead < PROBE_BYTES;
             bytes = numRead == buf.length ? buf : java.util.Arrays.copyOf(buf, numRead);
         } finally {
             tis.reset();
@@ -100,7 +102,7 @@ public class BOMDetector implements EncodingDetector {
             // FF FE 00 00 is also a UTF-16LE BOM followed by U+0000: fall through to UTF-16 if
             // the body isn't valid UTF-32
             if (startsWith(bom, bytes) && CHARSETS[i] != null
-                    && bodyDecodes(bytes, bom.length(), CHARSETS[i])) {
+                    && bodyDecodes(bytes, bom.length(), CHARSETS[i], endOfInput)) {
                 return List.of(new EncodingResult(CHARSETS[i], CONFIDENCE,
                         CHARSETS[i].name(), EncodingResult.ResultType.STATISTICAL));
             }
@@ -109,16 +111,16 @@ public class BOMDetector implements EncodingDetector {
     }
 
     /**
-     * Strict decode of the bytes after the BOM. A sequence cut off by the end of the probe
-     * is not an error. U+FFFE and U+FFFF never occur in text.
+     * Strict decode of the bytes after the BOM. A sequence cut off by the probe limit is not
+     * an error; one cut off by the end of the stream is. U+FFFE and U+FFFF never occur in text.
      */
-    static boolean bodyDecodes(byte[] bytes, int offset, Charset cs) {
+    static boolean bodyDecodes(byte[] bytes, int offset, Charset cs, boolean endOfInput) {
         CharsetDecoder dec = cs.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);
         ByteBuffer in = ByteBuffer.wrap(bytes, offset, bytes.length - offset);
         CharBuffer out = CharBuffer.allocate(bytes.length);
-        CoderResult r = dec.decode(in, out, false);
+        CoderResult r = dec.decode(in, out, endOfInput);
         if (r.isError()) {
             return false;
         }
@@ -140,6 +142,44 @@ public class BOMDetector implements EncodingDetector {
             }
         }
         return 0;
+    }
+
+    /**
+     * Skips a BOM at the current position of {@code tis} unless it names {@code charset}.
+     * Readers drop only U+FEFF, so a BOM the detectors rejected would reach the text as junk
+     * (EF BB BF read as windows-1252), and jsoup lets a BOM override the charset it is given.
+     */
+    public static void skipForeignBom(TikaInputStream tis, Charset charset) throws IOException {
+        byte[] head = new byte[4];
+        tis.mark(head.length);
+        int n;
+        try {
+            n = IOUtils.read(tis, head);
+        } finally {
+            tis.reset();
+        }
+        head = java.util.Arrays.copyOf(head, n);
+        int skip = 0;
+        // FF FE 00 00 is both the UTF-32LE BOM and the UTF-16LE BOM: keep it if either is ours
+        for (int i = 0; i < BOMS.length; i++) {
+            if (startsWith(BOMS[i], head)) {
+                if (isOwnBom(CHARSETS[i], charset)) {
+                    return;
+                }
+                skip = Math.max(skip, BOMS[i].length());
+            }
+        }
+        IOUtils.skipFully(tis, skip);
+    }
+
+    /** {@code bomCharset} is {@code charset}, or its byte-order-neutral form (which reads the BOM). */
+    private static boolean isOwnBom(Charset bomCharset, Charset charset) {
+        if (bomCharset == null) {
+            return false;
+        }
+        String bom = bomCharset.name();
+        String cs = charset.name();
+        return bom.equals(cs) || bom.startsWith(cs) && (cs.equals("UTF-16") || cs.equals("UTF-32"));
     }
 
     private static boolean startsWith(ByteOrderMark bom, byte[] bytes) {

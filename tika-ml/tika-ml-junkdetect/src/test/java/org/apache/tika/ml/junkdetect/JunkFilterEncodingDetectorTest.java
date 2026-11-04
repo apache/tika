@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.detect.BOMDetector;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
@@ -525,6 +526,52 @@ public class JunkFilterEncodingDetectorTest {
             assertEquals(gb, out.get(0).getCharset(),
                     "diff margin below FAMILY_DIFF_MARGIN -> no demote "
                             + "(boundary-noise guard)");
+        }
+    }
+
+    /**
+     * A BOM agreeing with the meta declaration is not the statistical layer's pick: it must
+     * not displace the quality champion via keepStatisticalTop.
+     */
+    @Test
+    public void bomAgreeingWithMetaDoesNotOverrideStatisticalPick() throws Exception {
+        Charset utf8 = StandardCharsets.UTF_8;
+        Charset win1252 = Charset.forName("windows-1252");
+        byte[] body = "caf\u00e9 cr\u00e8me br\u00fbl\u00e9e".getBytes(utf8);
+        byte[] bytes = new byte[body.length + 3];
+        bytes[0] = (byte) 0xEF;
+        bytes[1] = (byte) 0xBB;
+        bytes[2] = (byte) 0xBF;
+        System.arraycopy(body, 0, bytes, 3, body.length);
+
+        EncodingDetectorContext ctx = new EncodingDetectorContext();
+        ctx.addResult(List.of(new EncodingResult(utf8, 0.9f, "UTF-8",
+                EncodingResult.ResultType.STATISTICAL)), BOMDetector.class.getSimpleName());
+        ctx.addResult(List.of(new EncodingResult(utf8, 1.0f, "UTF-8",
+                EncodingResult.ResultType.DECLARATIVE)), "HtmlEncodingDetector");
+        ctx.addResult(List.of(new EncodingResult(win1252, 0.8f, "windows-1252",
+                EncodingResult.ResultType.STATISTICAL)), "MojibusterEncodingDetector");
+        ParseContext pc = new ParseContext();
+        pc.set(EncodingDetectorContext.class, ctx);
+
+        // quality prefers the windows-1252 decode ("cafÃ©")
+        TextQualityDetector prefers1252 = new TextQualityDetector() {
+            @Override
+            public TextQualityScore score(String text) {
+                return new TextQualityScore(text.indexOf('\u00c3') >= 0 ? -1f : -5f,
+                        Float.NaN, Float.NaN, Float.NaN, "LATIN");
+            }
+
+            @Override
+            public TextQualityComparison compare(String labelA, String candidateA,
+                                                 String labelB, String candidateB) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> out = new JunkFilterEncodingDetector(prefers1252)
+                    .detect(tis, new Metadata(), pc);
+            assertEquals(win1252, out.get(0).getCharset());
         }
     }
 }

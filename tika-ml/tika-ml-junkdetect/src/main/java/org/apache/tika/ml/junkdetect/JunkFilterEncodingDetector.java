@@ -540,13 +540,17 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     /**
      * Keeps the first STATISTICAL candidate over {@code champion} when a DECLARATIVE candidate
      * names the same charset: two independent signals agreeing beat a quality argmax, whose
-     * sibling margins here are typically ~0.005 (cc-html train: 79 fixed, 0 broken).
+     * sibling margins here are typically ~0.005 (cc-html train: 79 fixed, 0 broken).  The BOM
+     * result is not the statistical model's pick, so it is skipped.
      */
     private static Charset keepStatisticalTop(EncodingDetectorContext context, Charset champion,
                                               Map<Charset, Double> scoreByCharset) {
         Charset top = null;
         boolean declared = false;
         for (EncodingDetectorContext.Result r : context.getResults()) {
+            if (isBomResult(r)) {
+                continue;
+            }
             for (EncodingResult er : r.getEncodingResults()) {
                 if (top == null && er.getResultType() == EncodingResult.ResultType.STATISTICAL) {
                     top = er.getCharset();
@@ -734,10 +738,20 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         return HtmlContentCleaner.expandHtmlEntities(s);
     }
 
+    private static final String BOM_DETECTOR = BOMDetector.class.getSimpleName();
+
+    /**
+     * {@link BOMDetector}'s result.  The context records detectors by simple class name
+     * (see {@code CompositeEncodingDetector}); a BOM is a hint, not a vote of the statistical layer.
+     */
+    private static boolean isBomResult(EncodingDetectorContext.Result r) {
+        return BOM_DETECTOR.equals(r.getDetectorName());
+    }
+
     /** The candidate {@link BOMDetector} reported, if it survived decoding. */
     private static Charset bomHinted(EncodingDetectorContext context, Map<Charset, String> candidates) {
         for (EncodingDetectorContext.Result r : context.getResults()) {
-            if (r.getDetectorName().equals(BOMDetector.class.getSimpleName())
+            if (isBomResult(r)
                     && candidates.containsKey(r.getCharset())) {
                 return r.getCharset();
             }

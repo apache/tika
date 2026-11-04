@@ -125,6 +125,39 @@ public class BOMDetectorTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testTruncatedSequenceAtEndOfStream() throws Exception {
+        byte[] body = {'a', 'b', 'c', (byte) 0xE2};
+        try (TikaInputStream tis = TikaInputStream.get(withBom(ByteOrderMark.UTF_8, body))) {
+            assertTrue(new BOMDetector().detect(tis, new Metadata(), new ParseContext()).isEmpty());
+        }
+    }
+
+    @Test
+    public void testReaderSkipsForeignBom() throws Exception {
+        byte[] latin1 = "caf\u00e9".getBytes(StandardCharsets.ISO_8859_1);
+        // ISO-8859-2 reads EF BB BF as "ď»ż"
+        assertEquals("caf\u00e9", readAs(withBom(ByteOrderMark.UTF_8, latin1), "ISO-8859-2"));
+        assertEquals("caf\u00e9", readAs(withBom(ByteOrderMark.UTF_16LE, latin1), "ISO-8859-1"));
+        assertEquals("caf\u00e9", readAs(withBom(ByteOrderMark.UTF_8,
+                "caf\u00e9".getBytes(StandardCharsets.UTF_8)), "UTF-8"));
+        // the byte-order-neutral decoder needs its BOM
+        assertEquals("caf\u00e9", readAs(withBom(ByteOrderMark.UTF_16LE,
+                "caf\u00e9".getBytes(StandardCharsets.UTF_16LE)), "UTF-16"));
+        // FF FE 00 00 under UTF-16LE is a BOM and U+0000, not a UTF-32LE BOM to skip
+        assertEquals("\u0000caf\u00e9", readAs(withBom(ByteOrderMark.UTF_16LE,
+                "\u0000caf\u00e9".getBytes(StandardCharsets.UTF_16LE)), "UTF-16LE"));
+    }
+
+    private static String readAs(byte[] bytes, String charset) throws Exception {
+        EncodingDetector fixed = (tis, metadata, context) ->
+                List.of(new EncodingResult(Charset.forName(charset), 1.0f));
+        try (AutoDetectReader reader = new AutoDetectReader(TikaInputStream.get(bytes),
+                new Metadata(), fixed)) {
+            return IOUtils.toString(reader);
+        }
+    }
+
     private static byte[] withBom(ByteOrderMark bom, byte[] body) {
         byte[] out = java.util.Arrays.copyOf(bom.getBytes(), bom.length() + body.length);
         System.arraycopy(body, 0, out, bom.length(), body.length);
