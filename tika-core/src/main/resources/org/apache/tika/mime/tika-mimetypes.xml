@@ -2226,6 +2226,8 @@
   <mime-type type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml">
     <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
     <_comment>3D manufacturing format</_comment>
+    <!-- a zip package; without this, the +xml suffix would make it an XML document -->
+    <sub-class-of type="application/zip"/>
     <glob pattern="*.3mf"/>
   </mime-type>
 

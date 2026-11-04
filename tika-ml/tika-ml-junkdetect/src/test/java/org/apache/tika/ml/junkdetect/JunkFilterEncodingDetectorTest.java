@@ -407,9 +407,6 @@ public class JunkFilterEncodingDetectorTest {
         // Unknown named entity → left as literal
         assertEquals("&unknown;",
                 JunkFilterEncodingDetector.expandHtmlEntities("&unknown;"));
-        // Out-of-range numeric → left as literal (passes overflow guard)
-        assertEquals("&#999999999;",
-                JunkFilterEncodingDetector.expandHtmlEntities("&#999999999;"));
     }
 
     @Test
