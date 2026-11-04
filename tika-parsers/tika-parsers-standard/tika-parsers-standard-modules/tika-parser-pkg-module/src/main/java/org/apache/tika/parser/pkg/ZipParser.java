@@ -194,7 +194,9 @@ public class ZipParser extends AbstractArchiveParser {
                 "application/vnd.oasis.opendocument.chart-template",
                 "application/vnd.oasis.opendocument.text-master",
                 "application/vnd.adobe.indesign-idml-package",
-                "application/x-wacz", "application/x-vnd.datapackage+zip"
+                "application/x-wacz", "application/x-vnd.datapackage+zip",
+                "application/x-extension-fcstd", "application/x-krita",
+                "application/x-procreate", "image/openraster"
         }) {
             zipSpecializations.add(MediaType.parse(mediaTypeString));
         }

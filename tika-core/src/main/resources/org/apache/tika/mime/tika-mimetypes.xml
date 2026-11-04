@@ -2300,6 +2300,12 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/x-procreate">
+    <_comment>Procreate artwork</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.procreate"/>
+  </mime-type>
+
   <mime-type type="application/x-project">
     <glob pattern="*.mpx"/>
     <magic priority="50">
@@ -4111,6 +4117,13 @@
     <glob pattern="*.kil"/>
   </mime-type>
 
+  <mime-type type="application/x-krita">
+    <_comment>Krita document</_comment>
+    <tika:link>https://docs.krita.org/en/general_concepts/file_formats/file_kra.html</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.kra"/>
+  </mime-type>
+
   <mime-type type="application/x-object">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
@@ -4125,6 +4138,13 @@
     <glob pattern="*.scad"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
+  <mime-type type="application/x-extension-fcstd">
+    <_comment>FreeCAD document</_comment>
+    <tika:link>https://wiki.freecad.org/File_Format_FCStd</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.fcstd"/>
+  </mime-type>
+
   <mime-type type="application/x-executable">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
@@ -6803,6 +6823,14 @@
     </magic>
     <glob pattern="*.ntf"/>
     <glob pattern="*.nitf"/>
+  </mime-type>
+
+  <mime-type type="image/openraster">
+    <acronym>ORA</acronym>
+    <_comment>OpenRaster image</_comment>
+    <tika:link>https://www.freedesktop.org/wiki/Specifications/OpenRaster/</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.ora"/>
   </mime-type>
 
   <mime-type type="image/png">

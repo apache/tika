@@ -43,8 +43,12 @@ final class ZipPreview {
     private static final Set<String> IMAGE_EXTENSIONS =
             Set.of("jpg", "jpeg", "png", "gif", "webp", "bmp", "avif", "jxl");
 
-    private static final Map<MediaType, Function<ZipFile, String>> SELECTORS =
-            Map.of(COMIC_BOOK, ZipPreview::firstImageByName);
+    private static final Map<MediaType, Function<ZipFile, String>> SELECTORS = Map.of(
+            COMIC_BOOK, ZipPreview::firstImageByName,
+            MediaType.application("x-krita"), entry("preview.png"),
+            MediaType.image("openraster"), entry("Thumbnails/thumbnail.png"),
+            MediaType.application("x-extension-fcstd"), entry("thumbnails/Thumbnail.png"),
+            MediaType.application("x-procreate"), entry("QuickLook/Thumbnail.png"));
 
     private ZipPreview() {
     }
@@ -60,6 +64,10 @@ final class ZipPreview {
         }
         Function<ZipFile, String> selector = SELECTORS.get(type.getBaseType());
         return selector == null ? null : selector.apply(zipFile);
+    }
+
+    private static Function<ZipFile, String> entry(String name) {
+        return zipFile -> zipFile.getEntry(name) == null ? null : name;
     }
 
     /**

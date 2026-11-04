@@ -165,6 +165,34 @@ public class ZipParserTest extends AbstractPkgTest {
     }
 
     @Test
+    public void testFixedPathPreviewIsThumbnail() throws Exception {
+        byte[] png = png();
+        String[][] cases = {
+                {"art.kra", "application/x-krita", "preview.png", "mergedimage.png"},
+                {"art.ora", "image/openraster", "Thumbnails/thumbnail.png", "data/layer000.png"},
+                {"part.FCStd", "application/x-extension-fcstd", "thumbnails/Thumbnail.png",
+                        "Document.xml"},
+                {"art.procreate", "application/x-procreate", "QuickLook/Thumbnail.png",
+                        "Signature/Signature.png"},
+        };
+        for (String[] c : cases) {
+            Map<String, Metadata> entries = entriesByName(zip(new String[]{c[3], c[2]}, png), c[0]);
+            assertEquals(c[1], entries.get("").get(HttpHeaders.CONTENT_TYPE), c[0]);
+            assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                    entries.get(c[2]).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE), c[0]);
+            assertNull(entries.get(c[3]).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE), c[0]);
+        }
+    }
+
+    @Test
+    public void testFixedPathPreviewMissing() throws Exception {
+        Map<String, Metadata> entries =
+                entriesByName(zip(new String[]{"mergedimage.png"}, png()), "art.kra");
+        assertEquals("application/x-krita", entries.get("").get(HttpHeaders.CONTENT_TYPE));
+        assertNull(entries.get("mergedimage.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
     public void testPlainZipHasNoThumbnail() throws Exception {
         Map<String, Metadata> entries =
                 entriesByName(zip(new String[]{"001.png"}, png()), "images.zip");

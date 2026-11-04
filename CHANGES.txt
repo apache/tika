@@ -56,9 +56,12 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
-   * Comic book archives (.cbz) are detected as application/vnd.comicbook+zip, and the
-     first page in name order is emitted as the THUMBNAIL, so the thumbnail preset
-     serves the cover (TIKA-5032).
+   * Zip-based formats that carry a preview image have it emitted as the THUMBNAIL, so
+     the thumbnail preset serves it: comic book archives (.cbz, new type
+     application/vnd.comicbook+zip, the first page in name order), Krita (.kra,
+     preview.png), OpenRaster (.ora, Thumbnails/thumbnail.png), FreeCAD (.FCStd,
+     thumbnails/Thumbnail.png) and Procreate (.procreate, QuickLook/Thumbnail.png).
+     All five are new types and sub-types of application/zip (TIKA-5032).
 
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
