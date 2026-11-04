@@ -129,7 +129,7 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
         // Replaces the GLM-based languageness removed in TIKA-4720.
         if (JUNK_DETECTOR != null) {
             TextQualityScore q = JUNK_DETECTOR.score(content);
-            metadata.set(LANGUAGENESS, q.isUnknown() ? -99.0f : q.getZScore());
+            metadata.set(LANGUAGENESS, q.isUnknown() || q.isUnmodeled() ? -99.0f : q.getZScore());
         } else {
             metadata.set(LANGUAGENESS, -99.0f);
         }
