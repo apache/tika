@@ -64,6 +64,15 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
+     (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary
+     OpenPGP signatures (application/pgp-signature) are detected by content; they were
+     application/octet-stream. Together they are about a sixth of the Common Crawl files
+     Tika could not identify. MXF and Java serialization streams are detected by content
+     too (they had globs only), EOT fonts of version 0x00010000 and 0x00020001 are
+     detected (only 0x00020002 was), and torrent files whose first key is not "announce"
+     are detected (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 

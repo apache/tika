@@ -383,6 +383,10 @@
   <mime-type type="application/x-tika-unix-dump"/>
 
   <mime-type type="application/java-serialized-object">
+    <magic priority="50">
+      <!-- STREAM_MAGIC, STREAM_VERSION 5, then a TC_* (0x70-0x7E) -->
+      <match value="0xACED000570" mask="0xFFFFFFFFF0" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.ser"/>
   </mime-type>
 
@@ -743,6 +747,10 @@
   </mime-type>
 
   <mime-type type="application/mxf">
+    <magic priority="50">
+      <!-- SMPTE 377 header partition pack key -->
+      <match value="0x060E2B34020501010D0102010102" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.mxf"/>
   </mime-type>
   <mime-type type="application/nasdata"/>
@@ -897,6 +905,24 @@
   <mime-type type="application/pgp-keys"/>
 
   <mime-type type="application/pgp-signature">
+    <magic priority="50">
+      <!-- binary old-format signature packet (RFC 4880 5.2): tag 2 with a 1- or 2-byte
+           length, then v4 + binary/text sig type + RSA/DSA/ECDSA/EdDSA, or v3 + hashed length 5 -->
+      <match value="0x88" type="string" offset="0">
+        <match value="0x040001" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x040011" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x040013" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x040016" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x030500" mask="0xFFFFFE" type="string" offset="2"/>
+      </match>
+      <match value="0x89" type="string" offset="0">
+        <match value="0x040001" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x040011" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x040013" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x040016" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x030500" mask="0xFFFFFE" type="string" offset="3"/>
+      </match>
+    </magic>
     <glob pattern="*.asc"/>
     <glob pattern="*.sig"/>
   </mime-type>
@@ -1994,6 +2020,7 @@
     <_comment>FrameMaker Interchange Format</_comment>
     <alias type="application/x-mif"/>
     <alias type="application/x-frame"/>
+    <sub-class-of type="text/plain"/>
     <magic priority="50">
       <match value="&lt;MakerFile" type="string" offset="0" />
       <match value="&lt;MIFFile" type="string" offset="0" />
@@ -2020,7 +2047,6 @@
   <mime-type type="application/vnd.minisoft-hp3000-save"/>
   <mime-type type="application/vnd.mitsubishi.misty-guard.trustweb"/>
   <mime-type type="application/vnd.mobius.daf">
-    <sub-class-of type="text/plain"/>
     <glob pattern="*.daf"/>
   </mime-type>
   <mime-type type="application/vnd.mobius.dis">
@@ -2185,6 +2211,13 @@
 
   <mime-type type="application/vnd.ms-fontobject">
     <magic priority="50">
+      <!-- version 0x00010000, 0x00020001 or 0x00020002, then the "LP" magic -->
+      <match value="\x00\x00\x01\x00" type="string" offset="8">
+        <match value="\x4C\x50" type="string" offset="34"/>
+      </match>
+      <match value="\x01\x00\x02\x00" type="string" offset="8">
+        <match value="\x4C\x50" type="string" offset="34"/>
+      </match>
       <match value="\x02\x00\x02\x00" type="string" offset="8">
         <match value="\x4C\x50" type="string" offset="34"/>
       </match>
@@ -2796,6 +2829,14 @@
     <glob pattern="*.pqa"/>
     <glob pattern="*.oprc"/>
   </mime-type>
+  <mime-type type="application/x-palmdoc">
+    <_comment>PalmDOC (AportisDoc) e-book</_comment>
+    <sub-class-of type="application/vnd.palm"/>
+    <magic priority="60">
+      <!-- Palm database type + creator -->
+      <match value="TEXtREAd" type="string" offset="60"/>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/vnd.paos.xml"/>
   <mime-type type="application/vnd.pg.format">
@@ -3031,6 +3072,7 @@
   <mime-type type="application/vnd.sun.xml.writer">
     <alias type="application/x-vnd.sun.xml.writer"/>
     <_comment>OpenOffice v1.0: Writer Document</_comment>
+    <sub-class-of type="application/zip"/>
     <magic>
       <match type="string" offset="0" value="PK">
         <match type="string" offset="30"
@@ -3069,7 +3111,6 @@
   </mime-type>
   <mime-type type="application/vnd.syncml.dm+xml">
     <glob pattern="*.xdm"/>
-    <sub-class-of type="application/zip"/>
   </mime-type>
   <mime-type type="application/vnd.syncml.dm.notification"/>
   <mime-type type="application/vnd.syncml.ds.notification"/>
@@ -3515,6 +3556,15 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-adobe-swatch-exchange">
+    <acronym>ASE</acronym>
+    <_comment>Adobe Swatch Exchange</_comment>
+    <!-- no *.ase glob: Aseprite uses it too -->
+    <magic priority="50">
+      <match value="ASEF\x00\x01\x00\x00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-adobe-indesign">
     <acronym>INDD</acronym>
     <_comment>Adobe InDesign document</_comment>
@@ -3799,7 +3849,14 @@
 
   <mime-type type="application/x-bittorrent">
     <magic priority="50">
+      <!-- bencoded dict; keys are sorted, so the first is one of these -->
       <match value="d8:announce" type="string" offset="0"/>
+      <match value="d13:announce-list" type="string" offset="0"/>
+      <match value="d7:comment" type="string" offset="0"/>
+      <match value="d10:created by" type="string" offset="0"/>
+      <match value="d13:creation date" type="string" offset="0"/>
+      <match value="d8:encoding" type="string" offset="0"/>
+      <match value="d4:infod" type="string" offset="0"/>
     </magic>
     <glob pattern="*.torrent"/>
   </mime-type>
@@ -5387,6 +5444,26 @@
     </magic>
     <sub-class-of type="application/x-sqlite3"/>
   </mime-type>
+
+  <mime-type type="application/vnd.squashfs">
+    <alias type="application/x-squashfs"/>
+    <_comment>SquashFS filesystem image</_comment>
+    <magic priority="50">
+      <!-- superblock magic, then s_major (2-4) at offset 28 in the same byte order -->
+      <match value="hsqs" type="string" offset="0">
+        <match value="0x0400" type="string" offset="28"/>
+        <match value="0x0300" type="string" offset="28"/>
+        <match value="0x0200" type="string" offset="28"/>
+      </match>
+      <match value="sqsh" type="string" offset="0">
+        <match value="0x0004" type="string" offset="28"/>
+        <match value="0x0003" type="string" offset="28"/>
+        <match value="0x0002" type="string" offset="28"/>
+      </match>
+    </magic>
+    <glob pattern="*.sqsh"/>
+    <glob pattern="*.squashfs"/>
+  </mime-type>
   <mime-type type="application/x-stata-do">
     <_comment>Stata DTA Script</_comment>
     <acronym>DO</acronym>
@@ -6472,6 +6549,36 @@
   <mime-type type="chemical/x-xyz">
     <glob pattern="*.xyz"/>
   </mime-type>
+
+  <mime-type type="font/woff">
+    <alias type="application/font-woff"/>
+    <alias type="application/x-font-woff"/>
+    <acronym>WOFF</acronym>
+    <_comment>Web Open Font Format</_comment>
+    <tika:link>https://www.w3.org/TR/WOFF/</tika:link>
+    <magic priority="50">
+      <match value="wOFF" type="string" offset="0">
+        <match value="0x00010000" type="string" offset="4"/>
+        <match value="OTTO" type="string" offset="4"/>
+        <match value="true" type="string" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.woff"/>
+  </mime-type>
+  <mime-type type="font/woff2">
+    <alias type="application/font-woff2"/>
+    <acronym>WOFF2</acronym>
+    <_comment>Web Open Font Format 2</_comment>
+    <tika:link>https://www.w3.org/TR/WOFF2/</tika:link>
+    <magic priority="50">
+      <match value="wOF2" type="string" offset="0">
+        <match value="0x00010000" type="string" offset="4"/>
+        <match value="OTTO" type="string" offset="4"/>
+        <match value="true" type="string" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.woff2"/>
+  </mime-type>
   <mime-type type="image/x-3ds">
     <_comment>3D Studio (V1)</_comment>
     <magic priority="50">
@@ -6661,6 +6768,7 @@
   </mime-type>
   <mime-type type="image/heif-sequence">
     <_comment>HEIF Sequence - High Efficiency Image Sequence</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="60">
       <match value="ftypmsf1" type="string" offset="4"/>
     </magic>
@@ -6671,6 +6779,7 @@
     <alias   type="image/hevc"/>
     <_comment>HEIF Image using HEVC Codec</_comment>
     <acronym>HEIC</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="60">
       <match value="ftypheic" type="string" offset="4"/>
       <match value="ftypheix" type="string" offset="4"/>
@@ -6682,6 +6791,7 @@
     <alias   type="image/hevc-sequence"/>
     <_comment>HEIF Sequence using HEVC Codec</_comment>
     <acronym>HEVC</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="60">
       <match value="ftyphevc" type="string" offset="4"/>
       <match value="ftyphevx" type="string" offset="4"/>
@@ -6768,7 +6878,6 @@
     </magic>
     <glob pattern="*.ntf"/>
     <glob pattern="*.nitf"/>
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
   </mime-type>
 
   <mime-type type="image/png">
@@ -6779,7 +6888,6 @@
     </magic>
     <glob pattern="*.png"/>
   </mime-type>
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
 
   <mime-type type="image/prs.btif">
     <glob pattern="*.btif"/>
@@ -6791,7 +6899,6 @@
     <acronym>SVG</acronym>
     <_comment>Scalable Vector Graphics</_comment>
     <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg"/>
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="50">
       <!-- Version of 0x0001 is PSD -->
       <match value="&lt;svg" type="string" offset="0">
