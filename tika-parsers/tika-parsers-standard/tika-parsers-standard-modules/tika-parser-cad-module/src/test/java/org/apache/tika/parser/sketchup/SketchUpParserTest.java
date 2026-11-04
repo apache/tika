@@ -38,8 +38,10 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -110,8 +112,47 @@ public class SketchUpParserTest extends TikaTest {
         int length = indexOf(file, "CDib".getBytes(StandardCharsets.US_ASCII)) + 8;
         ByteBuffer.wrap(file).order(ByteOrder.LITTLE_ENDIAN)
                 .putInt(length, SketchUpParser.MAX_THUMBNAIL_LENGTH + 1);
-        assertThrows(TikaException.class,
+        assertThrows(TikaMemoryLimitException.class,
                 () -> SketchUpParser.readThumbnail(new ByteArrayInputStream(file)));
+    }
+
+    /**
+     * An entry before the thumbnail that uncompresses to more than is read through: the
+     * search stops there, without the thumbnail, instead of uncompressing all of it.
+     */
+    @Test
+    public void testLargeEntryBeforeTheThumbnail() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.writeBytes(header("26.1.194"));
+        out.writeBytes(new byte[]{'V', 'F', 'F', 8, 0, 1, 0, 0x11, 0, 1, 2, 3, 4});
+        try (ZipOutputStream zip = new ZipOutputStream(out)) {
+            zip.putNextEntry(new ZipEntry("meta/meta.dat"));
+            zip.write(new byte[SketchUpParser.MAX_SKIPPED_ENTRY_LENGTH + 1]);
+            zip.putNextEntry(new ZipEntry("meta/model_thumbnail.png"));
+            zip.write(MODEL);
+        }
+        assertNull(SketchUpParser.readThumbnail(new ByteArrayInputStream(out.toByteArray())));
+
+        ByteArrayOutputStream small = new ByteArrayOutputStream();
+        small.writeBytes(header("26.1.194"));
+        small.writeBytes(new byte[]{'V', 'F', 'F', 8, 0, 1, 0, 0x11, 0, 1, 2, 3, 4});
+        try (ZipOutputStream zip = new ZipOutputStream(small)) {
+            zip.putNextEntry(new ZipEntry("meta/meta.dat"));
+            zip.write(new byte[SketchUpParser.MAX_SKIPPED_ENTRY_LENGTH]);
+            zip.putNextEntry(new ZipEntry("meta/model_thumbnail.png"));
+            zip.write(MODEL);
+        }
+        assertArrayEquals(MODEL,
+                SketchUpParser.readThumbnail(new ByteArrayInputStream(small.toByteArray())));
+    }
+
+    @Test
+    public void testEmbeddedLimits() throws Exception {
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedLimits.class, new EmbeddedLimits(10, false, 0, false));
+        try (TikaInputStream tis = TikaInputStream.get(cdib("17.0.18899", MODEL))) {
+            assertEquals(1, getRecursiveMetadata(tis, new Metadata(), context, true).size());
+        }
     }
 
     @Test

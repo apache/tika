@@ -33,6 +33,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
@@ -89,6 +90,12 @@ public class SketchUpParser implements Parser {
 
     static final int MAX_THUMBNAIL_LENGTH = 16 * 1024 * 1024;
 
+    /**
+     * How much of an entry before the thumbnail is read through; moving past an entry means
+     * uncompressing it, and real files have none before the thumbnail.
+     */
+    static final int MAX_SKIPPED_ENTRY_LENGTH = 1024 * 1024;
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -126,8 +133,7 @@ public class SketchUpParser implements Parser {
         EndianUtils.readIntLE(record);
         long length = Integer.toUnsignedLong(EndianUtils.readIntLE(record));
         if (length > MAX_THUMBNAIL_LENGTH) {
-            throw new TikaException("Preview of " + length + " bytes, more than "
-                    + MAX_THUMBNAIL_LENGTH);
+            throw new TikaMemoryLimitException(length, MAX_THUMBNAIL_LENGTH);
         }
         return png(IOUtils.toByteArray(record, (int) length));
     }
@@ -160,6 +166,9 @@ public class SketchUpParser implements Parser {
             }
             if (VIEW_THUMBNAIL.equals(entry.getName())) {
                 view = bounded(zip);
+            } else if (zip.readNBytes(MAX_SKIPPED_ENTRY_LENGTH + 1).length
+                    > MAX_SKIPPED_ENTRY_LENGTH) {
+                break;
             }
         }
         return view == null ? null : png(view);
@@ -168,7 +177,7 @@ public class SketchUpParser implements Parser {
     private static byte[] bounded(InputStream in) throws IOException, TikaException {
         byte[] bytes = in.readNBytes(MAX_THUMBNAIL_LENGTH + 1);
         if (bytes.length > MAX_THUMBNAIL_LENGTH) {
-            throw new TikaException("Preview of more than " + MAX_THUMBNAIL_LENGTH + " bytes");
+            throw new TikaMemoryLimitException(bytes.length, MAX_THUMBNAIL_LENGTH);
         }
         return bytes;
     }
