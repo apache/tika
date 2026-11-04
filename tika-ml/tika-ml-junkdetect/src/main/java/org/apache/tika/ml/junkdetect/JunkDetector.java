@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -102,6 +103,13 @@ public final class JunkDetector implements TextQualityDetector {
     // incompatible and rejected at load.
     public static final int VERSION = 15;
 
+    /**
+     * A script table with fewer distinct bigrams than this is too thin to score:
+     * real text in it would hit the unseen-pair floor on nearly every bigram and
+     * read as junk.  Such scripts are treated as unmodeled (no z1 evidence).
+     */
+    static final int MIN_MODELED_BIGRAMS = 1000;
+
     // Feature 1 — per-script open-addressed codepoint-bigram tables.
     // No global Bloom: empty-slot is the membership oracle.
     private final Map<String, BigramTables> f1TablesByScript;
@@ -109,6 +117,9 @@ public final class JunkDetector implements TextQualityDetector {
     /** Per-script z1 calibration {mu, sigma} on the bucket mean log-prob.
      *  z1 is the ONLY per-script feature. */
     private final Map<String, float[]> calibrations; // script → float[2] {mu, sigma}
+
+    /** Scripts whose z1 table is populated enough to score; see {@link #MIN_MODELED_BIGRAMS}. */
+    private final Set<String> modeledScripts;
 
     // Feature 2 — single GLOBAL block-transition table.
     // int16-quantized; dequantize via {@code min + (s/65535) * (max - min)}.
@@ -156,8 +167,19 @@ public final class JunkDetector implements TextQualityDetector {
                          Map<String, BigramTables> f1TablesByScript,
                          float[] z5Calibration,
                          float[] z6Calibration,
-                         float[] z9Calibration) {
+                         float[] z9Calibration,
+                         int minModeledBigrams) {
         this.calibrations = Collections.unmodifiableMap(calibrations);
+        Set<String> modeled = new HashSet<>();
+        for (Map.Entry<String, BigramTables> e : f1TablesByScript.entrySet()) {
+            // COMMON is the glue bucket for COMMON-scripted letters; always scored.
+            if (calibrations.containsKey(e.getKey())
+                    && (COMMON_SCRIPT.equals(e.getKey())
+                        || e.getValue().occupiedSlots() >= minModeledBigrams)) {
+                modeled.add(e.getKey());
+            }
+        }
+        this.modeledScripts = Collections.unmodifiableSet(modeled);
         this.blockTable = blockTable;
         this.blockTableQuant = blockTableQuant;
         this.blockCalibration = blockCalibration;
@@ -217,8 +239,13 @@ public final class JunkDetector implements TextQualityDetector {
      * Loads a model from the given file path.  The file may be gzipped or raw.
      */
     public static JunkDetector loadFromPath(Path path) throws IOException {
+        return loadFromPath(path, MIN_MODELED_BIGRAMS);
+    }
+
+    /** As {@link #loadFromPath(Path)}, with the modeled-script threshold overridden (toy test models). */
+    static JunkDetector loadFromPath(Path path, int minModeledBigrams) throws IOException {
         try (InputStream is = Files.newInputStream(path)) {
-            return load(is);
+            return load(is, minModeledBigrams);
         }
     }
 
@@ -273,6 +300,11 @@ public final class JunkDetector implements TextQualityDetector {
      * </pre>
      */
     public static JunkDetector load(InputStream rawIs) throws IOException {
+        return load(rawIs, MIN_MODELED_BIGRAMS);
+    }
+
+    /** As {@link #load(InputStream)}, with the modeled-script threshold overridden (toy test models). */
+    static JunkDetector load(InputStream rawIs, int minModeledBigrams) throws IOException {
         byte[] peek = rawIs.readNBytes(2);
         InputStream rest = new java.io.SequenceInputStream(
                 new java.io.ByteArrayInputStream(peek), rawIs);
@@ -369,7 +401,7 @@ public final class JunkDetector implements TextQualityDetector {
                     scriptTransitionTable, scriptTransitionTableQuant,
                     scriptTransitionCalibration,
                     scriptBucketIndex, numScriptBuckets, f1TablesByScript,
-                    z5Calibration, z6Calibration, z9Calibration);
+                    z5Calibration, z6Calibration, z9Calibration, minModeledBigrams);
         }
     }
 
@@ -413,12 +445,11 @@ public final class JunkDetector implements TextQualityDetector {
     /**
      * {@inheritDoc}
      *
-     * <p>The text is split into contiguous runs of the same Unicode script.
-     * Each run is scored against its own script model.  Logits are combined
-     * as a byte-count-weighted average, so mixed-script text (e.g. half
-     * LATIN, half HAN) is scored fairly without arbitrarily picking one script.
-     * COMMON, INHERITED, and UNKNOWN codepoints (spaces, punctuation, digits)
-     * are attached to the preceding script run.
+     * <p>Letter runs are scored against their script's bigram table and the
+     * per-script z1's are combined count-weighted.  Punctuation, symbols and
+     * digits inside a run are scored with it; whitespace ends a run.  Scripts
+     * outside {@link #knownScripts()} contribute no z1 evidence and lower
+     * {@link TextQualityScore#getCoverage()}.
      */
     @Override
     public TextQualityScore score(String text) {
@@ -457,9 +488,9 @@ public final class JunkDetector implements TextQualityDetector {
         return new TextQualityComparison(winner, delta, scoreA, scoreB, labelA, labelB);
     }
 
-    /** Returns the set of script names this model knows about. */
+    /** Returns the scripts this model scores; text in any other script carries no z1 evidence. */
     public Set<String> knownScripts() {
-        return calibrations.keySet();
+        return modeledScripts;
     }
 
     /** Returns the file-format version of the loaded model
@@ -476,7 +507,9 @@ public final class JunkDetector implements TextQualityDetector {
     private static final class Agg {
         float z1, z2, z3, z4, z5, z6, z7, z8, z9, logit;
         String dominantScript;     // null => no scoreable script (NONE fallback)
+        String dominantUnmodeledScript;
         int totalBigrams;
+        float coverage = Float.NaN;
         float[] dominantCal1;
     }
 
@@ -486,7 +519,7 @@ public final class JunkDetector implements TextQualityDetector {
      * each script's mean log-prob is calibrated to {@code z1_S=(mean-mu)/sigma},
      * and the per-script z1's are aggregated count-weighted into a single doc
      * {@code z1}.  z2..z9 are document-level globals.  A single global combiner
-     * produces the logit.  No runs, no sentinels, no per-script z2/z3.
+     * produces the logit.
      */
     private Agg aggregate(String text) {
         // NFKC-normalize so inference matches the trainer's tally AND legacy
@@ -508,14 +541,13 @@ public final class JunkDetector implements TextQualityDetector {
         String[] lastScript = {null};
         int[] lastB = {Integer.MIN_VALUE};
         int[] lastBIdx = {-1};
+        Map<String, int[]> unmodeled = new HashMap<>();
         forEachScriptBigram(cps, (script, a, b) -> {
-            if (!calibrations.containsKey(script)) {
+            if (!modeledScripts.contains(script)) {
+                unmodeled.computeIfAbsent(script, k -> new int[1])[0]++;
                 return;
             }
             BigramTables t = f1TablesByScript.get(script);
-            if (t == null) {
-                return;
-            }
             int idxA = (a == lastB[0] && script.equals(lastScript[0]))
                     ? lastBIdx[0] : codepointToIndex(t, a);
             int idxB = codepointToIndex(t, b);
@@ -566,6 +598,18 @@ public final class JunkDetector implements TextQualityDetector {
         agg.z8 = Double.isNaN(rawFrag) ? 1f : 1f - (float) rawFrag;
         agg.z9 = computeZ9AlternationRatio(text);
         agg.totalBigrams = (int) z1Count;
+        long unmodeledCount = 0;
+        int maxUnmodeled = 0;
+        for (Map.Entry<String, int[]> e : unmodeled.entrySet()) {
+            unmodeledCount += e.getValue()[0];
+            if (e.getValue()[0] > maxUnmodeled) {
+                maxUnmodeled = e.getValue()[0];
+                agg.dominantUnmodeledScript = e.getKey();
+            }
+        }
+        if (z1Count + unmodeledCount > 0) {
+            agg.coverage = (float) z1Count / (z1Count + unmodeledCount);
+        }
 
         if (z1Count == 0 || agg.dominantScript == null) {
             // No scoreable LETTER at all (zero runs) — doc-level fallback:
@@ -573,10 +617,11 @@ public final class JunkDetector implements TextQualityDetector {
             // (unmodeled coherent script); density=1 coherence=0 -> very negative.
             // z6 is included so a letter-free but FFFD/anomaly-heavy doc (which can
             // no longer flood z1) is still penalized here — no path ignores the
-            // replacement ratio.  For unmodeled-but-clean script z6~0, so it's inert.
+            // replacement ratio.  z6 is 1 for anomaly-free text, so (z6 - 1) keeps
+            // it inert there: all-whitespace -1, coherent unmodeled script ~+2.4.
             agg.dominantScript = null;
             agg.z1 = Float.NaN;
-            agg.logit = -7f + 4f * agg.z7 + 6f * agg.z8 + 4f * agg.z6;
+            agg.logit = -7f + 4f * agg.z7 + 6f * agg.z8 + 4f * (agg.z6 - 1f);
             return agg;
         }
         agg.z1 = (float) (weightedZ1 / z1Count);
@@ -589,12 +634,13 @@ public final class JunkDetector implements TextQualityDetector {
         Agg a = aggregate(text);
         float pClean = (float) (1.0 / (1.0 + Math.exp(-a.logit)));
         if (a.dominantScript == null) {
-            return new TextQualityScore(a.logit, pClean, a.logit, a.logit, "NONE");
+            String script = a.dominantUnmodeledScript != null ? a.dominantUnmodeledScript : "NONE";
+            return new TextQualityScore(a.logit, pClean, a.logit, a.logit, script, a.coverage);
         }
         float uncertainty = (a.dominantCal1 != null && a.totalBigrams > 0)
                 ? (float) (1.96 * a.dominantCal1[1] / Math.sqrt(a.totalBigrams)) : 0f;
         return new TextQualityScore(a.logit, pClean,
-                a.logit - uncertainty, a.logit + uncertainty, a.dominantScript);
+                a.logit - uncertainty, a.logit + uncertainty, a.dominantScript, a.coverage);
     }
 
     /**
@@ -609,8 +655,9 @@ public final class JunkDetector implements TextQualityDetector {
         }
         Agg a = aggregate(text);
         if (a.dominantScript == null) {
+            String script = a.dominantUnmodeledScript != null ? a.dominantUnmodeledScript : "NONE";
             return new FeatureComponents(Float.NaN, Float.NaN, Float.NaN,
-                    a.z4, a.z5, a.z6, a.z7, a.z8, a.z9, a.logit, "NONE", null, 0);
+                    a.z4, a.z5, a.z6, a.z7, a.z8, a.z9, a.logit, script, null, 0);
         }
         return new FeatureComponents(a.z1, a.z2, a.z3, a.z4, a.z5, a.z6, a.z7,
                 a.z8, a.z9, a.logit, a.dominantScript, combinerWeights,

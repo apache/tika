@@ -76,6 +76,20 @@ self-contained jar by the `train` profile:
 
 The result is `tika-ml-junkdetect-tools-*-tools.jar`.
 
+To rebuild the bundled model, run the driver script from the repository root
+rather than the tools one by one:
+
+[source,bash]
+----
+TIKA_JUNK_DATA=<dir holding the corpus> tika-ml/tika-ml-junkdetect-tools/train-junk-model.sh
+----
+
+The script names the source corpus (its `CORPUS` constant is the committed record
+of which data trained the bundled model), builds the tools, runs stages 1 and 3
+into a fresh run directory `<TIKA_JUNK_DATA>/<corpus>-runs/<time>-<commit>/` (log,
+built data, and the exact uncommitted diff if the tree was dirty), and writes the
+model to its classpath location.
+
 [IMPORTANT]
 ====
 Durable training parameters are *not* CLI flags.  They are `public static final`
@@ -166,8 +180,11 @@ java -cp tika-ml-junkdetect-tools-*-tools.jar \
   --output-dir <workdir>/junkdetect
 ----
 
-`--data-dir`, `--output-dir`, and `--dry-run` (detect scripts and show the budget
-without writing) are the only accepted arguments.
+`--data-dir` and `--output-dir` are required; `--dry-run` (detect scripts and show
+the budget without writing) is the only other accepted argument.  The source
+corpus must carry a `manifest.tsv`; the tool refuses a directory without one, and
+records the corpus name and the manifest's SHA-256 in `source.tsv` in the output
+directory.
 
 === Config constants
 
@@ -270,15 +287,18 @@ weights are fit in the same run.
 [source,bash]
 ----
 java -cp tika-ml-junkdetect-tools-*-tools.jar \
-  org.apache.tika.ml.junkdetect.tools.TrainJunkModel
+  org.apache.tika.ml.junkdetect.tools.TrainJunkModel \
+  --data-dir <workdir>/junkdetect --output <model.bin> [--git-commit <sha>]
 ----
 
-The tool takes **no arguments**.  Its input directory and its output path — the
-classpath resource
-`tika-ml/tika-ml-junkdetect/src/main/resources/org/apache/tika/ml/junkdetect/junkdetect.bin`
-— are baked into `main`, deliberately: one bundled model in git, never a training
-run to a scratch directory, never parallel A/B variants.  Editing either means
-editing and committing the source.
+`--data-dir` (a `BuildJunkTrainingData` output directory, with its `manifest.tsv`
+and `source.tsv`) and `--output` are required.  Next to the model the tool writes
+`<model>.provenance`: the model's SHA-256, the source corpus name and manifest
+digest, the training data's manifest digest, the git commit, the command line, and
+every training constant.  Commit the model and its provenance file together;
+`ModelProvenanceTest` fails the build if the bundled model's digest does not match
+its provenance.  There is one bundled model in git: train through
+`train-junk-model.sh`, never keep parallel model variants.
 
 === Calibration
 
