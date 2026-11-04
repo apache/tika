@@ -246,6 +246,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public List<EncodingResult> detect(byte[] probe, Metadata metadata) {
         // BOMDetector reports the BOM; here its bytes are noise (EF BB BF alone is valid
         // multi-byte UTF-8, and they feed the bigram model).  A BOM is a hint, not proof.
+        // The wide-Unicode checks still see it: the UTF-16 specialist leans on it.
+        byte[] withBom = probe;
         int bom = probe == null ? 0 : BOMDetector.bomLength(probe);
         if (bom > 0) {
             probe = java.util.Arrays.copyOfRange(probe, bom, probe.length);
@@ -302,7 +304,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         // UTF-32 codepoint validity — structural candidate.  Also
         // collects UTF-16 surrogate invalidity flags used below.
-        WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(probe);
+        WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(withBom);
         LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={}",
                 wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be);
         if (wide.charset != null) {
@@ -320,10 +322,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // discriminate UTF-16 reliably (CJK in UTF-16 produces byte
         // pairs that alias common ASCII bigrams), so we keep UTF-16
         // out of NB training and delegate to the specialist.
-        boolean utf16Gate = StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(probe);
+        boolean utf16Gate = StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(withBom);
         LOG.trace("mojibuster utf16Gate={}", utf16Gate);
         if (utf16Gate) {
-            List<EncodingResult> utf16Results = utf16.detect(probe);
+            List<EncodingResult> utf16Results = utf16.detect(withBom);
             LOG.trace("mojibuster utf16Specialist returned {} candidates", utf16Results.size());
             for (EncodingResult r : utf16Results) {
                 String name = r.getCharset().name();
