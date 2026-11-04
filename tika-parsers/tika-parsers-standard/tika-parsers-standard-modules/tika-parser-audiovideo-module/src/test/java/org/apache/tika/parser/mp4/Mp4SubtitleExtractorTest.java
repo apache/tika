@@ -202,7 +202,13 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     @Test
     public void testLanguage() {
         assertEquals("eng", Mp4SubtitleExtractor.language(ENG));
-        assertNull(Mp4SubtitleExtractor.language(0));
+        assertEquals("eng", Mp4SubtitleExtractor.language(0));
+        assertEquals("spa", Mp4SubtitleExtractor.language(6));
+        assertEquals("cym", Mp4SubtitleExtractor.language(128));
+        assertEquals("aze", Mp4SubtitleExtractor.language(150));
+        assertNull(Mp4SubtitleExtractor.language(95));
+        assertNull(Mp4SubtitleExtractor.language(151));
+        assertNull(Mp4SubtitleExtractor.language(0x7FFF));
         assertNull(Mp4SubtitleExtractor.language((21 << 10) | (14 << 5) | 4));
     }
 

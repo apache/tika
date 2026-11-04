@@ -344,9 +344,32 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
         return new String(b, 2, len, StandardCharsets.UTF_8);
     }
 
+    // QuickTime Macintosh language codes 0-94 and 128-150 (Script Manager langXXX), as ISO 639-2/T
+    private static final String[] MAC_LANGUAGES = {
+        "eng", "fra", "deu", "ita", "nld", "swe", "spa", "dan", "por", "nor",
+        "heb", "jpn", "ara", "fin", "ell", "isl", "mlt", "tur", "hrv", "zho",
+        "urd", "hin", "tha", "kor", "lit", "pol", "hun", "est", "lav", "smi",
+        "fao", "fas", "rus", "zho", "nld", "gle", "sqi", "ron", "ces", "slk",
+        "slv", "yid", "srp", "mkd", "bul", "ukr", "bel", "uzb", "kaz", "aze",
+        "aze", "hye", "kat", "ron", "kir", "tgk", "tuk", "mon", "mon", "pus",
+        "kur", "kas", "snd", "bod", "nep", "san", "mar", "ben", "asm", "guj",
+        "pan", "ori", "mal", "kan", "tam", "tel", "sin", "mya", "khm", "lao",
+        "vie", "ind", "tgl", "msa", "msa", "amh", "tir", "orm", "som", "swa",
+        "kin", "run", "nya", "mlg", "epo", null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, "cym", "eus",
+        "cat", "lat", "que", "grn", "aym", "tat", "uig", "dzo", "jav", "sun",
+        "glg", "afr", "bre", "iku", "gla", "glv", "gle", "ton", "grc", "kal",
+        "aze"
+    };
+
     // ISO 639-2/T packed as three 5-bit letters; below 0x400 is a QuickTime Mac code
     static String language(int packed) {
-        if (packed < 0x400 || packed == 0x7FFF) {
+        if (packed < 0x400) {
+            return packed < MAC_LANGUAGES.length ? MAC_LANGUAGES[packed] : null;
+        }
+        if (packed == 0x7FFF) {
             return null;
         }
         char[] c = new char[3];
