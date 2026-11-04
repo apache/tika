@@ -56,6 +56,11 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Blender files (.blend, application/x-blender, new) yield the preview Blender stores
+     as the THUMBNAIL embedded document, for every file format version including the one
+     of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read
+     the same way; zstd needs zstd-jni on the classpath (TIKA-5036).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
