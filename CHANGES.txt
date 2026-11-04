@@ -13,6 +13,11 @@ Release 4.3.0 - ???
      the forks never saw such a fetcher, so every fetch through it failed. Use file or
      ignite (TIKA-5001).
 
+   * 3MF packages are detected as model/3mf, their IANA type, instead of
+     application/vnd.ms-package.3dmanufacturing-3dmodel+xml, which is the content type of
+     the model part inside the package. The old name is an alias, so it still resolves as
+     input, but detection output and metadata now carry model/3mf (TIKA-5049).
+
   SERVER, PIPES AND OPERATIONS
 
    * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,
