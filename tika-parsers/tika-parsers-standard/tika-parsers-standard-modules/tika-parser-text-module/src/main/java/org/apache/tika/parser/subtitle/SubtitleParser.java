@@ -19,6 +19,10 @@ package org.apache.tika.parser.subtitle;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,9 +78,7 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
     // literal "a < b"
     private static final Pattern SRT_TAG =
             Pattern.compile("</?(?:i|b|u|s|font)(?:\\s[^<>]*)?>", Pattern.CASE_INSENSITIVE);
-    private static final int MAX_PAIR_LINE = 1024;
-    private static final Pattern SRT_TAG_PAIR = Pattern.compile(
-            "<([A-Za-z][\\w-]*)(?:\\s[^<>]*)?>(.*?)</\\1\\s*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ANY_TAG = Pattern.compile("<(/?)([A-Za-z][\\w-]*)(\\s[^<>]*)?>");
     // SSA override blocks some SubRip writers carry over, e.g. {\an8}
     private static final Pattern SSA_OVERRIDE = Pattern.compile("\\{\\\\[^{}]*}");
     private static final Pattern VTT_ENTITY =
@@ -120,7 +122,7 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
 
     /** {@code HH:MM:SS.mmm} for a time {@link #TIMING} matched, or null if out of range. */
     static String normalizeTime(String raw) {
-        // TIMING guarantees 2-4 digit fields separated by ':', '.' or ','
+        // TIMING guarantees 2-4 digit runs separated by ':', '.' or ','
         int[] starts = new int[4];
         int[] ends = new int[4];
         int n = 0;
@@ -175,18 +177,51 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
         }
         if (tag) {
             line = SRT_TAG.matcher(line).replaceAll("");
-            // innermost pairs first, so nested pairs unwrap; the match is quadratic in the
-            // line, and a real cue line is short
-            for (int i = 0; i < 8 && line.length() <= MAX_PAIR_LINE && line.indexOf('<') >= 0;
-                    i++) {
-                String unwrapped = SRT_TAG_PAIR.matcher(line).replaceAll("$2");
-                if (unwrapped.equals(line)) {
-                    break;
-                }
-                line = unwrapped;
+            if (line.indexOf('<') >= 0) {
+                line = unwrapTagPairs(line);
             }
         }
         return line.indexOf('{') < 0 ? line : SSA_OVERRIDE.matcher(line).replaceAll("");
+    }
+
+    /** Removes each open tag that a later same-name close tag matches, and that close tag. */
+    private static String unwrapTagPairs(String line) {
+        Map<String, ArrayDeque<int[]>> open = new HashMap<>();
+        boolean[] drop = new boolean[line.length()];
+        boolean any = false;
+        Matcher m = ANY_TAG.matcher(line);
+        while (m.find()) {
+            String name = m.group(2).toLowerCase(Locale.ROOT);
+            if (m.group(1).isEmpty()) {
+                open.computeIfAbsent(name, k -> new ArrayDeque<>())
+                        .push(new int[]{m.start(), m.end()});
+                continue;
+            }
+            ArrayDeque<int[]> opens = open.get(name);
+            if ((m.group(3) == null || m.group(3).isBlank()) && opens != null
+                    && !opens.isEmpty()) {
+                int[] o = opens.pop();
+                markRange(drop, o[0], o[1]);
+                markRange(drop, m.start(), m.end());
+                any = true;
+            }
+        }
+        if (!any) {
+            return line;
+        }
+        StringBuilder sb = new StringBuilder(line.length());
+        for (int i = 0; i < line.length(); i++) {
+            if (!drop[i]) {
+                sb.append(line.charAt(i));
+            }
+        }
+        return sb.toString();
+    }
+
+    private static void markRange(boolean[] drop, int start, int end) {
+        for (int i = start; i < end; i++) {
+            drop[i] = true;
+        }
     }
 
     private static String decodeEntities(String s) {
@@ -267,8 +302,8 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
                     } else if (blockStart && vtt && startMetaBlock(line, first)) {
                         blockStart = false;
                     } else {
+                        line(line, next, blockStart);
                         blockStart = false;
-                        line(line, next);
                     }
                     first = false;
                     line = next;
@@ -296,7 +331,11 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
             return true;
         }
 
-        private void line(String line, String next) throws SAXException {
+        private void line(String line, String next, boolean blockStart) throws SAXException {
+            // a cue right after the header, without the blank line the spec requires
+            if (block == Block.HEADER && timing(line) != null) {
+                block = Block.NONE;
+            }
             switch (block) {
                 case HEADER:
                     Matcher m = LANGUAGE_HEADER.matcher(line);
@@ -326,8 +365,8 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
                     pendingCue.addAttribute("", "data-id", "data-id", "CDATA", pendingId);
                     pendingId = null;
                 }
-            } else if (timing(next) != null) {
-                // a line right before a timing line is that cue's identifier
+            } else if (timing(next) != null && (vtt ? blockStart : isCueNumber(line))) {
+                // a cue identifier; any other line here is text missing its blank line
                 pendingId = line.strip();
             } else {
                 text(line);
@@ -351,6 +390,19 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
             if (t != null) {
                 pendingCue.addAttribute("", name, name, "CDATA", t);
             }
+        }
+
+        private static boolean isCueNumber(String line) {
+            String s = line.strip();
+            if (s.isEmpty()) {
+                return false;
+            }
+            for (int i = 0; i < s.length(); i++) {
+                if (!isDigit(s.charAt(i))) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static boolean startsWithKeyword(String line, String keyword) {

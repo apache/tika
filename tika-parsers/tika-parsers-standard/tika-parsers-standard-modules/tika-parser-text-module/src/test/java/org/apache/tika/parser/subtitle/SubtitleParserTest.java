@@ -161,10 +161,43 @@ public class SubtitleParserTest extends TikaTest {
     }
 
     @Test
+    public void testCrossedTagPairs() {
+        assertEquals("x", SubtitleParser.clean("<p><q></p></q>x", false));
+        assertEquals("<a>y</c>", SubtitleParser.clean("<a>y</c>", false));
+    }
+
+    @Test
     @Timeout(10)
     public void testLongTagLineStaysLinear() {
-        String hostile = "<a>".repeat(SubtitleParser.MAX_LINE_CHARS / 3);
-        assertEquals(hostile, SubtitleParser.clean(hostile, false));
+        int n = SubtitleParser.MAX_LINE_CHARS / 8;
+        String unmatched = "<a>".repeat(n) + "</c>".repeat(n);
+        assertEquals(unmatched, SubtitleParser.clean(unmatched, false));
+        assertEquals("text", SubtitleParser.clean("<a>".repeat(n) + "text" + "</a>".repeat(n),
+                false));
+    }
+
+    @Test
+    public void testVttCueRightAfterHeader() throws Exception {
+        String vtt = "WEBVTT\nLanguage: en\n00:00.000 --> 00:01.000\nHello\n\n"
+                + "00:02.000 --> 00:03.000\nBye\n";
+        XMLResult r = parse(vtt, "x.vtt", StandardCharsets.UTF_8);
+        assertEquals(List.of("Hello", "Bye"), cues(r));
+        assertEquals("en", r.metadata.get(TikaCoreProperties.LANGUAGE));
+    }
+
+    @Test
+    public void testTextBeforeTimingIsNotAnId() throws Exception {
+        String srt = "1\n00:00:01,000 --> 00:00:02,000\nHello\n"
+                + "00:00:03,000 --> 00:00:04,000\nBye\n";
+        XMLResult r = parse(srt, "x.srt", StandardCharsets.UTF_8);
+        assertEquals(List.of("Hello", "Bye"), cues(r));
+        assertNotContained("data-id=\"Hello\"", r.xml);
+
+        String vtt = "WEBVTT\n\n00:01.000 --> 00:02.000\nHello\n"
+                + "00:03.000 --> 00:04.000\nBye\n";
+        r = parse(vtt, "x.vtt", StandardCharsets.UTF_8);
+        assertEquals(List.of("Hello", "Bye"), cues(r));
+        assertNotContained("data-id", r.xml);
     }
 
     @ParameterizedTest
