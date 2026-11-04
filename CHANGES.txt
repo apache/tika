@@ -56,6 +56,10 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Canon CR3 raws emit their JPEG preview (PRVW, 1620x1080 on current bodies) as the
+     THUMBNAIL and the 160x120 THMB thumbnail as INLINE, so the thumbnail preset serves
+     a preview (TIKA-5042).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
