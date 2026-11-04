@@ -57,15 +57,15 @@ final class ZipPreview {
             MediaType.application("x-extension-fcstd"), entry("thumbnails/Thumbnail.png"),
             MediaType.application("x-procreate"), entry("QuickLook/Thumbnail.png"),
             MediaType.application("x-sketch"), entry("previews/preview.png"),
-            MediaType.parse("model/3mf"), ZipPreview::packageThumbnail);
+            MediaType.parse("model/3mf"), ZipPreview::opcPackageThumbnail);
 
-    private static final String PACKAGE_RELATIONSHIPS = "_rels/.rels";
+    private static final String OPC_PACKAGE_RELATIONSHIPS = "_rels/.rels";
 
-    private static final String THUMBNAIL_RELATIONSHIP =
+    private static final String OPC_THUMBNAIL_RELATIONSHIP =
             "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail";
 
-    /** A package's relationships are a few hundred bytes; this bounds a bad one. */
-    static final int MAX_RELATIONSHIPS_LENGTH = 1024 * 1024;
+    /** An OPC package's relationships are a few hundred bytes; this bounds a bad one. */
+    static final int MAX_OPC_RELATIONSHIPS_LENGTH = 1024 * 1024;
 
     private ZipPreview() {
     }
@@ -88,16 +88,17 @@ final class ZipPreview {
     }
 
     /**
-     * The target of an OPC package's thumbnail relationship, as 3MF names its thumbnail;
-     * a model part may carry thumbnails of its own, which are not the package's.
+     * The target of the thumbnail relationship of an OPC package (the container of 3MF, as
+     * of OOXML), as 3MF names its thumbnail; a part may carry thumbnails of its own, which
+     * are not the package's.
      */
-    private static String packageThumbnail(ZipFile zipFile) {
-        ZipArchiveEntry relationships = zipFile.getEntry(PACKAGE_RELATIONSHIPS);
+    private static String opcPackageThumbnail(ZipFile zipFile) {
+        ZipArchiveEntry relationships = zipFile.getEntry(OPC_PACKAGE_RELATIONSHIPS);
         if (relationships == null) {
             return null;
         }
-        ThumbnailTarget handler = new ThumbnailTarget();
-        try (InputStream in = new BoundedInputStream(MAX_RELATIONSHIPS_LENGTH,
+        OpcThumbnailTarget handler = new OpcThumbnailTarget();
+        try (InputStream in = new BoundedInputStream(MAX_OPC_RELATIONSHIPS_LENGTH,
                 zipFile.getInputStream(relationships))) {
             XMLReaderUtils.parseSAX(in, handler, new ParseContext());
         } catch (IOException | SAXException | TikaException e) {
@@ -110,13 +111,13 @@ final class ZipPreview {
         return zipFile.getEntry(name) == null ? null : name;
     }
 
-    private static final class ThumbnailTarget extends DefaultHandler {
+    private static final class OpcThumbnailTarget extends DefaultHandler {
         private String target;
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attrs) {
             if (target == null && "Relationship".equals(localName)
-                    && THUMBNAIL_RELATIONSHIP.equals(attrs.getValue("Type"))
+                    && OPC_THUMBNAIL_RELATIONSHIP.equals(attrs.getValue("Type"))
                     && !"External".equals(attrs.getValue("TargetMode"))) {
                 target = attrs.getValue("Target");
             }
