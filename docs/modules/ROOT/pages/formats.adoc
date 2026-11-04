@@ -213,8 +213,9 @@ link:{api}/org/apache/tika/parser/image/TiffParser.html[TiffParser], which use
 the metadata-extractor library for Exif, IPTC and XMP; and from
 link:{api}/org/apache/tika/parser/image/RawTiffParser.html[RawTiffParser] for
 camera RAW files built on TIFF.
-Canon CR3 files, which are built on the ISO base media file format, are read by
-the MP4 parser, which emits their stored JPEG previews.
+link:{api}/org/apache/tika/parser/image/Cr3Parser.html[Cr3Parser] reads Canon CR3
+raw files, which are built on the ISO base media file format: their Exif data and
+their stored JPEG previews.
 link:{api}/org/apache/tika/parser/image/HeifParser.html[HeifParser] (HEIF/HEIC,
 AVIF),
 link:{api}/org/apache/tika/parser/image/JXLParser.html[JXLParser] (JPEG XL),

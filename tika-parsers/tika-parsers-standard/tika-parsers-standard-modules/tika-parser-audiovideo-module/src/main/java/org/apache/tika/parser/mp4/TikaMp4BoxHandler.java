@@ -37,7 +37,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.mp4.boxes.CanonCr3Previews;
 import org.apache.tika.parser.mp4.boxes.ISO6709;
 import org.apache.tika.parser.mp4.boxes.TikaUserDataBox;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -84,7 +83,7 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     @Override
     public boolean shouldAcceptBox(@NotNull String box) {
         if (box.equals("udta") || box.equals("keys") || box.equals("ilst")
-                || box.equals("elst") || box.equals("uuid")) {
+                || box.equals("elst")) {
             return true;
         }
         return super.shouldAcceptBox(box);
@@ -118,9 +117,6 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
             return this;
         } else if (box.equals("elst")) {
             processEditList(payload);
-            return this;
-        } else if (box.equals("uuid")
-                && CanonCr3Previews.process(payload, xhtml, parseContext)) {
             return this;
         } else if (box.equals("hdlr") && payload != null && payload.length >= 12
                 && payload[8] == 'm' && payload[9] == 'e'
