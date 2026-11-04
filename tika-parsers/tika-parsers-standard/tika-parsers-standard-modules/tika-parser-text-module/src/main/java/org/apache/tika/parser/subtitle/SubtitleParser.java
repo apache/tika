@@ -70,9 +70,13 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
 
     // WebVTT escapes '<', so every '<' opens a tag (class, voice, lang, ruby, timestamp)
     private static final Pattern VTT_TAG = Pattern.compile("<[^>]*>?");
-    // SubRip has no escaping: strip only the tags players honor, keep a literal "a < b"
+    // SubRip has no escaping: strip the tags players honor and any closed tag pair, keep a
+    // literal "a < b"
     private static final Pattern SRT_TAG =
             Pattern.compile("</?(?:i|b|u|s|font)(?:\\s[^<>]*)?>", Pattern.CASE_INSENSITIVE);
+    private static final int MAX_PAIR_LINE = 1024;
+    private static final Pattern SRT_TAG_PAIR = Pattern.compile(
+            "<([A-Za-z][\\w-]*)(?:\\s[^<>]*)?>(.*?)</\\1\\s*>", Pattern.CASE_INSENSITIVE);
     // SSA override blocks some SubRip writers carry over, e.g. {\an8}
     private static final Pattern SSA_OVERRIDE = Pattern.compile("\\{\\\\[^{}]*}");
     private static final Pattern VTT_ENTITY =
@@ -171,6 +175,16 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
         }
         if (tag) {
             line = SRT_TAG.matcher(line).replaceAll("");
+            // innermost pairs first, so nested pairs unwrap; the match is quadratic in the
+            // line, and a real cue line is short
+            for (int i = 0; i < 8 && line.length() <= MAX_PAIR_LINE && line.indexOf('<') >= 0;
+                    i++) {
+                String unwrapped = SRT_TAG_PAIR.matcher(line).replaceAll("$2");
+                if (unwrapped.equals(line)) {
+                    break;
+                }
+                line = unwrapped;
+            }
         }
         return line.indexOf('{') < 0 ? line : SSA_OVERRIDE.matcher(line).replaceAll("");
     }
@@ -395,7 +409,8 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
         private final char[] buf = new char[8192];
         private int pos;
         private int len;
-        private boolean pendingLf;
+        // 1 after a CR, 2 after CR CR: CR CR LF is one break, a doubled CRLF conversion
+        private int crs;
 
         LineReader(Reader reader) {
             this.reader = reader;
@@ -409,15 +424,31 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
                     pos = 0;
                     if (len <= 0) {
                         len = 0;
+                        if (crs == 2) {
+                            crs = 0;
+                            return "";
+                        }
                         return sb == null ? null : sb.toString();
                     }
                 }
                 char c = buf[pos++];
-                if (pendingLf) {
-                    pendingLf = false;
+                if (crs == 1) {
+                    crs = 0;
                     if (c == '\n') {
                         continue;
                     }
+                    if (c == '\r') {
+                        crs = 2;
+                        continue;
+                    }
+                } else if (crs == 2) {
+                    crs = 0;
+                    if (c == '\n') {
+                        continue;
+                    }
+                    // the second CR ended an empty line; c starts the next one
+                    pos--;
+                    return "";
                 }
                 if (sb == null) {
                     sb = new StringBuilder();
@@ -426,7 +457,7 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
                     return sb.toString();
                 }
                 if (c == '\r') {
-                    pendingLf = true;
+                    crs = 1;
                     return sb.toString();
                 }
                 sb.append(c);

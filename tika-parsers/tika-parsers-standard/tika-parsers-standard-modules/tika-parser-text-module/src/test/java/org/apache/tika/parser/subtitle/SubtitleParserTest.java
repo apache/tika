@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -124,8 +126,49 @@ public class SubtitleParserTest extends TikaTest {
         assertEquals(expected, SubtitleParser.normalizeTime(parts[0]));
     }
 
+    @Test
+    public void testCrCrLfKeepsCueIds() throws Exception {
+        String srt = "1\r\r\n00:00:01,000 --> 00:00:02,000\r\r\none\r\r\n\r\r\n"
+                + "2\r\r\n00:00:03,000 --> 00:00:04,000\r\r\ntwo\r\r\n";
+        XMLResult r = parse(srt, "x.srt", StandardCharsets.UTF_8);
+        assertEquals(List.of("one", "two"), cues(r));
+        assertContains("data-id=\"2\"", r.xml);
+    }
+
+    @Test
+    public void testLineReaderBreaks() throws Exception {
+        // CR CR LF is one break; CR CR without LF still ends an empty line (old Mac endings)
+        assertEquals(List.of("a", "b", "", "", "c", ""), lines("a\r\r\nb\r\r\rc\r\r"));
+        assertEquals(List.of("a", "", "b"), lines("a\r\n\r\nb"));
+    }
+
+    private static List<String> lines(String s) throws IOException {
+        SubtitleParser.LineReader reader = new SubtitleParser.LineReader(new StringReader(s));
+        List<String> out = new ArrayList<>();
+        for (String l = reader.next(); l != null; l = reader.next()) {
+            out.add(l);
+        }
+        return out;
+    }
+
+    @Test
+    public void testSubRipUnknownTagPairs() {
+        assertEquals("hide closed pairs and show text",
+                SubtitleParser.clean("<x par=5>hide closed pairs</x> and <y><z>show</z> text</Y>",
+                        false));
+        assertEquals("<open>left alone, a < b", SubtitleParser.clean("<open>left alone, a < b",
+                false));
+    }
+
+    @Test
+    @Timeout(10)
+    public void testLongTagLineStaysLinear() {
+        String hostile = "<a>".repeat(SubtitleParser.MAX_LINE_CHARS / 3);
+        assertEquals(hostile, SubtitleParser.clean(hostile, false));
+    }
+
     @ParameterizedTest
-    @ValueSource(strings = {"\n", "\r\n", "\r"})
+    @ValueSource(strings = {"\n", "\r\n", "\r", "\r\r\n"})
     public void testLineEndingsAndMagic(String eol) throws Exception {
         String srt = ("1\n00:00:01,000 --> 00:00:02,000\none\n\n"
                 + "2\n00:00:03,000 --> 00:00:04,000\ntwo\n").replace("\n", eol);
