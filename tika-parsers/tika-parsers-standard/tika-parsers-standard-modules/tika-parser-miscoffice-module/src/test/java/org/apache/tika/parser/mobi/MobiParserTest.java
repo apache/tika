@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,9 +33,11 @@ import java.util.List;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -67,7 +70,7 @@ public class MobiParserTest extends TikaTest {
 
     private static final String[] FIXTURES = {"testMOBI.mobi", "testMOBI_kf8.azw3",
             "testMOBI_huffcdic.mobi", "testMOBI_huffcdic_broken.mobi", "testMOBI_hybrid.mobi",
-            "testMOBI_encrypted.mobi", "testMOBI_unknown_compression.mobi"};
+            "testMOBI_encrypted.mobi", "testMOBI_unknown_compression.mobi", "testMOBI_stored.mobi"};
 
     private byte[] fixture(String name) throws IOException {
         try (InputStream stream = getResourceAsStream("/test-documents/" + name)) {
@@ -93,7 +96,8 @@ public class MobiParserTest extends TikaTest {
         assertEquals("generator script", metadata.get(TikaCoreProperties.CONTRIBUTOR));
         assertEquals("Apache License 2.0", metadata.get(TikaCoreProperties.RIGHTS));
         assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
-        assertEquals("2021-03-04T00:00:00Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2021-03-04", metadata.get(TikaCoreProperties.CREATED),
+                "a date-only EXTH 106 stays a date, no midnight is invented");
         assertEquals("windows-1252", metadata.get(HttpHeaders.CONTENT_ENCODING));
         assertEquals("6", metadata.get(Mobi.VERSION));
         assertEquals("palmdoc", metadata.get(Mobi.COMPRESSION));
@@ -140,35 +144,56 @@ public class MobiParserTest extends TikaTest {
         assertContains("Zwölf Bögen, grüne Türen.", content);
         assertContains("äöü umlauts", content);
         assertNotContained("Cover", content);
+        // the stylesheet flow after the FDST's first is not text
+        assertNotContained("calibre", content);
+        assertNotContained("margin-top", content);
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("image/jpeg", list.get(1).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
-    public void testHybridEmitsTheKf8HalfAsEmbeddedDocument() throws Exception {
+    public void testHybridYieldsTheBookOnce() throws Exception {
         List<Metadata> list = getRecursiveMetadata("testMOBI_hybrid.mobi");
-        assertEquals(4, list.size());
+        assertEquals(3, list.size(), "the document, its cover and thumbnail; no second copy");
         Metadata old = list.get(0);
         assertEquals("application/x-mobipocket-ebook", old.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("The Hybrid Book", old.get(TikaCoreProperties.TITLE));
         assertEquals("true", old.get(Mobi.HYBRID));
-        assertEquals("false", list.get(3).get(Mobi.HYBRID));
         assertEquals("de", old.get(TikaCoreProperties.LANGUAGE));
-        assertEquals("de", list.get(3).get(TikaCoreProperties.LANGUAGE));
         assertContains("The old half, café and all.", old.get(TikaCoreProperties.TIKA_CONTENT));
         assertNotContained("Erstes Kapitel", old.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("cover.jpeg", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("thumbnail.png", list.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
+
+    /**
+     * With {@code extractKf8}, the KF8 half of a hybrid is an embedded document of its own.
+     * Its header counts records from its own record 0, as real hybrids have it; the text is
+     * cut at the FDST record found that way, so the stylesheet stays out.
+     */
+    @Test
+    public void testHybridKf8HalfOnRequest() throws Exception {
+        MobiParser parser = new MobiParser();
+        parser.setExtractKf8(true);
+        List<Metadata> list;
+        try (TikaInputStream tis = TikaInputStream.get(fixture("testMOBI_hybrid.mobi"))) {
+            list = getRecursiveMetadata(tis, parser, new Metadata(), new ParseContext(), false);
+        }
+        assertEquals(4, list.size());
         Metadata kf8 = list.get(3);
         assertEquals("kf8.azw3", kf8.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("application/vnd.amazon.mobi8-ebook", kf8.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK.toString(),
-                kf8.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertNull(kf8.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("false", kf8.get(Mobi.HYBRID));
         assertEquals("The Hybrid Book", kf8.get(TikaCoreProperties.TITLE));
-        assertContains("Erstes Kapitel", kf8.get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("Die neue Hälfte.", kf8.get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotContained("The old half", kf8.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("de", kf8.get(TikaCoreProperties.LANGUAGE));
+        String content = kf8.get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("Erstes Kapitel", content);
+        assertContains("Die neue Hälfte.", content);
+        assertNotContained("The old half", content);
+        assertNotContained("calibre", content);
+        assertNull(kf8.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     @Test
@@ -178,6 +203,7 @@ public class MobiParserTest extends TikaTest {
         assertEquals("The Test Book", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Ada Example", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("mobipocket", metadata.get(Mobi.ENCRYPTION));
+        assertEquals("true", metadata.get(TikaCoreProperties.IS_ENCRYPTED));
         assertNull(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
         String warning = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
         assertContains(EncryptedDocumentException.class.getName(), warning);
@@ -235,12 +261,20 @@ public class MobiParserTest extends TikaTest {
     @Test
     public void testTruncatedFile() throws Exception {
         byte[] whole = fixture("testMOBI.mobi");
-        for (int length : new int[]{0, 10, 77, 78, 100, 300, 700, whole.length - 1}) {
+        int record0End = PalmDatabase.read(whole).slice(1).offset();
+        for (int length : new int[]{0, 10, 77, 78, 100, 300, 700, record0End, whole.length - 1}) {
             byte[] cut = Arrays.copyOf(whole, length);
+            Metadata metadata = new Metadata();
             try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(cut))) {
-                new MobiParser().parse(tis, new DefaultHandler(), new Metadata(), new ParseContext());
+                new MobiParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
             } catch (TikaException e) {
-                // the only acceptable way out
+                // the only way out, and only while record 0 is incomplete
+                assertTrue(length < record0End, length + ": " + e);
+                continue;
+            }
+            if (length >= record0End) {
+                assertEquals("The Test Book", metadata.get(TikaCoreProperties.TITLE),
+                        "length " + length);
             }
         }
     }
@@ -260,10 +294,11 @@ public class MobiParserTest extends TikaTest {
             list = getRecursiveMetadata(tis, true);
         }
         Metadata metadata = list.get(0);
+        assertNull(metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
         assertEquals("The Hybrid Book", metadata.get(TikaCoreProperties.TITLE));
         assertContains("The old half", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("false", metadata.get(Mobi.HYBRID));
-        assertContains("The file is truncated: 4 of 10 records",
+        assertContains("The file is truncated: 4 of 11 records",
                 metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
         assertEquals(3, list.size());
         assertEquals("cover.jpeg", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -276,8 +311,12 @@ public class MobiParserTest extends TikaTest {
      * TikaException or make the best of it, but it may not fail with anything else.
      */
     @Test
+    @Timeout(120)
     public void testMutatedFilesFailCleanly() throws Exception {
         Random random = new Random(5026);
+        MobiParser parser = new MobiParser();
+        // the KF8 half of the hybrid is parsed too, mutations behind the boundary included
+        parser.setExtractKf8(true);
         for (String fixture : FIXTURES) {
             byte[] original = fixture(fixture);
             for (int round = 0; round < 200; round++) {
@@ -287,8 +326,7 @@ public class MobiParserTest extends TikaTest {
                     mutated[random.nextInt(mutated.length)] = (byte) random.nextInt(256);
                 }
                 try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(mutated))) {
-                    new MobiParser().parse(tis, new DefaultHandler(), new Metadata(),
-                            new ParseContext());
+                    getRecursiveMetadata(tis, parser, new Metadata(), new ParseContext(), false);
                 } catch (TikaException e) {
                     // refused or stopped, both fine
                 } catch (RuntimeException | StackOverflowError e) {
@@ -298,24 +336,173 @@ public class MobiParserTest extends TikaTest {
         }
     }
 
+    /** Not even a Palm Database, as a Topaz or KFX book named .azw: nothing and a warning. */
     @Test
-    public void testNotAMobi() throws Exception {
+    public void testNotAPalmDatabaseYieldsNothing() throws Exception {
+        Metadata metadata = new Metadata();
         try (InputStream stream = getResourceAsStream("/test-documents/testEPUB.epub");
                 TikaInputStream tis = TikaInputStream.get(stream)) {
-            assertThrows(TikaException.class, () -> new MobiParser()
-                    .parse(tis, new DefaultHandler(), new Metadata(), new ParseContext()));
+            new MobiParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
+        assertContains("Not a Mobipocket book",
+                metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     @Test
-    public void testParseDate() {
-        assertEquals(1415059200000L, MobiParser.parseDate("2014-11-04").getTime());
-        assertEquals(749520000000L, MobiParser.parseDate("1993-10-02T00:00:00+00:00").getTime());
-        assertEquals(749520000000L, MobiParser.parseDate("1993-10-02T00:00:00").getTime());
-        assertNull(MobiParser.parseDate("November 2014"));
-        // parses as a date, but no Date can hold the year
-        assertNull(MobiParser.parseDate("+999999999-01-01"));
-        assertNull(MobiParser.parseDate("+300000000-01-01T00:00:00Z"));
+    public void testStoredTextTitleFallbackLanguageAndCdeType() throws Exception {
+        XMLResult result = getXML("testMOBI_stored.mobi");
+        Metadata metadata = result.metadata;
+        assertEquals("none", metadata.get(Mobi.COMPRESSION));
+        assertEquals("A Test Book for Apache Tika", metadata.get(TikaCoreProperties.TITLE),
+                "without EXTH 503 the title is the header's full name");
+        assertEquals("fr", metadata.get(TikaCoreProperties.LANGUAGE),
+                "EXTH 524 wins over the header's locale (German)");
+        assertEquals("EBOK", metadata.get(Mobi.CDE_TYPE));
+        assertContains("The café opened at dawn.", result.xml);
+        assertContains("Second chapter, second record.", result.xml);
+    }
+
+    @Test
+    public void testDates() throws Exception {
+        assertEquals("1993-10-02T00:00:00Z", created("1993-10-02T00:00:00+00:00"));
+        assertEquals("1993-10-02T00:00:00", created("1993-10-02T00:00:00"));
+        assertEquals("2014-11-04", created("4 November 2014"), "not ISO, but a date");
+        assertNull(created("November 2014"), "no day, no creation date");
+    }
+
+    /** The CREATED value of a book whose only EXTH record is a 106 with the given date. */
+    private String created(String date) throws Exception {
+        List<Object[]> exth = new ArrayList<>();
+        exth.add(new Object[]{106, date});
+        byte[] record0 = record0WithExth(exth);
+        byte[] book = palmDatabase(fixture("testMOBI.mobi"), List.of(record0, new byte[]{0}));
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(book)) {
+            new MobiParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        return metadata.get(TikaCoreProperties.CREATED);
+    }
+
+    @Test
+    public void testUnknownCodepageIsWindows1252() throws Exception {
+        byte[] file = fixture("testMOBI.mobi");
+        int recordZero = PalmDatabase.read(file).slice(0).offset();
+        ByteBuffer.wrap(file).putInt(recordZero + 28, 0);
+        Metadata metadata = new Metadata();
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            xml = getXML(tis, new MobiParser(), metadata).xml;
+        }
+        assertEquals("windows-1252", metadata.get(HttpHeaders.CONTENT_ENCODING));
+        assertContains("The café opened at dawn.", xml);
+    }
+
+    @Test
+    public void testHuffCdicKeepsTheTextBeforeABadRecord() throws Exception {
+        byte[] file = fixture("testMOBI_huffcdic.mobi");
+        PalmDatabase pdb = PalmDatabase.read(file);
+        // the last text record, its trailing entries kept: codes the table does not hold
+        int last = MobiHeader.read(pdb).textRecordCount();
+        PalmDatabase.Slice record = pdb.slice(last);
+        Arrays.fill(file, record.offset(), record.offset() + record.length() - 4, (byte) 0);
+        Metadata metadata = new Metadata();
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            xml = getXML(tis, new MobiParser(), metadata).xml;
+        }
+        assertContains("Chapter One", xml);
+        assertContains("Text record " + last + " cannot be decoded",
+                metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    @Test
+    public void testLargerThanMaxFileSizeIsReadAsFarAsItGoes() throws Exception {
+        byte[] file = fixture("testMOBI.mobi");
+        MobiParser parser = new MobiParser();
+        parser.setMaxFileSize(PalmDatabase.read(file).slice(2).offset());
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        assertEquals("The Test Book", metadata.get(TikaCoreProperties.TITLE));
+        String warning = String.join(" ",
+                metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertContains("larger than", warning);
+        assertContains("maxFileSize", warning);
+        assertThrows(IllegalArgumentException.class, () -> parser.setMaxFileSize(0));
+    }
+
+    /** A .prc that is a PalmDOC text, not a Mobipocket book: nothing, a warning, no failure. */
+    @Test
+    public void testOtherPalmDatabaseYieldsNothing() throws Exception {
+        byte[] file = new byte[PalmDatabase.HEADER_SIZE + 8 + 2 + 16];
+        System.arraycopy("TEXtREAd".getBytes(StandardCharsets.US_ASCII), 0, file, 60, 8);
+        ByteBuffer.wrap(file).putShort(76, (short) 1).putInt(78, PalmDatabase.HEADER_SIZE + 10);
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            new MobiParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        assertContains("TEXtREAd", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    @Test
+    public void testExthIsBounded() throws Exception {
+        List<String> creators = new ArrayList<>();
+        for (int i = 0; i < 200; i++) {
+            creators.add("Creator " + i);
+        }
+        List<Object[]> exth = new ArrayList<>();
+        for (String creator : creators) {
+            exth.add(new Object[]{100, creator});
+        }
+        MobiHeader header = MobiHeader.read(record0WithExth(exth));
+        assertEquals(MobiHeader.MAX_VALUES_PER_TYPE,
+                header.exthStrings(MobiHeader.EXTH_CREATOR).size());
+    }
+
+    /**
+     * A version 6 record 0 without text: a minimal MOBI header and the given EXTH records,
+     * each a type and a string value.
+     */
+    private static byte[] record0WithExth(List<Object[]> records) {
+        int headerLength = 232;
+        List<byte[]> exth = new ArrayList<>();
+        int exthLength = 12;
+        for (Object[] record : records) {
+            byte[] value = ((String) record[1]).getBytes(StandardCharsets.US_ASCII);
+            exth.add(ByteBuffer.allocate(8 + value.length).putInt((Integer) record[0])
+                    .putInt(8 + value.length).put(value).array());
+            exthLength += 8 + value.length;
+        }
+        ByteBuffer r = ByteBuffer.allocate(16 + headerLength + exthLength);
+        r.position(16);
+        // MOBI, header length, book type, codepage, unique id, file version
+        r.put("MOBI".getBytes(StandardCharsets.US_ASCII)).putInt(headerLength).putInt(2)
+                .putInt(65001).putInt(0).putInt(6);
+        // the field offsets count from record 0, the MOBI header starts at 16
+        r.putInt(128, 0x40);
+        r.position(16 + headerLength);
+        r.put("EXTH".getBytes(StandardCharsets.US_ASCII)).putInt(exthLength).putInt(records.size());
+        for (byte[] record : exth) {
+            r.put(record);
+        }
+        return r.array();
+    }
+
+    @Test
+    public void testDetection() throws Exception {
+        byte[] file = fixture("testMOBI.mobi");
+        DefaultDetector detector = new DefaultDetector();
+        for (String[] c : new String[][]{{"book.mobi", "application/x-mobipocket-ebook"},
+                {"book.azw", "application/vnd.amazon.ebook"},
+                {"book.azw3", "application/vnd.amazon.mobi8-ebook"},
+                {"book.prc", "application/x-mobipocket-ebook"}}) {
+            Metadata metadata = new Metadata();
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, c[0]);
+            try (TikaInputStream tis = TikaInputStream.get(file)) {
+                assertEquals(c[1], detector.detect(tis, metadata, new ParseContext()).toString(), c[0]);
+            }
+        }
     }
 
     @Test
@@ -344,7 +531,7 @@ public class MobiParserTest extends TikaTest {
         parser.setMaxTextLength(600);
         Metadata metadata = new Metadata();
         String xml = getXML("testMOBI.mobi", parser, metadata).xml;
-        assertContains("The text is cut at 600 of the declared 6489 bytes",
+        assertContains("The text is cut at 600 of 6489 bytes",
                 metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
         assertContains("Chapter One", xml);
         assertNotContained("Chapter Two", xml);
@@ -472,10 +659,10 @@ public class MobiParserTest extends TikaTest {
 
     @Test
     public void testHybridWithAnythingButKf8BehindTheBoundaryIsNotSplit() throws Exception {
-        // EXTH 121 pointing at a text record, an image, the KF8 text, FLIS, FCIS or the
-        // 4-byte EOF record: none of them is a KF8 half, none may fail
+        // EXTH 121 pointing at a text record, an image, the KF8 text, FDST, FLIS, FCIS or
+        // the 4-byte EOF record: none of them is a KF8 half, none may fail
         byte[] original = fixture("testMOBI_hybrid.mobi");
-        for (int target : new int[]{1, 2, 3, 6, 7, 8, 9}) {
+        for (int target : new int[]{1, 2, 3, 6, 7, 8, 9, 10}) {
             byte[] mutated = original.clone();
             int exth121 = indexOf(mutated, new byte[]{0, 0, 0, 121, 0, 0, 0, 12});
             ByteBuffer.wrap(mutated).putInt(exth121 + 8, target);
@@ -489,12 +676,13 @@ public class MobiParserTest extends TikaTest {
      */
     @Test
     public void testVersion6HeaderBehindTheBoundaryIsNotSplit() throws Exception {
-        PalmDatabase pdb = PalmDatabase.read(fixture("testMOBI_hybrid.mobi"));
+        byte[] file = fixture("testMOBI_hybrid.mobi");
+        PalmDatabase pdb = PalmDatabase.read(file);
         List<byte[]> records = new ArrayList<>();
         for (int i = 0; i < pdb.recordCount(); i++) {
             records.add(i == 5 ? pdb.record(0) : pdb.record(i));
         }
-        assertNotAHybrid(pdb.rebuild(records));
+        assertNotAHybrid(palmDatabase(file, records));
     }
 
     private void assertNotAHybrid(byte[] file) throws Exception {
@@ -511,6 +699,25 @@ public class MobiParserTest extends TikaTest {
         assertEquals(3, list.size());
         assertEquals("cover.jpeg", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("thumbnail.png", list.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
+
+    /** A Palm Database with the header of {@code file} and the given records. */
+    private static byte[] palmDatabase(byte[] file, List<byte[]> records) {
+        int tableEnd = PalmDatabase.HEADER_SIZE + 8 * records.size() + 2;
+        int size = tableEnd;
+        for (byte[] record : records) {
+            size += record.length;
+        }
+        ByteBuffer out = ByteBuffer.allocate(size);
+        out.put(file, 0, PalmDatabase.HEADER_SIZE);
+        out.putShort(76, (short) records.size());
+        int offset = tableEnd;
+        for (int i = 0; i < records.size(); i++) {
+            out.putInt(PalmDatabase.HEADER_SIZE + 8 * i, offset).putInt(PalmDatabase.HEADER_SIZE + 8 * i + 4, 2 * i);
+            out.put(offset, records.get(i));
+            offset += records.get(i).length;
+        }
+        return out.array();
     }
 
     private static int indexOf(byte[] haystack, byte[] needle) {

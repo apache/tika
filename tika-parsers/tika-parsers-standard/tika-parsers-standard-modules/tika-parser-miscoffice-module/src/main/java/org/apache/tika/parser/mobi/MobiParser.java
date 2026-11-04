@@ -19,18 +19,10 @@ package org.apache.tika.parser.mobi;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
@@ -42,6 +34,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -54,6 +47,7 @@ import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Parser for Mobipocket books and their Kindle descendants: {@code .mobi}/{@code .prc},
@@ -65,11 +59,15 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * documents (the cover as the {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}),
  * and the text records, PalmDOC- or HUFF/CDIC-compressed or stored, are handed to the HTML
  * parser. The KF8 text is taken as its records hold it, without reassembling skeletons and
- * fragments. A hybrid file, a version 6 book with a KF8 book behind a BOUNDARY record,
- * yields the first as the document and the second as an embedded document. An encrypted
- * book yields its metadata and images, which are not encrypted, and records the locked text
- * as an {@link EncryptedDocumentException} warning rather than throwing it, so that the
- * unpack endpoints still answer with the cover.
+ * fragments; of its content flows only the first, the book's HTML, is text, the others are
+ * stylesheets and images. A hybrid file, a version 6 book with a KF8 book of the same
+ * content behind a BOUNDARY record, yields the first; the KF8 book is emitted as an embedded
+ * document of its own only with {@link #setExtractKf8(boolean)}. An encrypted book yields
+ * its metadata and images, which are not encrypted, sets {@code tika:encrypted} and records
+ * the locked text as an {@link EncryptedDocumentException} warning rather than throwing it,
+ * so that the unpack endpoints still answer with the cover. A file that is not a Mobipocket
+ * book, a {@code .prc} that is a Palm application or a plain PalmDOC text, yields nothing
+ * and a warning, as it did before there was a parser for the type.
  */
 @TikaComponent
 public class MobiParser implements Parser {
@@ -81,12 +79,22 @@ public class MobiParser implements Parser {
     static final MediaType KF8_TYPE = MediaType.application("vnd.amazon.mobi8-ebook");
     private static final Set<MediaType> SUPPORTED_TYPES = Set.of(MOBI_TYPE, AZW_TYPE, KF8_TYPE);
 
-    /** A book larger than this is not read; the largest real ones are tens of MB. */
-    static final int MAX_FILE_SIZE = 256 * 1024 * 1024;
-    /** The text is cut here whatever the header declares; a novel is a few MB. */
-    static final int DEFAULT_MAX_TEXT_LENGTH = 64 * 1024 * 1024;
+    /**
+     * Of a larger book only the first this many bytes are read: the header, the metadata and
+     * the records that fit. Real books are a few MB, illustrated ones some tens of MB.
+     */
+    static final int DEFAULT_MAX_FILE_SIZE = 256 * 1024 * 1024;
+    /** The text is cut here whatever the header declares; a novel is one or two MB. */
+    static final int DEFAULT_MAX_TEXT_LENGTH = 16 * 1024 * 1024;
+    /**
+     * The text is also cut at this multiple of the file's size: PalmDOC and HUFF/CDIC reach
+     * a few times the compressed size on real books, a crafted dictionary far more.
+     */
+    static final int MAX_TEXT_EXPANSION = 32;
 
+    private int maxFileSize = DEFAULT_MAX_FILE_SIZE;
     private int maxTextLength = DEFAULT_MAX_TEXT_LENGTH;
+    private boolean extractKf8 = false;
 
     private static final String BOOK_MOBI = "BOOKMOBI";
 
@@ -101,10 +109,7 @@ public class MobiParser implements Parser {
             new ImageMagic(new byte[]{'B', 'M'}, MediaType.image("bmp")));
     private static final byte[] BOUNDARY = "BOUNDARY".getBytes(StandardCharsets.ISO_8859_1);
 
-    private static final List<Function<String, Date>> DATE_FORMS = List.of(
-            value -> Date.from(OffsetDateTime.parse(value).toInstant()),
-            value -> Date.from(LocalDateTime.parse(value).toInstant(ZoneOffset.UTC)),
-            value -> Date.from(LocalDate.parse(value).atStartOfDay().toInstant(ZoneOffset.UTC)));
+    private static final byte[] FDST = "FDST".getBytes(StandardCharsets.ISO_8859_1);
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -124,19 +129,56 @@ public class MobiParser implements Parser {
         this.maxTextLength = maxTextLength;
     }
 
+    /** How many bytes of a book are read at most; of a larger one, its beginning. */
+    public int getMaxFileSize() {
+        return maxFileSize;
+    }
+
+    public void setMaxFileSize(int maxFileSize) {
+        if (maxFileSize <= 0) {
+            throw new IllegalArgumentException("maxFileSize must be positive, got " + maxFileSize);
+        }
+        this.maxFileSize = maxFileSize;
+    }
+
+    /**
+     * Whether the KF8 book of a hybrid file is emitted as an embedded document too. It holds
+     * the same book as the first half, so it is off by default.
+     */
+    public boolean isExtractKf8() {
+        return extractKf8;
+    }
+
+    public void setExtractKf8(boolean extractKf8) {
+        this.extractKf8 = extractKf8;
+    }
+
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        // refused before the read when the stream knows its length, after it otherwise
-        byte[] file = tis.hasLength() && tis.getLength() > MAX_FILE_SIZE ? null
-                : IOUtils.toByteArray(new BoundedInputStream(MAX_FILE_SIZE + 1L, tis));
-        if (file == null || file.length > MAX_FILE_SIZE) {
-            throw new TikaException("The book is larger than " + MAX_FILE_SIZE + " bytes");
+        byte[] file = IOUtils.toByteArray(new BoundedInputStream(maxFileSize, tis));
+        if (file.length == maxFileSize && tis.read() >= 0) {
+            // the beginning holds the header and the metadata; the records that do not fit
+            // are dropped as those of a truncated file are
+            EmbeddedDocumentUtil.recordException(new TikaException("The book is larger than "
+                    + maxFileSize + " bytes (maxFileSize); its first " + maxFileSize
+                    + " bytes are read"), metadata, context);
         }
-        PalmDatabase pdb = PalmDatabase.read(file);
+        // a .prc or .azw reaches this parser by its name: a Palm application, a PalmDOC text,
+        // a Topaz or KFX book; none of them is a Mobipocket book, and none was an error
+        // before there was a parser for the type
+        PalmDatabase pdb;
+        try {
+            pdb = PalmDatabase.read(file);
+        } catch (TikaException e) {
+            nothingExtracted(new TikaException("Not a Mobipocket book; nothing extracted", e),
+                    handler, metadata, context);
+            return;
+        }
         if (!BOOK_MOBI.equals(pdb.typeAndCreator())) {
-            throw new TikaException("Not a Mobipocket book: Palm Database type "
-                    + pdb.typeAndCreator());
+            nothingExtracted(new TikaException("Not a Mobipocket book: Palm Database type "
+                    + pdb.typeAndCreator() + "; nothing extracted"), handler, metadata, context);
+            return;
         }
         MobiHeader header = MobiHeader.read(pdb);
         if (pdb.recordCount() < pdb.declaredRecordCount()) {
@@ -152,14 +194,17 @@ public class MobiParser implements Parser {
         try {
             extractImages(pdb, header, kf8Half == null ? pdb.recordCount() : kf8Half.index(), xhtml,
                     context);
-            if (kf8Half != null) {
+            if (kf8Half != null && extractKf8) {
                 extractKf8Half(pdb, kf8Half, xhtml, context);
             }
             if (header.encryption() == MobiHeader.Encryption.NONE) {
-                extractText(pdb, header, xhtml, metadata, context, maxTextLength);
+                extractText(pdb, header, xhtml, metadata, context,
+                        (int) Math.min(maxTextLength, (long) MAX_TEXT_EXPANSION * file.length));
             } else {
                 // not thrown: the metadata and the images are complete, only the text is
-                // locked, and a thrown exception would cost the client the cover (422)
+                // locked, and a thrown exception would cost the client the cover (422); the
+                // flag a thrown EncryptedDocumentException would have set is set here
+                metadata.set(TikaCoreProperties.IS_ENCRYPTED, true);
                 EmbeddedDocumentUtil.recordException(new EncryptedDocumentException(
                         "The text is encrypted (Mobipocket encryption " + header.encryption().label()
                                 + "); metadata and images only"), metadata, context);
@@ -167,6 +212,15 @@ public class MobiParser implements Parser {
         } finally {
             xhtml.endDocument();
         }
+    }
+
+    private static void nothingExtracted(TikaException why, ContentHandler handler,
+                                         Metadata metadata, ParseContext context)
+            throws SAXException {
+        EmbeddedDocumentUtil.recordException(why, metadata, context);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+        xhtml.startDocument();
+        xhtml.endDocument();
     }
 
     private static void extractMetadata(MobiHeader header, boolean hybrid, Metadata metadata) {
@@ -215,7 +269,7 @@ public class MobiParser implements Parser {
             metadata.set(TikaCoreProperties.LANGUAGE, language);
         }
         String published = header.exthString(MobiHeader.EXTH_PUBLISHING_DATE);
-        Date date = published == null ? null : parseDate(published);
+        String date = published == null ? null : TikaDates.toMetadataString(published);
         if (date != null) {
             metadata.set(TikaCoreProperties.CREATED, date);
         }
@@ -228,19 +282,6 @@ public class MobiParser implements Parser {
             metadata.set(Mobi.CDE_TYPE, cdeType);
         }
         metadata.set(Mobi.HYBRID, hybrid);
-    }
-
-    /** EXTH 106 is an ISO date, with or without a time and an offset. */
-    static Date parseDate(String value) {
-        for (Function<String, Date> form : DATE_FORMS) {
-            try {
-                return form.apply(value);
-            } catch (DateTimeException | IllegalArgumentException e) {
-                // the next form, or none: a year beyond what a Date holds ends here too
-                continue;
-            }
-        }
-        return null;
     }
 
     /**
@@ -330,28 +371,22 @@ public class MobiParser implements Parser {
 
     /**
      * The KF8 book of a hybrid file as an embedded document of its own: a Palm Database
-     * rebuilt from the records from its record 0 on, with the header's record indices
-     * counted from there and no images, since the two halves share them and the first half
-     * has emitted them.
+     * rebuilt from the records from its record 0 on, whose record indices already count
+     * from there, without images, since the two halves share them and the first half has
+     * emitted them. Built only once the extractor wants it.
      */
     private static void extractKf8Half(PalmDatabase pdb, Kf8Half half, XHTMLContentHandler xhtml,
                                        ParseContext context) throws IOException, SAXException {
-        List<byte[]> records = new ArrayList<>();
-        records.add(half.header().rebasedRecord0(half.index()));
-        for (int i = half.index() + 1; i < pdb.recordCount(); i++) {
-            records.add(pdb.record(i));
-        }
         Metadata halfMetadata = Metadata.newInstance(context);
         halfMetadata.set(HttpHeaders.CONTENT_TYPE, KF8_TYPE.toString());
-        halfMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK.toString());
         halfMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "kf8.azw3");
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (!extractor.shouldParseEmbedded(halfMetadata, context)) {
             return;
         }
-        try (TikaInputStream stream = TikaInputStream.get(pdb.rebuild(records), halfMetadata)) {
+        byte[] book = pdb.rebuild(half.header().kf8Record0(), half.index() + 1);
+        try (TikaInputStream stream = TikaInputStream.get(book, halfMetadata)) {
             extractor.parseEmbedded(stream, xhtml, halfMetadata, context, true);
         }
     }
@@ -396,27 +431,56 @@ public class MobiParser implements Parser {
                 return;
         }
         int lastTextRecord = (int) Math.min(header.textRecordCount(), pdb.recordCount() - 1L);
-        long remaining = Math.min(header.textLength(), maxTextLength);
+        long bookLength = Math.min(header.textLength(), firstFlowEnd(pdb, header));
+        long remaining = Math.min(bookLength, maxTextLength);
         // decoded once at the end: a multibyte character may straddle two records
         ByteArrayOutputStream html = new ByteArrayOutputStream();
         for (int i = 1; i <= lastTextRecord && remaining > 0; i++) {
             PalmDatabase.Slice record = pdb.slice(i);
             record = record.trimmed(PalmDoc.trailingEntriesLength(record, header.trailingEntryFlags()));
-            byte[] text = decoder.decode(record, (int) Math.min(remaining, header.textRecordSize()));
+            byte[] text;
+            try {
+                text = decoder.decode(record, (int) Math.min(remaining, header.textRecordSize()));
+            } catch (TikaException e) {
+                // what the records before it held is kept, as for a truncated book
+                EmbeddedDocumentUtil.recordException(new TikaException("Text record " + i
+                        + " cannot be decoded; the text of the records before it is kept", e),
+                        metadata, context);
+                break;
+            }
             remaining -= text.length;
             html.write(text);
         }
-        if (header.textLength() > maxTextLength) {
+        if (bookLength > maxTextLength) {
             EmbeddedDocumentUtil.recordException(new TikaException("The text is cut at "
-                    + maxTextLength + " of the declared " + header.textLength() + " bytes"),
-                    metadata, context);
+                    + maxTextLength + " of " + bookLength + " bytes"), metadata, context);
         }
         if (html.size() == 0) {
             return;
         }
         htmlParser(context).parseString(html.toString(header.charset()),
                 new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                new Metadata(), context);
+                Metadata.newInstance(context), context);
+    }
+
+    /**
+     * Where the first content flow ends, by the FDST record of a KF8 book: the book's HTML;
+     * the flows after it are its stylesheets and SVG images. {@code Long.MAX_VALUE} when
+     * there is no FDST record to go by.
+     */
+    private static long firstFlowEnd(PalmDatabase pdb, MobiHeader header) {
+        long index = header.fdstIndex();
+        if (index <= 0 || index >= pdb.recordCount() || !pdb.recordStartsWith((int) index, FDST)) {
+            return Long.MAX_VALUE;
+        }
+        PalmDatabase.Slice fdst = pdb.slice((int) index);
+        // FDST, the offset of the table, the flow count, then a start and an end per flow
+        if (fdst.length() < 20) {
+            return Long.MAX_VALUE;
+        }
+        long count = EndianUtils.getUIntBE(fdst.data(), fdst.offset() + 8);
+        long end = EndianUtils.getUIntBE(fdst.data(), fdst.offset() + 16);
+        return count == 0 || end == 0 ? Long.MAX_VALUE : end;
     }
 
     /** What turns one text record into text, chosen once per book. */

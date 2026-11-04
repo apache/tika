@@ -182,16 +182,17 @@ def exth(records):
     return b'EXTH' + u32(length + pad) + u32(len(records)) + body + b'\0' * pad
 
 def record0(text, text_records, compression, encryption, codepage, version, exth_records,
-            full_name, first_image, trailing_flags, nrecords, huff=(0, 0), locale=0x409, base=0):
-    """Record 0; `base` is its own index in the file, so that the record index fields count
-    from the file start as the format has it (0 for a book that starts at record 0)."""
+            full_name, first_image, trailing_flags, nrecords, huff=(0, 0), locale=0x409, fdst=None):
+    """Record 0. The record index fields count from this record, also for the second
+    header of a hybrid, as real hybrids have them; `nrecords` counts from here too.
+    `fdst` is the index of a KF8 book's FDST record."""
     kf8 = version >= 8
     header_len = 264 if kf8 else 232
     h = bytearray()
     h += u16(compression) + u16(0) + u32(len(text)) + u16(len(text_records)) + u16(4096) + u16(encryption) + u16(0)
     h += b'MOBI' + u32(header_len) + u32(2) + u32(codepage) + u32(0x1234) + u32(version)
     h += u32(0xffffffff) * 10                       # 40..79 index records
-    h += u32(base + 1 + len(text_records))          # 80 first non-book record, file-relative
+    h += u32(1 + len(text_records))                 # 80 first non-book record
     name_offset_pos = len(h); h += u32(0) + u32(len(full_name))  # 84, 88 filled below
     h += u32(locale) + u32(0) + u32(0)              # 92 locale, 96, 100
     h += u32(version)                               # 104 min version
@@ -202,7 +203,7 @@ def record0(text, text_records, compression, encryption, codepage, version, exth
     h += u32(0xffffffff) + u32(0xffffffff) + u32(0) + u32(0) + u32(0)  # 164 unknown, 168 drm offset, 172 count, 176 size, 180 flags
     h += b'\0' * 8                                  # 184..191
     if kf8:
-        h += u32(0xffffffff) + u32(1)               # 192 FDST record (none), 196
+        h += u32(0xffffffff if fdst is None else fdst) + u32(1)  # 192 FDST record, 196 flow count
     else:
         h += u16(1) + u16(nrecords - 1) + u32(1)    # 192 first/last content, 196
     h += u32(nrecords - 2) + u32(1) + u32(nrecords - 3) + u32(1)  # 200 FCIS, 204, 208 FLIS, 212 (tail is FLIS, FCIS, EOF)
@@ -230,6 +231,12 @@ def pdb(name, records):
         offset += len(r)
     return header + table + b'\0\0' + b''.join(records)
 
+def fdst_record(flows):
+    """FDST: the offset of the table (12), the flow count, then start and end per flow."""
+    return b'FDST' + u32(12) + u32(len(flows)) + b''.join(u32(a) + u32(b) for a, b in flows)
+
+KF8_CSS = b'.calibre { display: block; margin: 0 } @page { margin-top: 5pt }'
+
 def text_records(text, compression, trailing_flags):
     recs = []
     for i in range(0, len(text), 4096):
@@ -245,10 +252,15 @@ def text_records(text, compression, trailing_flags):
 NULL = u32(0xffffffff)
 
 def build(path, version, compression=2, encryption=0, codepage=65001, text=None, exth_extra=(), name=b'Test Book',
-          cover=(201, u32(0)), huff_broken=False):
+          cover=(201, u32(0)), huff_broken=False, title=b'The Test Book', language=b'en', locale=0x409):
     trailing_flags = 0x3
     full_name = b'A Test Book for Apache Tika'
     huff_recs = []
+    flows = None
+    if version >= 8:
+        # the text records hold the book's HTML and then its stylesheet, as kindlegen writes them
+        flows = [(0, len(text)), (len(text), len(text) + len(KF8_CSS))]
+        text = text + KF8_CSS
     if compression == 17480:
         huff_rec, cdics, stream, seq, codes = huff_encode(text)
         # record boundaries fall on phrase boundaries: re-chunk the text by phrases of 4096 max
@@ -272,37 +284,44 @@ def build(path, version, compression=2, encryption=0, codepage=65001, text=None,
     images = [image('JPEG', (24, 32), (200, 30, 30)), image('PNG', (12, 16), (30, 200, 30)), image('GIF', (8, 8), (30, 30, 200))]
     first_image = 1 + len(text_recs) + len(huff_recs)
     tail = [b'FLIS' + b'\0' * 32, b'FCIS' + b'\0' * 40, b'\xe9\x8e\r\n']
-    nrecords = 1 + len(text_recs) + len(huff_recs) + len(images) + len(tail)
-    records = [(503, b'The Test Book'), (100, b'Ada Example'), (100, b'Bob Example'), (101, b'Tika Press'),
+    extra = [fdst_record(flows)] if flows else []
+    fdst = 1 + len(text_recs) + len(huff_recs) + len(images) if flows else None
+    nrecords = 1 + len(text_recs) + len(huff_recs) + len(images) + len(extra) + len(tail)
+    records = ([(503, title)] if title else []) + [(100, b'Ada Example'), (100, b'Bob Example'), (101, b'Tika Press'),
                (103, b'<p>A small Mobipocket book that exercises the parser.</p>'), (104, b'9780000000002'),
                (105, b'Testing'), (105, b'Fixtures'), (106, b'2021-03-04'), (108, b'generator script'),
-               (109, b'Apache License 2.0'), (113, b'B000TEST01'), (504, b'B000TEST01'), (524, b'en'),
-               cover, (202, u32(1)), (203, u32(0))] + list(exth_extra)
+               (109, b'Apache License 2.0'), (113, b'B000TEST01'), (504, b'B000TEST01')] + \
+              ([(524, language)] if language else []) + [cover, (202, u32(1)), (203, u32(0))] + list(exth_extra)
     r0 = record0(text if encryption == 0 else b'x' * 1024, text_recs, compression, encryption, codepage, version,
                  records, full_name, first_image, trailing_flags, nrecords,
-                 huff=(1, len(huff_recs)) if huff_broken else (1 + len(text_recs), len(huff_recs)) if huff_recs else (0, 0))
-    data = pdb(name, [r0] + text_recs + huff_recs + images + tail)
+                 huff=(1, len(huff_recs)) if huff_broken else (1 + len(text_recs), len(huff_recs)) if huff_recs else (0, 0),
+                 locale=locale, fdst=fdst)
+    data = pdb(name, [r0] + text_recs + huff_recs + images + extra + tail)
     with open(path, 'wb') as f: f.write(data)
     print(path, len(data), 'bytes', nrecords, 'records')
 
 def build_hybrid(path, text7, text8, name=b'Hybrid Book'):
     """kindlegen's dual file: a version 6 book, the shared images, a BOUNDARY record, then a
-    version 8 book whose header counts records from the start of the file. EXTH 121 of the
-    first header is the index of the second header."""
+    version 8 book whose header counts records from its own record 0, as real hybrids have
+    it. EXTH 121 of the first header is the index of the second header."""
     trailing_flags = 0x3
     full_name = b'A Hybrid Test Book'
     recs7 = text_records(text7, 2, trailing_flags)
+    flows8 = [(0, len(text8)), (len(text8), len(text8) + len(KF8_CSS))]
+    text8 = text8 + KF8_CSS
     recs8 = text_records(text8, 2, trailing_flags)
     images = [image('JPEG', (24, 32), (200, 30, 30)), image('PNG', (12, 16), (30, 200, 30))]
     first_image = 1 + len(recs7)
     kf8_index = first_image + len(images) + 1          # after the BOUNDARY record
     tail = [b'FLIS' + b'\0' * 32, b'FCIS' + b'\0' * 40, b'\xe9\x8e\r\n']
-    nrecords = kf8_index + 1 + len(recs8) + len(tail)
+    nrecords = kf8_index + 1 + len(recs8) + 1 + len(tail)
+    nrecords8 = 1 + len(recs8) + 1 + len(tail)          # counted from the KF8 record 0
     # no EXTH 524: the language has to come from the header's locale (0x407 = German)
     common = [(503, b'The Hybrid Book'), (100, b'Ada Example'), (201, u32(0)), (202, u32(1))]
     r0_7 = record0(text7, recs7, 2, 0, 1252, 6, common + [(121, u32(kf8_index))], full_name, first_image, trailing_flags, nrecords, locale=0x407)
-    r0_8 = record0(text8, recs8, 2, 0, 65001, 8, common + [(129, b'kindle:embed:0001'), (121, NULL)], full_name, first_image, trailing_flags, nrecords, locale=0x407, base=kf8_index)
-    data = pdb(name, [r0_7] + recs7 + images + [b'BOUNDARY'] + [r0_8] + recs8 + tail)
+    r0_8 = record0(text8, recs8, 2, 0, 65001, 8, common + [(129, b'kindle:embed:0001'), (121, NULL)], full_name,
+                   first_image, trailing_flags, nrecords8, locale=0x407, fdst=1 + len(recs8))
+    data = pdb(name, [r0_7] + recs7 + images + [b'BOUNDARY'] + [r0_8] + recs8 + [fdst_record(flows8)] + tail)
     with open(path, 'wb') as f: f.write(data)
     print(path, len(data), 'bytes', nrecords, 'records, kf8 header at', kf8_index)
 
@@ -317,6 +336,8 @@ kf8 = ('<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/199
        '<body aid="2"><h1 aid="3">Erstes Kapitel</h1><p aid="4">Zwölf Bögen, grüne Türen. ' + 'Fragment text repeats here. ' * 150 + '</p>'
        '<p aid="5">Second record text with äöü umlauts. ' + 'Again and again. ' * 60 + '</p></body></html>')
 build(os.path.join(out, 'testMOBI_kf8.azw3'), 8, text=kf8.encode('utf-8'), exth_extra=[(129, b'kindle:embed:0001'), (125, u32(3))])
+build(os.path.join(out, 'testMOBI_stored.mobi'), 6, compression=1, codepage=1252, text=mobi7.encode('cp1252'),
+      title=None, language=b'fr', locale=0x407, exth_extra=[(501, b'EBOK')])
 build(os.path.join(out, 'testMOBI_encrypted.mobi'), 6, encryption=2, codepage=1252, text=mobi7.encode('cp1252'),
       exth_extra=[(208, b'atv:kin:2:test'), (209, b'\x01\x00\x00\x00\xd0')])
 huffbook = ('<html><head></head><body><h1>Chapter One</h1><p>The caf\xe9 opened at dawn and the words of the first chapter '

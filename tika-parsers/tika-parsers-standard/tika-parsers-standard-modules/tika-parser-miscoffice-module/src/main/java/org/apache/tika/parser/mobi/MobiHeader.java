@@ -119,7 +119,6 @@ final class MobiHeader {
     private static final int HEADER_LENGTH_FIELD = 20;
     private static final int CODEPAGE_FIELD = 28;
     private static final int FILE_VERSION_FIELD = 36;
-    private static final int FIRST_NON_BOOK_FIELD = 80;
     private static final int FULL_NAME_OFFSET_FIELD = 84;
     private static final int FULL_NAME_LENGTH_FIELD = 88;
     private static final int LOCALE_FIELD = 92;
@@ -128,22 +127,14 @@ final class MobiHeader {
     private static final int HUFF_COUNT_FIELD = 116;
     private static final int EXTH_FLAGS_FIELD = 128;
     private static final int FDST_FIELD = 192;
-    private static final int FCIS_FIELD = 200;
-    private static final int FLIS_FIELD = 208;
     private static final int TRAILING_FLAGS_FIELD = 242;
-    private static final int NCX_FIELD = 244;
-    private static final int FRAGMENT_FIELD = 248;
-    private static final int SKELETON_FIELD = 252;
-    private static final int DATP_FIELD = 256;
-    private static final int GUIDE_FIELD = 260;
-
-    /** The fields of a KF8 header that hold record indices counted from the file start. */
-    private static final int[] KF8_RECORD_INDEX_FIELDS = {FIRST_NON_BOOK_FIELD, HUFF_RECORD_FIELD,
-            FDST_FIELD, FCIS_FIELD, FLIS_FIELD, NCX_FIELD, FRAGMENT_FIELD, SKELETON_FIELD,
-            DATP_FIELD, GUIDE_FIELD};
 
     /** The value writers put into a record index field that points nowhere. */
     static final long NULL_INDEX = 0xffffffffL;
+    /** EXTH records read at most; real books carry a few dozen. */
+    static final int MAX_EXTH_RECORDS = 1024;
+    /** Values of one EXTH type kept at most, e.g. creators or subjects. */
+    static final int MAX_VALUES_PER_TYPE = 64;
 
     private static final int MIN_RECORD_0 = 16 + 24;
     private static final int MOBI_OFFSET = 16;
@@ -263,25 +254,15 @@ final class MobiHeader {
     }
 
     /**
-     * A copy of this KF8 header's record 0 as the first record of a file of its own: the
-     * record index fields count from itself, the first image index is cleared so the images
-     * it shares with the first half of a hybrid are not emitted twice. {@code base} is the
-     * record's index in the file it came from.
+     * A copy of this KF8 header's record 0 as the first record of a file of its own. Its
+     * record index fields already count from itself, as the second header of a hybrid
+     * has them; only the first image index is cleared, so the images the KF8 half shares
+     * with the first half are not emitted twice.
      */
-    byte[] rebasedRecord0(int base) {
+    byte[] kf8Record0() {
         byte[] copy = record0.clone();
         if (hasField(FIRST_IMAGE_FIELD)) {
             PalmDatabase.putUInt(copy, FIRST_IMAGE_FIELD, 0);
-        }
-        for (int offset : KF8_RECORD_INDEX_FIELDS) {
-            if (!hasField(offset)) {
-                continue;
-            }
-            long value = EndianUtils.getUIntBE(copy, offset);
-            if (value == 0 || value == NULL_INDEX) {
-                continue;
-            }
-            PalmDatabase.putUInt(copy, offset, value >= base ? value - base : NULL_INDEX);
         }
         return copy;
     }
@@ -293,7 +274,7 @@ final class MobiHeader {
         }
         long count = EndianUtils.getUIntBE(r, offset + 8);
         int pos = offset + 12;
-        for (long i = 0; i < count && pos + 8 <= r.length; i++) {
+        for (long i = 0; i < Math.min(count, MAX_EXTH_RECORDS) && pos + 8 <= r.length; i++) {
             long type = EndianUtils.getUIntBE(r, pos);
             long recordLength = EndianUtils.getUIntBE(r, pos + 4);
             if (recordLength < 8 || pos + recordLength > r.length) {
@@ -358,6 +339,12 @@ final class MobiHeader {
         return firstImageIndex;
     }
 
+    /** The FDST record of a KF8 book, which bounds the text's flows, or -1. */
+    long fdstIndex() {
+        long index = isKf8() ? field(record0, FDST_FIELD) : 0;
+        return index == 0 || index == NULL_INDEX ? -1 : index;
+    }
+
     long huffRecordIndex() {
         return huffRecordIndex;
     }
@@ -383,17 +370,18 @@ final class MobiHeader {
     }
 
     private static Charset charsetOf(int codepage) {
-        if (codepage == CODEPAGE_UTF8 || codepage == 0) {
+        if (codepage == CODEPAGE_UTF8) {
             return StandardCharsets.UTF_8;
         }
-        if (codepage == CODEPAGE_CP1252) {
-            return Charset.forName("windows-1252");
+        if (codepage != CODEPAGE_CP1252 && codepage != 0) {
+            try {
+                return Charset.forName("windows-" + codepage);
+            } catch (IllegalArgumentException e) {
+                // an unknown codepage reads as the format's default, below
+            }
         }
-        try {
-            return Charset.forName("windows-" + codepage);
-        } catch (IllegalArgumentException e) {
-            return StandardCharsets.UTF_8;
-        }
+        // what Mobipocket writers use when they say nothing else
+        return Charset.forName("windows-1252");
     }
 
     boolean isKf8() {
@@ -413,7 +401,7 @@ final class MobiHeader {
     List<String> exthStrings(int type) {
         List<String> values = new ArrayList<>();
         for (ExthRecord record : exth) {
-            if (record.type() == type) {
+            if (record.type() == type && values.size() < MAX_VALUES_PER_TYPE) {
                 String value = record.asString(charset());
                 if (!value.isEmpty()) {
                     values.add(value);

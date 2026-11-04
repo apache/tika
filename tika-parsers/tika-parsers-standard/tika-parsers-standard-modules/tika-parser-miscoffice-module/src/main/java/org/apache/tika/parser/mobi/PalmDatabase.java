@@ -18,7 +18,6 @@ package org.apache.tika.parser.mobi;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
@@ -141,27 +140,35 @@ final class PalmDatabase {
     }
 
     /**
-     * A new Palm Database with this one's header (name, type and creator) and the given
-     * records, the way a reader application writes one: header, record table, two padding
-     * bytes, records.
+     * A new Palm Database with this one's header (name, type and creator), {@code first} as
+     * its record 0 and this one's records from {@code from} on, the way a reader application
+     * writes one: header, record table, two padding bytes, records. The records are copied
+     * once, straight into the new file.
      */
-    byte[] rebuild(List<byte[]> records) {
-        int tableSize = records.size() * RECORD_ENTRY_SIZE;
-        int size = HEADER_SIZE + tableSize + 2;
-        for (byte[] record : records) {
-            size += record.length;
+    byte[] rebuild(byte[] first, int from) {
+        int count = 1 + recordCount() - from;
+        int tableSize = count * RECORD_ENTRY_SIZE;
+        long size = HEADER_SIZE + tableSize + 2L + first.length;
+        for (int i = from; i < recordCount(); i++) {
+            size += recordLength(i);
         }
-        byte[] out = new byte[size];
+        byte[] out = new byte[(int) size];
         System.arraycopy(file, 0, out, 0, HEADER_SIZE);
-        out[RECORD_COUNT_OFFSET] = (byte) (records.size() >> 8);
-        out[RECORD_COUNT_OFFSET + 1] = (byte) records.size();
+        out[RECORD_COUNT_OFFSET] = (byte) (count >> 8);
+        out[RECORD_COUNT_OFFSET + 1] = (byte) count;
         int offset = HEADER_SIZE + tableSize + 2;
-        for (int i = 0; i < records.size(); i++) {
+        for (int i = 0; i < count; i++) {
             int entry = HEADER_SIZE + i * RECORD_ENTRY_SIZE;
             putUInt(out, entry, offset);
             putUInt(out, entry + 4, 2L * i);
-            System.arraycopy(records.get(i), 0, out, offset, records.get(i).length);
-            offset += records.get(i).length;
+            if (i == 0) {
+                System.arraycopy(first, 0, out, offset, first.length);
+                offset += first.length;
+            } else {
+                int source = from + i - 1;
+                System.arraycopy(file, recordOffsets[source], out, offset, recordLength(source));
+                offset += recordLength(source);
+            }
         }
         return out;
     }
