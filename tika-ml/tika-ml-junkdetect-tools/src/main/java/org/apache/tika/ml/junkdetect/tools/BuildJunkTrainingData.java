@@ -70,14 +70,15 @@ import java.util.zip.GZIPOutputStream;
  *     {script}.dev.gz     — 10% split, used for calibration (mu/sigma)
  *     {script}.test.gz    — 10% split, held out for final evaluation only
  *     manifest.tsv        — per-script stats: entropy, budget, bytes written, languages
+ *     source.tsv          — source corpus name and the SHA-256 of its manifest.tsv
  * </pre>
  *
  * <p>Usage:
  * <pre>
  *   java BuildJunkTrainingData \
- *     --data-dir   ~/datasets/madlad/data \
- *     --output-dir ~/datasets/madlad/junkdetect \
- *     [--total-budget-bytes 50000000]
+ *     --data-dir   &lt;corpus&gt; \
+ *     --output-dir &lt;workdir&gt;/junkdetect \
+ *     [--dry-run]
  * </pre>
  */
 public class BuildJunkTrainingData {
@@ -101,8 +102,8 @@ public class BuildJunkTrainingData {
     // -----------------------------------------------------------------------
 
     public static void main(String[] args) throws IOException {
-        Path dataDir = Paths.get(System.getProperty("user.home"), "datasets", "madlad", "data");
-        Path outputDir = Paths.get(System.getProperty("user.home"), "datasets", "madlad", "junkdetect");
+        Path dataDir = null;
+        Path outputDir = null;
         boolean dryRun = false;
 
         // Bind config-controlled values into local variables.  These are
@@ -154,6 +155,13 @@ public class BuildJunkTrainingData {
                     System.exit(1);
             }
         }
+
+        if (dataDir == null || outputDir == null) {
+            System.err.println("ERROR: --data-dir and --output-dir are required");
+            printUsage();
+            System.exit(1);
+        }
+        TrainingProvenance.requireManifest(dataDir, "source corpus");
 
         System.out.println("=== BuildJunkTrainingData ===");
         System.out.println("  data-dir:               " + dataDir);
@@ -446,6 +454,7 @@ public class BuildJunkTrainingData {
             }
         }
 
+        TrainingProvenance.writeSource(dataDir, outputDir);
         System.out.println("\nWrote manifest: " + manifest);
         System.out.println("Done.");
     }
@@ -728,10 +737,9 @@ public class BuildJunkTrainingData {
 
     private static void printUsage() {
         System.err.println("Usage: BuildJunkTrainingData [options]");
-        System.err.println("  --data-dir   <path>  MADLAD data root"
-                + " (default: ~/datasets/madlad/data)");
-        System.err.println("  --output-dir <path>  Output directory"
-                + " (default: ~/datasets/madlad/junkdetect)");
+        System.err.println("  --data-dir   <path>  Source corpus: <lang>/*.txt plus manifest.tsv"
+                + " (required)");
+        System.err.println("  --output-dir <path>  Output directory (required)");
         System.err.println("  --dry-run            Detect scripts + show budget,"
                 + " skip file writing.");
         System.err.println();

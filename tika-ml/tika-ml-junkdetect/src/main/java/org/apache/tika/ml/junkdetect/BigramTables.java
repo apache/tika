@@ -220,7 +220,8 @@ public final class BigramTables {
                 unigramQuantMin, unigramQuantMax);
     }
 
-    private int occupiedSlots() {
+    /** Number of distinct bigrams stored. */
+    public int occupiedSlots() {
         int n = 0;
         for (int k : bigramKeys) {
             if (k != EMPTY_KEY) n++;

@@ -198,14 +198,43 @@ public class TrainJunkModel {
     static final int CALIB_SAMPLES = 5000;
 
     public static void main(String[] args) throws IOException {
-        // Training data and output paths are intentionally NOT CLI-configurable.
-        // Single bundled model in git; never train to /tmp/; never maintain
-        // parallel A/B variants.  Edit and commit if these need to change.
-        Path dataDir = Paths.get(System.getProperty("user.home"),
-                "data", "junk-augmented-symbolboost");
-        Path output = Paths.get(
-                "tika-ml/tika-ml-junkdetect/src/main/resources",
-                "org/apache/tika/ml/junkdetect/junkdetect.bin");
+        // Run through train-junk-model.sh, which pins the corpus; every run writes
+        // <output>.provenance so a model can be traced to its data and code.
+        Path dataDir = null;
+        Path output = null;
+        String gitCommit = null;
+        for (int i = 0; i < args.length; i++) {
+            if (i + 1 >= args.length) {
+                System.err.println("ERROR: " + args[i] + " needs a value");
+                System.exit(1);
+            }
+            switch (args[i]) {
+                case "--data-dir":
+                    dataDir = Paths.get(args[++i]);
+                    break;
+                case "--output":
+                    output = Paths.get(args[++i]);
+                    break;
+                case "--git-commit":
+                    gitCommit = args[++i];
+                    break;
+                default:
+                    System.err.println("Unknown argument: " + args[i]
+                            + ".  Training parameters live in JunkDetectorTrainingConfig.");
+                    System.exit(1);
+            }
+        }
+        if (dataDir == null || output == null) {
+            System.err.println("Usage: TrainJunkModel --data-dir <BuildJunkTrainingData output>"
+                    + " --output <model.bin> [--git-commit <sha>]");
+            System.exit(1);
+        }
+        TrainingProvenance.requireManifest(dataDir, "training data");
+        if (!Files.isRegularFile(dataDir.resolve(TrainingProvenance.SOURCE_FILE))) {
+            System.err.println("ERROR: " + dataDir + " has no " + TrainingProvenance.SOURCE_FILE
+                    + "; rebuild it with BuildJunkTrainingData");
+            System.exit(1);
+        }
 
         // Durable training parameters live in JunkDetectorTrainingConfig; this
         // tool deliberately refuses CLI overrides so a built model file's
@@ -223,14 +252,6 @@ public class TrainJunkModel {
         }
         if (keyIndexBits < 1 || keyIndexBits > 16) {
             System.err.println("ERROR: KEY_INDEX_BITS must be in [1, 16], got " + keyIndexBits);
-            System.exit(1);
-        }
-
-        if (args.length > 0) {
-            System.err.println("TrainJunkModel takes no arguments.  Data-dir and"
-                    + " output path are baked in; edit the source if they need"
-                    + " to change.  Other training parameters live in"
-                    + " JunkDetectorTrainingConfig.");
             System.exit(1);
         }
 
@@ -277,10 +298,9 @@ public class TrainJunkModel {
         // file via forEachScriptBigram (the SAME tokenizer inference uses): the
         // text is split into maximal same-script LETTER runs (marks attach), each
         // run wrapped TOKEN_START..TOKEN_END, and the within-run bigrams (incl. the
-        // ^/$ edges) tallied to the run's script.  Non-letters are boundaries and
-        // emit nothing, so the trained tables hold exactly the bigrams inference
-        // scores.  The COMMON bucket is now effectively vestigial (only the rare
-        // COMMON-scripted letter lands there).
+        // ^/$ edges) tallied to the run's script.  In-run punctuation/symbols/digits
+        // attach as glue; whitespace and anomalies end a run.  The trained tables
+        // therefore hold exactly the bigrams inference scores.
         // -----------------------------------------------------------------------
         System.out.println("\n--- Phase 1: bucket-by-script F1 tables ---");
         Map<String, HashMap<Long, long[]>> pairsByScript = new HashMap<>();
@@ -388,6 +408,9 @@ public class TrainJunkModel {
                 combiner, scriptBuckets, scriptTransTable, scriptTransCal, output);
         System.out.printf(Locale.ROOT, "Model size: %,d bytes (%.1f KB)%n",
                 Files.size(output), Files.size(output) / 1024.0);
+        TrainingProvenance.writeModelProvenance(output, dataDir, args, gitCommit,
+                List.of(JunkDetectorTrainingConfig.class, TrainJunkModel.class));
+        System.out.println("Wrote " + output + TrainingProvenance.PROVENANCE_SUFFIX);
         System.out.println("Done.");
     }
 
