@@ -45,6 +45,12 @@
       <artifactId>tika-encoding-detector-mojibuster</artifactId>
       <version>${revision}</version>
     </dependency>
+    <!-- the meta-charset detector of the real chain, for the hashed trainer's chain pairs -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-html</artifactId>
+      <version>${revision}</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <!--

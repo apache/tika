@@ -127,6 +127,14 @@ public final class TrainingProvenance {
     static void writeModelProvenance(Path model, Path builtDir, String[] args,
                                      String gitCommit, List<Class<?>> configClasses)
             throws IOException {
+        writeModelProvenance(model, builtDir, args, gitCommit, configClasses, Map.of());
+    }
+
+    /** As above, plus {@code extra} entries (further inputs, run results) after the git state. */
+    static void writeModelProvenance(Path model, Path builtDir, String[] args,
+                                     String gitCommit, List<Class<?>> configClasses,
+                                     Map<String, String> extra)
+            throws IOException {
         Path builtManifest = requireManifest(builtDir, "training data");
         Path source = builtDir.resolve(SOURCE_FILE);
         if (!Files.isRegularFile(source)) {
@@ -142,11 +150,12 @@ public final class TrainingProvenance {
         kv.put("git_commit", gitCommit == null ? "unrecorded" : gitCommit);
         StringBuilder a = new StringBuilder();
         for (int i = 0; i < args.length; i++) {
-            boolean path = i > 0 && (args[i - 1].equals("--data-dir") || args[i - 1].equals("--output"));
+            boolean path = i > 0 && args[i - 1].startsWith("--") && !args[i - 1].equals("--git-commit");
             a.append(i == 0 ? "" : " ").append(path ? shortPath(Path.of(args[i])) : args[i]);
         }
         kv.put("args", a.toString());
         kv.put("java_version", System.getProperty("java.version"));
+        kv.putAll(extra);
         for (Class<?> c : configClasses) {
             for (Field f : c.getDeclaredFields()) {
                 int mod = f.getModifiers();

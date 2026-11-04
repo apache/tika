@@ -120,6 +120,29 @@ public class HashedJunkModelTest {
     // ---------------------------------------------------------------- contract
 
     @Test
+    public void staticFeaturesAreTheModelsFeatures() {
+        HashedJunkModel m = testModel();
+        Random r = new Random(11);
+        for (int i = 0; i < 200; i++) {
+            String t = randomText(r);
+            assertArrayEquals(m.buckets(t), HashedJunkModel.featureBuckets(t, LOG2, 3), t);
+        }
+        assertThrows(IllegalArgumentException.class, () -> HashedJunkModel.featureBuckets("a", 15, 3));
+        assertThrows(IllegalArgumentException.class, () -> HashedJunkModel.featureBuckets("a", LOG2, 5));
+    }
+
+    @Test
+    public void compareIsTheDifferenceOfPairValues() {
+        HashedJunkModel m = testModel();
+        Random r = new Random(12);
+        for (int i = 0; i < 200; i++) {
+            String a = randomText(r);
+            String b = randomText(r);
+            assertEquals(m.compare(a, b), m.pairValue(a) - m.pairValue(b), 1e-9);
+        }
+    }
+
+    @Test
     public void compareIsAntisymmetricAndZeroOnIdentity() {
         HashedJunkModel m = testModel();
         Random r = new Random(7);

@@ -308,8 +308,12 @@ public final class HashedJunkModel {
         }
     }
 
-    /** Calls {@code sink} with the bucket of every n-gram starting at each position, in order. */
     private void forEachBucket(Units u, BucketSink sink) {
+        forEachBucket(u, mask, maxN, sink);
+    }
+
+    /** Calls {@code sink} with the bucket of every n-gram starting at each position, in order. */
+    private static void forEachBucket(Units u, int mask, int maxN, BucketSink sink) {
         int[] cps = u.cps;
         int n = u.n;
         for (int i = 0; i < n; i++) {
@@ -330,12 +334,22 @@ public final class HashedJunkModel {
         void accept(int position, int bucket);
     }
 
-    /** Sorted bucket ids of every n-gram in {@code text}, with repeats. */
     int[] buckets(String text) {
+        return featureBuckets(text, log2Size, maxN);
+    }
+
+    /**
+     * Sorted bucket ids of every n-gram in {@code text}, with repeats: the features a model of
+     * this size and n-gram order sees.  For trainers; a model's weights index these buckets.
+     */
+    public static int[] featureBuckets(String text, int log2Size, int maxN) {
+        if (log2Size < MIN_LOG2_SIZE || log2Size > MAX_LOG2_SIZE || maxN < MIN_N || maxN > MAX_N) {
+            throw new IllegalArgumentException("log2Size " + log2Size + " / maxN " + maxN);
+        }
         Units u = new Units(text);
         int[] out = new int[Math.max(1, u.n * maxN)];
         int[] size = new int[1];
-        forEachBucket(u, (pos, b) -> out[size[0]++] = b);
+        forEachBucket(u, (1 << log2Size) - 1, maxN, (pos, b) -> out[size[0]++] = b);
         int[] r = Arrays.copyOf(out, size[0]);
         Arrays.sort(r);
         return r;
@@ -345,6 +359,14 @@ public final class HashedJunkModel {
         long[] sum = new long[1];
         forEachBucket(new Units(text), (pos, b) -> sum[0] += pairWeights[b]);
         return sum[0];
+    }
+
+    /**
+     * Pairwise value of one text: the scaled sum of its n-gram weights.  Only differences between
+     * decodes of the same bytes mean anything; {@link #compare} is the difference of two values.
+     */
+    public double pairValue(String text) {
+        return pairScale * (double) pairSum(text);
     }
 
     /**

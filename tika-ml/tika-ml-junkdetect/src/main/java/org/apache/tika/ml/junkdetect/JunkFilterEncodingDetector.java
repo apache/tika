@@ -168,73 +168,30 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             return Collections.emptyList();
         }
         bytes = stripBomBytes(bytes);
-
-        // Decode each candidate, then HtmlContentCleaner.clean — the same
-        // tag-strip + entity-expand TrainJunkModel applies, so train and
-        // inference match.  Entity expansion is load-bearing: numeric refs
-        // become codepoints whose cross-script transitions expose mojibake
-        // under a wrong decoding (AIT5 case).
-        Map<Charset, String> candidates = new LinkedHashMap<>();
-        // Dedup: charsets that decode the raw probe to the identical string
-        // (e.g. GB18030/GBK, x-windows-949/EUC-KR on non-extension content)
-        // share one clean() call — the cleaned result is identical by
-        // construction, so this is quality-neutral, purely a work saving.
-        Map<String, String> cleanedByRaw = new HashMap<>();
-        Set<Charset> candidateCharsets = bandFilter(context, uniqueCharsets);
-        for (Charset cs : candidateCharsets) {
-            String raw = safeDecode(bytes, cs);
-            if (raw == null || raw.isEmpty()) {
-                LOG.trace("junk-filter decode {} -> null/empty", cs.name());
-                continue;
-            }
-            String decoded = cleanedByRaw.get(raw);
-            if (decoded == null) {
-                decoded = HtmlContentCleaner.clean(raw);
-                cleanedByRaw.put(raw, decoded);
-            }
-            if (decoded != null && !decoded.isEmpty()) {
-                candidates.put(cs, decoded);
-            }
-        }
-        if (candidates.size() <= 1) {
-            // One or zero candidates produced usable text; nothing to compare.
-            LOG.trace("junk-filter <=1 usable candidate, abstaining");
-            return Collections.emptyList();
-        }
-        // When a DECLARATIVE candidate decodes byte-identically to at least
-        // one other candidate, honour the declaration — text quality cannot
-        // distinguish equivalent decodings, and a downstream divergent byte
-        // (e.g. 0xA4 = € in ISO-8859-15, ¤ in windows-1252) will then be
-        // decoded as the author intended.
-        Charset declared = pickDeclarativeWithEquivalentDecode(context, candidates);
-        if (declared != null) {
-            // A STRUCTURAL proof (valid multi-byte UTF-8, ISO-2022, BOM) outranks a
-            // DECLARATIVE self-claim on conflict.  The equivalent-decode shortcut
-            // compares tag-stripped text, so a doc whose only high bytes live in
-            // markup (a <meta> attribute, an <o:..> tag) ties on visible text and
-            // would honour a declaration the bytes contradict.  Defer to the proof
-            // (CJK-declaration guard in #overridesDeclared).
-            Charset structural = conflictingStructural(context, candidates, declared);
-            if (structural != null && overridesDeclared(structural, declared, bytes)) {
+        Candidates prepared = prepare(bytes, context);
+        Map<Charset, String> candidates = prepared.getTexts();
+        switch (prepared.getRule()) {
+            case TOO_FEW_TEXTS:
+                LOG.trace("junk-filter <=1 usable candidate, abstaining");
+                return Collections.emptyList();
+            case PREFER_STRUCTURAL:
                 context.setArbitrationInfo("junk-filter-prefer-structural");
-                LOG.trace("junk-filter -> {} (structural proof overrides declared {})",
-                        structural.name(), declared.name());
-                return List.of(new EncodingResult(structural,
-                        context.getTopConfidenceFor(structural)));
-            }
-            float conf = context.getTopConfidenceFor(declared);
-            context.setArbitrationInfo("junk-filter-prefer-declarative");
-            LOG.trace("junk-filter -> {} (declarative with equivalent decode)",
-                    declared.name());
-            return List.of(new EncodingResult(declared, conf));
-        }
-        if (allDecodingsIdentical(candidates)) {
-            // All decodings are byte-identical but no DECLARATIVE candidate
-            // is present.  Text quality cannot distinguish them; defer to
-            // the composite's default ordering.
-            context.setArbitrationInfo("junk-filter-identical-decodings");
-            LOG.trace("junk-filter all decodings identical, deferring");
-            return Collections.emptyList();
+                LOG.trace("junk-filter -> {} (structural proof overrides the declaration)",
+                        prepared.getRuleCharset().name());
+                return List.of(new EncodingResult(prepared.getRuleCharset(),
+                        context.getTopConfidenceFor(prepared.getRuleCharset())));
+            case PREFER_DECLARATIVE:
+                context.setArbitrationInfo("junk-filter-prefer-declarative");
+                LOG.trace("junk-filter -> {} (declarative with equivalent decode)",
+                        prepared.getRuleCharset().name());
+                return List.of(new EncodingResult(prepared.getRuleCharset(),
+                        context.getTopConfidenceFor(prepared.getRuleCharset())));
+            case IDENTICAL_DECODINGS:
+                context.setArbitrationInfo("junk-filter-identical-decodings");
+                LOG.trace("junk-filter all decodings identical, deferring");
+                return Collections.emptyList();
+            default:
+                break;
         }
 
         // Calibrated-rescale argmax.  Score each candidate once with the
@@ -480,6 +437,174 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             return win;
         }
         return champion;
+    }
+
+    /**
+     * What this filter arbitrates for {@code tis}: the probe, the charsets the candidate band keeps,
+     * their cleaned decodes, the anchors, and the rule (if any) that decides before the quality
+     * model.  For trainers and diagnostics; it reads the probe {@link #detect} reads, from the
+     * context's probe cache when there is one.
+     *
+     * @return {@code null} without a stream or context, or for an empty probe
+     */
+    public Candidates candidates(TikaInputStream tis, EncodingDetectorContext context)
+            throws IOException {
+        if (tis == null || context == null) {
+            return null;
+        }
+        byte[] bytes = readProbe(tis, context);
+        if (bytes == null || bytes.length == 0) {
+            return null;
+        }
+        return prepare(stripBomBytes(bytes), context);
+    }
+
+    private static Candidates prepare(byte[] bytes, EncodingDetectorContext context) {
+        // Decode each candidate, then HtmlContentCleaner.clean — the same
+        // tag-strip + entity-expand the trainer applies, so train and
+        // inference match.  Entity expansion is load-bearing: numeric refs
+        // become codepoints whose cross-script transitions expose mojibake
+        // under a wrong decoding (AIT5 case).
+        Map<Charset, String> texts = new LinkedHashMap<>();
+        // Dedup: charsets that decode the raw probe to the identical string
+        // (e.g. GB18030/GBK, x-windows-949/EUC-KR on non-extension content)
+        // share one clean() call — the cleaned result is identical by
+        // construction, so this is quality-neutral, purely a work saving.
+        Map<String, String> cleanedByRaw = new HashMap<>();
+        Set<Charset> band = bandFilter(context, context.getUniqueCharsets());
+        for (Charset cs : band) {
+            String raw = safeDecode(bytes, cs);
+            if (raw == null || raw.isEmpty()) {
+                LOG.trace("junk-filter decode {} -> null/empty", cs.name());
+                continue;
+            }
+            String decoded = cleanedByRaw.get(raw);
+            if (decoded == null) {
+                decoded = HtmlContentCleaner.clean(raw);
+                cleanedByRaw.put(raw, decoded);
+            }
+            if (decoded != null && !decoded.isEmpty()) {
+                texts.put(cs, decoded);
+            }
+        }
+        Charset structural = firstAnchor(context, texts, EncodingResult.ResultType.STRUCTURAL);
+        Charset declaredAnchor = firstAnchor(context, texts, EncodingResult.ResultType.DECLARATIVE);
+        Candidates.Rule rule = Candidates.Rule.MODEL;
+        Charset ruleCharset = null;
+        if (texts.size() <= 1) {
+            rule = Candidates.Rule.TOO_FEW_TEXTS;
+        } else {
+            // When a DECLARATIVE candidate decodes byte-identically to at least
+            // one other candidate, honour the declaration — text quality cannot
+            // distinguish equivalent decodings, and a downstream divergent byte
+            // (e.g. 0xA4 = € in ISO-8859-15, ¤ in windows-1252) will then be
+            // decoded as the author intended.
+            Charset declared = pickDeclarativeWithEquivalentDecode(context, texts);
+            if (declared != null) {
+                // A STRUCTURAL proof (valid multi-byte UTF-8, ISO-2022, BOM) outranks a
+                // DECLARATIVE self-claim on conflict.  The equivalent-decode shortcut
+                // compares tag-stripped text, so a doc whose only high bytes live in
+                // markup (a <meta> attribute, an <o:..> tag) ties on visible text and
+                // would honour a declaration the bytes contradict.  Defer to the proof
+                // (CJK-declaration guard in #overridesDeclared).
+                Charset proof = conflictingStructural(context, texts, declared);
+                if (proof != null && overridesDeclared(proof, declared, bytes)) {
+                    rule = Candidates.Rule.PREFER_STRUCTURAL;
+                    ruleCharset = proof;
+                } else {
+                    rule = Candidates.Rule.PREFER_DECLARATIVE;
+                    ruleCharset = declared;
+                }
+            } else if (allDecodingsIdentical(texts)) {
+                // No DECLARATIVE candidate and text quality cannot tell them apart.
+                rule = Candidates.Rule.IDENTICAL_DECODINGS;
+            }
+        }
+        return new Candidates(bytes, band, texts, structural, declaredAnchor, rule, ruleCharset);
+    }
+
+    /** First result of {@code type}, in detector order, whose charset produced a usable decode. */
+    private static Charset firstAnchor(EncodingDetectorContext context, Map<Charset, String> texts,
+                                       EncodingResult.ResultType type) {
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                if (er.getResultType() == type && texts.containsKey(er.getCharset())) {
+                    return er.getCharset();
+                }
+            }
+        }
+        return null;
+    }
+
+    /** What {@link #candidates} reports: the junk filter's view of one probe. */
+    public static final class Candidates {
+
+        /** What decides the charset for these candidates. */
+        public enum Rule {
+            /** The quality model arbitrates. */
+            MODEL,
+            /** At most one candidate decoded to usable text: the filter abstains. */
+            TOO_FEW_TEXTS,
+            /** A declared charset decodes like another candidate: the declaration wins. */
+            PREFER_DECLARATIVE,
+            /** As {@link #PREFER_DECLARATIVE}, but a structural proof contradicts the declaration. */
+            PREFER_STRUCTURAL,
+            /** Every candidate decodes to the same text and none is declared: the filter abstains. */
+            IDENTICAL_DECODINGS
+        }
+
+        private final byte[] probe;
+        private final List<Charset> band;
+        private final Map<Charset, String> texts;
+        private final Charset structural;
+        private final Charset declared;
+        private final Rule rule;
+        private final Charset ruleCharset;
+
+        Candidates(byte[] probe, Set<Charset> band, Map<Charset, String> texts, Charset structural,
+                   Charset declared, Rule rule, Charset ruleCharset) {
+            this.probe = probe;
+            this.band = Collections.unmodifiableList(new ArrayList<>(band));
+            this.texts = Collections.unmodifiableMap(texts);
+            this.structural = structural;
+            this.declared = declared;
+            this.rule = rule;
+            this.ruleCharset = ruleCharset;
+        }
+
+        /** The probe bytes the decodes come from, after any byte-order mark. */
+        public byte[] getProbe() {
+            return probe.clone();
+        }
+
+        /** Every charset the candidate band keeps, including those that failed to decode. */
+        public List<Charset> getBandCharsets() {
+            return band;
+        }
+
+        /** Cleaned decode of each band charset that produced text, in band order. */
+        public Map<Charset, String> getTexts() {
+            return texts;
+        }
+
+        /** First STRUCTURAL result with a decode, or {@code null}. */
+        public Charset getStructural() {
+            return structural;
+        }
+
+        /** First DECLARATIVE result with a decode, or {@code null}. */
+        public Charset getDeclared() {
+            return declared;
+        }
+
+        public Rule getRule() {
+            return rule;
+        }
+
+        /** The charset a {@code PREFER_*} rule picks; {@code null} for the other rules. */
+        public Charset getRuleCharset() {
+            return ruleCharset;
+        }
     }
 
     /**
