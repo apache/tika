@@ -146,6 +146,7 @@ public class ZipParser extends AbstractArchiveParser {
                 "application/vnd.ms-excel.sheet.binary.macroenabled.12",
                 "application/vnd.ms-excel.sheet.macroenabled.12",
                 "application/vnd.ms-excel.template.macroenabled.12",
+                "application/vnd.ms-package.3dmanufacturing-3dmodel+xml",
                 "application/vnd.ms-powerpoint.addin.macroenabled.12",
                 "application/vnd.ms-powerpoint.presentation.macroenabled.12",
                 "application/vnd.ms-powerpoint.slide.macroenabled.12",

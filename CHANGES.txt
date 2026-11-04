@@ -56,6 +56,9 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
+     sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
+
    * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
      <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
      cleaned of markup; WebVTT NOTE blocks become <div class="note"> and a Language
