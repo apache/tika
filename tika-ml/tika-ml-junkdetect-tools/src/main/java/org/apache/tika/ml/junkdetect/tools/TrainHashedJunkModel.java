@@ -371,6 +371,7 @@ public final class TrainHashedJunkModel {
                 ys.add(false);
             }
         }
+        damagedExamples(fit, p, report, xs, ys);
         report.put("point_examples", String.valueOf(xs.size()));
         int size = 1 << p.log2Size;
         float[] w = new float[size + 1];
@@ -405,6 +406,72 @@ public final class TrainHashedJunkModel {
                     loss / Math.max(1, xs.size()), w[size]);
         }
         return w;
+    }
+
+    /**
+     * Real damage from gold spans ({@link HashedTrainingConfig#DAMAGED_SPAN_WEIGHT}): padded spans as
+     * junk, the rest of the page as clean.  Pages whose visible text no longer hashes to their
+     * {@code vis_sha1} are skipped and counted: their spans point at other text.
+     */
+    static void damagedExamples(List<GoldPage> fit, Params p, Map<String, String> report,
+                                List<HashedFeatures.Vec> xs, List<Boolean> ys) {
+        int weight = HashedTrainingConfig.DAMAGED_SPAN_WEIGHT;
+        int pad = HashedTrainingConfig.DAMAGED_SPAN_PAD;
+        int[] stale = new int[1];
+        List<List<Object[]>> per = PairSources.inOrder(fit.size(), i -> {
+            GoldPage g = fit.get(i);
+            List<Object[]> out = new ArrayList<>();
+            if (weight == 0 || g.damageSpans.length == 0
+                    || !HashedTrainingConfig.DAMAGED_SPAN_BASES.contains(g.spanBasis)) {
+                return out;
+            }
+            String text = HtmlContentCleaner.clean(new String(PairSources.read(g.path),
+                    PairSources.decodeAs(g.labels.get(0))));
+            if (!PairSources.sha1Hex(text.getBytes(StandardCharsets.UTF_8)).equals(g.visSha1)) {
+                synchronized (stale) {
+                    stale[0]++;
+                }
+                return out;
+            }
+            int[] cps = text.codePoints().toArray();
+            boolean[] bad = new boolean[cps.length];
+            for (int[] s : g.damageSpans) {
+                int lo = Math.max(0, s[0] - pad);
+                int hi = Math.min(cps.length, s[1] + pad);
+                if (lo < hi) {
+                    out.add(new Object[]{new String(cps, lo, hi - lo), false});
+                    Arrays.fill(bad, lo, hi, true);
+                }
+            }
+            StringBuilder rest = new StringBuilder();
+            for (int k = 0; k < cps.length && rest.length() < p.clip; k++) {
+                rest.appendCodePoint(bad[k] ? ' ' : cps[k]);
+            }
+            String r = rest.toString().trim();
+            if (r.codePointCount(0, r.length()) >= HashedTrainingConfig.POINT_MIN_PAGE_CODEPOINTS) {
+                out.add(new Object[]{r, true});
+            }
+            return out;
+        });
+        int junk = 0;
+        int clean = 0;
+        for (List<Object[]> l : per) {
+            for (Object[] e : l) {
+                HashedFeatures.Vec v = HashedFeatures.pointVec(HashedFeatures.counts((String) e[0], p.log2Size, p.maxN));
+                for (int r = 0; r < weight; r++) {
+                    xs.add(v);
+                    ys.add((Boolean) e[1]);
+                }
+                if ((Boolean) e[1]) {
+                    clean++;
+                } else {
+                    junk++;
+                }
+            }
+        }
+        report.put("point_damaged_windows", String.valueOf(junk));
+        report.put("point_damaged_clean_rest", String.valueOf(clean));
+        report.put("point_damaged_stale_pages", String.valueOf(stale[0]));
     }
 
     /** A cross-fit page where deferring changes correctness: the champion or the anchor is right, not both. */

@@ -31,7 +31,9 @@ import java.util.Map;
  * One gold train page from a halves file: tab-separated with a header holding {@code path}
  * (relative to the file's directory, or absolute), {@code split}, {@code label} (comma-separated
  * equivalent charsets, the pick first), {@code half} ({@code even}/{@code odd}) and
- * {@code text_quality}.
+ * {@code text_quality}; optionally {@code damage_spans} ({@code start-end;...}, half-open code
+ * point ranges into the cleaned visible text of the labelled decode), {@code span_basis} and
+ * {@code vis_sha1} (sha1 of that text's UTF-8 bytes).
  */
 final class GoldPage {
 
@@ -39,12 +41,19 @@ final class GoldPage {
     final List<String> labels;
     final String half;
     final String textQuality;
+    final int[][] damageSpans;
+    final String spanBasis;
+    final String visSha1;
 
-    private GoldPage(Path path, List<String> labels, String half, String textQuality) {
+    private GoldPage(Path path, List<String> labels, String half, String textQuality,
+                     int[][] damageSpans, String spanBasis, String visSha1) {
         this.path = path;
         this.labels = labels;
         this.half = half;
         this.textQuality = textQuality;
+        this.damageSpans = damageSpans;
+        this.spanBasis = spanBasis;
+        this.visSha1 = visSha1;
     }
 
     boolean isClean() {
@@ -81,7 +90,33 @@ final class GoldPage {
             }
             out.add(new GoldPage(base.resolve(c[col.get("path")]),
                     Collections.unmodifiableList(Arrays.asList(c[col.get("label")].split(","))),
-                    half, c[col.get("text_quality")]));
+                    half, c[col.get("text_quality")], spans(get(c, col, "damage_spans"), halves, i + 1),
+                    get(c, col, "span_basis"), get(c, col, "vis_sha1")));
+        }
+        return out;
+    }
+
+    private static String get(String[] c, Map<String, Integer> col, String name) {
+        Integer i = col.get(name);
+        return i == null || i >= c.length ? "" : c[i];
+    }
+
+    private static int[][] spans(String s, Path file, int line) throws IOException {
+        if (s.isEmpty()) {
+            return new int[0][];
+        }
+        String[] parts = s.split(";");
+        int[][] out = new int[parts.length][];
+        for (int k = 0; k < parts.length; k++) {
+            String[] se = parts[k].split("-");
+            try {
+                out[k] = new int[]{Integer.parseInt(se[0]), Integer.parseInt(se[1])};
+            } catch (RuntimeException e) {
+                throw new IOException(file + " line " + line + ": bad damage span " + parts[k], e);
+            }
+            if (out[k][0] < 0 || out[k][1] <= out[k][0]) {
+                throw new IOException(file + " line " + line + ": bad damage span " + parts[k]);
+            }
         }
         return out;
     }

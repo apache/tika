@@ -334,8 +334,12 @@ final class PairSources {
     }
 
     static String sha1(String s) {
+        return sha1Hex(s.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static String sha1Hex(byte[] b) {
         try {
-            byte[] d = MessageDigest.getInstance("SHA-1").digest(s.getBytes(StandardCharsets.UTF_8));
+            byte[] d = MessageDigest.getInstance("SHA-1").digest(b);
             StringBuilder sb = new StringBuilder(40);
             for (byte x : d) {
                 sb.append(String.format(Locale.ROOT, "%02x", x));

@@ -95,6 +95,19 @@ public final class HashedTrainingConfig {
 
     public static final long POINT_SEED = 7;
 
+    /**
+     * Real damage for the pointwise head: each damage span of a fit-half gold page, padded by
+     * {@link #DAMAGED_SPAN_PAD} code points, is a junk example and the rest of the page a clean one,
+     * repeated this many times.  0 turns it off.  Only spans whose basis is in
+     * {@link #DAMAGED_SPAN_BASES}.
+     */
+    public static final int DAMAGED_SPAN_WEIGHT = 10;
+
+    public static final int DAMAGED_SPAN_PAD = 100;
+
+    /** {@code rule}: located mechanically (U+FFFD / control runs); {@code proposed} mojibake spans stay out. */
+    public static final List<String> DAMAGED_SPAN_BASES = Collections.unmodifiableList(List.of("rule", "adjudicated"));
+
     /** Shortest gold page, in codepoints, used as a clean example. */
     public static final int POINT_MIN_PAGE_CODEPOINTS = 50;
 

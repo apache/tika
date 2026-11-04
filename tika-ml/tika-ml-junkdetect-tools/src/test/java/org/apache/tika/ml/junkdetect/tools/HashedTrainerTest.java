@@ -139,6 +139,15 @@ public class HashedTrainerTest {
     }
 
     @Test
+    public void malformedDamageSpansAreRefused(@TempDir Path dir) throws IOException {
+        Path g = dir.resolve("halves.tsv");
+        Files.write(g, List.of("path\tsplit\tlabel\thalf\ttext_quality\tdamage_spans",
+                "a.html\ttrain\tUTF-8\teven\tdamaged\t12-7"));
+        IOException e = assertThrows(IOException.class, () -> GoldPage.read(g));
+        assertTrue(e.getMessage().contains("bad damage span"), e.getMessage());
+    }
+
+    @Test
     public void goldRowsOutsideTrainAreRefused(@TempDir Path dir) throws IOException {
         Path g = dir.resolve("halves.tsv");
         Files.write(g, List.of("path\tsplit\tlabel\thalf\ttext_quality", "a.html\tdev\tUTF-8\teven\tclean"));
@@ -192,7 +201,10 @@ public class HashedTrainerTest {
                 "pairs_real_decision_fit", "defer_sweep_curve", "point_clean_web", "chain"}) {
             assertTrue(r.report.containsKey(k), k + " missing from " + r.report);
         }
-        assertEquals("11", r.report.get("point_clean_web"), "the damaged even page is not a clean example");
+        assertEquals("10", r.report.get("point_clean_web"), "damaged even pages are not clean examples");
+        assertEquals("1", r.report.get("point_damaged_windows"), "one fresh span on an even page");
+        assertEquals("1", r.report.get("point_damaged_clean_rest"));
+        assertEquals("1", r.report.get("point_damaged_stale_pages"), "the stale page's spans are skipped");
         assertEquals(r.report.get("defer_sweep_decisive_pages"), String.valueOf(r.deferrals.size()));
         for (TrainHashedJunkModel.Deferral d : r.deferrals) {
             assertTrue(!d.champion.equals(d.anchor) && d.logit >= 0, d.champion + " " + d.anchor + " " + d.logit);

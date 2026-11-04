@@ -29,6 +29,9 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.tika.detect.CharsetSupersets;
+import org.apache.tika.ml.junkdetect.HtmlContentCleaner;
+
 /** A tiny synthetic corpus, built data, gold halves and real-decision sample for trainer tests. */
 final class HashedTrainingFixture {
 
@@ -56,15 +59,37 @@ final class HashedTrainingFixture {
 
         Path g = Files.createDirectories(root.resolve("gold"));
         List<String> rows = new ArrayList<>();
-        rows.add("path\tsplit\tlabel\thalf\ttext_quality");
+        rows.add("path\tsplit\tlabel\thalf\ttext_quality\tdamage_spans\tspan_basis\tvis_sha1");
         for (int i = 0; i < 24; i++) {
             String half = i % 2 == 0 ? "even" : "odd";
             boolean ru = i % 3 != 0;
             String cs = ru ? (i % 4 == 1 ? "KOI8-R" : "windows-1251") : (i % 4 == 0 ? "UTF-8" : "windows-1252");
             boolean meta = i % 5 != 0;
             String name = String.format(Locale.ROOT, "docs/p%02d.html", i);
-            write(g.resolve(name), page(ru ? RU : FR, r, meta ? cs : null).getBytes(Charset.forName(cs)));
-            rows.add(name + "\ttrain\t" + cs + "\t" + half + "\t" + (i == 8 ? "damaged" : "clean"));
+            String html = page(ru ? RU : FR, r, meta ? cs : null);
+            boolean damaged = i == 8 || i == 10;
+            if (damaged) {
+                // a run of injected control characters in the second paragraph
+                int at = html.indexOf("<p>", html.indexOf("<p>") + 1) + 3;
+                html = html.substring(0, at) + "\u0005\u0006\u0007\u0005\u0006" + html.substring(at);
+            }
+            byte[] b = html.getBytes(Charset.forName(cs));
+            write(g.resolve(name), b);
+            String spans = "";
+            String sha = "";
+            if (damaged) {
+                String vis = HtmlContentCleaner.clean(new String(b, CharsetSupersets.decodeAs(Charset.forName(cs))));
+                int[] cps = vis.codePoints().toArray();
+                int s = 0;
+                while (cps[s] != 5) {
+                    s++;
+                }
+                spans = s + "-" + (s + 5);
+                // page 10's text hash is stale: its spans must be ignored
+                sha = i == 8 ? PairSources.sha1Hex(vis.getBytes(StandardCharsets.UTF_8)) : "0000";
+            }
+            rows.add(name + "\ttrain\t" + cs + "\t" + half + "\t" + (damaged ? "damaged" : "clean")
+                    + "\t" + spans + "\t" + (damaged ? "rule" : "") + "\t" + sha);
         }
         gold = g.resolve("halves.tsv");
         Files.write(gold, rows, StandardCharsets.UTF_8);
