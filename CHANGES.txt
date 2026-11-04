@@ -56,6 +56,11 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * EpubParser resolves manifest hrefs as URI references relative to the OPF: a '+' is
+     no longer read as a space, and '../' is followed, so such chapters and images are no
+     longer skipped. encryption.xml URIs are resolved the same way. The new
+     ZipEntryPaths in tika-parser-zip-commons does the resolving (TIKA-5050).
+
    * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
      sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
 
