@@ -56,6 +56,10 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * SketchUp models (application/vnd.sketchup.skp, new, detected by their header) yield
+     the preview SketchUp stores as the THUMBNAIL embedded document, from SketchUp 3 to
+     2026 (TIKA-5036).
+
    * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
      <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
      cleaned of markup; WebVTT NOTE blocks become <div class="note"> and a Language

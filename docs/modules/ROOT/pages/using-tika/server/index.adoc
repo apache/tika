@@ -201,7 +201,7 @@ renders, so the presets do not make them. Both name the standard parsers, so the
 
 `/unpack/preset/thumbnail` — "just give me the thumbnail". The zip holds at most one raster
 image per request and nothing else: the stored thumbnail (Office docProps, audio cover art,
-raw camera previews, epub, iWork), the rasterized EMF/WMF thumbnail, or the PDF page; `204`
+raw camera previews, epub, SketchUp, iWork), the rasterized EMF/WMF thumbnail, or the PDF page; `204`
 when the document has none. An image file is its own thumbnail: it has no embedded documents,
 so it answers `204` too. Text is read from the first PDF page only, no OCR or inference runs,
 and embedded documents are parsed two levels deep at most, so the parse is cheap.
