@@ -40,7 +40,16 @@ public class TrainingProvenanceTest {
 
         assertThrows(IOException.class, () -> TrainingProvenance.writeSource(corpus, built));
         Files.writeString(corpus.resolve("manifest.tsv"), "lang\tscript\n", StandardCharsets.UTF_8);
+        Files.createDirectories(corpus.resolve("eng"));
+        Files.writeString(corpus.resolve("eng/sentences_wikipedia.txt"), "1\tHello.\n", StandardCharsets.UTF_8);
         TrainingProvenance.writeSource(corpus, built);
+        String content = TrainingProvenance.readKv(built.resolve(TrainingProvenance.SOURCE_FILE))
+                .get("source_content_sha256");
+        // editing a sentence file without touching the manifest changes the content digest
+        Files.writeString(corpus.resolve("eng/sentences_wikipedia.txt"), "1\tHullo.\n", StandardCharsets.UTF_8);
+        assertTrue(!content.equals(TrainingProvenance.contentSha256(corpus)));
+        Files.writeString(corpus.resolve("eng/sentences_wikipedia.txt"), "1\tHello.\n", StandardCharsets.UTF_8);
+        assertEquals(content, TrainingProvenance.contentSha256(corpus));
 
         Files.writeString(model, "model", StandardCharsets.UTF_8);
         assertThrows(IOException.class, () -> TrainingProvenance.writeModelProvenance(
