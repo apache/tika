@@ -258,6 +258,12 @@ public class ZipParserTest extends AbstractPkgTest {
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 entries.get("Previews/front.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE),
                 "a relative target counts from the package root");
+
+        entries = entriesByName(threeMF("/Metadata/plate%201.png", "Metadata/plate 1.png"),
+                "a.3mf");
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                entries.get("Metadata/plate 1.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE),
+                "the target is a URI, its escapes decoded");
     }
 
     @Test

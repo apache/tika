@@ -37,6 +37,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipEntryPaths;
 
 /**
  * Picks the entry of a zip-based format that is its preview image, so
@@ -104,11 +105,8 @@ final class ZipPreview {
         } catch (IOException | SAXException | TikaException e) {
             return null;
         }
-        if (handler.target == null) {
-            return null;
-        }
-        String name = handler.target.startsWith("/") ? handler.target.substring(1) : handler.target;
-        return zipFile.getEntry(name) == null ? null : name;
+        String name = ZipEntryPaths.resolve("", handler.target);
+        return name == null || zipFile.getEntry(name) == null ? null : name;
     }
 
     private static final class OpcThumbnailTarget extends DefaultHandler {
