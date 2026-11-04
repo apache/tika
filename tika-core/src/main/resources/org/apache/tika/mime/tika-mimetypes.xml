@@ -8061,6 +8061,11 @@
       <match value="(?i)&lt;(html|head|body|title|div)[ >]" type="regex" offset="0"/>
       <match value="(?i)&lt;h[123][ >]" type="regex" offset="0"/>
     </magic>
+    <!-- fragments served as pages: meta-first, PHP warnings, partials; below the weak
+         %PDF-/xhtml matches so a PDF or XHTML with a junk HTML prefix keeps its type -->
+    <magic priority="15">
+      <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+    </magic>
     <!-- The magic priority needs to be lower than that of -->
     <!--  files which contain HTML within them, eg mime emails -->
     <magic priority="40">
@@ -9261,6 +9266,10 @@
     <glob pattern="*.asx"/>
     <root-XML localName="asx"/>
     <root-XML localName="ASX"/>
+    <!-- often no XML declaration -->
+    <magic priority="50">
+      <match value="(?i)&lt;asx[\\s>]" type="regex" offset="0"/>
+    </magic>
     <sub-class-of type="application/xml"/>
   </mime-type>
   <mime-type type="video/x-ms-wm">

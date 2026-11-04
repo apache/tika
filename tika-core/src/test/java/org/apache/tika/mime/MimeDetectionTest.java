@@ -289,6 +289,34 @@ public class MimeDetectionTest {
         assertDetected(MediaType.OCTET_STREAM, bytes(0xac, 0xed, 0x53, 0xab, 0x49));
     }
 
+    @Test
+    public void testHtmlFragmentDetection() throws Exception {
+        for (String s : new String[]{
+                "<meta http-equiv=\"Content-Type\" content=\"text/html\">",
+                "<br />\n<b>Warning</b>:  filesize()",
+                "<p><a href='http://example.com'>x</a>",
+                "</b> <br>\n<font face=Arial>",
+                "<script type='text/javascript'>\nvar x = 1;",
+                "<SMALL>x</SMALL>"}) {
+            assertDetected(MediaType.TEXT_HTML, s.getBytes(US_ASCII));
+        }
+        assertDetected(MediaType.TEXT_PLAIN, "<abbr title=x>".getBytes(US_ASCII));
+        assertDetected(MediaType.TEXT_PLAIN, "<bread> and butter".getBytes(US_ASCII));
+        // injected analytics in front of a real document
+        assertDetected(MediaType.application("pdf"),
+                "<script>\n  (function(i,s,o,g,r,a,m){})\n</script>\n%PDF-1.4\n".getBytes(US_ASCII));
+        assertDetected(MediaType.application("xhtml+xml"),
+                ("<script src=\"urchin.js\"></script>\n" + "<!-- x -->\n".repeat(12)
+                        + "<html xmlns=\"http://www.w3.org/1999/xhtml\">").getBytes(US_ASCII));
+    }
+
+    @Test
+    public void testAsxWithoutXmlDeclaration() throws Exception {
+        MediaType asx = MediaType.application("x-ms-asx");
+        assertDetected(asx, "<ASX version = \"3.0\">\n<Entry>".getBytes(US_ASCII));
+        assertDetected(asx, "<Asx Version=\"3.0\"><Entry>".getBytes(US_ASCII));
+    }
+
     private static byte[] header(int offset, String ascii) {
         byte[] header = new byte[128];
         byte[] value = ascii.getBytes(US_ASCII);

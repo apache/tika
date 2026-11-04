@@ -80,6 +80,12 @@ Release 4.3.0 - ???
      in RSID format are detected, and PSID needs a valid version after the magic
      (TIKA-5029).
 
+   * HTML that opens with a fragment instead of <html> (a <meta>, <script>, <p>, <br>,
+     <table> or similar tag, as in pages that start with PHP warnings) is detected as
+     text/html, and Windows Media playlists without an XML declaration are detected as
+     application/x-ms-asx; they were application/octet-stream or text/plain. A PDF or
+     XHTML document with such a fragment in front keeps its type (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
