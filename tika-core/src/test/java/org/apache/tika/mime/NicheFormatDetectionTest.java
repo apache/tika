@@ -191,6 +191,45 @@ public class NicheFormatDetectionTest {
                 "\u0000X\u0017ü## time resolution: 250\u0000\u0000");
     }
 
+    @Test
+    public void testPrinterJobs() throws Exception {
+        MediaType pcl = MediaType.application("vnd.hp-pcl");
+        MediaType pclxl = MediaType.application("vnd.hp-pclxl");
+        assertDetected(pclxl, "\u001b%-12345X@PJL COMMENT x\r\n@PJL ENTER LANGUAGE = PCLXL\r\n");
+        assertDetected(pclxl, ") HP-PCL XL;3;0;Comment");
+        assertDetected(pcl, "\u001b%-12345X@PJL JOB\r\n@PJL ENTER LANGUAGE=PCL\r\n\u001bE");
+        assertDetected(pcl, "\u001b%-12345X\u001bE\u001b&u600D");
+        assertDetected(pcl, "\u001bE\u001b&l0O\u001b&l0H");
+        assertDetected(MediaType.application("postscript"),
+                "\u001b%-12345X@PJL\r\n@PJL ENTER LANGUAGE = POSTSCRIPT\r\n%!PS");
+    }
+
+    @Test
+    public void testAfpDumpsAndMetafiles() throws Exception {
+        assertDetected(MediaType.application("vnd.ibm.modcap"), "Z\u0000\u0010Ó¨Æ\u0000\u0000");
+        assertDetected(MediaType.application("x-dmp"), "MDMP\u0093§\u0000\u0000");
+        assertDetected(MediaType.application("x-windows-kernel-dump"), "PAGEDU64DU64");
+        assertDetected(MediaType.image("x-svm"), "VCLMTF\u0001\u0000");
+        assertDetected(MediaType.parse("application/vnd.lotus-1-2-3;version=97+9.x"),
+                "\u0000\u0000\u001a\u0000\u0005\u0010\u0004\u0000");
+    }
+
+    @Test
+    public void testIdentifiedCrawlClusters() throws Exception {
+        assertDetected(MediaType.application("x-promethean-flipchart"),
+                " Bamboo \u0007\u0000\u0006\u0000\u0000\u00001\u0000.\u00000\u0000");
+        StringBuilder casio = new StringBuilder();
+        for (char c : "USBPower1\u0000\u0010\u0000\u0010\u0000".toCharArray()) {
+            casio.append((char) (~c & 0xff));
+        }
+        assertDetected(MediaType.application("x-casio-g1m"), casio.toString());
+        assertDetected(MediaType.application("x-haihaisoft-drm"),
+                "XDRM\u0000\u0000\u0000\n\u0000\u0003HEAD\u0000\u0000\u0000Ñ\u0000\u0003<XDRMHEADER>");
+        assertDetected(MediaType.application("x-navitel-map"),
+                "PMGC\u0005\u0000Ò\u000f\u0004\u0000\f\u0000\u0000\u0000\u0000\u0000"
+                        + "\u0084Sÿ\u0018\u0084\u0000\u0000\u0000\u0084\u0000\u0000\u0000");
+    }
+
     private static void assertDetected(MediaType expected, String latin1) throws IOException {
         byte[] bytes = new byte[64];
         byte[] header = latin1.getBytes(ISO_8859_1);

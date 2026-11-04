@@ -113,6 +113,13 @@ Release 4.3.0 - ???
      control files and PhysioNet WFDB annotations are detected by content; they were
      application/octet-stream in a recent Common Crawl sample (TIKA-5029).
 
+   * HP printer jobs are detected by content: PJL jobs by the language they enter (PCL,
+     PCL XL or PostScript), and raw PCL5 and PCL XL streams. So are IBM MO:DCA (AFP)
+     documents, Windows minidumps and kernel dumps, StarView metafiles, Lotus 1-2-3 files
+     with format version 0x1005, Promethean ActivInspire flipcharts, Casio calculator
+     (g1m family) files, Haihaisoft DRM-X protected files and Navitel maps; they were
+     application/octet-stream (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 

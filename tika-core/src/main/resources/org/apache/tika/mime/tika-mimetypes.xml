@@ -1045,6 +1045,10 @@
 
   <mime-type type="application/postscript">
     <_comment>PostScript</_comment>
+    <magic priority="60">
+      <!-- PJL job that switches to PostScript -->
+      <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*POSTSCRIPT" type="regex" offset="0"/>
+    </magic>
     <magic priority="50">
       <match value="%!" type="string" offset="0" />
       <match value="\004%!" type="string" offset="0" />
@@ -1773,10 +1777,27 @@
     <glob pattern="*.jlt"/>
   </mime-type>
   <mime-type type="application/vnd.hp-pcl">
+    <magic priority="60">
+      <!-- PJL job (UEL, then @PJL commands) that switches to PCL, not PCL XL -->
+      <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCL\\s" type="regex" offset="0"/>
+    </magic>
+    <magic priority="50">
+      <!-- UEL straight into PCL, or a raw PCL5 stream: reset, then a parameterized command -->
+      <match value="\x1b%-12345X\x1bE" type="string" offset="0"/>
+      <match value="\x1bE\x1b[&amp;*(%]" type="regex" offset="0"/>
+    </magic>
     <glob pattern="*.pcl"/>
   </mime-type>
   <mime-type type="application/vnd.hp-pclxl">
+    <magic priority="60">
+      <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCLXL" type="regex" offset="0"/>
+    </magic>
+    <magic priority="50">
+      <!-- stream header, e.g. ") HP-PCL XL;3;0;" -->
+      <match value=") HP-PCL XL;" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.pclxl"/>
+    <glob pattern="*.pxl"/>
   </mime-type>
   <mime-type type="application/vnd.httphone"/>
   <mime-type type="application/vnd.hydrostatix.sof-data">
@@ -1791,6 +1812,12 @@
     <glob pattern="*.mpy"/>
   </mime-type>
   <mime-type type="application/vnd.ibm.modcap">
+    <magic priority="50">
+      <!-- MO:DCA structured field: 5A, 2-byte length, D3 class, A8 = Begin (document, resource group, ...) -->
+      <match value="0x5A" type="string" offset="0">
+        <match value="0xD3A8" type="string" offset="3"/>
+      </match>
+    </magic>
     <glob pattern="*.afp"/>
     <glob pattern="*.listafp"/>
     <glob pattern="*.list3820"/>
@@ -2009,6 +2036,8 @@
     <magic priority="50">
       <match value="0x00001A0003100400" type="string" offset="0">
       </match>
+      <!-- 0x1005 is also seen in .123 files -->
+      <match value="0x00001A0005100400" type="string" offset="0"/>
     </magic>
     <glob pattern="*.123"/>
   </mime-type>
@@ -3492,6 +3521,13 @@
     <glob pattern="*.wspolicy"/>
   </mime-type>
   
+  <mime-type type="image/x-svm">
+    <_comment>StarView Metafile</_comment>
+    <magic priority="50">
+      <match value="VCLMTF" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.svm"/>
+  </mime-type>
   <mime-type type="image/x-tga">
      <alias type="image/x-targa"/>
      <_comment>Targa image data</_comment>
@@ -3960,6 +3996,18 @@
     </magic>
     <glob pattern="*.fxi"/>
   </mime-type>
+  <mime-type type="application/x-casio-g1m">
+    <_comment>Casio calculator file (g1m family)</_comment>
+    <magic priority="50">
+      <!-- "USBPower", bitwise inverted -->
+      <match value="0xAAACBDAF90889A8D" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.g1m"/>
+    <glob pattern="*.g1r"/>
+    <glob pattern="*.g2m"/>
+    <glob pattern="*.g2r"/>
+    <glob pattern="*.g3m"/>
+  </mime-type>
   <mime-type type="application/x-cdf">
     <_comment>CD Audio</_comment>
     <magic priority="50">
@@ -4335,6 +4383,19 @@
     </magic>
     <!-- too rare to use? <glob pattern="*.mmm"/> -->
   </mime-type>
+  <mime-type type="application/x-dmp">
+    <_comment>Windows minidump</_comment>
+    <magic priority="50">
+      <match value="MDMP\x93\xa7" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-windows-kernel-dump">
+    <_comment>Windows kernel memory dump</_comment>
+    <magic priority="50">
+      <match value="PAGEDUMP" type="string" offset="0"/>
+      <match value="PAGEDU64" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-dosexec">
     <_comment>DOS/Windows executable (EXE)</_comment>
     <!-- magic is MZ at offset=0, but that may not be unique enough -->
@@ -4520,6 +4581,14 @@
     <_comment>ESRI Layer file</_comment>
     <sub-class-of type="application/x-tika-msoffice"/>
     <glob pattern="*.lyr"/>
+  </mime-type>
+  <mime-type type="application/x-haihaisoft-drm">
+    <_comment>Haihaisoft DRM-X protected file</_comment>
+    <magic priority="50">
+      <match value="XDRM" type="string" offset="0">
+        <match value="HEAD" type="string" offset="10"/>
+      </match>
+    </magic>
   </mime-type>
   <mime-type type="application/x-hdf">
     <_comment>Hierarchical Data Format File</_comment>
@@ -5208,6 +5277,14 @@
       <match value="0x43444601" type="string" offset="0"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-navitel-map">
+    <_comment>Navitel Navigator map</_comment>
+    <magic priority="50">
+      <match value="PMGC\x05\x00" type="string" offset="0">
+        <match value="0x8400000084000000" type="string" offset="20"/>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-nufx">
     <_comment>NuFX (ShrinkIt) archive</_comment>
     <magic priority="50">
@@ -5269,6 +5346,13 @@
     <magic priority="50">
       <match value="0M3C" type="string" offset="8" />
     </magic>
+  </mime-type>
+  <mime-type type="application/x-promethean-flipchart">
+    <_comment>Promethean ActivInspire flipchart</_comment>
+    <magic priority="50">
+      <match value=" Bamboo " type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.flipchart"/>
   </mime-type>
   <mime-type type="application/x-ps3-package">
     <_comment>PlayStation 3/PSP package</_comment>
