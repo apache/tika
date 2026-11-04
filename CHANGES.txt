@@ -56,6 +56,9 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
+     sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 
