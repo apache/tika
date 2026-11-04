@@ -31,13 +31,11 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.FileSystem;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -68,11 +66,6 @@ public class RarParser implements Parser {
 
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        String mediaType = metadata.get(HttpHeaders.CONTENT_TYPE);
-
-        if (mediaType != null && mediaType.contains("version=5")) {
-            throw new UnsupportedFormatException("Tika does not yet support rar version 5.");
-        }
         Archive rar = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
             rar = new Archive(tis.getFile());
