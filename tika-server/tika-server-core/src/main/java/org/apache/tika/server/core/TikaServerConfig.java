@@ -74,6 +74,17 @@ public class TikaServerConfig {
     /** A value for a {@code server} field and what set it, for the log and the error. */
     private record Setting(String value, String source) {
     }
+
+    /** Fields that are not settings, and where they are set instead. */
+    private static final Map<String, String> NOT_SETTINGS = Map.of(
+            "configPath", "the -c option",
+            "presets", "--preset or " + PRESETS_ENV,
+            "tlsConfig", "the config file, it takes an object",
+            "endpoints", "the config file, it takes a list");
+
+    /** Fields that have an option of their own, and that option. */
+    private static final Map<String, String> OWN_OPTIONS = Map.of(
+            "port", "p", "host", "h", "id", "i", "metricsPort", "metricsPort");
     /**
      * Endpoints that expose the pipes/fetch machinery (process-isolated pipes
      * parsing and async batch processing). Selecting any of these requires
@@ -165,6 +176,14 @@ public class TikaServerConfig {
         }
 
         Map<String, Setting> serverSettings = serverSettings(commandLine, environment);
+        for (Map.Entry<String, String> own : OWN_OPTIONS.entrySet()) {
+            Setting setting = serverSettings.get(own.getKey());
+            if (setting != null && commandLine.hasOption(own.getValue())) {
+                String option = own.getValue().length() == 1 ? "-" + own.getValue() : "--" + own.getValue();
+                throw new TikaConfigException(setting.source() + " and " + option + " both set "
+                        + own.getKey() + "; use one of them");
+            }
+        }
 
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
@@ -250,7 +269,9 @@ public class TikaServerConfig {
      * The {@code server} fields given as {@code --serverSetting <field>=<value>} or as
      * {@value #SETTINGS_ENV_PREFIX}{@code <FIELD>} in the environment, the option winning over
      * the variable for the same field. {@code TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES} names
-     * {@code maxRequestSizeBytes}; the variable's name is upper snake case of the field's.
+     * {@code maxRequestSizeBytes}; the variable's name is upper snake case of the field's. Two
+     * options, or two variables, for the same field are refused: which one wins would be
+     * arbitrary for variables, whose order the environment does not define.
      */
     private static Map<String, Setting> serverSettings(CommandLine commandLine,
                                                        Map<String, String> environment)
@@ -263,19 +284,32 @@ public class TikaServerConfig {
                     throw new TikaConfigException("--" + SETTING_OPTION + " takes <field>=<value>, got '"
                             + option + "'");
                 }
-                serverSettings.putIfAbsent(option.substring(0, eq).trim(),
+                put(serverSettings, option.substring(0, eq).trim(),
                         new Setting(option.substring(eq + 1), "--" + SETTING_OPTION));
             }
         }
+        Map<String, Setting> fromEnvironment = new LinkedHashMap<>();
         for (Map.Entry<String, String> e : environment.entrySet()) {
             String key = e.getKey();
             if (!key.startsWith(SETTINGS_ENV_PREFIX) || key.length() == SETTINGS_ENV_PREFIX.length()) {
                 continue;
             }
-            serverSettings.putIfAbsent(fieldName(key.substring(SETTINGS_ENV_PREFIX.length())),
+            put(fromEnvironment, fieldName(key.substring(SETTINGS_ENV_PREFIX.length())),
                     new Setting(e.getValue(), key));
         }
+        fromEnvironment.forEach(serverSettings::putIfAbsent);
         return serverSettings;
+    }
+
+    private static void put(Map<String, Setting> settings, String field, Setting setting)
+            throws TikaConfigException {
+        Setting earlier = settings.putIfAbsent(field, setting);
+        if (earlier != null) {
+            throw new TikaConfigException(earlier.source().equals(setting.source())
+                    ? setting.source() + " sets " + field + " twice; use one of them"
+                    : earlier.source() + " and " + setting.source() + " both set " + field
+                            + "; use one of them");
+        }
     }
 
     /** {@code MAX_REQUEST_SIZE_BYTES} to {@code maxRequestSizeBytes}. */
@@ -302,9 +336,12 @@ public class TikaServerConfig {
         if (serverSettings.isEmpty()) {
             return;
         }
-        if (serverSettings.containsKey("configPath")) {
-            throw new TikaConfigException(serverSettings.get("configPath").source()
-                    + ": configPath is the -c option, not a server setting");
+        for (Map.Entry<String, String> notSetting : NOT_SETTINGS.entrySet()) {
+            Setting setting = serverSettings.get(notSetting.getKey());
+            if (setting != null) {
+                throw new TikaConfigException(setting.source() + ": " + notSetting.getKey()
+                        + " is not a server setting, it is set with " + notSetting.getValue());
+            }
         }
         ObjectNode node = OBJECT_MAPPER.createObjectNode();
         serverSettings.forEach((field, setting) -> {
@@ -316,7 +353,9 @@ public class TikaServerConfig {
                 LOG.warn("server setting '{}' = {} set by {}: overrides \"{}\": {} in {}", field,
                         setting.value(), setting.source(), field, inFile, tikaConfigPath);
             }
-            node.set(field, valueNode(setting.value()));
+            //a string, as Jackson converts it to the field's type itself: a number for a
+            //number field, but "007" stays "007" for a text field
+            node.put(field, setting.value().trim());
         });
         try {
             OBJECT_MAPPER.readerForUpdating(config).readValue(node);
@@ -324,7 +363,7 @@ public class TikaServerConfig {
             Setting setting = serverSettings.get(e.getPropertyName());
             List<String> known = new ArrayList<>();
             for (Object id : e.getKnownPropertyIds()) {
-                if (!"configPath".equals(id)) {
+                if (!NOT_SETTINGS.containsKey(id.toString())) {
                     known.add(id.toString());
                 }
             }
@@ -342,17 +381,6 @@ public class TikaServerConfig {
         }
     }
 
-    /** The JSON a config file would hold for the value: a number, a boolean or a string. */
-    private static JsonNode valueNode(String value) {
-        String trimmed = value.trim();
-        if ("true".equals(trimmed) || "false".equals(trimmed)) {
-            return OBJECT_MAPPER.getNodeFactory().booleanNode(Boolean.parseBoolean(trimmed));
-        }
-        if (trimmed.matches("-?\\d{1,18}")) {
-            return OBJECT_MAPPER.getNodeFactory().numberNode(Long.parseLong(trimmed));
-        }
-        return OBJECT_MAPPER.getNodeFactory().textNode(value);
-    }
 
 
     public int getPort() {

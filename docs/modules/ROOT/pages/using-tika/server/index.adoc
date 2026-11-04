@@ -682,13 +682,17 @@ hard failure.
 Server behavior beyond host/port comes from the `server` section of the JSON config passed via
 `-c`/`--config`. That section maps to fields on `TikaServerConfig`.
 
-Every field can also be set without the file: `--serverSetting <field>=<value>` (repeatable) or
-the environment variable `TIKA_SERVER_SETTING_<FIELD>`, the field's name in upper snake case (the
-prefix is deliberately not `TIKA_SERVER_`, which Kubernetes uses for the variables it gives every
-pod for a Service named `tika-server`). Either goes
-through the same binding as the file, so the value is checked as it would be there, an unknown
-field fails startup, and the option wins over the variable, which wins over the file. `tlsConfig`
-and `endpoints` take an object and a list and stay in the file.
+Every field except `tlsConfig` and `endpoints`, which take an object and a list and stay in the
+file, can also be set without it: `--serverSetting <field>=<value>` (repeatable) or the environment
+variable `TIKA_SERVER_SETTING_<FIELD>`, the field's name in upper snake case (the prefix is
+deliberately not `TIKA_SERVER_`, which Kubernetes uses for the variables it gives every pod for a
+Service named `tika-server`). Either goes through the same binding as the file, so the value is
+checked as it would be there, an unknown field fails startup, and the option wins over the
+variable, which wins over the file. Startup also fails when two options or two variables set the
+same field, and when a setting names `host`, `port`, `id` or `metricsPort` while `-h`, `-p`, `-i` or
+`--metricsPort` sets it too. The Docker image's entry point passes `-h 0.0.0.0`, so
+`TIKA_SERVER_SETTING_HOST` fails there; limit access with the container's port mapping instead.
+`presets` is set with `--preset` or `TIKA_PRESETS`.
 
 [source,bash]
 ----

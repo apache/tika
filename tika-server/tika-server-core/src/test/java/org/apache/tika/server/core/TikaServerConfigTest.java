@@ -232,6 +232,48 @@ public class TikaServerConfigTest extends TikaTest {
     }
 
     @Test
+    public void testServerSettingsAreText() throws Exception {
+        CommandLine empty = new DefaultParser().parse(new Options(), new String[]{});
+        TikaServerConfig config = TikaServerConfig.load(empty, null, Map.of(
+                TikaServerConfig.SETTINGS_ENV_PREFIX + "ID", "007",
+                TikaServerConfig.SETTINGS_ENV_PREFIX + "ALLOW_HTTP2", "TRUE"));
+        assertEquals("007", config.getId(), "a text field keeps its leading zeros");
+        assertTrue(config.isAllowHttp2());
+    }
+
+    @Test
+    public void testServerSettingConflicts() throws Exception {
+        Options options = new Options()
+                .addOption(Option.builder("h").hasArg().get())
+                .addOption(Option.builder().longOpt(TikaServerConfig.SETTING_OPTION).hasArg().get());
+        CommandLine host = new DefaultParser().parse(options, new String[]{"-h", "0.0.0.0"});
+        TikaConfigException ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(
+                host, null, Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "HOST", "127.0.0.1")));
+        assertContains("TIKA_SERVER_SETTING_HOST and -h both set host", ex.getMessage());
+
+        CommandLine empty = new DefaultParser().parse(options, new String[]{});
+        ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(empty, null, Map.of(
+                TikaServerConfig.SETTINGS_ENV_PREFIX + "ALLOW_PIPES", "true",
+                TikaServerConfig.SETTINGS_ENV_PREFIX + "ALLOW__PIPES", "false")));
+        assertContains("both set allowPipes", ex.getMessage());
+
+        CommandLine twice = new DefaultParser().parse(options, new String[]{
+                "--" + TikaServerConfig.SETTING_OPTION, "allowPipes=true",
+                "--" + TikaServerConfig.SETTING_OPTION, "allowPipes=false"});
+        ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(twice, null, Map.of()));
+        assertContains("sets allowPipes twice", ex.getMessage());
+
+        ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(empty, null,
+                Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "PRESETS", "thumbnail")));
+        assertContains("TIKA_PRESETS", ex.getMessage());
+
+        ex = assertThrows(TikaConfigException.class, () -> TikaServerConfig.load(empty, null,
+                Map.of(TikaServerConfig.SETTINGS_ENV_PREFIX + "TLS_CONFIG", "x")));
+        assertContains("config file", ex.getMessage());
+    }
+
+    @Test
     public void testFieldName() {
         assertEquals("maxRequestSizeBytes", TikaServerConfig.fieldName("MAX_REQUEST_SIZE_BYTES"));
         assertEquals("port", TikaServerConfig.fieldName("PORT"));
