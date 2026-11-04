@@ -56,6 +56,9 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * PSD files emit the JPEG thumbnail Photoshop stores in image resource 0x040C as a
+     THUMBNAIL embedded resource, so the thumbnail preset serves it (TIKA-5033).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 

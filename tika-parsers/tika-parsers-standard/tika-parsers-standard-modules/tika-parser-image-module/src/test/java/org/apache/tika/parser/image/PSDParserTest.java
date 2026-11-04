@@ -19,6 +19,8 @@ package org.apache.tika.parser.image;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -29,6 +31,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -88,5 +91,22 @@ public class PSDParserTest extends TikaTest {
         assertThrows(TikaException.class, () -> {
             getXML("testPSD_xmp.psd", p, metadata);
         });
+    }
+
+    @Test
+    public void testThumbnail() throws Exception {
+        for (String file : new String[]{"testPSD2.psd", "testPSD_xmp.psd"}) {
+            List<Metadata> metadataList = getRecursiveMetadata(file);
+            assertEquals(2, metadataList.size(), file);
+            Metadata thumbnail = metadataList.get(1);
+            assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                    thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE), file);
+            assertEquals("image/jpeg", thumbnail.get(HttpHeaders.CONTENT_TYPE), file);
+        }
+    }
+
+    @Test
+    public void testNoThumbnail() throws Exception {
+        assertEquals(1, getRecursiveMetadata("testPSD.psd").size());
     }
 }
