@@ -32,6 +32,8 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -175,9 +177,37 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     @Test
+    public void testFragmented() throws Exception {
+        Metadata container = new Metadata();
+        List<Emitted> docs = extract(fragmented(5, 1), container);
+        assertEquals(1, docs.size());
+        assertEquals("WEBVTT\n"
+                + "\n00:00:05.000 --> 00:00:06.000\nfrag one\n"
+                + "\n00:00:06.000 --> 00:00:07.000\nfrag two\n"
+                + "\n00:00:09.000 --> 00:00:11.000\nfrag three\n", docs.get(0).body());
+        assertEquals("track-2.vtt",
+                docs.get(0).metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    @Test
+    @Timeout(20)
+    public void testFragmentedHugeSampleCounts() throws Exception {
+        // 200 video runs each claim 4 billion default-sized samples: only their ends are computed
+        byte[] hostile = moof1(0, 0xFFFFFFFFL, 2, 2, 0);
+        byte[][] parts = new byte[201][];
+        parts[0] = fragmented(5, 0xFFFFFFFFL);
+        Arrays.fill(parts, 1, parts.length, hostile);
+        List<Emitted> docs = extract(cat(parts), new Metadata());
+        assertEquals(1, docs.size());
+        assertTrue(docs.get(0).body().contains("frag three"), docs.get(0).body());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
     @Timeout(60)
-    public void testCorruptedBytes() throws Exception {
-        byte[] good = new Builder().build(true);
+    public void testCorruptedBytes(boolean fragmented) throws Exception {
+        byte[] good = fragmented ? fragmented(5, 1) : new Builder().build(true);
         long seed = new Random().nextLong();
         Random r = new Random(seed);
         for (int i = 0; i < 2000; i++) {
@@ -210,6 +240,58 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         assertNull(Mp4SubtitleExtractor.language(151));
         assertNull(Mp4SubtitleExtractor.language(0x7FFF));
         assertNull(Mp4SubtitleExtractor.language((21 << 10) | (14 << 5) | 4));
+    }
+
+    /**
+     * ftyp, moov with empty sample tables and trex (track 2: duration 1000), then two
+     * moof+mdat pairs. Fragment 1: a video traf (default-base-is-moof, {@code videoRuns}
+     * default-sized 8-byte samples) then a subtitle traf with no base, so its data follows
+     * the video's; tfdt v1 at {@code startSeconds}. Fragment 2: subtitle only, tfhd default
+     * duration 2000, tfdt v0 at 9s.
+     */
+    private static byte[] fragmented(int startSeconds, long videoRuns) throws IOException {
+        byte[] ftyp = box("ftyp", ascii("iso6"), u32(0), ascii("iso6"));
+        byte[] video = Builder.trak(1, "vide", ENG, new long[0][], new int[0], 1, new int[0], -1,
+                new long[0], false, null);
+        byte[] subs = Builder.trak(2, "sbtl", ENG, new long[0][], new int[0], 1, new int[0], -1,
+                new long[0], false, null);
+        byte[] mvex = box("mvex", box("trex", u32(0), u32(2), u32(1), u32(1000), u32(0),
+                u32(0)));
+        byte[] moov = box("moov", box("mvhd", new byte[100]), video, subs, mvex);
+
+        byte[] one = Builder.sample("frag one".getBytes(StandardCharsets.UTF_8));
+        byte[] two = Builder.sample("frag two".getBytes(StandardCharsets.UTF_8));
+        byte[] videoData = new byte[8];
+        // moof length is fixed by its fields, so build once to measure, then for real
+        byte[] moof1 = moof1(0, videoRuns, one.length, two.length, startSeconds);
+        moof1 = moof1(moof1.length + 8, videoRuns, one.length, two.length, startSeconds);
+        byte[] mdat1 = box("mdat", videoData, one, two);
+
+        byte[] three = Builder.sample("frag three".getBytes(StandardCharsets.UTF_8));
+        byte[] moof2 = moof2(0, three.length);
+        moof2 = moof2(moof2.length + 8, three.length);
+        byte[] mdat2 = box("mdat", three);
+        return cat(ftyp, moov, moof1, mdat1, moof2, mdat2);
+    }
+
+    private static byte[] moof1(int dataOffset, long videoRuns, int size1, int size2,
+                                int startSeconds) {
+        byte[] videoTraf = box("traf",
+                box("tfhd", u32(0x020010), u32(1), u32(8)),
+                box("trun", u32(0x000001), u32(videoRuns), u32(dataOffset)));
+        byte[] subTraf = box("traf",
+                box("tfhd", u32(0), u32(2)),
+                box("tfdt", u32(0x01000000), u64(startSeconds * 1000L)),
+                box("trun", u32(0x000200), u32(2), u32(size1), u32(size2)));
+        return box("moof", box("mfhd", u32(0), u32(1)), videoTraf, subTraf);
+    }
+
+    private static byte[] moof2(int dataOffset, int size) {
+        byte[] subTraf = box("traf",
+                box("tfhd", u32(0x020008), u32(2), u32(2000)),
+                box("tfdt", u32(0), u32(9000)),
+                box("trun", u32(0x000201), u32(1), u32(dataOffset), u32(size)));
+        return box("moof", box("mfhd", u32(0), u32(2)), subTraf);
     }
 
     /**
@@ -255,7 +337,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
             return cat(ftyp, mdat, moov);
         }
 
-        private static byte[] trak(int id, String handler, int lang, long[][] stts,
+        static byte[] trak(int id, String handler, int lang, long[][] stts,
                                    int[] stscFirst, int perChunk, int[] sizes, int sizeCount,
                                    long[] chunks, boolean co64, byte[] tref)
                 throws IOException {
@@ -298,7 +380,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                     : box("trak", box("tkhd", tkhd), tref, mdia);
         }
 
-        private static byte[] sample(byte[] text) {
+        static byte[] sample(byte[] text) {
             return cat(new byte[]{(byte) (text.length >> 8), (byte) text.length}, text);
         }
     }

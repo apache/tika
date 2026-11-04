@@ -58,8 +58,10 @@ Release 4.3.0 - ???
 
    * MP4Parser extracts text subtitle tracks (tx3g/mov_text, QuickTime text) as
      embedded text/vtt documents named track-<id>.vtt, with the track language as
-     dc:language; chapter tracks are skipped. Samples are read through the sample
-     tables by seeking, so the media data is not read. Only when the input is a file,
+     dc:language (ISO or QuickTime Mac language codes); chapter tracks are skipped.
+     Samples are read through the sample tables, and through moof/traf/trun in
+     fragmented files (DASH/CMAF, live recorders), by seeking, so the media data is
+     not read. Only when the input is a file,
      in memory, or a stream of known length up to 64 MB. Off with extractSubtitles
      (TIKA-5030).
 

@@ -22,8 +22,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.xml.sax.SAXException;
@@ -41,9 +43,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Text subtitle tracks of MP4 and QuickTime files: {@code tx3g} (3GPP timed text,
  * {@code mov_text}) and QuickTime {@code text} sample entries in a {@code text}, {@code sbtl}
  * or {@code subt} track. Samples are located through the track's sample tables and read by
- * seeking, so the media data is never read. Chapter tracks ({@code tref/chap}) are skipped.
- * Fragmented files ({@code moof}) and edit lists
- * are not handled.
+ * seeking, so the media data is never read. Fragmented files add samples through
+ * {@code moof/traf/trun}. Chapter tracks ({@code tref/chap}) are skipped; edit lists are not
+ * applied.
  */
 public class Mp4SubtitleExtractor implements SubtitleExtractor {
 
@@ -68,19 +70,24 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                          XHTMLContentHandler xhtml, ParseContext context)
             throws IOException, SAXException {
         Box moov = null;
+        List<Box> moofs = new ArrayList<>();
         for (Box b : children(ch, 0, ch.size())) {
-            if (b.is("moov")) {
+            if (b.is("moov") && moov == null) {
                 moov = b;
-                break;
+            } else if (b.is("moof")) {
+                moofs.add(b);
             }
         }
         if (moov == null) {
             return;
         }
         List<Box> traks = new ArrayList<>();
+        Map<Long, long[]> trex = new HashMap<>();
         for (Box b : children(ch, moov.payload, moov.end)) {
             if (b.is("trak")) {
                 traks.add(b);
+            } else if (b.is("mvex")) {
+                readTrex(ch, b, trex);
             }
         }
         Set<Long> chapterTracks = chapterTracks(ch, traks);
@@ -105,6 +112,9 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
             SubtitleTrack out = new SubtitleTrack("track-" + track.id + ".vtt", track.language);
             try {
                 track.readCues(ch, out);
+                if (!moofs.isEmpty()) {
+                    track.readFragments(ch, moofs, trex.get(track.id), out);
+                }
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordException(e, containerMetadata, context);
             }
@@ -114,6 +124,19 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                         containerMetadata, context);
             }
             out.emit(xhtml, context);
+        }
+    }
+
+    /** trex defaults by track ID: {duration, size}. */
+    private static void readTrex(SeekableByteChannel ch, Box mvex, Map<Long, long[]> trex)
+            throws IOException {
+        for (Box b : children(ch, mvex.payload, mvex.end)) {
+            if (b.is("trex") && trex.size() < MAX_CHILDREN) {
+                byte[] p = payload(ch, b, 24);
+                if (p.length >= 24) {
+                    trex.put(u32(p, 4), new long[]{u32(p, 12), u32(p, 16)});
+                }
+            }
         }
     }
 
@@ -149,6 +172,10 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
         boolean stz2;
         byte[] chunkOffsets;
         boolean co64;
+        static final long FULL = Long.MIN_VALUE;
+        // running decode time and sample count, carried from stbl into the fragments
+        long time;
+        int samplesRead;
 
         /** The track's tables if it is a text subtitle track, else null. */
         static Track read(SeekableByteChannel ch, Box trak) throws IOException, TikaException {
@@ -225,13 +252,14 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                         break;
                 }
             }
-            if (!textEntry || t.stsz == null || t.stsc == null || t.chunkOffsets == null) {
-                return null;
-            }
-            return t;
+            // a fragmented file may leave the stbl sample tables out
+            return textEntry ? t : null;
         }
 
         void readCues(SeekableByteChannel ch, SubtitleTrack out) throws IOException {
+            if (stsz == null || stsc == null || chunkOffsets == null) {
+                return;
+            }
             SampleSizes sizes = new SampleSizes(stsz, stz2);
             int samples = Math.min(sizes.count, MAX_SAMPLES);
             int chunkWidth = co64 ? 8 : 4;
@@ -241,6 +269,7 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
             long fileSize = ch.size();
 
             int sample = 0;
+            try {
             // chunks run in order; a table that steps back must not re-walk them
             long nextChunk = 1;
             int sttsIndex = 0;
@@ -268,23 +297,177 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                             sttsLeft--;
                         }
                         long size = sizes.get(sample);
-                        if (offset >= 0 && size >= 2 && offset <= fileSize - 2) {
-                            String text = sampleText(ch, offset, Math.min(size, MAX_SAMPLE_READ));
-                            if (!out.addCue(millis(time), millis(time + duration), text)) {
-                                return;
-                            }
+                        if (!cue(ch, offset, size, duration, fileSize, out)) {
+                            return;
                         }
                         offset += size;
-                        time += duration;
                         sample++;
+                    }
+                }
+            }
+            } finally {
+                samplesRead = sample;
+            }
+        }
+
+        /** Emits one sample and advances {@link #time}; false once the track is full. */
+        private boolean cue(SeekableByteChannel ch, long offset, long size, long duration,
+                            long fileSize, SubtitleTrack out) throws IOException {
+            if (offset >= 0 && size >= 2 && offset <= fileSize - 2) {
+                String text = sampleText(ch, offset, Math.min(size, MAX_SAMPLE_READ));
+                if (!out.addCue(millis(time), millis(time + duration), text)) {
+                    return false;
+                }
+            }
+            time += duration;
+            return true;
+        }
+
+        void readFragments(SeekableByteChannel ch, List<Box> moofs, long[] trex,
+                           SubtitleTrack out) throws IOException {
+            for (Box moof : moofs) {
+                // without an explicit base, the first traf's data starts at the moof and
+                // each later one where the previous ended (ISO 14496-12 8.8.7.1)
+                long dataEnd = moof.start();
+                for (Box traf : children(ch, moof.payload(), moof.end())) {
+                    if (traf.is("traf")) {
+                        dataEnd = readTraf(ch, traf, moof.start(), dataEnd, trex, out);
+                        if (dataEnd == FULL) {
+                            return;
+                        }
                     }
                 }
             }
         }
 
+        /**
+         * Emits the samples of {@code traf} if it belongs to this track; returns where its
+         * data ends, or {@link #FULL} once the track takes no more.
+         */
+        private long readTraf(SeekableByteChannel ch, Box traf, long moofStart, long prevEnd,
+                              long[] trex, SubtitleTrack out) throws IOException {
+            List<Box> boxes = children(ch, traf.payload(), traf.end());
+            long trackId = -1;
+            long base = prevEnd;
+            long defDuration = trex == null ? 0 : trex[0];
+            long defSize = trex == null ? 0 : trex[1];
+            long decodeTime = -1;
+            for (Box b : boxes) {
+                if (b.is("tfhd")) {
+                    byte[] p = payload(ch, b, 40);
+                    if (p.length < 8) {
+                        return prevEnd;
+                    }
+                    int flags = flags(p);
+                    trackId = u32(p, 4);
+                    int i = 8;
+                    if ((flags & 0x01) != 0 && p.length >= i + 8) {
+                        base = s64(p, i);
+                        i += 8;
+                    } else if ((flags & 0x20000) != 0) {
+                        base = moofStart;
+                    }
+                    if ((flags & 0x02) != 0) {
+                        i += 4;
+                    }
+                    if ((flags & 0x08) != 0 && p.length >= i + 4) {
+                        defDuration = u32(p, i);
+                        i += 4;
+                    }
+                    if ((flags & 0x10) != 0 && p.length >= i + 4) {
+                        defSize = u32(p, i);
+                    }
+                } else if (b.is("tfdt")) {
+                    byte[] p = payload(ch, b, 12);
+                    if (p.length >= 8) {
+                        decodeTime = p[0] == 1 && p.length >= 12 ? s64(p, 4) : u32(p, 4);
+                    }
+                }
+            }
+            if (trackId < 0) {
+                return prevEnd;
+            }
+            SubtitleTrack target = trackId == id ? out : null;
+            if (target != null && decodeTime >= 0) {
+                time = decodeTime;
+            }
+            long next = base;
+            for (Box b : boxes) {
+                if (b.is("trun")) {
+                    next = readTrun(ch, b, base, next, defDuration, defSize, target);
+                    if (next == FULL) {
+                        return FULL;
+                    }
+                }
+            }
+            return next;
+        }
+
+        /**
+         * Emits the run's samples to {@code out} (null: another track's run); returns the end
+         * of its data, or {@link #FULL}.
+         */
+        private long readTrun(SeekableByteChannel ch, Box trun, long base, long next,
+                              long defDuration, long defSize, SubtitleTrack out)
+                throws IOException {
+            byte[] p = payload(ch, trun, MAX_TABLE_BYTES);
+            if (p.length < 8) {
+                return next;
+            }
+            int flags = flags(p);
+            long count = u32(p, 4);
+            int i = 8;
+            long offset = next;
+            if ((flags & 0x01) != 0) {
+                if (p.length < i + 4) {
+                    return next;
+                }
+                offset = base + (int) u32(p, i);
+                i += 4;
+            }
+            if ((flags & 0x04) != 0) {
+                i += 4;
+            }
+            int width = 4 * Integer.bitCount(flags & 0xF00);
+            if (width > 0) {
+                count = Math.min(count, (p.length - i) / width);
+            } else if (out == null) {
+                // every sample has the default size; nothing to walk
+                return defSize > 0 && count > (Long.MAX_VALUE - Math.max(offset, 0)) / defSize
+                        ? Long.MAX_VALUE : offset + count * defSize;
+            }
+            long fileSize = ch.size();
+            for (long s = 0; s < count; s++) {
+                long duration = defDuration;
+                long size = defSize;
+                if ((flags & 0x100) != 0) {
+                    duration = u32(p, i);
+                    i += 4;
+                }
+                if ((flags & 0x200) != 0) {
+                    size = u32(p, i);
+                    i += 4;
+                }
+                i += ((flags & 0x400) != 0 ? 4 : 0) + ((flags & 0x800) != 0 ? 4 : 0);
+                if (out != null) {
+                    if (samplesRead >= MAX_SAMPLES || !cue(ch, offset, size, duration, fileSize,
+                            out)) {
+                        return FULL;
+                    }
+                    samplesRead++;
+                }
+                offset += size;
+            }
+            return offset;
+        }
+
         private long millis(long units) {
             return units / timescale * 1000 + (units % timescale) * 1000 / timescale;
         }
+    }
+
+    private static int flags(byte[] p) {
+        return ((p[1] & 0xFF) << 16) | ((p[2] & 0xFF) << 8) | (p[3] & 0xFF);
     }
 
     /** Sizes from {@code stsz} (fixed or 32-bit) or {@code stz2} (4, 8 or 16-bit). */
@@ -384,7 +567,7 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
         return lang.equals("und") ? null : lang;
     }
 
-    private record Box(String type, long payload, long end) {
+    private record Box(String type, long start, long payload, long end) {
         boolean is(String t) {
             return type.equals(t);
         }
@@ -412,7 +595,7 @@ public class Mp4SubtitleExtractor implements SubtitleExtractor {
                 break;
             }
             long boxEnd = size > end - pos ? end : pos + size;
-            boxes.add(new Box(type, pos + header, boxEnd));
+            boxes.add(new Box(type, pos, pos + header, boxEnd));
             pos = boxEnd;
         }
         return boxes;
