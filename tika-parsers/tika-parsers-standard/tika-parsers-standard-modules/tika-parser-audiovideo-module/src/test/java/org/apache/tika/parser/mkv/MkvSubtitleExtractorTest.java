@@ -41,12 +41,14 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MkvSubtitleExtractorTest extends TikaTest {
@@ -144,6 +146,22 @@ public class MkvSubtitleExtractorTest extends TikaTest {
         off.setExtractSubtitles(false);
         assertEquals(1, getRecursiveMetadata(TikaInputStream.get(sample()), off, new Metadata(),
                 new ParseContext(), true).size());
+    }
+
+    @Test
+    public void testConfigTurnsSubtitlesOff() throws Exception {
+        Parser parser = TikaLoader
+                .load(getConfigPath(MkvSubtitleExtractorTest.class,
+                        "tika-config-mkv-no-subtitles.json"))
+                .loadParsers();
+        Metadata m = new Metadata();
+        // the loaded parser does not detect; route it as AutoDetectParser would
+        m.set(HttpHeaders.CONTENT_TYPE, "video/x-matroska");
+        List<Metadata> list = getRecursiveMetadata(TikaInputStream.get(sample()), parser, m,
+                new ParseContext(), true);
+        assertEquals(1, list.size());
+        assertTrue(Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY))
+                .contains(MatroskaParser.class.getName()));
     }
 
     @Test
