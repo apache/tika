@@ -29,11 +29,12 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.video.SubtitleTracks;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
- * Matroska and WebM. Extracts text subtitle tracks as embedded {@code text/vtt} documents
- * (see {@link MkvSubtitleExtractor}); no container metadata yet.
+ * Matroska and WebM. Extracts text subtitle tracks (SubRip, ASS/SSA, WebVTT) as embedded
+ * {@code text/vtt} documents; no container metadata yet.
  */
 @TikaComponent(name = "matroska-parser")
 public class MatroskaParser implements Parser {
@@ -66,7 +67,7 @@ public class MatroskaParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         if (extractSubtitles) {
-            new MkvSubtitleExtractor().extract(tis, metadata, xhtml, context);
+            SubtitleTracks.readMatroska(tis, metadata, context).emit(xhtml);
         }
         xhtml.endDocument();
     }

@@ -57,6 +57,7 @@ import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.video.SubtitleTracks;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -88,11 +89,12 @@ public class MP4Parser implements Parser {
     //needs more. See TikaMp4Reader and TIKA-4812.
     private static final long DEFAULT_MAX_BOX_SIZE = 100L * 1024L * 1024L;
 
+    //subtitles need random access: a stream above this is not buffered for them
+    private static final long MAX_SUBTITLE_SPOOL_BYTES = 64L * 1024L * 1024L;
+
     private long maxBoxSize = DEFAULT_MAX_BOX_SIZE;
     private boolean extractSubtitles = true;
 
-    //subtitles need random access: a streamed input above this is not spooled for them
-    private static final long MAX_SUBTITLE_SPOOL_BYTES = 64L * 1024L * 1024L;
     static {
         // All types should be 4 bytes long, space padded as needed
         typesMap.put(MediaType.audio("mp4"), Arrays.asList("M4A ", "M4B ", "F4A ", "F4B "));
@@ -129,9 +131,9 @@ public class MP4Parser implements Parser {
 
     /**
      * Whether text subtitle tracks are extracted as embedded {@code text/vtt} documents.
-     * Default true. Only when random access is cheap: the input is a file, or is (or can be
-     * held) in memory, or is a stream of known length up to 64 MB; a longer or unsized
-     * stream is not spooled to look for subtitles.
+     * Default true. Only when random access is cheap: the input is a file, or its measured
+     * length is up to 64 MB, or the source can hold it in memory; any other stream is not
+     * buffered to look for subtitles.
      */
     public boolean isExtractSubtitles() {
         return extractSubtitles;
@@ -147,14 +149,9 @@ public class MP4Parser implements Parser {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
-        if (extractSubtitles && cheapRandomAccess(tis)) {
-            //before the streaming walk below: random access needs the stream unread
-            try {
-                new Mp4SubtitleExtractor().extract(tis, metadata, xhtml, context);
-            } catch (IOException | TikaException e) {
-                EmbeddedDocumentUtil.recordException(e, metadata, context);
-            }
-        }
+        //read before the streaming walk, which consumes the stream; emitted after it, so a
+        //limit hit while emitting cannot cost the container's metadata
+        SubtitleTracks subtitles = extractSubtitles ? readSubtitles(tis, metadata, context) : null;
         com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
         Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml, context);
         //we used to spool to disk and then read from that with sannies parser.
@@ -186,13 +183,33 @@ public class MP4Parser implements Parser {
                         ExceptionUtils.truncate(m, reporting.getMaxLength()));
             }
         }
+        if (subtitles != null) {
+            subtitles.emit(xhtml);
+        }
         xhtml.endDocument();
     }
 
+    private static SubtitleTracks readSubtitles(TikaInputStream tis, Metadata metadata,
+                                                ParseContext context) {
+        try {
+            if (!cheapRandomAccess(tis)) {
+                return null;
+            }
+        } catch (IOException e) {
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
+            return null;
+        }
+        return SubtitleTracks.readMp4(tis, metadata, context);
+    }
+
+    //content already on disk or in memory, or a measured length short enough to buffer;
+    //a declared length may lie, so only the source's own bounded retention trusts it
     private static boolean cheapRandomAccess(TikaInputStream tis) throws IOException {
-        return tis.hasFile()
-                || (tis.hasLength() && tis.getLength() <= MAX_SUBTITLE_SPOOL_BYTES)
-                || tis.tryRetainInMemory();
+        if (tis.hasReliableLength()) {
+            return tis.hasFile() || tis.getLength() <= MAX_SUBTITLE_SPOOL_BYTES;
+        }
+        return (!tis.hasLength() || tis.getLength() <= MAX_SUBTITLE_SPOOL_BYTES)
+                && tis.tryRetainInMemory();
     }
 
     private Set<String> processMp4Directories(Collection<Mp4Directory> mp4Directories,

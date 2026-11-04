@@ -14,18 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.mp4;
+package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,13 +44,17 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.mp4.MP4Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class Mp4SubtitleExtractorTest extends TikaTest {
@@ -82,7 +90,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 new XHTMLContentHandler(new DefaultHandler(), container, context);
         xhtml.startDocument();
         try (TikaInputStream tis = TikaInputStream.get(mp4)) {
-            new Mp4SubtitleExtractor().extract(tis, container, xhtml, context);
+            SubtitleTracks.readMp4(tis, container, context).emit(xhtml);
         }
         xhtml.endDocument();
         return capture.docs;
@@ -261,7 +269,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         Metadata container = new Metadata();
         extract(cat(ftyp, mdat, box("moov", box("mvhd", new byte[100]), subs)), container);
         assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                .contains("exceeds"), container.toString());
+                .contains("decoded bytes"), container.toString());
     }
 
     @Test
@@ -347,9 +355,11 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 Builder.sample("hi".getBytes(StandardCharsets.UTF_8)), new byte[0xFFFF]);
         try (TikaInputStream tis = TikaInputStream.get(data);
                 CountingChannel ch = new CountingChannel(tis.getSeekableByteChannel())) {
-            assertEquals("", Mp4SubtitleExtractor.sampleText(ch, 0, 0xFFFF + 2));
+            SubtitleTracks budget = new SubtitleTracks(new Metadata(), new ParseContext());
+            assertEquals("", Mp4SubtitleExtractor.sampleText(ch, 0, 0xFFFF + 2, budget));
             assertEquals(2, ch.read);
-            assertEquals("hi", Mp4SubtitleExtractor.sampleText(ch, 0xFFFF + 2, 0xFFFF + 2));
+            assertEquals("hi",
+                    Mp4SubtitleExtractor.sampleText(ch, 0xFFFF + 2, 0xFFFF + 2, budget));
             assertEquals(2 + 4, ch.read);
         }
     }
@@ -586,6 +596,115 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         static byte[] sample(byte[] text) {
             return cat(new byte[]{(byte) (text.length >> 8), (byte) text.length}, text);
         }
+    }
+
+
+    @Test
+    public void testFileInputOverSpoolLimit() throws Exception {
+        // the production path: a file input of any size; a sparse 100 MB tail proves it
+        byte[] mp4 = new Builder().build(true);
+        Path p = Files.createTempFile("subs", ".mp4");
+        try {
+            long free = 100L * 1024 * 1024;
+            try (RandomAccessFile f = new RandomAccessFile(p.toFile(), "rw")) {
+                f.write(mp4);
+                f.write(u32(free));
+                f.write(ascii("free"));
+                f.setLength(mp4.length + free);
+            }
+            Metadata m = new Metadata();
+            m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "x.mp4");
+            List<Metadata> list = getRecursiveMetadata(TikaInputStream.get(p),
+                    AUTO_DETECT_PARSER, m, new ParseContext(), true);
+            assertEquals(2, list.size());
+            assertEquals("track-2.vtt", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        } finally {
+            Files.delete(p);
+        }
+    }
+
+    @Test
+    public void testDeclaredLengthIsNotTrusted() throws Exception {
+        // a Content-Length hint may lie, so even an honest one does not get a stream buffered
+        byte[] mp4 = new Builder().build(true);
+        Metadata m = new Metadata();
+        m.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(mp4.length));
+        List<Metadata> list = getRecursiveMetadata(
+                TikaInputStream.get(new ByteArrayInputStream(mp4), m),
+                new MP4Parser(), m, new ParseContext(), true);
+        assertEquals(1, list.size());
+        assertTrue(Arrays.stream(list.get(0).getValues(
+                TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .noneMatch(w -> w.contains("subtitles")), list.get(0).toString());
+    }
+
+    @Test
+    public void testEmptySamplesAreChargedPerFile() throws Exception {
+        // two tracks of 600k empty samples: each read costs, though nothing decodes
+        int n = 600_000;
+        byte[] ftyp = box("ftyp", ascii("isom"), u32(0), ascii("isom"));
+        byte[] mdat = box("mdat", new byte[2 * n + 16]);
+        long dataStart = ftyp.length + 8L;
+        int[] sizes = new int[n];
+        Arrays.fill(sizes, 2);
+        byte[] t2 = Builder.trak(2, "sbtl", ENG, new long[][]{{n, 1}}, new int[]{1}, n, sizes,
+                -1, new long[]{dataStart}, false, null);
+        byte[] t3 = Builder.trak(3, "sbtl", ENG, new long[][]{{n, 1}}, new int[]{1}, n, sizes,
+                -1, new long[]{dataStart}, false, null);
+        Metadata container = new Metadata();
+        assertEquals(0, extract(cat(ftyp, mdat, box("moov", box("mvhd", new byte[100]), t2, t3)),
+                container).size());
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("subtitle samples"), container.toString());
+    }
+
+    @Test
+    public void testWriteLimitKeepsContainerMetadata() throws Exception {
+        // tracks are emitted after the metadata walk, so a limit hit on them costs nothing else
+        byte[] mp4 = new Builder().build(true);
+        int mvhd = indexOf(mp4, ascii("mvhd")) + 4;
+        ByteBuffer.wrap(mp4).putInt(mvhd + 12, 1000).putInt(mvhd + 16, 5000);
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "x.mp4");
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, AUTO_DETECT_PARSER);
+        try (TikaInputStream tis = TikaInputStream.get(mp4)) {
+            assertThrows(WriteLimitReachedException.class, () ->
+                    AUTO_DETECT_PARSER.parse(tis, new BodyContentHandler(5), m, context));
+        }
+        assertEquals("5.0", m.get(XMPDM.DURATION), m.toString());
+    }
+
+    @Test
+    public void testUnsupportedSampleEntryIsReported() throws Exception {
+        byte[] mp4 = new Builder().build(true);
+        // the subtitle track's tx3g entry becomes wvtt
+        int i = indexOf(mp4, ascii("tx3g"));
+        System.arraycopy(ascii("wvtt"), 0, mp4, i, 4);
+        Metadata container = new Metadata();
+        extract(mp4, container);
+        assertTrue(String.join("\n",
+                container.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("sample entry 'wvtt' not supported"), container.toString());
+    }
+
+    @Test
+    public void testNulOnlyLineDoesNotEndTheCue() {
+        assertEquals("a\nb", SubtitleTrack.cueText("a\n\u0000\nb"));
+        assertEquals("a\nb", SubtitleTrack.cueText("a\n \u0000 \nb"));
+    }
+
+    private static int indexOf(byte[] haystack, byte[] needle) {
+        outer:
+        for (int i = 0; i + needle.length <= haystack.length; i++) {
+            for (int j = 0; j < needle.length; j++) {
+                if (haystack[i + j] != needle[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        throw new AssertionError("not found");
     }
 
     private static byte[] box(String type, byte[]... parts) {

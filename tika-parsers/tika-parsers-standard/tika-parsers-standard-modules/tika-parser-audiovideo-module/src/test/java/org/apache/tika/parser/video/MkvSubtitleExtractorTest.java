@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.mkv;
+package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,9 +51,17 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.mkv.MatroskaParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MkvSubtitleExtractorTest extends TikaTest {
+
+    // 1-byte blocks over a 4 KB stripped header that decode past the 256 MB budget
+    private static final int BLOCKS_PAST_BUDGET =
+            (int) (SubtitleTracks.MAX_DECODED_BYTES / MkvSubtitleExtractor.MAX_COMP_SETTINGS_BYTES)
+                    + 10;
+    private static final byte[] UNKNOWN = {0x01, -1, -1, -1, -1, -1, -1, -1};
+
 
     @TempDir
     Path tmp;
@@ -94,7 +104,7 @@ public class MkvSubtitleExtractorTest extends TikaTest {
             tis = TikaInputStream.get(new ByteArrayInputStream(mkv));
         }
         try (tis) {
-            new MkvSubtitleExtractor().extract(tis, container, xhtml, context);
+            SubtitleTracks.readMatroska(tis, container, context).emit(xhtml);
         }
         xhtml.endDocument();
         return capture.docs;
@@ -129,7 +139,11 @@ public class MkvSubtitleExtractorTest extends TikaTest {
         assertEquals("WEBVTT\n\n00:00:03.000 --> 00:00:04.000\nHi &amp; bye\n",
                 docs.get(3).body());
         assertEquals("de", docs.get(3).metadata().get(TikaCoreProperties.LANGUAGE));
-        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        // the encrypted and laced tracks are skipped, and said so
+        String[] warnings = container.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertEquals(2, warnings.length, String.join("\n", warnings));
+        assertTrue(warnings[0].contains("track 7: encrypted; skipped"), warnings[0]);
+        assertTrue(warnings[1].contains("laced blocks not supported"), warnings[1]);
     }
 
     @Test
@@ -204,14 +218,14 @@ public class MkvSubtitleExtractorTest extends TikaTest {
 
     @Test
     public void testBlankStrippedHeaderStillCharged() throws Exception {
-        // 8 MB of spaces as the stripped header: every 1-byte block decodes to 8 MB of blanks
-        byte[] spaces = new byte[8 * 1024 * 1024];
+        // 4 KB of spaces as the stripped header: every 1-byte block decodes to 4 KB of blanks
+        byte[] spaces = new byte[MkvSubtitleExtractor.MAX_COMP_SETTINGS_BYTES];
         Arrays.fill(spaces, (byte) ' ');
         byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
         byte[] tracks = el(0x1654AE6B, track(1, "S_TEXT/UTF8", null, null, null,
                 el(0x6240, el(0x5034, el(0x4254, uint(3)), el(0x4255, spaces)))));
         ByteArrayOutputStream blocks = new ByteArrayOutputStream();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < BLOCKS_PAST_BUDGET; i++) {
             blocks.writeBytes(el(0xA3, block(1, i, utf8(" "))));
         }
         byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)), blocks.toByteArray());
@@ -219,21 +233,21 @@ public class MkvSubtitleExtractorTest extends TikaTest {
         Metadata container = new Metadata();
         assertEquals(0, extract(mkv, true, container).size());
         assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                .contains("exceeds"), container.toString());
+                .contains("decoded bytes"), container.toString());
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     public void testFilteredAwayTextStillCharged(boolean grouped) throws Exception {
-        // an ASS track whose 8 MB stripped header has no fields: every 1-byte block decodes
-        // 8 MB that the filter drops; SimpleBlocks, or Blocks all in one BlockGroup
-        byte[] header = new byte[8 * 1024 * 1024];
+        // an ASS track whose 4 KB stripped header has no fields: every 1-byte block decodes
+        // 4 KB that the filter drops; SimpleBlocks, or Blocks all in one BlockGroup
+        byte[] header = new byte[MkvSubtitleExtractor.MAX_COMP_SETTINGS_BYTES];
         Arrays.fill(header, (byte) 'x');
         byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
         byte[] tracks = el(0x1654AE6B, track(1, "S_TEXT/ASS", null, null, null,
                 el(0x6240, el(0x5034, el(0x4254, uint(3)), el(0x4255, header)))));
         ByteArrayOutputStream blocks = new ByteArrayOutputStream();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < BLOCKS_PAST_BUDGET; i++) {
             blocks.writeBytes(grouped ? el(0xA1, block(1, i, utf8("x")))
                     : el(0xA3, block(1, i, utf8("x"))));
         }
@@ -243,7 +257,7 @@ public class MkvSubtitleExtractorTest extends TikaTest {
         assertEquals(0, extract(cat(ebml, el(0x18538067, tracks, cluster)), true, container)
                 .size());
         assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                .contains("exceeds"), container.toString());
+                .contains("decoded bytes"), container.toString());
     }
 
     /**
@@ -287,6 +301,123 @@ public class MkvSubtitleExtractorTest extends TikaTest {
                 (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF},
                 info, tracks, cluster1, cluster2);
         return cat(ebml, segment);
+    }
+
+
+    @Test
+    public void testNoTextTrackStopsAtFirstCluster() throws Exception {
+        // a video-only stream: nothing past the first Cluster header may be read
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
+        byte[] tracks = el(0x1654AE6B, track(1, "V_VP9", null, null, null, null));
+        ByteArrayOutputStream video = new ByteArrayOutputStream();
+        for (int i = 0; i < 1000; i++) {
+            video.writeBytes(el(0xA3, block(1, i, new byte[1000])));
+        }
+        byte[] head = cat(ebml, id(0x18538067), UNKNOWN, tracks, id(0x1F43B675), UNKNOWN);
+        byte[] mkv = cat(head, el(0xE7, uint(0)), video.toByteArray());
+        long[] read = {0};
+        InputStream counting = new FilterInputStream(new ByteArrayInputStream(mkv)) {
+            @Override
+            public int read() throws IOException {
+                int b = super.read();
+                read[0] += b < 0 ? 0 : 1;
+                return b;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                int n = super.read(b, off, len);
+                read[0] += Math.max(n, 0);
+                return n;
+            }
+        };
+        Metadata container = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(counting)) {
+            SubtitleTracks.readMatroska(tis, container, new ParseContext());
+        }
+        assertTrue(read[0] <= head.length + 8192, "read " + read[0] + " of " + mkv.length);
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    @Test
+    public void testDamagedZlibIsCharged() throws Exception {
+        // each block inflates to nearly 1 MB before its checksum fails: the work is charged
+        byte[] plain = new byte[MkvSubtitleExtractor.MAX_BLOCK_BYTES - 1];
+        Arrays.fill(plain, (byte) 'a');
+        Deflater d = new Deflater(9);
+        d.setInput(plain);
+        d.finish();
+        byte[] buf = new byte[1 << 16];
+        int n = d.deflate(buf);
+        d.end();
+        byte[] bad = Arrays.copyOf(buf, n);
+        bad[n - 1] ^= 0x55;
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
+        byte[] tracks = el(0x1654AE6B, track(1, "S_TEXT/UTF8", null, null, null,
+                el(0x6240, el(0x5034, el(0x4254, uint(0))))));
+        ByteArrayOutputStream blocks = new ByteArrayOutputStream();
+        int count = (int) (SubtitleTracks.MAX_DECODED_BYTES / plain.length) + 10;
+        for (int i = 0; i < count; i++) {
+            blocks.writeBytes(el(0xA3, block(1, 0, bad)));
+        }
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)), blocks.toByteArray());
+        Metadata container = new Metadata();
+        assertEquals(0, extract(cat(ebml, el(0x18538067, tracks, cluster)), true, container)
+                .size());
+        String warnings = String.join("\n",
+                container.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertTrue(warnings.contains("decoded bytes"), warnings);
+        assertTrue(warnings.contains("damaged zlib block"), warnings);
+    }
+
+    @Test
+    public void testWebmVttDropsIdentifierAndSettings() throws Exception {
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("webm")));
+        byte[] tracks = el(0x1654AE6B, track(1, "D_WEBVTT/SUBTITLES", null, null, null, null));
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)),
+                el(0xA0, el(0xA1, block(1, 0, utf8("cue-1\nline:0 align:start\nHi <b>there</b>"))),
+                        el(0x9B, uint(1000))),
+                el(0xA0, el(0xA1, block(1, 2000, utf8("\n\nSecond"))), el(0x9B, uint(500))));
+        List<Emitted> docs = extract(cat(ebml, el(0x18538067, tracks, cluster)), true,
+                new Metadata());
+        assertEquals(1, docs.size());
+        assertEquals("WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nHi there\n"
+                + "\n00:00:02.000 --> 00:00:02.500\nSecond\n", docs.get(0).body());
+    }
+
+    @Test
+    public void testHeaderStringsAreCapped() throws Exception {
+        byte[] name = new byte[1024 * 1024];
+        Arrays.fill(name, (byte) 'n');
+        byte[] header = new byte[MkvSubtitleExtractor.MAX_COMP_SETTINGS_BYTES + 1];
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
+        byte[] tracks = el(0x1654AE6B,
+                track(1, "S_TEXT/UTF8", null, null, new String(name, StandardCharsets.US_ASCII),
+                        null),
+                track(2, "S_TEXT/UTF8", null, null, null,
+                        el(0x6240, el(0x5034, el(0x4254, uint(3)), el(0x4255, header)))));
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)),
+                el(0xA3, block(1, 0, utf8("one"))), el(0xA3, block(2, 0, utf8("two"))));
+        Metadata container = new Metadata();
+        List<Emitted> docs = extract(cat(ebml, el(0x18538067, tracks, cluster)), true, container);
+        assertEquals(1, docs.size());
+        assertEquals(MkvSubtitleExtractor.MAX_NAME_BYTES,
+                docs.get(0).metadata().get(TikaCoreProperties.TITLE).length());
+        assertTrue(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
+                .contains("track 2: stripped header over"), container.toString());
+    }
+
+    @Test
+    public void testEncodingScopedToCodecPrivateIsIgnored() throws Exception {
+        // ContentEncodingScope 2: zlib applies to CodecPrivate only; frames are plain
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
+        byte[] tracks = el(0x1654AE6B, track(1, "S_TEXT/UTF8", null, null, null,
+                el(0x6240, el(0x5032, uint(2)), el(0x5034, el(0x4254, uint(0))))));
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)), el(0xA3, block(1, 0, utf8("plain"))));
+        List<Emitted> docs = extract(cat(ebml, el(0x18538067, tracks, cluster)), true,
+                new Metadata());
+        assertEquals(1, docs.size());
+        assertTrue(docs.get(0).body().contains("plain"), docs.get(0).body());
     }
 
     private static byte[] track(int number, String codec, String lang, String bcp47,

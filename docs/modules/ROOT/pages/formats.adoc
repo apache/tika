@@ -239,15 +239,19 @@ link:{api}/org/apache/tika/parser/video/FLVParser.html[FLVParser] supports the
 Flash video format with a simple parsing algorithm.
 link:{api}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser] covers the MP4
 family (MP4, QuickTime, 3GPP, ...), extracting video metadata and any audio
-stream metadata. Its text subtitle tracks (`tx3g`/`mov_text`) become embedded
-WebVTT documents (`track-<id>.vtt`, with the track's `dc:language`). It does this
-when the input is a file, in memory, or a stream of known length up to 64 MB; a
-longer or unsized stream is not spooled to disk for it. Set `extractSubtitles` to
-false to turn it off.
+stream metadata. Its text subtitle tracks (`tx3g`/`mov_text`, QuickTime `text`)
+become embedded WebVTT documents (`track-<id>.vtt`, with the track's `dc:language`),
+written by Tika from the samples rather than copied from the file. Finding the
+samples needs random access, so this happens when the input is a file, or content of
+measured length up to 64 MB, or a source that can hold it in memory; any other stream
+(including one with only a declared `Content-Length`) is not buffered for it. Set
+`extractSubtitles` to false on `mp4-parser` to turn it off.
 link:{api}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser] does the
 same for Matroska and WebM: SubRip, ASS/SSA and WebVTT text tracks (also when
-zlib-compressed), named by their `Name` as `dc:title`. It reads in a single
-forward pass, so streams are not spooled; it extracts no container metadata yet.
+zlib-compressed or header-stripped), with the track's `Name` as `dc:title`. It reads in
+a single forward pass, so streams are not spooled, and stops at the first Cluster when
+the file has no text track; it extracts no container metadata yet. Its switch is
+`extractSubtitles` on `matroska-parser`.
 For the Ogg family,
 link:{api}/org/apache/tika/parser/ogg/OggParser.html[OggParser] and
 link:{api}/org/apache/tika/parser/ogg/TheoraParser.html[TheoraParser] extract a
