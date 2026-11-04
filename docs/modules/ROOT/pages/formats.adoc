@@ -173,6 +173,11 @@ CSV and TSV, emitting tables for those.
 link:{api}/org/apache/tika/parser/markdown/MarkdownParser.html[MarkdownParser]
 parses Markdown into structured XHTML rather than treating it as plain text.
 
+link:{api}/org/apache/tika/parser/subtitle/SubtitleParser.html[SubtitleParser]
+extracts WebVTT and SubRip subtitles: one `<div class="cue">` per cue, carrying
+its start and end time (`data-start`, `data-end`, as `HH:MM:SS.mmm`) and
+identifier (`data-id`), with styling markup removed from the text.
+
 == Feed and syndication formats
 
 link:{api}/org/apache/tika/parser/feed/FeedParser.html[FeedParser] supports the
