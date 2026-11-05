@@ -72,6 +72,9 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * FictionBook marks the cover image named in <coverpage> as a THUMBNAIL embedded
+     resource, so the thumbnail preset serves it (TIKA-5035).
+     
    * MP4Parser extracts text subtitle tracks (tx3g/mov_text, QuickTime text) as
      embedded text/vtt documents named track-<id>.vtt, synthesized from the samples
      and parsed by SubtitleParser, with the track language as dc:language (ISO 639-2;
