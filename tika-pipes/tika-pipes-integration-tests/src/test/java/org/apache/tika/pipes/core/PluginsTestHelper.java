@@ -50,9 +50,18 @@ public class PluginsTestHelper {
     }
 
     public static Path getFileSystemFetcherConfig(String templateName, Path configBase, Path fetcherBase, Path emitterBase, boolean emitIntermediateResults) throws Exception {
+        return getFileSystemFetcherConfig(templateName, configBase, fetcherBase, emitterBase, emitIntermediateResults, Map.of());
+    }
+
+    /**
+     * @param extraReplacements template placeholders beyond the standard ones, mapped to their
+     *                          values (see {@link JsonConfigHelper} for the supported value types)
+     */
+    public static Path getFileSystemFetcherConfig(String templateName, Path configBase, Path fetcherBase, Path emitterBase,
+                                                  boolean emitIntermediateResults, Map<String, Object> extraReplacements) throws Exception {
         Path pipesConfig = configBase.resolve("pipes-config.json");
 
-        Map<String, Object> replacements = new HashMap<>();
+        Map<String, Object> replacements = new HashMap<>(extraReplacements);
         replacements.put("FETCHER_BASE_PATH", fetcherBase);
 
         if (emitterBase != null) {
