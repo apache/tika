@@ -1350,6 +1350,15 @@
     <glob pattern="*.c4p"/>
     <glob pattern="*.c4u"/>
   </mime-type>
+  <mime-type type="application/vnd.comicbook-rar">
+    <alias type="application/x-cbr"/>
+    <acronym>CBR</acronym>
+    <_comment>Comic Book Archive (RAR)</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Comic_book_archive</tika:link>
+    <sub-class-of type="application/x-rar-compressed"/>
+    <glob pattern="*.cbr"/>
+  </mime-type>
+
   <mime-type type="application/vnd.comicbook+zip">
     <alias type="application/x-cbz"/>
     <acronym>CBZ</acronym>
@@ -5970,6 +5979,22 @@
       </match>
     </magic>
     <glob pattern="*.7z" />
+  </mime-type>
+
+  <mime-type type="application/x-cb7">
+    <acronym>CB7</acronym>
+    <_comment>Comic Book Archive (7z)</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Comic_book_archive</tika:link>
+    <sub-class-of type="application/x-7z-compressed"/>
+    <glob pattern="*.cb7"/>
+  </mime-type>
+
+  <mime-type type="application/x-cbt">
+    <acronym>CBT</acronym>
+    <_comment>Comic Book Archive (tar)</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Comic_book_archive</tika:link>
+    <sub-class-of type="application/x-tar"/>
+    <glob pattern="*.cbt"/>
   </mime-type>
 
   <mime-type type="audio/32kadpcm"/>

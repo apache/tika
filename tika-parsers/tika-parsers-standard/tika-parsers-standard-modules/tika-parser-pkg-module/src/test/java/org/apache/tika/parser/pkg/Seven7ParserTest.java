@@ -22,11 +22,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -35,6 +44,29 @@ import org.apache.tika.sax.BodyContentHandler;
  * Test case for parsing 7z files.
  */
 public class Seven7ParserTest extends AbstractPkgTest {
+
+    /** A .cb7 keeps its type, and its first page by name is the cover. */
+    @Test
+    public void testComicBookCover(@TempDir Path tmp) throws Exception {
+        Path cb7 = tmp.resolve("comic.cb7");
+        try (SevenZOutputFile out = new SevenZOutputFile(cb7.toFile())) {
+            for (String name : new String[]{"pages/page-02.jpg", "pages/page-01.jpg", "info.txt"}) {
+                out.putArchiveEntry(out.createArchiveEntry(tmp.toFile(), name));
+                out.write(name.getBytes(StandardCharsets.UTF_8));
+                out.closeArchiveEntry();
+            }
+        }
+        List<Metadata> list = getRecursiveMetadata(cb7, new ParseContext(), false);
+        assertEquals("application/x-cb7", list.get(0).get(HttpHeaders.CONTENT_TYPE));
+        Map<String, String> types = resourceTypes(list);
+        assertEquals("THUMBNAIL", types.get("pages/page-01.jpg"), types.toString());
+        assertEquals("null", types.get("pages/page-02.jpg"));
+
+        Path plain = Files.copy(cb7, tmp.resolve("plain.7z"));
+        list = getRecursiveMetadata(plain, new ParseContext(), false);
+        assertEquals("application/x-7z-compressed", list.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("null", resourceTypes(list).get("pages/page-01.jpg"));
+    }
 
     /**
      * Tests that the ParseContext parser is correctly

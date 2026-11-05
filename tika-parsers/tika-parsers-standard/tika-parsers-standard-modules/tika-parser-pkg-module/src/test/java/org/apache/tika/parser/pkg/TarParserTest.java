@@ -21,11 +21,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 /**
@@ -37,6 +49,57 @@ public class TarParserTest extends AbstractPkgTest {
      * Tests that the ParseContext parser is correctly
      * fired for all the embedded entries.
      */
+    /**
+     * A .cbt keeps its type, and its first page by name is the cover, which a streamed tar
+     * only reaches in storage order; POSIX and GNU tar alike.
+     */
+    @Test
+    public void testComicBookCover(@TempDir Path tmp) throws Exception {
+        for (boolean gnu : new boolean[]{false, true}) {
+            Path cbt = tmp.resolve((gnu ? "gnu" : "posix") + ".cbt");
+            try (TarArchiveOutputStream out = new TarArchiveOutputStream(Files.newOutputStream(cbt))) {
+                for (String name : new String[]{"page-03.png", "page-01.png", "page-02.png"}) {
+                    byte[] data = name.getBytes(StandardCharsets.UTF_8);
+                    TarArchiveEntry entry = new TarArchiveEntry(name);
+                    entry.setSize(data.length);
+                    out.putArchiveEntry(entry);
+                    out.write(data);
+                    out.closeArchiveEntry();
+                }
+            }
+            if (gnu) {
+                Files.write(cbt, gnuMagic(Files.readAllBytes(cbt)));
+            }
+            List<Metadata> list = getRecursiveMetadata(cbt, new ParseContext(), false);
+            assertEquals("application/x-cbt", list.get(0).get(HttpHeaders.CONTENT_TYPE), cbt.toString());
+            Map<String, String> types = resourceTypes(list);
+            assertEquals("THUMBNAIL", types.get("page-01.png"), types.toString());
+            assertEquals("null", types.get("page-03.png"));
+        }
+    }
+
+    /**
+     * commons-compress writes the POSIX magic "ustar\0" "00"; GNU tar writes "ustar  \0".
+     * Each header gets the GNU magic and its checksum recomputed.
+     */
+    private static byte[] gnuMagic(byte[] tar) {
+        byte[] magic = "ustar  \0".getBytes(StandardCharsets.US_ASCII);
+        int at = 0;
+        while (at + 512 <= tar.length && tar[at] != 0) {
+            System.arraycopy(magic, 0, tar, at + 257, magic.length);
+            Arrays.fill(tar, at + 148, at + 156, (byte) ' ');
+            int sum = 0;
+            for (int i = 0; i < 512; i++) {
+                sum += tar[at + i] & 0xff;
+            }
+            byte[] checksum = String.format("%06o\0 ", sum).getBytes(StandardCharsets.US_ASCII);
+            System.arraycopy(checksum, 0, tar, at + 148, checksum.length);
+            long size = Long.parseLong(new String(tar, at + 124, 11, StandardCharsets.US_ASCII).trim(), 8);
+            at += 512 + (int) ((size + 511) / 512) * 512;
+        }
+        return tar;
+    }
+
     @Test
     public void testEmbedded() throws Exception {
         ContentHandler handler = new BodyContentHandler();

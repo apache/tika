@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.CRC32;
 
@@ -138,6 +139,25 @@ public class RarParserTest extends AbstractPkgTest {
         assertContains("page-001.txt", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    /**
+     * A .cbr is a comic book: its first page by name is the cover, wherever it is stored.
+     * The same archive named .rar has no cover.
+     */
+    @Test
+    public void testComicBookCover(@TempDir Path tmp) throws Exception {
+        byte[] rar = storedRar5(-1, "page-002.jpg", "2", "notes.txt", "n", "page-001.jpg", "1");
+        List<Metadata> list = getRecursiveMetadata(Files.write(tmp.resolve("comic.cbr"), rar),
+                new ParseContext(), false);
+        assertEquals("application/vnd.comicbook-rar", list.get(0).get(HttpHeaders.CONTENT_TYPE));
+        Map<String, String> types = resourceTypes(list);
+        assertEquals("THUMBNAIL", types.get("page-001.jpg"), types.toString());
+        assertEquals("null", types.get("page-002.jpg"));
+
+        list = getRecursiveMetadata(Files.write(tmp.resolve("plain.rar"), rar),
+                new ParseContext(), false);
+        assertEquals("null", resourceTypes(list).get("page-001.jpg"));
+    }
+
     /** RAR5 stores a Unix time, an instant: it does not move with the JVM's time zone. */
     @Test
     public void testRar5TimesAreInstants(@TempDir Path tmp) throws Exception {
@@ -163,12 +183,21 @@ public class RarParserTest extends AbstractPkgTest {
      * than -1 is written as Unix time.
      */
     private static byte[] storedRar5(long mtime, String... namesAndContents) {
+        java.util.LinkedHashMap<String, byte[]> files = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < namesAndContents.length; i += 2) {
+            files.put(namesAndContents[i], namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8));
+        }
+        return storedRar5(mtime, files);
+    }
+
+    /** As above, with the files' bytes, in the map's order. */
+    private static byte[] storedRar5(long mtime, Map<String, byte[]> files) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         out.writeBytes(new byte[]{'R', 'a', 'r', '!', 0x1a, 0x07, 0x01, 0x00});
         out.writeBytes(rar5Block(concat(vint(1), vint(0), vint(0))));
-        for (int i = 0; i < namesAndContents.length; i += 2) {
-            byte[] name = namesAndContents[i].getBytes(StandardCharsets.UTF_8);
-            byte[] data = namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8);
+        for (Map.Entry<String, byte[]> file : files.entrySet()) {
+            byte[] name = file.getKey().getBytes(StandardCharsets.UTF_8);
+            byte[] data = file.getValue();
             CRC32 crc = new CRC32();
             crc.update(data);
             byte[] time = mtime < 0 ? new byte[0] : littleEndian((int) mtime);

@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.pkg;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -38,11 +38,8 @@ import org.apache.tika.mime.MediaType;
  */
 final class ZipPreview {
 
-    private static final Set<String> IMAGE_EXTENSIONS =
-            Set.of("jpg", "jpeg", "png", "gif", "webp", "bmp", "avif", "jxl");
-
     private static final Map<MediaType, Function<ZipFile, String>> SELECTORS = Map.of(
-            MediaType.application("vnd.comicbook+zip"), ZipPreview::firstImageByName,
+            ComicBook.CBZ, ZipPreview::firstImageByName,
             MediaType.application("x-krita"), entry("preview.png"),
             MediaType.image("openraster"), entry("Thumbnails/thumbnail.png"),
             MediaType.application("x-extension-fcstd"), entry("thumbnails/Thumbnail.png"),
@@ -73,33 +70,14 @@ final class ZipPreview {
      * A comic's cover is its first page, and the pages are ordered by name.
      */
     private static String firstImageByName(ZipFile zipFile) {
-        String first = null;
-        String firstKey = null;
+        List<String> names = new ArrayList<>();
         Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
         while (entries.hasMoreElements()) {
             ZipArchiveEntry entry = entries.nextElement();
-            String name = entry.getName();
-            if (entry.isDirectory() || !isPage(name)) {
-                continue;
-            }
-            String key = name.toLowerCase(Locale.ROOT);
-            if (firstKey == null || key.compareTo(firstKey) < 0) {
-                first = name;
-                firstKey = key;
+            if (!entry.isDirectory()) {
+                names.add(entry.getName());
             }
         }
-        return first;
-    }
-
-    private static boolean isPage(String name) {
-        if (name.startsWith("__MACOSX/")) {
-            return false;
-        }
-        String base = name.substring(name.lastIndexOf('/') + 1);
-        int dot = base.lastIndexOf('.');
-        if (base.startsWith(".") || dot < 0) {
-            return false;
-        }
-        return IMAGE_EXTENSIONS.contains(base.substring(dot + 1).toLowerCase(Locale.ROOT));
+        return ComicBook.cover(names);
     }
 }

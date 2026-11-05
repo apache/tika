@@ -21,7 +21,9 @@ import static org.apache.tika.detect.zip.PackageConstants.SEVENZ;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.compress.MemoryLimitException;
@@ -44,6 +46,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
@@ -114,7 +117,10 @@ public class SevenZParser extends AbstractArchiveParser {
             password = provider.getPassword(metadata);
         }
 
-        metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());
+        boolean comic = ComicBook.is(metadata, ComicBook.CB7);
+        if (!comic) {
+            metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());
+        }
 
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -135,10 +141,24 @@ public class SevenZParser extends AbstractArchiveParser {
                     : builder.setPassword(password.toCharArray()).get();
             xhtml.startDocument();
             started = true;
+            String cover = null;
+            if (comic) {
+                List<String> names = new ArrayList<>();
+                for (SevenZArchiveEntry e : sevenZFile.getEntries()) {
+                    if (!e.isDirectory()) {
+                        names.add(e.getName());
+                    }
+                }
+                cover = ComicBook.cover(names);
+            }
             SevenZArchiveEntry entry = sevenZFile.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
-                    parseEntry(sevenZFile, entry, extractor, metadata, xhtml, context);
+                    boolean isCover = entry.getName().equals(cover);
+                    if (isCover) {
+                        cover = null;
+                    }
+                    parseEntry(sevenZFile, entry, isCover, extractor, metadata, xhtml, context);
                 }
                 entry = sevenZFile.getNextEntry();
             }
@@ -159,7 +179,7 @@ public class SevenZParser extends AbstractArchiveParser {
         }
     }
 
-    private void parseEntry(SevenZFile sevenZFile, SevenZArchiveEntry entry,
+    private void parseEntry(SevenZFile sevenZFile, SevenZArchiveEntry entry, boolean cover,
                             EmbeddedDocumentExtractor extractor, Metadata parentMetadata,
                             XHTMLContentHandler xhtml, ParseContext context)
             throws SAXException, IOException, TikaException {
@@ -174,6 +194,10 @@ public class SevenZParser extends AbstractArchiveParser {
                 context);
         if (entry.getHasAccessDate()) {
             setInstant(entrydata, FileSystem.ACCESSED, entry.getAccessDate());
+        }
+        if (cover) {
+            entrydata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
         }
 
         if (extractor.shouldParseEmbedded(entrydata, context)) {
