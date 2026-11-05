@@ -24,13 +24,11 @@ import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -125,7 +123,12 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("Big5-HKSCS",     "Big5-HKSCS");
         CHARSET_JAVA.put("x-EUC-TW",      "x-EUC-TW");
         // Latin / Southern European
+        CHARSET_JAVA.put("ISO-8859-2",     "ISO-8859-2");
         CHARSET_JAVA.put("ISO-8859-3",     "ISO-8859-3");
+        // Not supersets of windows-1251/1256/1253: letters sit at different bytes (TIKA-5019)
+        CHARSET_JAVA.put("ISO-8859-5",     "ISO-8859-5");
+        CHARSET_JAVA.put("ISO-8859-6",     "ISO-8859-6");
+        CHARSET_JAVA.put("ISO-8859-7",     "ISO-8859-7");
         CHARSET_JAVA.put("ISO-8859-16",    "ISO-8859-16");
         // Windows single-byte (replaces ISO-8859-X equivalents)
         CHARSET_JAVA.put("windows-1250",   "windows-1250");
@@ -136,7 +139,7 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("windows-1255",   "windows-1255");
         CHARSET_JAVA.put("windows-1256",   "windows-1256");
         CHARSET_JAVA.put("windows-1257",   "windows-1257");
-        // windows-1258 (Vietnamese) requires NFD normalization before encoding
+        // windows-1258 (Vietnamese): base letter + combining tone, see CharsetTextEncoding
         CHARSET_JAVA.put("windows-1258",   "windows-1258");
         // Thai — windows-874 is the superset of TIS-620
         CHARSET_JAVA.put("windows-874",    "x-windows-874");
@@ -231,22 +234,22 @@ public class BuildCharsetTrainingData {
         put("bos", "windows-1250", "IBM852", "ISO-8859-2");
         put("sqi", "windows-1250", "IBM852", "ISO-8859-2", "ISO-8859-16");
         // Cyrillic — keep all distinct encodings
-        put("rus", "windows-1251", "KOI8-R", "IBM855", "IBM866", "x-mac-cyrillic");
-        put("ukr", "windows-1251", "KOI8-U", "IBM855", "x-mac-cyrillic");
-        put("bul", "windows-1251", "IBM855", "x-mac-cyrillic");
-        put("bel", "windows-1251", "IBM855");
-        put("mkd", "windows-1251");
-        put("srp", "windows-1251");
+        put("rus", "windows-1251", "KOI8-R", "IBM855", "IBM866", "x-mac-cyrillic", "ISO-8859-5");
+        put("ukr", "windows-1251", "KOI8-U", "IBM855", "x-mac-cyrillic", "ISO-8859-5");
+        put("bul", "windows-1251", "IBM855", "x-mac-cyrillic", "ISO-8859-5");
+        put("bel", "windows-1251", "IBM855", "ISO-8859-5");
+        put("mkd", "windows-1251", "ISO-8859-5");
+        put("srp", "windows-1251", "ISO-8859-5");
         // Arabic
-        put("ara", "windows-1256", "IBM420-ltr", "IBM420-rtl");
+        put("ara", "windows-1256", "IBM420-ltr", "IBM420-rtl", "ISO-8859-6");
         put("urd", "windows-1256");
         put("fas", "windows-1256");
-        put("pus", "windows-1256");
+        // pus: 99% of paragraphs need letters windows-1256 lacks (ې ړ ګ ټ ...); UTF-8 only
         // Hebrew
         put("heb", "windows-1255", "IBM424-ltr", "IBM424-rtl");
         // Greek
-        put("ell", "windows-1253");
-        // Vietnamese — windows-1258 requires NFD normalization before encoding
+        put("ell", "windows-1253", "ISO-8859-7");
+        // Vietnamese
         put("vie", "windows-1258");
         // Japanese
         put("jpn", "Shift_JIS", "EUC-JP", "ISO-2022-JP");
@@ -331,15 +334,6 @@ public class BuildCharsetTrainingData {
     /** RTL charsets: text is reversed (character level) before encoding. */
     private static final Set<String> RTL_CHARSETS = new HashSet<>(Arrays.asList(
             "IBM424-rtl", "IBM420-rtl"
-    ));
-
-    /**
-     * Charsets that require NFD normalization before encoding and NFC
-     * recomposition after decoding for a fair drop-count comparison.
-     * windows-1258 (Vietnamese) uses combining diacritical marks.
-     */
-    private static final Set<String> NFD_CHARSETS = new HashSet<>(Arrays.asList(
-            "windows-1258"
     ));
 
     /**
@@ -430,10 +424,14 @@ public class BuildCharsetTrainingData {
         int minChunk         = DEFAULT_MIN_CHUNK;
         int maxChunk         = DEFAULT_MAX_CHUNK;
         int seed             = DEFAULT_SEED;
+        Path wikiDir         = null;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--madlad-dir":
                     madladDir = Paths.get(args[++i]);
+                    break;
+                case "--wiki-dir":
+                    wikiDir = Paths.get(args[++i]);
                     break;
                 case "--output-dir":
                     outputDir = Paths.get(args[++i]);
@@ -495,7 +493,9 @@ public class BuildCharsetTrainingData {
         // Load unicode_langs.txt for Unicode charset training
         Path unicodeLangsFile = madladDir.resolve(UNICODE_LANGS_FILE);
         List<String> unicodeLangs = new ArrayList<>();
-        if (Files.exists(unicodeLangsFile)) {
+        if (wikiDir != null) {
+            unicodeLangs.addAll(wikiLanguages(wikiDir));
+        } else if (Files.exists(unicodeLangsFile)) {
             for (String line : Files.readAllLines(unicodeLangsFile,
                     java.nio.charset.StandardCharsets.UTF_8)) {
                 line = line.strip();
@@ -512,7 +512,8 @@ public class BuildCharsetTrainingData {
         }
 
         System.out.println("=== BuildCharsetTrainingData ===");
-        System.out.println("  madlad-dir:          " + madladDir);
+        System.out.println("  source:              "
+                + (wikiDir != null ? "wikipedia train split " + wikiDir : "madlad " + madladDir));
         System.out.println("  output-dir:          " + outputDir);
         System.out.printf(Locale.ROOT, "  sample cap:          %,d%n", sampleCap);
         System.out.printf(Locale.ROOT, "  byte budget:         %,d%n", byteBudget);
@@ -538,7 +539,10 @@ public class BuildCharsetTrainingData {
             String javaName = CHARSET_JAVA.get(label);
             Charset cs      = Charset.forName(javaName);
             boolean structOnly = STRUCTURAL_ONLY.contains(label);
-            String[] splits       = {"train", "devtest", "test"};
+            // Wikipedia source: eval comes from that corpus's dev/test articles
+            // (BuildCharsetEvalData), so only train is generated here.
+            String[] splits       = wikiDir != null ? new String[]{"train"}
+                    : new String[]{"train", "devtest", "test"};
             int[]    splitCaps    = {sampleCap, sampleCap, sampleCap};
             long[]   splitBudgets = {byteBudget, byteBudget / 5, byteBudget / 5};
             System.out.printf(Locale.ROOT, "%s  (%s)%s%n", label, javaName,
@@ -572,8 +576,16 @@ public class BuildCharsetTrainingData {
             System.out.printf(Locale.ROOT, "  Contributing languages (%d), perLangCap=%,d:%n",
                     nLangs, perLangCap);
             for (String lang : langs) {
-                Path langDir = madladDir.resolve(lang);
-                List<String> sents = loadMadladSentences(langDir, perLangCap);
+                List<String> sents = wikiDir != null
+                        ? loadWikiTrainParagraphs(wikiDir, lang, perLangCap)
+                        : loadMadladSentences(madladDir.resolve(lang), perLangCap);
+                // ron ș ț -> ş ţ in windows-1250 / ISO-8859-2, fas/urd ی ک in windows-1256: how
+                // legacy text in those charsets was actually written (same table as the eval)
+                Map<Integer, Integer> subst = CharsetTextEncoding.substitutionFor(lang, cs);
+                if (subst != null) {
+                    sents.replaceAll(t -> CharsetTextEncoding.substitute(t, subst));
+                    System.out.printf(Locale.ROOT, "      (%s: de-facto letter substitution applied)%n", lang);
+                }
                 if (sents.isEmpty()) {
                     System.out.printf(Locale.ROOT, "    %-6s: ** 0 sentences — MISSING DATA **%n", lang);
                 } else {
@@ -593,7 +605,7 @@ public class BuildCharsetTrainingData {
             // Shuffle once with fixed seed, then split 80 / 10 / 10
             Collections.shuffle(allSentences, new Random(seed));
             int n        = allSentences.size();
-            int nTrain   = (int) (n * 0.80);
+            int nTrain   = wikiDir != null ? n : (int) (n * 0.80);
             int nDevtest = (n - nTrain) / 2;
             Map<String, List<String>> splitSents = new HashMap<>();
             splitSents.put("train",   allSentences.subList(0, nTrain));
@@ -735,6 +747,54 @@ public class BuildCharsetTrainingData {
     // Sentence loading
     // -----------------------------------------------------------------------
 
+    /** Languages with a downloaded Wikipedia sample (fetch_lang.py layout). */
+    private static List<String> wikiLanguages(Path wikiDir) throws IOException {
+        List<String> langs = new ArrayList<>();
+        try (java.util.stream.Stream<Path> dirs = Files.list(wikiDir)) {
+            dirs.filter(d -> Files.exists(d.resolve("articles.jsonl.gz")))
+                    .map(d -> d.getFileName().toString()).sorted().forEach(langs::add);
+        }
+        return langs;
+    }
+
+    /**
+     * Paragraphs from the train-split articles of a Wikipedia sample
+     * ({@code <wikiDir>/<lang>/articles.jsonl.gz}).  zho-trad reads zho; the encoder's
+     * no-dropped-letter rule rejects Simplified text under Big5-HKSCS/x-EUC-TW.
+     */
+    private static List<String> loadWikiTrainParagraphs(Path wikiDir, String lang, int max) {
+        String dir = lang.equals("zho-trad") ? "zho" : lang;
+        Path f = wikiDir.resolve(dir).resolve("articles.jsonl.gz");
+        List<String> result = new ArrayList<>();
+        if (!Files.exists(f)) {
+            return result;
+        }
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(
+                new java.util.zip.GZIPInputStream(Files.newInputStream(f)),
+                java.nio.charset.StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null && result.size() < max) {
+                com.fasterxml.jackson.databind.JsonNode a = json.readTree(line);
+                if (!"train".equals(WikiSplits.split(dir, a.path("id").asText(), a.path("split").asText()))) {
+                    continue;
+                }
+                for (String para : a.path("text").asText().split("\n")) {
+                    String cleaned = para.strip().replaceAll("\\s+", " ");
+                    if (!cleaned.isEmpty()) {
+                        result.add(cleaned);
+                        if (result.size() >= max) {
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("WARNING: could not read " + f + ": " + e.getMessage());
+        }
+        return result;
+    }
+
     /**
      * Load sentences from a MADLAD {@code sentences_madlad.txt} file.
      * Format: {@code lineNum TAB text} (tab-separated, or just text).
@@ -820,6 +880,13 @@ public class BuildCharsetTrainingData {
      *               identity (the ambiguity gate); empty for CJK/Unicode charsets
      * @return {@code long[]}{written, ambiguousDropped, totalBytes}
      */
+    /** True when the sentence, prepared for this charset, encodes without dropping a letter. */
+    private static boolean fitsCharset(String sentence, Charset cs, String charset) {
+        int[] dropped = new int[2];
+        CharsetTextEncoding.encodable(prepareText(sentence, charset), cs.newEncoder(), dropped);
+        return dropped[1] == 0;
+    }
+
     private static long[] writeSamples(List<String> sentences, Charset cs, String charset,
                                        Path outFile, int sampleCap, long byteBudget,
                                        int minChunk, int maxChunk,
@@ -840,11 +907,23 @@ public class BuildCharsetTrainingData {
                 // enough characters to plausibly fill the target byte size.
                 // Rough heuristic: 2 bytes per char for CJK, 1 for SBCS.
                 int charTarget = target;
-                StringBuilder combined = new StringBuilder(
-                        sentences.get(sentIdx++));
+                // Skip sentences that would lose letters in this charset before combining: one
+                // off-script sentence (Simplified text under Big5-HKSCS) would otherwise get the
+                // whole multi-sentence chunk rejected.
+                StringBuilder combined = new StringBuilder();
                 while (combined.length() < charTarget
                         && sentIdx < sentences.size()) {
-                    combined.append('\n').append(sentences.get(sentIdx++));
+                    String next = sentences.get(sentIdx++);
+                    if (!fitsCharset(next, cs, charset)) {
+                        continue;
+                    }
+                    if (combined.length() > 0) {
+                        combined.append('\n');
+                    }
+                    combined.append(next);
+                }
+                if (combined.length() == 0) {
+                    continue;
                 }
 
                 byte[] chunk = encodeChunk(combined.toString(), cs, charset,
@@ -924,9 +1003,6 @@ public class BuildCharsetTrainingData {
      *   <li>RTL: reverse character order (IBM424-rtl, IBM420-rtl).</li>
      *   <li>IBM420: strip Arabic diacritics and normalise alef variants.</li>
      * </ol>
-     * NFD normalization (windows-1258) is handled separately in
-     * {@link #encodeChunk} because it must be applied after the drop-count
-     * comparison baseline is established.
      */
     private static String prepareText(String text, String charset) {
         text = text.replace("\ufeff", "");
@@ -1157,10 +1233,8 @@ public class BuildCharsetTrainingData {
      * <p>Quality gates (matching the Python generator):
      * <ol>
      *   <li>Prepare text (BOM strip, RTL reversal, IBM420 diacritic strip).</li>
-     *   <li>NFD normalize for windows-1258 (Vietnamese).</li>
-     *   <li>Encode with IGNORE — unencodable characters are silently dropped.</li>
-     *   <li>Decode back with REPLACE — corrupt sequences become U+FFFD.</li>
-     *   <li>Reject if (dropped + corrupt) {@literal >} scaled max.</li>
+     *   <li>Encode per code point with {@link CharsetTextEncoding#encodable}.</li>
+     *   <li>Reject any dropped letter, or more dropped non-letters than the scaled max.</li>
      *   <li>Trim to {@code targetBytes}.</li>
      *   <li>Reject if high-byte ratio is below threshold for the encoding family.</li>
      * </ol>
@@ -1174,50 +1248,23 @@ public class BuildCharsetTrainingData {
             return null;
         }
 
-        // Baseline for drop-count (NFC; after RTL + IBM420 prep but before NFD)
-        String sourceText = text;
-
-        // windows-1258 (Vietnamese) uses combining diacritical marks (NFD)
-        String encText = NFD_CHARSETS.contains(charset)
-                ? Normalizer.normalize(text, Normalizer.Form.NFD)
-                : text;
-
-        // Encode with IGNORE: unencodable chars are dropped, not replaced.
-        // This matches Python's errors='ignore' so the drop-count is accurate.
+        // Same encoder as the eval generator: windows-1258 tone split, no silent letter loss
+        // (NFD + IGNORE used to strip every circumflex, breve and horn from Vietnamese).
         CharsetEncoder encoder = cs.newEncoder()
-                .onMalformedInput(CodingErrorAction.IGNORE)
-                .onUnmappableCharacter(CodingErrorAction.IGNORE);
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        int[] dropped = new int[2];
+        String kept = CharsetTextEncoding.encodable(text, encoder, dropped);
+        int maxDrop = MAX_DROPPED_BASE + text.length() / DROP_SCALE_CHARS;
+        if (dropped[1] > 0 || dropped[0] > maxDrop || kept.isEmpty()) {
+            return null;
+        }
         byte[] encoded;
         try {
-            ByteBuffer bb = encoder.encode(CharBuffer.wrap(encText));
+            ByteBuffer bb = cs.newEncoder().encode(CharBuffer.wrap(kept));
             encoded = new byte[bb.limit()];
             bb.get(encoded);
         } catch (Exception e) {
-            return null;
-        }
-        if (encoded.length == 0) {
-            return null;
-        }
-
-        // Decode back with REPLACE: corrupt sequences become U+FFFD
-        String decoded;
-        try {
-            CharsetDecoder decoder = cs.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
-            decoded = decoder.decode(ByteBuffer.wrap(encoded)).toString();
-        } catch (Exception e) {
-            return null;
-        }
-        // NFC recompose for fair length comparison with NFD charsets
-        if (NFD_CHARSETS.contains(charset)) {
-            decoded = Normalizer.normalize(decoded, Normalizer.Form.NFC);
-        }
-
-        int dropped = sourceText.length() - decoded.length();
-        int corrupt = countChar(decoded, '\ufffd');
-        int maxDrop = MAX_DROPPED_BASE + sourceText.length() / DROP_SCALE_CHARS;
-        if (dropped + corrupt > maxDrop) {
             return null;
         }
 
@@ -1249,16 +1296,6 @@ public class BuildCharsetTrainingData {
         }
 
         return chunk;
-    }
-
-    private static int countChar(String s, char c) {
-        int count = 0;
-        for (int i = 0; i < s.length(); i++) {
-            if (s.charAt(i) == c) {
-                count++;
-            }
-        }
-        return count;
     }
 
     // -----------------------------------------------------------------------

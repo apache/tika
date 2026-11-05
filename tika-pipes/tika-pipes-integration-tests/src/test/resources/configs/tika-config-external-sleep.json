@@ -1,0 +1,54 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "fse": {
+      "file-system-emitter": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 1,
+    "useSharedServer": "USE_SHARED_SERVER",
+    "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
+    "heartbeatIntervalMillis": 200,
+    "forkedJvmArgs": ["-Xmx256m", "-XX:TieredStopAtLevel=1"],
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
+  },
+  "parsers": [
+    {
+      "external-parser": {
+        "_mime-include": ["text/plain"],
+        "commandLine": "COMMAND_LINE",
+        "timeoutMillis": 300000
+      }
+    }
+  ],
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 30000
+    }
+  },
+  "plugin-roots": "PLUGINS_PATHS"
+}

@@ -50,8 +50,10 @@ public class CharsetConfusablesTest {
 
     @Test
     public void testCyrillicSymmetric() {
-        assertTrue(CharsetConfusables.isLenientMatch("ISO-8859-5", "windows-1251"));
-        assertTrue(CharsetConfusables.isLenientMatch("windows-1251", "ISO-8859-5")); // symmetric
+        // TIKA-5019: different letter bytes, so never a lenient match
+        assertFalse(CharsetConfusables.isLenientMatch("ISO-8859-5", "windows-1251"));
+        assertFalse(CharsetConfusables.isLenientMatch("ISO-8859-6", "windows-1256"));
+        assertFalse(CharsetConfusables.isLenientMatch("ISO-8859-7", "windows-1253"));
         assertTrue(CharsetConfusables.isLenientMatch("KOI8-R", "KOI8-U"));
         assertTrue(CharsetConfusables.isLenientMatch("KOI8-U", "KOI8-R")); // symmetric
     }

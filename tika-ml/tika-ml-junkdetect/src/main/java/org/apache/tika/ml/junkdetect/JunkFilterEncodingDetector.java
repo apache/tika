@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.detect.BOMDetector;
 import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingProbeCache;
@@ -58,7 +59,7 @@ import org.apache.tika.quality.TextQualityDetector;
  * then reads the raw probe bytes, decodes them under each unique candidate
  * charset, scores each decode with {@link TextQualityDetector#score}, and
  * picks the highest-scoring candidate (the score is cross-script comparable,
- * so a plain argmax suffices).  BOM-declared, meta-tag-declared, structural,
+ * so a plain argmax suffices).  BOM-hinted, meta-tag-declared, structural,
  * and statistical candidates all compete on the same footing — quality of the
  * resulting decode is the sole criterion at this layer.
  *
@@ -208,7 +209,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // decoded as the author intended.
         Charset declared = pickDeclarativeWithEquivalentDecode(context, candidates);
         if (declared != null) {
-            // A STRUCTURAL proof (valid multi-byte UTF-8, ISO-2022, BOM) outranks a
+            // A STRUCTURAL proof (valid multi-byte UTF-8, ISO-2022) outranks a
             // DECLARATIVE self-claim on conflict.  The equivalent-decode shortcut
             // compares tag-stripped text, so a doc whose only high bytes live in
             // markup (a <meta> attribute, an <o:..> tag) ties on visible text and
@@ -230,8 +231,20 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         }
         if (allDecodingsIdentical(candidates)) {
             // All decodings are byte-identical but no DECLARATIVE candidate
-            // is present.  Text quality cannot distinguish them; defer to
-            // the composite's default ordering.
+            // is present.  Text quality cannot distinguish them.  A validated
+            // BOM is then the only discriminating evidence (it also tells the
+            // reader to drop the BOM bytes); otherwise defer to the composite's
+            // default ordering.
+            Charset bom = bomHinted(context, candidates);
+            if (bom != null) {
+                context.setArbitrationInfo("junk-filter-identical-decodings-bom");
+                return List.of(new EncodingResult(bom, context.getTopConfidenceFor(bom)));
+            }
+            Charset frequent = mostFrequentLegacy(candidates.keySet());
+            if (frequent != null) {
+                context.setArbitrationInfo("junk-filter-identical-decodings-frequency");
+                return List.of(new EncodingResult(frequent, context.getTopConfidenceFor(frequent)));
+            }
             context.setArbitrationInfo("junk-filter-identical-decodings");
             LOG.trace("junk-filter all decodings identical, deferring");
             return Collections.emptyList();
@@ -348,6 +361,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // windows-1252 truth under COMMON-dilution.  Cased-letter count reads
         // it where typicality ties.  See {@link #applyLatinLetterGate}.
         champion = applyLatinLetterGate(bytes, champion, candidates.keySet());
+        champion = keepStatisticalTop(context, champion, scoreByCharset);
 
         // "No-info" guard: if the statistical layer produced no confident
         // answer — no STRUCTURAL proof, and its best STATISTICAL candidate is
@@ -524,14 +538,53 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     }
 
     /**
+     * Keeps the first STATISTICAL candidate over {@code champion} when a DECLARATIVE candidate
+     * names the same charset: two independent signals agreeing beat a quality argmax, whose
+     * sibling margins here are typically ~0.005 (cc-html train: 79 fixed, 0 broken).  The BOM
+     * result is not the statistical model's pick, so it is skipped; a STRUCTURAL champion is kept.
+     */
+    private static Charset keepStatisticalTop(EncodingDetectorContext context, Charset champion,
+                                              Map<Charset, Double> scoreByCharset) {
+        Charset top = null;
+        boolean declared = false;
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            if (isBomResult(r)) {
+                continue;
+            }
+            for (EncodingResult er : r.getEncodingResults()) {
+                if (top == null && er.getResultType() == EncodingResult.ResultType.STATISTICAL) {
+                    top = er.getCharset();
+                }
+            }
+        }
+        if (top == null || top.equals(champion) || !scoreByCharset.containsKey(top)) {
+            return champion;
+        }
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                declared |= er.getResultType() == EncodingResult.ResultType.DECLARATIVE
+                        && er.getCharset().equals(top);
+                if (er.getResultType() == EncodingResult.ResultType.STRUCTURAL
+                        && er.getCharset().equals(champion)) {
+                    return champion;
+                }
+            }
+        }
+        return declared ? top : champion;
+    }
+
+    /**
      * True if some detector produced a confident non-declarative signal: any
      * STRUCTURAL result (byte-grammar proof), or any STATISTICAL result above
-     * {@link #NO_INFO_CONFIDENCE}.  When false, the statistical layer has
+     * {@link #NO_INFO_CONFIDENCE}; the BOM hint does not count.  When false, the statistical layer has
      * effectively abstained (only its "I don't know" fallback), so a
      * declaration should be trusted over a quality argmax.
      */
     private static boolean hasConfidentNonDeclarative(EncodingDetectorContext context) {
         for (EncodingDetectorContext.Result r : context.getResults()) {
+            if (isBomResult(r)) {
+                continue;
+            }
             for (EncodingResult er : r.getEncodingResults()) {
                 EncodingResult.ResultType t = er.getResultType();
                 if (t == EncodingResult.ResultType.STRUCTURAL) {
@@ -692,44 +745,88 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         return HtmlContentCleaner.expandHtmlEntities(s);
     }
 
+    private static final String BOM_DETECTOR = BOMDetector.class.getSimpleName();
+
+    /**
+     * {@link BOMDetector}'s result.  The context records detectors by simple class name
+     * (see {@code CompositeEncodingDetector}); a BOM is a hint, not a vote of the statistical layer.
+     */
+    private static boolean isBomResult(EncodingDetectorContext.Result r) {
+        return BOM_DETECTOR.equals(r.getDetectorName());
+    }
+
+    /** The candidate {@link BOMDetector} reported, if it survived decoding. */
+    private static Charset bomHinted(EncodingDetectorContext context, Map<Charset, String> candidates) {
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            if (isBomResult(r)
+                    && candidates.containsKey(r.getCharset())) {
+                return r.getCharset();
+            }
+        }
+        return null;
+    }
+
+    private static final Map<String, Long> LEGACY_FREQUENCY = loadLegacyFrequency();
+
+    private static Map<String, Long> loadLegacyFrequency() {
+        Map<String, Long> m = new HashMap<>();
+        try (java.io.InputStream in = JunkFilterEncodingDetector.class
+                .getResourceAsStream("legacy-charset-frequency.txt")) {
+            if (in == null) {
+                throw new IllegalStateException("legacy-charset-frequency.txt missing");
+            }
+            for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                String[] f = line.split("\t");
+                m.put(f[0], Long.parseLong(f[1].trim()));
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return m;
+    }
+
+    /**
+     * Among candidates that decode identically, the most frequent on legacy-charset web pages: with
+     * identical text the bytes carry no evidence, so the prior decides. Null when a Unicode charset
+     * is tied (the frequency table covers legacy pages only) or nothing is more frequent than the rest.
+     */
+    private static Charset mostFrequentLegacy(Set<Charset> candidates) {
+        Charset best = null;
+        long bestCount = 0;
+        boolean tie = false;
+        for (Charset cs : candidates) {
+            if (cs.name().startsWith("UTF-") || cs.name().equals("US-ASCII")) {
+                return null;
+            }
+            Long count = LEGACY_FREQUENCY.get(cs.name());
+            if (count == null) {
+                count = LEGACY_FREQUENCY.getOrDefault(CharsetSupersets.decodeAs(cs).name(), 0L);
+            }
+            if (count > bestCount) {
+                best = cs;
+                bestCount = count;
+                tie = false;
+            } else if (count == bestCount) {
+                tie = true;
+            }
+        }
+        return tie ? null : best;
+    }
+
     /**
      * Strip a leading byte-order mark, if any.  UTF-32 signatures are
      * checked before UTF-16 because the UTF-32 LE BOM ({@code FF FE 00 00})
      * starts with the UTF-16 LE BOM ({@code FF FE}).
      */
     private static byte[] stripBomBytes(byte[] bytes) {
-        int bomLen = bomLength(bytes);
+        int bomLen = BOMDetector.bomLength(bytes);
         if (bomLen == 0) {
             return bytes;
         }
         return Arrays.copyOfRange(bytes, bomLen, bytes.length);
-    }
-
-    private static int bomLength(byte[] b) {
-        if (b.length >= 4
-                && (b[0] & 0xFF) == 0x00 && (b[1] & 0xFF) == 0x00
-                && (b[2] & 0xFF) == 0xFE && (b[3] & 0xFF) == 0xFF) {
-            return 4; // UTF-32BE
-        }
-        if (b.length >= 4
-                && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xFE
-                && (b[2] & 0xFF) == 0x00 && (b[3] & 0xFF) == 0x00) {
-            return 4; // UTF-32LE
-        }
-        if (b.length >= 3
-                && (b[0] & 0xFF) == 0xEF && (b[1] & 0xFF) == 0xBB
-                && (b[2] & 0xFF) == 0xBF) {
-            return 3; // UTF-8
-        }
-        if (b.length >= 2
-                && (b[0] & 0xFF) == 0xFE && (b[1] & 0xFF) == 0xFF) {
-            return 2; // UTF-16BE
-        }
-        if (b.length >= 2
-                && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xFE) {
-            return 2; // UTF-16LE
-        }
-        return 0;
     }
 
 }
