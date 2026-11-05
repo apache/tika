@@ -33,9 +33,9 @@ import org.apache.tika.quality.TextQualityScore;
  *       z-score, its sigmoid as pClean, the dominant script, and the share of letters in
  *       scripts the model was trained on as coverage.  There is no interval estimate:
  *       ciLow = ciHigh = the logit.  The score is unknown ({@link TextQualityScore#isUnknown})
- *       for empty text, text without letters (coverage NaN) and text whose letters are all in
- *       untrained scripts (coverage 0, {@link TextQualityScore#isUnmodeled}): the model has
- *       nothing to judge there.</li>
+ *       for empty text, text without letters (coverage NaN) and text with less than
+ *       {@link #MIN_COVERAGE} of its letters in trained scripts (all untrained: coverage 0,
+ *       {@link TextQualityScore#isUnmodeled}): the model cannot judge those.</li>
  *   <li>{@link #compare}: which of two decodes of the same bytes is the real text, from the
  *       pairwise head; the delta is the magnitude of the trained pairwise logit.</li>
  * </ul>
@@ -46,6 +46,13 @@ import org.apache.tika.quality.TextQualityScore;
 public final class JunkDetector implements TextQualityDetector {
 
     public static final String DEFAULT_MODEL_RESOURCE = "org/apache/tika/ml/junkdetect/junkdetect.bin";
+
+    /**
+     * Below this share of letters in trained scripts the score is unknown: letters in untrained
+     * scripts drag it down, so clean mixed text would read as junk (below 0.5 coverage almost always,
+     * and still often up to 0.9).
+     */
+    public static final float MIN_COVERAGE = 0.9f;
 
     private final HashedJunkModel model;
 
@@ -98,7 +105,7 @@ public final class JunkDetector implements TextQualityDetector {
         HashedJunkModel.Score s = model.score(text);
         String script = s.getDominantScript() == null ? null : s.getDominantScript().name();
         float coverage = (float) s.getCoverage();
-        if (!(coverage > 0)) {
+        if (!(coverage >= MIN_COVERAGE)) {
             return new TextQualityScore(TextQualityScore.UNKNOWN, TextQualityScore.UNKNOWN,
                     TextQualityScore.UNKNOWN, TextQualityScore.UNKNOWN, script, coverage);
         }

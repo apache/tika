@@ -67,7 +67,8 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
     /**
      * Junk-detector languageness of the content: positive = reads as clean text, negative =
      * junk (mojibake, broken fonts, garbage). {@value #UNKNOWN_LANGUAGENESS} when it cannot be
-     * judged: no letters, or letters only in scripts the model was not trained on.
+     * judged: no letters, or less than {@link JunkDetector#MIN_COVERAGE} of them in scripts the model
+     * was trained on.
      */
     public static Property LANGUAGENESS = Property.externalReal(TIKA_EVAL_NS + "languageness");
 
@@ -161,8 +162,8 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
         }
         HashedJunkModel.Score s = JUNK_DETECTOR.getModel().score(content);
         double coverage = s.getCoverage();
-        if (!(coverage > 0)) {
-            return new float[]{UNKNOWN_LANGUAGENESS, UNKNOWN_LANGUAGENESS, Double.isNaN(coverage) ? -1f : 0f};
+        if (!(coverage >= JunkDetector.MIN_COVERAGE)) {
+            return new float[]{UNKNOWN_LANGUAGENESS, UNKNOWN_LANGUAGENESS, Double.isNaN(coverage) ? -1f : (float) coverage};
         }
         double min = Double.isNaN(s.getWindowMin()) ? s.getLogit() : s.getWindowMin();
         return new float[]{(float) s.getLogit(), (float) min, (float) coverage};

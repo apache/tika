@@ -129,7 +129,7 @@ Release 4.3.0 - ???
      languageness comes from the same model and gains tika-eval:languagenessMin (the worst
      200-character window, which finds a damaged region in a clean document) and
      tika-eval:languagenessCoverage. Languageness is -99 (unknown) for text with no letters
-     or with letters only in scripts the model was not trained on (TIKA-5027).
+     or with under 90% of its letters in scripts the model was trained on (TIKA-5027).
 
   OTHER CHANGES
 

@@ -92,6 +92,12 @@ public class TikaEvalMetadataFilterTest {
         assertEquals(TikaEvalMetadataFilter.UNKNOWN_LANGUAGENESS, yi[0]);
         assertEquals(0f, yi[2]);
 
+        // mostly an untrained script with a few Latin words: unknown, but the coverage is reported
+        float[] mixed = TikaEvalMetadataFilter.languageness("Mongolia \u182e\u1823\u1829\u182d\u1823\u182f "
+                + "\u1824\u182f\u1824\u1830 \u182a\u1823\u182f \u1833\u1823\u1837\u1824\u1828\u1820\u1833\u1824 is a country.");
+        assertEquals(TikaEvalMetadataFilter.UNKNOWN_LANGUAGENESS, mixed[0]);
+        assertTrue(mixed[2] > 0 && mixed[2] < org.apache.tika.ml.junkdetect.JunkDetector.MIN_COVERAGE, "coverage " + mixed[2]);
+
         // a clean page with one damaged island: the minimum finds it, the page score barely moves
         StringBuilder page = new StringBuilder();
         for (int i = 0; i < 8; i++) {

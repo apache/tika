@@ -82,6 +82,17 @@ public class UnmodeledScriptTest {
         assertTrue(s.getCoverage() > 0f && s.getCoverage() < 1f, s.toString());
     }
 
+    /** Clean text mostly in an untrained script scores like junk, so below MIN_COVERAGE it is unknown. */
+    @Test
+    void mostlyUnmodeledTextIsUnknown() {
+        TextQualityScore s = detector.score("Mongolia ᠮᠣᠩᠭᠣᠯ ᠤᠯᠤᠰ ᠪᠣᠯ ᠳᠣᠷᠤᠨᠠᠳᠤ ᠠᠽᠢ ᠶᠢᠨ ᠬᠣᠢᠳᠤ is a country.");
+        assertTrue(s.getCoverage() > 0 && s.getCoverage() < JunkDetector.MIN_COVERAGE, s.toString());
+        assertTrue(s.isUnknown() && !s.isUnmodeled(), s.toString());
+        TextQualityScore mostlyLatin = detector.score("The Mongolian name of the country, ᠮᠣᠩᠭᠣᠯ, is written in the "
+                + "traditional script, which runs in vertical columns from left to right across the page.");
+        assertTrue(mostlyLatin.getCoverage() >= JunkDetector.MIN_COVERAGE && !mostlyLatin.isUnknown(), mostlyLatin.toString());
+    }
+
     @Test
     void unmodeledScriptSaladIsJunk() {
         int[] pool = "ꆈꌠꁱꂷᠮᠣᠩᠭᐃᓄᒃᑎᏣᎳᎩᎦ".codePoints().toArray();

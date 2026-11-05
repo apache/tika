@@ -82,8 +82,10 @@ score.getCoverage();   // share of letters in trained scripts
   1% score below 0.1; on clean Wikipedia sentences about 0.3% score below 0.
 * `getCiLow()` and `getCiHigh()` equal the logit: there is no interval estimate.
 * The score is **unknown** (`isUnknown()`) for empty text, text without letters (coverage NaN)
-  and text whose letters are all in untrained scripts (coverage 0, `isUnmodeled()`).  An
-  unknown score means "cannot judge", never "junk".
+  and text with less than 90% of its letters in trained scripts (`JunkDetector.MIN_COVERAGE`;
+  all untrained: coverage 0, `isUnmodeled()`).  Letters in untrained scripts pull the score
+  down, so clean mixed text would otherwise read as junk.  An unknown score means "cannot
+  judge", never "junk".
 * `getDominantScript()` is the script with the most letters.
 
 === The worst window
@@ -117,19 +119,20 @@ by the trainer).
 | Key | Value
 
 | `tika-eval:languageness`
-| The pointwise logit; −99 when unknown (no letters, or only untrained scripts).
+| The pointwise logit; −99 when unknown (no letters, or under 90% of them in trained scripts).
 
 | `tika-eval:languagenessMin`
 | The worst window (the whole text if shorter than a window); −99 when unknown.
 
 | `tika-eval:languagenessCoverage`
-| Share of letters in trained scripts in [0, 1]; −1 when the text has no letters.
+| Share of letters in trained scripts in [0, 1], reported even when the score is unknown; −1 when
+  the text has no letters.
 |===
 
 == Limitations
 
-* **Scripts**: only scripts with enough training text are covered (`getTrainedScripts()`);
-  letters in others make the score unknown or, in mixed text, lower its coverage.
+* **Scripts**: only scripts with enough training text are covered (`getTrainedScripts()`); text
+  with more than 10% of its letters in other scripts gets no score.
 * **Short text**: a few words give a few n-grams; scores on very short strings are noisy.
 * **Small damage**: a handful of replacement characters in a long page barely move the score;
   count them directly.
