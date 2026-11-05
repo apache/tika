@@ -270,6 +270,20 @@ or larger within the cache memory budget. Any other input, including a
 stream with only a declared `Content-Length`, is silently not searched. Set
 `extractSubtitles` to false on `mp4-parser` to turn it off.
 `extractSubtitles` is read from tika-config.json only, not from a per-request config.
+CEA-608 closed captions come out the same way, one document per channel
+(`track-<id>-cc1.vtt` ... `cc4`, with `dc:title` `CC1` ... `CC4`). QuickTime `c608`
+caption tracks are read by default; `extractClosedCaptions` set to false skips them.
+Captions carried in the SEI messages of H.264 and HEVC video are read only when
+`videoCaptionScan` is `PROBE` or `FULL` (default `NONE`), since every such video file
+then pays for some reads. `PROBE` reads the first 300 frames, then 8 frames every 5
+seconds, and the whole track once a caption character turns up, so a caption run between
+two probes in an otherwise uncaptioned track is missed; `FULL` reads every frame. Only
+the NAL units before each frame's first slice are read; no video is decoded. CEA-708
+captions are not decoded, and a file with both a `c608` track and SEI captions yields
+both. These settings, too, are read from tika-config.json only, and captions are
+MP4/QuickTime only. Caption reads stop at one million frames, 128 MB or two million
+caption byte pairs per file, apart from the subtitle limits below, which caption text
+still counts toward.
 link:{api}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser] does the
 same for Matroska and WebM: SubRip, ASS/SSA and WebVTT text tracks (also when
 zlib-compressed or header-stripped), with the track's `Name` as `dc:title`. It reads in

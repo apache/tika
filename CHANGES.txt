@@ -110,6 +110,17 @@ Release 4.3.0 - ???
      other tracks' blocks in a file and reading through them in a stream. No container
      metadata yet. Off with extractSubtitles on matroska-parser (TIKA-5030).
 
+   * MP4Parser extracts CEA-608 closed captions (CC1-CC4) as embedded text/vtt
+     documents named track-<id>-cc1.vtt ... with dc:title CC1 ..., from the same inputs as
+     text subtitles. QuickTime c608 tracks are read by default (off with
+     extractClosedCaptions). Captions in the SEI messages of H.264 and HEVC video are
+     read only with videoCaptionScan: PROBE reads the first 300 frames, then 8 frames
+     every 5 seconds, and the whole track once a caption character turns up; FULL reads
+     every frame. Only the NAL units before each frame's first slice are read; no video
+     is decoded. Pairs are reordered to presentation time; roll-up lines are emitted
+     once. CEA-708 is not decoded. Caption reads have their own per-file limits, so a
+     long video cannot crowd out the text tracks (TIKA-5039).
+
    * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
      cover as the THUMBNAIL embedded document, the other images, and the text, stored,
      PalmDOC- or HUFF/CDIC-compressed, through the HTML parser (of a KF8 book the HTML flow

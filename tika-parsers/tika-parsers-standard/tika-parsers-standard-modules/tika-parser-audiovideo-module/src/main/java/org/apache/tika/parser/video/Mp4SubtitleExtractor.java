@@ -27,6 +27,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -42,8 +43,22 @@ import org.apache.tika.io.TikaInputStream;
  * or {@code subt} track. Samples are located through the track's sample tables, and through
  * {@code moof/traf/trun} in fragmented files, and read by seeking. Chapter tracks
  * ({@code tref/chap}) are skipped; edit lists are not applied.
+ * <p>
+ * CEA-608 closed captions come from QuickTime {@code c608} tracks and, when asked, from the
+ * SEI messages of H.264 and HEVC video tracks, of which only the NAL units before a sample's
+ * first slice are read. A probed video track is read for its first {@value #PROBE_HEAD}
+ * samples, then {@value #PROBE_WINDOW} samples every {@value #PROBE_INTERVAL_SECONDS} seconds,
+ * and in full only once a caption character turns up. Caption pairs are reordered by
+ * presentation time before decoding.
  */
 final class Mp4SubtitleExtractor {
+
+    /**
+     * Which captions to read: {@code c608} tracks, H.264/HEVC {@code video} SEI, and whether
+     * video is probed before it is read in full.
+     */
+    record Captions(boolean c608, boolean video, boolean probe) {
+    }
 
     // absent from runtimes built without jdk.charsets
     private static final Charset MAC_ROMAN =
@@ -54,20 +69,34 @@ final class Mp4SubtitleExtractor {
     private static final int MAX_CHILDREN = 100_000;
     // uint16 length prefix plus the longest text it can declare
     private static final int MAX_SAMPLE_READ = 2 + 0xFFFF;
+    static final int PROBE_HEAD = 300;
+    static final int PROBE_INTERVAL_SECONDS = 5;
+    static final int PROBE_WINDOW = 8;
+    // c608 and video tracks read for captions, apart from the text tracks' MAX_TRACKS
+    static final int MAX_CAPTION_SOURCES = 16;
+    // NAL units looked at before a sample's first slice; SEI follows parameter sets and other
+    // SEI (HDR keyframes carry several)
+    private static final int MAX_NALS_PER_SAMPLE = 32;
+    // NAL headers (and small SEI) are parsed from windows of this many bytes, not read one by
+    // one; each read is charged at least MIN_READ_CHARGE so tiny reads cannot multiply
+    private static final int NAL_WINDOW = 128;
+    private static final int MIN_READ_CHARGE = 64;
+    private static final int MAX_SEI_BYTES = 8 * 1024;
 
     private Mp4SubtitleExtractor() {
     }
 
     /** Damage is recorded on the container; what was read before it is kept. */
-    static void extract(TikaInputStream tis, SubtitleTracks out) {
+    static void extract(TikaInputStream tis, SubtitleTracks out, Captions captions) {
         try (SeekableByteChannel ch = tis.getSeekableByteChannel()) {
-            extract(ch, out);
+            extract(ch, out, captions);
         } catch (IOException e) {
             out.damaged(e);
         }
     }
 
-    private static void extract(SeekableByteChannel ch, SubtitleTracks out) throws IOException {
+    static void extract(SeekableByteChannel ch, SubtitleTracks out, Captions captions)
+            throws IOException {
         // moov alone first: most files have no text track, and a long fragmented one has
         // a moof every few seconds
         Box moov = null;
@@ -98,14 +127,24 @@ final class Mp4SubtitleExtractor {
         }
         Set<Long> chapterTracks = chapterTracks(ch, traks, out);
         Map<Long, Track> tracks = new LinkedHashMap<>();
+        int captionSources = 0;
         for (Box trak : traks) {
-            Track t = Track.read(ch, trak, chapterTracks, tracks.keySet(), out);
+            boolean room = captionSources < MAX_CAPTION_SOURCES;
+            Track t = Track.read(ch, trak, chapterTracks, tracks.keySet(), captions, room, out);
             if (t == null) {
                 continue;
             }
-            t.out = out.add("track-" + t.id + ".vtt", t.language, null);
-            if (t.out == null) {
+            if (t.kind == Kind.TEXT) {
+                t.out = out.add("track-" + t.id + ".vtt", t.language, null);
+                if (t.out == null) {
+                    continue;
+                }
+            } else if (!room) {
+                out.warn("more than " + MAX_CAPTION_SOURCES + " caption sources; the rest skipped");
                 continue;
+            } else {
+                captionSources++;
+                t.startCaptions(trak, captions.probe(), out);
             }
             tracks.put(t.id, t);
             t.readCues(ch, out);
@@ -123,6 +162,38 @@ final class Mp4SubtitleExtractor {
             }
         }
         readFragments(ch, moofs, trex, tracks, out);
+        rescan(ch, moofs, trex, chapterTracks, tracks, captions, out);
+        for (Track t : tracks.values()) {
+            if (t.pairs != null && t.pairs.found) {
+                t.pairs.decode(out, "track-" + t.id + "-", t.kind == Kind.C608 ? t.language : null);
+            }
+        }
+    }
+
+    /**
+     * Reads in full, in one more pass over the fragments, the video tracks whose probe found
+     * captions after samples it had skipped.
+     */
+    private static void rescan(SeekableByteChannel ch, List<Box> moofs, Map<Long, long[]> trex,
+                               Set<Long> chapterTracks, Map<Long, Track> tracks,
+                               Captions captions, SubtitleTracks out) throws IOException {
+        Map<Long, Track> again = new LinkedHashMap<>();
+        for (Track t : tracks.values()) {
+            if (!t.rescan || out.captionsSpent()) {
+                continue;
+            }
+            Track r = Track.read(ch, t.trak, chapterTracks, Set.of(), captions, true, out);
+            if (r == null) {
+                continue;
+            }
+            r.startCaptions(t.trak, false, out);
+            again.put(r.id, r);
+            r.readCues(ch, out);
+        }
+        if (!again.isEmpty()) {
+            readFragments(ch, moofs, trex, again, out);
+            tracks.putAll(again);
+        }
     }
 
     /** trex defaults by track ID: {duration, size}. */
@@ -314,8 +385,16 @@ final class Mp4SubtitleExtractor {
                 size = getUIntBE(p, i);
                 i += 4;
             }
-            i += ((flags & 0x400) != 0 ? 4 : 0) + ((flags & 0x800) != 0 ? 4 : 0);
-            if (t != null && !t.cue(ch, offset, size, duration, fileSize, out)) {
+            if ((flags & 0x400) != 0) {
+                i += 4;
+            }
+            long cto = 0;
+            if ((flags & 0x800) != 0) {
+                // signed in version 1, and written signed into version 0 too
+                cto = (int) getUIntBE(p, i);
+                i += 4;
+            }
+            if (t != null && !t.cue(ch, offset, size, duration, cto, fileSize, out)) {
                 // the run's end still places the next traf
                 t.done = true;
                 t = null;
@@ -325,8 +404,24 @@ final class Mp4SubtitleExtractor {
         return offset;
     }
 
+    private enum Kind { TEXT, AVC, HEVC, C608 }
+
     private static final class Track {
         long id;
+        Kind kind;
+        // caption sources: NAL unit length prefix (from avcC/hvcC), and composition offsets
+        int nalLength;
+        byte[] ctts;
+        CaptionPairs pairs;
+        Box trak;
+        boolean probing;
+        // the probe found captions after skipping samples: the track is read again in full
+        boolean rescan;
+        // caption samples walked, read or skipped by the probe
+        long sampleIndex;
+        // probe: samples left in the current window, and the decode time of the next one
+        int probeLeft;
+        long nextProbe;
         long timescale;
         String language;
         byte[] stts;
@@ -344,11 +439,13 @@ final class Mp4SubtitleExtractor {
         long time;
 
         /**
-         * The track's tables if it is a text subtitle track not among {@code skip} or
-         * {@code seen}, else null.
+         * The track's tables if it is a text subtitle track or an asked-for caption source not
+         * among {@code skip} or {@code seen}, else null. A caption source without
+         * {@code room} comes back without its tables.
          */
         static Track read(SeekableByteChannel ch, Box trak, Set<Long> skip, Set<Long> seen,
-                          SubtitleTracks out) throws IOException {
+                          Captions captions, boolean room, SubtitleTracks out)
+                throws IOException {
             Track t = new Track();
             Box mdia = null;
             for (Box b : children(ch, trak.payload, trak.end, out)) {
@@ -363,12 +460,11 @@ final class Mp4SubtitleExtractor {
                 return null;
             }
             Box minf = null;
-            boolean text = false;
+            String handler = "";
             for (Box b : children(ch, mdia.payload, mdia.end, out)) {
                 if (b.is("hdlr")) {
                     byte[] p = payload(ch, b, 12);
-                    String type = p.length >= 12 ? fourCc(p, 8) : "";
-                    text = type.equals("text") || type.equals("sbtl") || type.equals("subt");
+                    handler = p.length >= 12 ? fourCc(p, 8) : "";
                 } else if (b.is("mdhd")) {
                     byte[] p = payload(ch, b, 34);
                     boolean v1 = p.length > 0 && p[0] == 1;
@@ -382,7 +478,11 @@ final class Mp4SubtitleExtractor {
                     minf = b;
                 }
             }
-            if (!text || minf == null || t.timescale == 0) {
+            boolean text = handler.equals("text") || handler.equals("sbtl")
+                    || handler.equals("subt");
+            boolean c608 = captions.c608() && handler.equals("clcp");
+            boolean video = captions.video() && handler.equals("vide");
+            if (!(text || c608 || video) || minf == null || t.timescale == 0) {
                 return null;
             }
             Box stbl = null;
@@ -395,35 +495,40 @@ final class Mp4SubtitleExtractor {
                 return null;
             }
             List<Box> tables = children(ch, stbl.payload, stbl.end, out);
-            String format = null;
             for (Box b : tables) {
                 if (b.is("stsd")) {
-                    byte[] p = payload(ch, b, 16);
-                    format = p.length >= 16 ? fourCc(p, 12) : "";
+                    t.kind = text ? textKind(ch, b, t) : sampleKind(ch, b, c608, t, out);
                 }
             }
-            // other formats (wvtt, stpp) are valid tracks Tika does not decode: no warning
-            if (format == null || !(format.equals("tx3g") || format.equals("text"))) {
+            // other formats (wvtt, stpp, av01, ...) are valid tracks Tika does not decode
+            if (t.kind == null) {
                 return null;
             }
-            t.macText = format.equals("text");
+            if (t.kind != Kind.TEXT && !room) {
+                return t;
+            }
+            // a video's tables can be large and valid: its first samples are still read
+            boolean prefix = t.kind != Kind.TEXT;
             for (Box b : tables) {
                 switch (b.type) {
                     case "stts":
-                        t.stts = table(ch, b, out);
+                        t.stts = table(ch, b, prefix, out);
                         break;
                     case "stsc":
-                        t.stsc = table(ch, b, out);
+                        t.stsc = table(ch, b, prefix, out);
                         break;
                     case "stsz":
                     case "stz2":
-                        t.stsz = table(ch, b, out);
+                        t.stsz = table(ch, b, prefix, out);
                         t.stz2 = b.is("stz2");
                         break;
                     case "stco":
                     case "co64":
-                        t.chunkOffsets = table(ch, b, out);
+                        t.chunkOffsets = table(ch, b, prefix, out);
                         t.co64 = b.is("co64");
+                        break;
+                    case "ctts":
+                        t.ctts = prefix ? table(ch, b, true, out) : null;
                         break;
                     default:
                         break;
@@ -431,6 +536,53 @@ final class Mp4SubtitleExtractor {
             }
             // a fragmented file may leave the stbl sample tables out
             return t;
+        }
+
+        private static Kind textKind(SeekableByteChannel ch, Box stsd, Track t)
+                throws IOException {
+            byte[] p = payload(ch, stsd, 16);
+            String format = p.length >= 16 ? fourCc(p, 12) : "";
+            t.macText = format.equals("text");
+            return format.equals("tx3g") || format.equals("text") ? Kind.TEXT : null;
+        }
+
+        // the first sample entry: c608, or H.264/HEVC (Dolby Vision too) with its NAL length
+        private static Kind sampleKind(SeekableByteChannel ch, Box stsd, boolean c608, Track t,
+                                       SubtitleTracks out) throws IOException {
+            Box entry = next(ch, stsd.payload + 8, stsd.end);
+            if (entry == null) {
+                return null;
+            }
+            if (c608) {
+                return entry.is("c608") ? Kind.C608 : null;
+            }
+            boolean avc = entry.is("avc1") || entry.is("avc3") || entry.is("dva1")
+                    || entry.is("dvav");
+            boolean hevc = entry.is("hvc1") || entry.is("hev1") || entry.is("dvh1")
+                    || entry.is("dvhe");
+            if (!avc && !hevc) {
+                return null;
+            }
+            // VisualSampleEntry: 8 bytes of SampleEntry fields and 70 of visual ones, then boxes
+            for (Box b : children(ch, entry.payload + 78, entry.end, out)) {
+                if (b.is(avc ? "avcC" : "hvcC")) {
+                    int at = avc ? 4 : 21;
+                    byte[] p = payload(ch, b, at + 1);
+                    if (p.length <= at) {
+                        return null;
+                    }
+                    t.nalLength = (p[at] & 0x03) + 1;
+                    // 3 is not a legal length size
+                    return t.nalLength == 3 ? null : avc ? Kind.AVC : Kind.HEVC;
+                }
+            }
+            return null;
+        }
+
+        void startCaptions(Box trak, boolean probe, SubtitleTracks budget) {
+            this.trak = trak;
+            pairs = new CaptionPairs(budget);
+            probing = probe && kind != Kind.C608;
         }
 
         /** The stbl samples; the tables are dropped after, as the fragments need only time. */
@@ -442,6 +594,7 @@ final class Mp4SubtitleExtractor {
                 stsc = null;
                 stsz = null;
                 chunkOffsets = null;
+                ctts = null;
             }
         }
 
@@ -459,12 +612,17 @@ final class Mp4SubtitleExtractor {
             long stscEntries = Math.min(getUIntBE(stsc, 4), (stsc.length - 8) / 12);
             long sttsEntries = stts == null ? 0
                     : Math.min(getUIntBE(stts, 4), (stts.length - 8) / 8);
+            long cttsEntries = ctts == null ? 0
+                    : Math.min(getUIntBE(ctts, 4), (ctts.length - 8) / 8);
             long fileSize = ch.size();
             // chunks run in order; a table that steps back must not re-walk them
             long nextChunk = 1;
             int sttsIndex = 0;
             long sttsLeft = 0;
             long delta = 0;
+            int cttsIndex = 0;
+            long cttsLeft = 0;
+            long offsetDelta = 0;
             for (long e = 0; e < stscEntries && walked < samples; e++) {
                 long firstChunk = getUIntBE(stsc, 8 + (int) e * 12);
                 long perChunk = getUIntBE(stsc, 12 + (int) e * 12);
@@ -485,9 +643,19 @@ final class Mp4SubtitleExtractor {
                         if (sttsLeft > 0) {
                             sttsLeft--;
                         }
+                        while (cttsLeft == 0 && cttsIndex < cttsEntries) {
+                            cttsLeft = getUIntBE(ctts, 8 + cttsIndex * 8);
+                            // signed in version 1, and written signed into version 0 too
+                            offsetDelta = (int) getUIntBE(ctts, 12 + cttsIndex * 8);
+                            cttsIndex++;
+                        }
+                        long cto = cttsLeft > 0 ? offsetDelta : 0;
+                        if (cttsLeft > 0) {
+                            cttsLeft--;
+                        }
                         long size = sizes.get(walked);
                         walked++;
-                        if (!cue(ch, offset, size, duration, fileSize, budget)) {
+                        if (!cue(ch, offset, size, duration, cto, fileSize, budget)) {
                             done = true;
                             return;
                         }
@@ -497,9 +665,17 @@ final class Mp4SubtitleExtractor {
             }
         }
 
-        /** Emits one sample and advances {@link #time}; false once the file's budget is spent. */
-        boolean cue(SeekableByteChannel ch, long offset, long size, long duration,
+        /**
+         * Emits one sample, or collects its captions at {@code time + cto}, and advances
+         * {@link #time}; false once the track takes no more.
+         */
+        boolean cue(SeekableByteChannel ch, long offset, long size, long duration, long cto,
                     long fileSize, SubtitleTracks budget) throws IOException {
+            if (kind != Kind.TEXT) {
+                boolean more = captionSample(ch, offset, size, time + cto, fileSize, budget);
+                time += duration;
+                return more;
+            }
             // empty samples are charged too: they cost a walk, not a read
             if (!budget.chargeSample()) {
                 return false;
@@ -517,6 +693,167 @@ final class Mp4SubtitleExtractor {
 
         private long millis(long units) {
             return units / timescale * 1000 + (units % timescale) * 1000 / timescale;
+        }
+
+        /** Collects one sample's caption pairs; false to stop the walk. */
+        private boolean captionSample(SeekableByteChannel ch, long offset, long size, long pts,
+                                      long fileSize, SubtitleTracks budget) throws IOException {
+            long index = sampleIndex++;
+            if (probing && index >= PROBE_HEAD) {
+                if (probeLeft > 0) {
+                    probeLeft--;
+                } else if (time >= nextProbe) {
+                    probeLeft = PROBE_WINDOW - 1;
+                    nextProbe = time + PROBE_INTERVAL_SECONDS * timescale;
+                } else {
+                    return true;
+                }
+            }
+            if (offset < 0 || size <= 0 || offset >= fileSize) {
+                return true;
+            }
+            if (!budget.chargeCaptionSample()) {
+                return false;
+            }
+            long end = Math.min(offset + size, fileSize);
+            long ms = Math.max(0, millis(pts));
+            boolean more = kind == Kind.C608 ? c608(ch, offset, end, ms, budget)
+                    : nals(ch, offset, end, ms, budget);
+            if (probing && pairs.found) {
+                probing = false;
+                if (index >= PROBE_HEAD) {
+                    // samples before this one were skipped
+                    rescan = true;
+                    return false;
+                }
+            }
+            return more;
+        }
+
+        // length-prefixed NAL units up to the first slice; SEI bodies go to CaptionData
+        private boolean nals(SeekableByteChannel ch, long offset, long end, long ms,
+                             SubtitleTracks budget) throws IOException {
+            int header = kind == Kind.AVC ? 1 : 2;
+            int need = nalLength + header;
+            byte[] window = new byte[0];
+            long windowAt = offset;
+            long pos = offset;
+            for (int n = 0; n < MAX_NALS_PER_SAMPLE && pos + need <= end; n++) {
+                if (pos + need > windowAt + window.length) {
+                    int len = (int) Math.min(NAL_WINDOW, end - pos);
+                    if (!budget.chargeCaptionBytes(Math.max(len, MIN_READ_CHARGE))) {
+                        return false;
+                    }
+                    window = Mp4SubtitleExtractor.read(ch, pos, len);
+                    windowAt = pos;
+                }
+                int o = (int) (pos - windowAt);
+                long len = 0;
+                for (int i = 0; i < nalLength; i++) {
+                    len = (len << 8) | (window[o + i] & 0xFF);
+                }
+                long start = pos + nalLength;
+                if (len < header || len > end - start) {
+                    return true;
+                }
+                int h = window[o + nalLength] & 0xFF;
+                int type = kind == Kind.AVC ? h & 0x1F : (h >> 1) & 0x3F;
+                // A/53 captions ride in prefix SEI, before the first slice
+                boolean slice = kind == Kind.AVC ? type >= 1 && type <= 5 : type <= 31;
+                if (slice) {
+                    return true;
+                }
+                if (kind == Kind.AVC ? type == 6 : type == 39) {
+                    int take = (int) Math.min(len, MAX_SEI_BYTES);
+                    byte[] nal;
+                    if (start + take <= windowAt + window.length) {
+                        int from = (int) (start - windowAt);
+                        nal = Arrays.copyOfRange(window, from, from + take);
+                    } else {
+                        if (!budget.chargeCaptionBytes(Math.max(take, MIN_READ_CHARGE))) {
+                            return false;
+                        }
+                        nal = Mp4SubtitleExtractor.read(ch, start, take);
+                    }
+                    CaptionData.fromSei(nal, header, (field, b1, b2) -> pairs.add(ms, field, b1, b2));
+                    if (pairs.overflow) {
+                        return false;
+                    }
+                }
+                pos = start + len;
+            }
+            return true;
+        }
+
+        // QuickTime c608 sample: cdat (field 1) and cdt2 (field 2) atoms of byte pairs
+        private boolean c608(SeekableByteChannel ch, long offset, long end, long ms,
+                             SubtitleTracks budget) throws IOException {
+            int take = (int) Math.min(end - offset, MAX_SEI_BYTES);
+            if (!budget.chargeCaptionBytes(Math.max(take, MIN_READ_CHARGE))) {
+                return false;
+            }
+            byte[] b = Mp4SubtitleExtractor.read(ch, offset, take);
+            int pos = 0;
+            while (pos + 8 <= b.length) {
+                long size = getUIntBE(b, pos);
+                if (size < 8 || size > b.length - pos) {
+                    break;
+                }
+                String type = fourCc(b, pos + 4);
+                int field = type.equals("cdat") ? 0 : type.equals("cdt2") ? 1 : -1;
+                for (int i = pos + 8; field >= 0 && i + 2 <= pos + size; i += 2) {
+                    pairs.add(ms, field, b[i] & 0xFF, b[i + 1] & 0xFF);
+                }
+                pos += (int) size;
+            }
+            return !pairs.overflow;
+        }
+    }
+
+    /** Caption pairs with presentation times, decoded in time order (stable within a frame). */
+    private static final class CaptionPairs {
+        private static final int INDEX_BITS = 21;
+        private final SubtitleTracks budget;
+        private long[] keys = new long[256];
+        private int[] data = new int[256];
+        int count;
+        boolean overflow;
+        // a pair other than padding was seen
+        boolean found;
+        // latest time of any pair: when the last caption leaves the screen
+        long lastMillis;
+
+        CaptionPairs(SubtitleTracks budget) {
+            this.budget = budget;
+        }
+
+        // padding is kept: it separates a repeated control code from a new one, and that must
+        // be judged in presentation order
+        void add(long ms, int field, int b1, int b2) {
+            lastMillis = Math.max(lastMillis, ms);
+            if (overflow || count >= 1 << INDEX_BITS || !budget.chargeCaptionPair()) {
+                overflow = true;
+                return;
+            }
+            if (count == keys.length) {
+                keys = Arrays.copyOf(keys, count * 2);
+                data = Arrays.copyOf(data, count * 2);
+            }
+            keys[count] = (Math.min(ms, (1L << 42) - 1) << INDEX_BITS) | count;
+            data[count] = (field << 16) | (b1 << 8) | b2;
+            count++;
+            found |= ((b1 | b2) & 0x7F) != 0;
+        }
+
+        void decode(SubtitleTracks owner, String prefix, String language) {
+            long[] sorted = Arrays.copyOf(keys, count);
+            Arrays.sort(sorted);
+            Cea608Decoder decoder = new Cea608Decoder(owner, prefix, language);
+            for (long key : sorted) {
+                int v = data[(int) (key & ((1 << INDEX_BITS) - 1))];
+                decoder.pair(key >>> INDEX_BITS, v >> 16, (v >> 8) & 0xFF, v & 0xFF);
+            }
+            decoder.finish(lastMillis);
         }
     }
 
@@ -699,11 +1036,16 @@ final class Mp4SubtitleExtractor {
         return read(ch, b.payload, (int) Math.min(max, b.end - b.payload));
     }
 
-    /** The box's payload, or null if it is too short or over {@link #MAX_TABLE_BYTES}. */
-    private static byte[] table(SeekableByteChannel ch, Box b, SubtitleTracks out)
-            throws IOException {
+    /**
+     * The box's payload, or null if it is too short or over {@link #MAX_TABLE_BYTES}; with
+     * {@code prefix}, its first {@link #MAX_TABLE_BYTES} instead.
+     */
+    private static byte[] table(SeekableByteChannel ch, Box b, boolean prefix,
+                                SubtitleTracks out) throws IOException {
         long len = b.end - b.payload;
-        if (len > MAX_TABLE_BYTES) {
+        if (prefix) {
+            len = Math.min(len, MAX_TABLE_BYTES);
+        } else if (len > MAX_TABLE_BYTES) {
             out.warn("MP4 '" + b.type + "' box of " + len
                     + " bytes exceeds the subtitle table limit of " + MAX_TABLE_BYTES);
             return null;

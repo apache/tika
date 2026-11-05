@@ -47,6 +47,11 @@ public final class SubtitleTracks {
     static final long MAX_DECODED_BYTES = 256L * 1024 * 1024;
     // samples or blocks walked per file, empty ones included
     static final int MAX_SAMPLES = 1_000_000;
+    // captions have their own read budgets: a long video cannot starve the text tracks
+    static final int MAX_CAPTION_SAMPLES = 1_000_000;
+    static final long MAX_CAPTION_BYTES = 128L * 1024 * 1024;
+    // caption byte pairs held for reordering, across tracks, padding included
+    static final int MAX_CAPTION_PAIRS = 1 << 21;
     private static final int MAX_WARNINGS = 32;
 
     private final Metadata containerMetadata;
@@ -57,6 +62,10 @@ public final class SubtitleTracks {
     private int samples;
     private int chars;
     private boolean spent;
+    private int captionSamples;
+    private long captionBytes;
+    private int captionPairs;
+    private boolean captionsSpent;
     private EmbeddedLimitReachedException limit;
 
     SubtitleTracks(Metadata containerMetadata, ParseContext context) {
@@ -71,8 +80,20 @@ public final class SubtitleTracks {
      */
     public static SubtitleTracks readMp4(TikaInputStream tis, Metadata containerMetadata,
                                          ParseContext context) {
+        return readMp4(tis, containerMetadata, context, true, false, false);
+    }
+
+    /**
+     * As {@link #readMp4(TikaInputStream, Metadata, ParseContext)}, with CEA-608 captions from
+     * QuickTime {@code c608} tracks ({@code c608Tracks}) and from the SEI messages of H.264 and
+     * HEVC video ({@code videoCaptions}): probed unless {@code fullVideoScan}.
+     */
+    public static SubtitleTracks readMp4(TikaInputStream tis, Metadata containerMetadata,
+                                         ParseContext context, boolean c608Tracks,
+                                         boolean videoCaptions, boolean fullVideoScan) {
         SubtitleTracks out = new SubtitleTracks(containerMetadata, context);
-        Mp4SubtitleExtractor.extract(tis, out);
+        Mp4SubtitleExtractor.extract(tis, out,
+                new Mp4SubtitleExtractor.Captions(c608Tracks, videoCaptions, !fullVideoScan));
         return out;
     }
 
@@ -150,6 +171,53 @@ public final class SubtitleTracks {
         }
         chars += n;
         return true;
+    }
+
+    /** Charges one sample read for captions; false once the captions' budget is spent. */
+    boolean chargeCaptionSample() {
+        if (captionsSpent) {
+            return false;
+        }
+        if (++captionSamples > MAX_CAPTION_SAMPLES) {
+            spendCaptions("more than " + MAX_CAPTION_SAMPLES + " video samples read for captions");
+            return false;
+        }
+        return true;
+    }
+
+    /** Charges bytes read for captions; false once the captions' budget is spent. */
+    boolean chargeCaptionBytes(long bytes) {
+        if (captionsSpent) {
+            return false;
+        }
+        if (bytes > MAX_CAPTION_BYTES - captionBytes) {
+            spendCaptions("more than " + MAX_CAPTION_BYTES + " bytes read for captions");
+            return false;
+        }
+        captionBytes += bytes;
+        return true;
+    }
+
+    /** Charges one caption byte pair held; false once the captions' budget is spent. */
+    boolean chargeCaptionPair() {
+        if (captionsSpent) {
+            return false;
+        }
+        if (++captionPairs > MAX_CAPTION_PAIRS) {
+            spendCaptions("more than " + MAX_CAPTION_PAIRS + " caption byte pairs");
+            return false;
+        }
+        return true;
+    }
+
+    /** True once a caption budget is spent: no more caption data is read. */
+    boolean captionsSpent() {
+        return captionsSpent;
+    }
+
+    private void spendCaptions(String why) {
+        captionsSpent = true;
+        warn(why + "; the rest skipped");
     }
 
     /** True once a budget is spent: no more cues are taken. */

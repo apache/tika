@@ -95,6 +95,21 @@ public class MP4Parser implements Parser {
 
     private long maxBoxSize = DEFAULT_MAX_BOX_SIZE;
     private boolean extractSubtitles = true;
+    private boolean extractClosedCaptions = true;
+    private VideoCaptionScan videoCaptionScan = VideoCaptionScan.NONE;
+
+    /** How H.264 and HEVC video is read for CEA-608 captions carried in its SEI messages. */
+    public enum VideoCaptionScan {
+        /** Not read. */
+        NONE,
+        /**
+         * The first 300 frames, then 8 frames every 5 seconds; every frame only once a caption
+         * character turns up. A caption run between two probes is missed.
+         */
+        PROBE,
+        /** Every frame. */
+        FULL
+    }
 
     static {
         // All types should be 4 bytes long, space padded as needed
@@ -146,6 +161,36 @@ public class MP4Parser implements Parser {
         this.extractSubtitles = extractSubtitles;
     }
 
+    /**
+     * Whether CEA-608 closed captions (CC1-CC4) are extracted as embedded {@code text/vtt}
+     * documents ({@code track-<id>-cc1.vtt} ...), from QuickTime {@code c608} tracks and, per
+     * {@link #getVideoCaptionScan()}, from H.264 and HEVC video. Default true; applies only
+     * while {@link #isExtractSubtitles()} is true, and to the same inputs. Set in
+     * tika-config.json; not read from a per-request config.
+     */
+    public boolean isExtractClosedCaptions() {
+        return extractClosedCaptions;
+    }
+
+    public void setExtractClosedCaptions(boolean extractClosedCaptions) {
+        this.extractClosedCaptions = extractClosedCaptions;
+    }
+
+    /**
+     * How video is read for captions in its SEI messages; default {@link VideoCaptionScan#NONE},
+     * as it reads a few bytes of each probed frame of every H.264 and HEVC file. Applies only
+     * while {@link #isExtractClosedCaptions()} is true. Set in tika-config.json; not read from a
+     * per-request config.
+     */
+    public VideoCaptionScan getVideoCaptionScan() {
+        return videoCaptionScan;
+    }
+
+    public void setVideoCaptionScan(VideoCaptionScan videoCaptionScan) {
+        this.videoCaptionScan = videoCaptionScan == null ? VideoCaptionScan.NONE
+                : videoCaptionScan;
+    }
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
@@ -192,8 +237,8 @@ public class MP4Parser implements Parser {
         xhtml.endDocument();
     }
 
-    private static SubtitleTracks readSubtitles(TikaInputStream tis, Metadata metadata,
-                                                ParseContext context) {
+    private SubtitleTracks readSubtitles(TikaInputStream tis, Metadata metadata,
+                                         ParseContext context) {
         try {
             if (!cheapRandomAccess(tis)) {
                 return null;
@@ -203,7 +248,9 @@ public class MP4Parser implements Parser {
                     new TikaException("subtitles: " + e.getMessage(), e), metadata, context);
             return null;
         }
-        return SubtitleTracks.readMp4(tis, metadata, context);
+        boolean video = extractClosedCaptions && videoCaptionScan != VideoCaptionScan.NONE;
+        return SubtitleTracks.readMp4(tis, metadata, context, extractClosedCaptions, video,
+                videoCaptionScan == VideoCaptionScan.FULL);
     }
 
     //content already on disk or in memory, or a measured length short enough to buffer;
