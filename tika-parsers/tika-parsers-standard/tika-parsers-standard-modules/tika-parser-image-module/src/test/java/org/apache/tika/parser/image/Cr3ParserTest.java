@@ -71,6 +71,8 @@ public class Cr3ParserTest extends TikaTest {
         assertEquals("100", metadata.get(TIFF.ISO_SPEED_RATINGS));
         assertEquals("48.5", metadata.get(Geographic.LATITUDE));
         assertEquals("11.25", metadata.get(Geographic.LONGITUDE));
+        assertEquals("Firmware Version 1.0.1", metadata.get("img:Firmware Version"),
+                "the maker note block is read as Canon's maker note");
     }
 
     @Test
@@ -84,6 +86,8 @@ public class Cr3ParserTest extends TikaTest {
         assertEquals("48", embedded.get(1).get(TIFF.IMAGE_WIDTH));
         assertEquals("32", embedded.get(1).get(TIFF.IMAGE_LENGTH));
         assertEquals("image/jpeg", embedded.get(1).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("image-0.jpg", embedded.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("thumbnail-0.jpg", embedded.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test
@@ -98,7 +102,9 @@ public class Cr3ParserTest extends TikaTest {
     public void testLengthBeyondTheBoxIsIgnored() throws Exception {
         byte[] file = cr3(jpeg(16, 12), jpeg(48, 32));
         int prvw = indexOf(file, "PRVW".getBytes(StandardCharsets.US_ASCII));
-        ByteBuffer.wrap(file).putInt(prvw + 16, Integer.MAX_VALUE);
+        // within the 64 MB cap, but running past the box into mdat, where the bytes still
+        // start like the JPEG
+        ByteBuffer.wrap(file).putInt(prvw + 16, jpeg(48, 32).length + 10);
         List<Metadata> embedded = new ArrayList<>();
         Metadata metadata = new Metadata();
         parse(file, metadata, embedded, new ArrayList<>());
@@ -195,6 +201,8 @@ public class Cr3ParserTest extends TikaTest {
                 new Entry(0x0110, ASCII, ascii("Canon EOS R7\0")))));
         metadataUuid.write(box("CMT2", tiff(new Entry(0x829A, RATIONAL, rationals(1, 250)),
                 new Entry(0x8827, SHORT, le(ByteBuffer.allocate(2).putShort((short) 100))))));
+        metadataUuid.write(box("CMT3", tiff(new Entry(0x0007, ASCII,
+                ascii("Firmware Version 1.0.1\0")))));
         metadataUuid.write(box("CMT4", tiff(new Entry(0x0001, ASCII, ascii("N\0")),
                 new Entry(0x0002, RATIONAL, rationals(48, 1, 30, 1, 0, 1)),
                 new Entry(0x0003, ASCII, ascii("E\0")),

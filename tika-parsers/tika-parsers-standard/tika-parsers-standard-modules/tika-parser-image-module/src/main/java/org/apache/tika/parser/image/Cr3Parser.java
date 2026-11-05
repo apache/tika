@@ -76,7 +76,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * The {@code THMB} and {@code PRVW} records carry width and height and the JPEG
  * length ahead of the JPEG, which starts 24 bytes into the record.
  */
-@TikaComponent
+@TikaComponent(name = "cr3-parser")
 public class Cr3Parser implements Parser {
 
     private static final long serialVersionUID = 7130874255196421580L;
@@ -276,6 +276,10 @@ public class Cr3Parser implements Parser {
         Metadata metadata = Metadata.newInstance(context);
         metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, type.name());
+        EmbeddedDocumentUtil.setGeneratedResourceName(metadata,
+                type == TikaCoreProperties.EmbeddedResourceType.THUMBNAIL
+                        ? EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL
+                        : EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE, 0, "image/jpeg");
         metadata.set(TIFF.IMAGE_WIDTH, jpeg.width());
         metadata.set(TIFF.IMAGE_LENGTH, jpeg.height());
         EmbeddedDocumentExtractor extractor =
