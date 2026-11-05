@@ -119,6 +119,10 @@ link:{api}/org/apache/tika/parser/epub/EpubParser.html[EpubParser] supports the
 EPUB format used for many digital books.
 link:{api}/org/apache/tika/parser/xml/FictionBookParser.html[FictionBookParser]
 supports the XML-based FictionBook (`.fb2`) publishing format.
+Comic book archives (`.cbz`) are read by the zip parser, which emits the
+first page in name order as the cover thumbnail. The zip parser also emits the
+stored preview of Krita (`.kra`), OpenRaster (`.ora`), FreeCAD (`.FCStd`),
+Procreate (`.procreate`) and Sketch (`.sketch`) files as their thumbnail.
 
 == Rich Text Format
 

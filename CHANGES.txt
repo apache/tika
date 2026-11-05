@@ -66,6 +66,14 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Zip-based formats that carry a preview image have it emitted as the THUMBNAIL, so
+     the thumbnail preset serves it: comic book archives (.cbz, new type
+     application/vnd.comicbook+zip, the first page in name order), Krita (.kra,
+     preview.png), OpenRaster (.ora, Thumbnails/thumbnail.png), FreeCAD (.FCStd,
+     thumbnails/Thumbnail.png), Procreate (.procreate, QuickLook/Thumbnail.png) and
+     Sketch (.sketch, previews/preview.png). All six are new types and sub-types of
+     application/zip (TIKA-5032).
+
    * PSD files emit the JPEG thumbnail Photoshop stores in image resource 0x040C as a
      THUMBNAIL embedded resource, so the thumbnail preset serves it; one over
      maxDataLengthBytes is skipped with a warning (TIKA-5033).

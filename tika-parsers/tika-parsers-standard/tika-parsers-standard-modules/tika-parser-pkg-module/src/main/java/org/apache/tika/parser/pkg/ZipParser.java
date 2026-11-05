@@ -138,6 +138,7 @@ public class ZipParser extends AbstractArchiveParser {
                 "application/vnd.android.package-archive", "application/vnd.apple.iwork",
                 "application/vnd.apple.keynote", "application/vnd.apple.numbers",
                 "application/vnd.apple.pages", "application/vnd.apple.unknown.13",
+                "application/vnd.comicbook+zip",
                 "application/vnd.etsi.asic-e+zip", "application/vnd.etsi.asic-s+zip",
                 "application/vnd.geogebra.file", "application/vnd.geogebra.slides",
                 "application/vnd.geogebra.tool",
@@ -193,7 +194,9 @@ public class ZipParser extends AbstractArchiveParser {
                 "application/vnd.oasis.opendocument.chart-template",
                 "application/vnd.oasis.opendocument.text-master",
                 "application/vnd.adobe.indesign-idml-package",
-                "application/x-wacz", "application/x-vnd.datapackage+zip"
+                "application/x-wacz", "application/x-vnd.datapackage+zip",
+                "application/x-extension-fcstd", "application/x-krita",
+                "application/x-procreate", "application/x-sketch", "image/openraster"
         }) {
             zipSpecializations.add(MediaType.parse(mediaTypeString));
         }
@@ -281,6 +284,7 @@ public class ZipParser extends AbstractArchiveParser {
         // Don't close the ZipFile - it was passed from the detector and will be closed
         // when TikaInputStream is closed (it's set as the openContainer)
         updateMediaType(zipFile, metadata);
+        String thumbnailEntry = ZipPreview.thumbnailEntry(metadata, zipFile);
 
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -297,7 +301,13 @@ public class ZipParser extends AbstractArchiveParser {
                     centralDirectoryEntries.add(entry.getName());
                 }
                 if (!entry.isDirectory()) {
-                    parseZipFileEntry(zipFile, headers, entry, extractor, metadata, xhtml, context, config);
+                    boolean thumbnail = entry.getName().equals(thumbnailEntry);
+                    if (thumbnail) {
+                        // duplicate entry names: mark only the first
+                        thumbnailEntry = null;
+                    }
+                    parseZipFileEntry(zipFile, headers, entry, extractor, metadata, xhtml, context, config,
+                            thumbnail);
                 }
             }
         } finally {
@@ -478,7 +488,7 @@ public class ZipParser extends AbstractArchiveParser {
     private void parseZipFileEntry(ZipFile zipFile, SeekableByteChannel headers, ZipArchiveEntry entry,
                                     EmbeddedDocumentExtractor extractor, Metadata parentMetadata,
                                     XHTMLContentHandler xhtml, ParseContext context,
-                                    ZipParserConfig config)
+                                    ZipParserConfig config, boolean thumbnail)
             throws SAXException, IOException, TikaException {
 
         String name = detectEntryName(entry, context, config);
@@ -504,6 +514,10 @@ public class ZipParser extends AbstractArchiveParser {
         }
 
         Metadata entryMetadata = buildEntryMetadata(entry, name, context, readDosTime(headers, entry));
+        if (thumbnail) {
+            entryMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+        }
 
         writeEntryXhtml(name, xhtml);
 
