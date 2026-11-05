@@ -116,20 +116,9 @@ public class Cr3ParserTest extends TikaTest {
     /** The XMP box as the camera writes it: a packet with the rating, padded to 64 KB. */
     @Test
     public void testXmpRating() throws Exception {
-        String packet = "<?xpacket begin='\uFEFF' id='W5M0MpCehiHzreSzNTczkc9d'?>"
-                + "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF "
-                + "xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
-                + "<rdf:Description rdf:about=\"\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\">"
-                + "<xmp:Rating>4</xmp:Rating></rdf:Description></rdf:RDF></x:xmpmeta>";
-        byte[] padded = Arrays.copyOf(packet.getBytes(StandardCharsets.UTF_8), 65536 - 20);
-        Arrays.fill(padded, packet.getBytes(StandardCharsets.UTF_8).length, padded.length, (byte) ' ');
-        ByteArrayOutputStream xmpUuid = new ByteArrayOutputStream();
-        xmpUuid.write(hex(XMP_UUID));
-        xmpUuid.write(padded);
-        xmpUuid.write(ascii("<?xpacket end='w'?>"));
         ByteArrayOutputStream file = new ByteArrayOutputStream();
         file.write(cr3(jpeg(16, 12), jpeg(48, 32)));
-        file.write(box("uuid", xmpUuid.toByteArray()));
+        file.write(xmpBox(4, 65536));
         Metadata metadata = new Metadata();
         List<Metadata> embedded = new ArrayList<>();
         parse(file.toByteArray(), metadata, embedded, new ArrayList<>());
@@ -152,6 +141,29 @@ public class Cr3ParserTest extends TikaTest {
         assertNull(metadata.get(XMP.RATING));
         assertEquals("Canon EOS R7", metadata.get(TIFF.EQUIPMENT_MODEL));
         assertEquals(2, embedded.size());
+    }
+
+    /**
+     * testCR3.cr3 is the file these tests build, as cr3(), with colored previews and an XMP
+     * box rated 3, saved for trying the parser by hand.
+     */
+    @Test
+    public void testFixture() throws Exception {
+        Metadata metadata = new Metadata();
+        List<Metadata> embedded = new ArrayList<>();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testCR3.cr3")) {
+            parse(tis.readAllBytes(), metadata, embedded, new ArrayList<>());
+        }
+        assertEquals("Canon", metadata.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("Canon EOS R7", metadata.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals("0.004", metadata.get(TIFF.EXPOSURE_TIME));
+        assertEquals("48.5", metadata.get(Geographic.LATITUDE));
+        assertEquals("Firmware Version 1.0.1", metadata.get("img:Firmware Version"));
+        assertEquals("3", metadata.get(XMP.RATING));
+        assertEquals(2, embedded.size());
+        assertEquals("INLINE", embedded.get(0).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("THUMBNAIL", embedded.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("48", embedded.get(1).get(TIFF.IMAGE_WIDTH));
     }
 
     @Test
@@ -272,9 +284,40 @@ public class Cr3ParserTest extends TikaTest {
     }
 
     private static byte[] jpeg(int width, int height) throws IOException {
+        return jpeg(width, height, 0x000000);
+    }
+
+    private static byte[] jpeg(int width, int height, int rgb) throws IOException {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                image.setRGB(x, y, rgb);
+            }
+        }
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ImageIO.write(new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), "jpeg", out);
+        ImageIO.write(image, "jpeg", out);
         return out.toByteArray();
+    }
+
+    /**
+     * The XMP box as the camera writes it: a packet with the rating, padded with spaces so
+     * the box holds the given number of bytes after its UUID.
+     */
+    private static byte[] xmpBox(int rating, int length) throws IOException {
+        String packet = "<?xpacket begin='\uFEFF' id='W5M0MpCehiHzreSzNTczkc9d'?>"
+                + "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF "
+                + "xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
+                + "<rdf:Description rdf:about=\"\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\">"
+                + "<xmp:Rating>" + rating + "</xmp:Rating></rdf:Description></rdf:RDF></x:xmpmeta>";
+        byte[] end = ascii("<?xpacket end='w'?>");
+        byte[] bytes = packet.getBytes(StandardCharsets.UTF_8);
+        byte[] padded = Arrays.copyOf(bytes, length - end.length);
+        Arrays.fill(padded, bytes.length, padded.length, (byte) ' ');
+        ByteArrayOutputStream uuid = new ByteArrayOutputStream();
+        uuid.write(hex(XMP_UUID));
+        uuid.write(padded);
+        uuid.write(end);
+        return box("uuid", uuid.toByteArray());
     }
 
     private static byte[] shorts(int... values) {
