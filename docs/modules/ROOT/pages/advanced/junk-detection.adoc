@@ -17,53 +17,46 @@
 
 = Text Quality Scoring (Junk Detection)
 
-The `tika-ml-junkdetect` module provides a language-agnostic scorer that
-distinguishes clean natural-language text from garbled, corrupted, or
-mis-decoded content — without needing to know the language in advance.
+The `tika-ml-junkdetect` module scores how much a string reads like real text, in any
+language it was trained on, without being told the language.  Tika uses it in two places:
+
+* **charset detection**: of several decodes of the same bytes, which one is the real text
+  (see xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline]);
+* **tika-eval**: the `tika-eval:languageness` score of extracted text, plus the worst window
+  and coverage.
 
 == What it detects
 
-* **Mojibake** — text decoded with the wrong character set (e.g., a Windows-1251
-  Russian document decoded as Windows-1252, producing Latin lookalike garbage)
-* **Byte-level corruption** — random or partially-overwritten byte sequences that
-  produce structurally invalid UTF-8
-* **Reversed or shuffled text** — text that contains valid characters but in
-  nonsensical order, as can occur in bidirectional rendering failures or corrupted
-  OCR streams
-* **OCR garbage** — low-confidence OCR output full of symbol noise
+* **Mojibake**: text decoded with the wrong charset (Russian windows-1251 read as
+  windows-1252, UTF-8 read as windows-1252: `Ã©`, double encoding).
+* **Broken PDF fonts**: text layers whose fonts map glyphs to the wrong characters
+  (`ïðåäñòàâëÿ`, legacy Indic and Greek fonts), which PDF metadata reports as fully mapped.
+* **Garbage**: replacement characters, injected control characters, random bytes read as text,
+  shuffled words and characters.
 
-It does _not_ detect incorrect language (e.g., an English document mistakenly
-labeled as French) — use xref:advanced/language-detection.adoc[Language Detection]
-for that.
+It does _not_ say which language a text is in (see
+xref:advanced/language-detection.adoc[Language Detection]).  Code, data, tables and menus are
+real text but not prose; they score lower than prose, so treat a low score on them with care.
 
 == How it works
 
-The model is trained on clean Wikipedia and MADLAD-400 text.  For each input it:
+One linear model over hashed codepoint n-grams (1–3 codepoints, 2^21 buckets, int8 weights),
+with two heads:
 
-1. **Buckets every codepoint bigram to its Unicode script** (Latin, Cyrillic,
-   Arabic, Han, …), folding COMMON/INHERITED glue into the adjacent script, and
-   scores each against that script's own codepoint-bigram table.  Per-script
-   scores are combined count-weighted, so mixed-script text is scored fairly
-   rather than by picking one script.
-2. **Adds document-level features**: Unicode block transitions, control-byte
-   fraction, script transitions, letter-adjacent-to-mark ratio,
-   replacement-character ratio, script density, coherence, and alternation.
-3. **Combines them with one global linear combiner** into a single score.
+* a **pairwise** head, trained on pairs of a correct and a wrong decode of the same bytes, that
+  says which of two texts is the real one (`compare`);
+* a **pointwise** head, trained on clean text against junk, that scores one text (`score`).
 
-The combined score is the primary output, and it is a *logit*, not a
-per-script z-score: positive means clean, negative means junk, and the natural
-threshold is 0.  `getPClean()` is `sigmoid(score)`.
-
-See xref:advanced/junk-detection-build.adoc[Building the Junk Detector] for the
-feature list, calibration, and model format.
+Text is normalized first: full-width ASCII and half-width kana are folded, soft hyphens are
+dropped, then NFC; whitespace runs become one space and digits become `0`.  There are no
+per-script tables and no calibration step: one model covers every trained script.  Training uses
+Wikipedia sentences and web pages, train splits only; see
+xref:advanced/junk-detection-build.adoc[Building the Junk Detector].
 
 == Using the API
 
-The public interface is `TextQualityDetector` in `tika-core`.
-The implementation lives in `tika-ml-junkdetect`, which registers itself via
-the Java `ServiceLoader` mechanism.
-
-Add the dependency to your project:
+The public interface is `TextQualityDetector` in `tika-core`; `tika-ml-junkdetect` registers
+`JunkDetector` through `ServiceLoader`.
 
 [source,xml,subs=attributes+]
 ----
@@ -74,151 +67,80 @@ Add the dependency to your project:
 </dependency>
 ----
 
-=== Loading the detector
-
 [source,java]
 ----
-// Via ServiceLoader — picks up any registered TextQualityDetector implementation
-TextQualityDetector detector = ServiceLoader.load(TextQualityDetector.class)
-        .findFirst()
-        .orElseThrow(() -> new IllegalStateException("No TextQualityDetector on classpath"));
-
-// Or directly, when you know you want JunkDetector specifically
-JunkDetector detector = JunkDetector.loadFromClasspath();
-----
-
-`JunkDetector` is **immutable and thread-safe** after construction.  Load it once
-at application startup.
-
-=== Scoring a string
-
-[source,java]
-----
+JunkDetector detector = JunkDetector.loadFromClasspath();   // once; immutable and thread-safe
 TextQualityScore score = detector.score("The quick brown fox jumps over the lazy dog.");
-System.out.println(score.getZScore());   // combiner logit; > 0 means clean
-System.out.println(score.getPClean());   // sigmoid of the same value
+score.getZScore();     // the pointwise logit: > 0 reads as clean text, < 0 as junk
+score.getPClean();     // sigmoid of the logit
+score.getCoverage();   // share of letters in trained scripts
 ----
 
 === Interpreting the score
 
-[cols="1,3"]
-|===
-| Score | Interpretation
+* `getZScore()` is a logit, not a z-score; 0 is the natural boundary.  On clean web pages about
+  1% score below 0.1; on clean Wikipedia sentences about 0.3% score below 0.
+* `getCiLow()` and `getCiHigh()` equal the logit: there is no interval estimate.
+* The score is **unknown** (`isUnknown()`) for empty text, text without letters (coverage NaN)
+  and text with less than 90% of its letters in trained scripts (`JunkDetector.MIN_COVERAGE`;
+  all untrained: coverage 0, `isUnmodeled()`).  Letters in untrained scripts pull the score
+  down, so clean mixed text would otherwise read as junk.  An unknown score means "cannot
+  judge", never "junk".
+* `getDominantScript()` is the script with the most letters.
 
-| > 0
-| Clean.  The natural decision boundary.
+=== The worst window
 
-| 0 to −2
-| Leaning junk but not decisively.  Noisy OCR, code-heavy text, or unusual domain
-  language lands here.
+A long clean document with one damaged island still scores clean as a whole.
+`getModel().score(text)` also returns `getWindowMin()`, the lowest score over 200-codepoint
+windows (step 100, at least 20 letters; NaN when there is no such window), and
+`getWindowFracBelow0()`.  On clean web pages about 1% have a window below −1.1.
 
-| < −2
-| A conservative junk threshold.  Reasonable trigger for re-OCR or re-decoding.
-
-| < −5
-| Almost certainly garbled: wrong charset, reversed content, or heavy corruption.
-|===
-
-The `TextQualityScore` also carries:
-
-* `getPClean()` — `sigmoid(score)`.  The combiner is a fitted logistic, so this is
-  usable for ranking; do not read it as a precisely calibrated probability.
-* `getCiLow()` / `getCiHigh()` — the score plus/minus
-  `1.96 × sigma / sqrt(bigrams)` for the dominant script.  Narrow on long texts,
-  wide on short ones; use them for threshold decisions on short strings.
-* `getDominantScript()` — the Unicode script name that carried the scoring (e.g.
-  `"LATIN"`, `"CYRILLIC"`, `"HAN"`), or `"NONE"` when no scoreable letter was
-  found.  When `isUnknown()` is true, no script in the input had a model and no
-  score is available.
-
-=== Comparing two candidates
-
-The `compare()` method is the primary use case for charset detection:
-given the same raw bytes decoded two different ways, which decoding
-looks more like natural language?
-
-The caller is responsible for decoding the raw bytes; the detector just compares
-the resulting strings.  Each candidate is given a human-readable label (typically
-the charset name) that is echoed back in the result.
+=== Comparing two decodes
 
 [source,java]
 ----
-byte[] rawBytes = ...; // bytes from an unknown-encoding file
-
-String ascp1252 = new String(rawBytes, Charset.forName("cp1252"));
-String ascp1251 = new String(rawBytes, Charset.forName("cp1251"));
-
-TextQualityComparison result = detector.compare("cp1252", ascp1252, "cp1251", ascp1251);
-
-System.out.println(result.winner());  // the winning label: "cp1252" or "cp1251"
-System.out.println(result.delta());   // score separation between the two
-
-if ("cp1251".equals(result.winner()) && result.delta() > 1.0) {
-    // cp1251 is confidently the better decoding
-}
+String a = new String(raw, Charset.forName("windows-1252"));
+String b = new String(raw, Charset.forName("windows-1251"));
+TextQualityComparison result = detector.compare("windows-1252", a, "windows-1251", b);
+result.winner();   // the label of the decode that reads as real text
+result.delta();    // |pairwise logit|: the model's average opinion per differing n-gram
 ----
 
-An `isUnknown()` candidate is treated as neutral (0), not `-∞`: a decoding whose
-script the model does not know must not lose to a garbled-but-recognisable one.
+`delta()` averages over the n-grams the two decodes do not share, so it does not grow with the
+amount of evidence: two decodes that differ in one character can still have a large delta.
+`getModel().pairwiseDifference(a, b)` gives that amount.  The junk filter defers to a declared or
+structural charset when the margin is below the model's `getDeferThreshold()` (chosen per model
+by the trainer).
 
-`delta()` is the absolute score difference between the two candidates.  As a rough
-guide:
+== tika-eval fields
 
 [cols="1,3"]
 |===
-| Delta | Confidence
+| Key | Value
 
-| < 0.5
-| Very uncertain — both decodings look similar to the model.  Fall back to
-  other heuristics.
+| `tika-eval:languageness`
+| The pointwise logit; −99 when unknown (no letters, or under 90% of them in trained scripts).
 
-| 0.5 – 1.0
-| Weak signal — winner is likely correct but not assured.
+| `tika-eval:languagenessMin`
+| The worst window (the whole text if shorter than a window); −99 when unknown.
 
-| 1.0 – 3.0
-| Useful signal.  Trust the winner for most production purposes.
-
-| > 3.0
-| High confidence.  One decoding is clearly more language-like.
+| `tika-eval:languagenessCoverage`
+| Share of letters in trained scripts in [0, 1], reported even when the score is unknown; −1 when
+  the text has no letters.
 |===
-
-=== Listing known scripts
-
-`JunkDetector.knownScripts()` returns the `Set<String>` of scripts with a trained
-table — 72 in the bundled model, covering the major living scripts plus a long
-tail of historic ones.  It is on `JunkDetector`, not on the `TextQualityDetector`
-interface, so reach for it only when you have the concrete class.  If none of an input's scripts is in that set, `score()`
-returns a `TextQualityScore` with `isUnknown()` true and no usable score.
-
-== Thresholds and operating points
-
-There is no universally correct threshold; it depends on your content and your
-tolerance for flagging good text as junk.  Starting points:
-
-* **Trigger re-OCR**: score < −2.0.
-* **Charset tiebreaking**: take the higher-scoring candidate when
-  `delta() > 1.0`; abstain below 0.5.
-* **Training-data filtering**: score < −1.5 to strip mojibake and bot noise from
-  an NLP corpus.
-
-Under ~50 UTF-8 bytes, threshold on `getCiLow()` rather than `getZScore()` — the
-interval widens substantially there.
 
 == Limitations
 
-* **Script coverage** — only scripts with a trained table can be scored; others
-  return `isUnknown()`.
-* **Short text** — unreliable below ~15 UTF-8 bytes; there are too few bigrams for
-  a stable estimate.
-* **Closely related charsets within one script** — the LATIN table pools hundreds
-  of languages, which dilutes the signal between neighbours like cp1252 and cp1257
-  on Lithuanian text.  The winner is usually right, but `delta()` may be < 0.5.
-* **Deliberately obfuscated text** — content padded to look like natural language
-  is not detected.
+* **Scripts**: only scripts with enough training text are covered (`getTrainedScripts()`); text
+  with more than 10% of its letters in other scripts gets no score.
+* **Short text**: a few words give a few n-grams; scores on very short strings are noisy.
+* **Small damage**: a handful of replacement characters in a long page barely move the score;
+  count them directly.
+* **Not prose**: code, data, tables and menus score lower than prose without being junk.
 
 == Further reading
 
-* xref:advanced/junk-detection-build.adoc[Building the Junk Detector] — training,
-  model format, limitations
-* xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline] — where
-  `compare()` is used in production
+* xref:advanced/junk-detection-build.adoc[Building the Junk Detector]: training data, recipe,
+  model format
+* xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline]: where the pairwise
+  head is used

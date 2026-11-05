@@ -1413,6 +1413,13 @@
     <_comment>frictionless data package zip package</_comment>
     <sub-class-of type="application/zip"/>
   </mime-type>
+  <mime-type type="application/x-ipynb+json">
+    <_comment>Jupyter Notebook</_comment>
+    <tika:link>https://nbformat.readthedocs.io/en/latest/format_description.html</tika:link>
+    <sub-class-of type="application/json"/>
+    <glob pattern="*.ipynb"/>
+  </mime-type>
+
   <mime-type type="application/x-vnd.datapackage+json">
     <_comment>frictionless data package - standalong datapackage.json</_comment>
     <sub-class-of type="application/json"/>
