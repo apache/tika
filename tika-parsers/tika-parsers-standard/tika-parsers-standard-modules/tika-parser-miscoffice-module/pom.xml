@@ -40,6 +40,11 @@
       <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-html-module</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!-- default chain for tests: html + mojibuster base detectors + junk arbiter -->
     <dependency>
       <groupId>${project.groupId}</groupId>
