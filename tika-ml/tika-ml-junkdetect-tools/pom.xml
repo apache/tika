@@ -29,7 +29,7 @@
   <name>Apache Tika ML junk detector — training and evaluation tools</name>
   <description>
     Build-time training, evaluation, and diagnostic CLIs for the junk detector
-    (TrainJunkModel, BuildJunkTrainingData, and diagnostics).  These are not part
+    (TrainHashedJunkModel and BuildJunkTrainingData).  These are not part
     of the runtime detector — they are kept out of the tika-ml-junkdetect runtime
     jar and built into a self-contained tools jar via the 'train' profile.
   </description>
@@ -43,6 +43,12 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-encoding-detector-mojibuster</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <!-- the meta-charset detector of the real chain, for the hashed trainer's chain pairs -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-html</artifactId>
       <version>${revision}</version>
     </dependency>
 
@@ -94,7 +100,7 @@
           ./mvnw package -pl tika-ml/tika-ml-junkdetect-tools -am -Ptrain -DskipTests \
               -Dmaven.repo.local=.local_m2_repo
           java -jar tika-ml/tika-ml-junkdetect-tools/target/tika-ml-junkdetect-tools-*-tools.jar [args...]
-        The shaded main class is TrainJunkModel; run any other tool with
+        The shaded main class is TrainHashedJunkModel; run any other tool with
           java -cp <that jar> org.apache.tika.ml.junkdetect.tools.BuildJunkTrainingData [args...]
       -->
       <id>train</id>
@@ -112,7 +118,7 @@
                   <shadedClassifierName>tools</shadedClassifierName>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.apache.tika.ml.junkdetect.tools.TrainJunkModel</mainClass>
+                      <mainClass>org.apache.tika.ml.junkdetect.tools.TrainHashedJunkModel</mainClass>
                     </transformer>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />

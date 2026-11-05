@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "mp4-parser": {
+        "extractSubtitles": false
+      }
+    }
+  ]
+}

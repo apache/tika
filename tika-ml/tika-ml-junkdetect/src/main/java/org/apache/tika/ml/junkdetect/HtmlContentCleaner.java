@@ -24,7 +24,7 @@ import org.apache.tika.ml.chardetect.HtmlByteStripper;
 
 /**
  * Junk-detection HTML→text cleaning: strip tags, then <em>expand</em> entities
- * to codepoints.  Called by both {@code TrainJunkModel} and {@link
+ * to codepoints.  Called by both {@code TrainHashedJunkModel} and {@link
  * JunkFilterEncodingDetector} so training and inference prepare text identically
  * (no drift).
  *

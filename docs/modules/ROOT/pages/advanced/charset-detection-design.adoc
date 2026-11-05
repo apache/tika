@@ -20,7 +20,7 @@
 :toc-placement: left
 
 Byte-bigram Naive Bayes classification, structural detectors for
-UTF-16/UTF-32/ISO-2022, and a script-aware text-quality arbitrator.  The design
+UTF-16/UTF-32/ISO-2022, and a text-model arbitrator.  The design
 decision that shapes everything else: collect candidates from every layer, then
 arbitrate by decode quality — not first-detector-wins.
 
@@ -65,8 +65,8 @@ are collected into an `EncodingDetectorContext` on the `ParseContext`; when a
 | 5
 | `JunkFilterEncodingDetector`
 | `tika-ml-junkdetect`
-| `MetaEncodingDetector`.  Arbitrates across all base-detector candidates using
-  a script-aware text-quality model.  See <<junk-filter>>.
+| `MetaEncodingDetector`.  Arbitrates across all base-detector candidates with
+  a hashed n-gram text model.  See <<junk-filter>>.
 |===
 
 === EncodingResult and ResultType
@@ -279,10 +279,9 @@ typicality layer's job (<<junk-filter>>).
 [[junk-filter]]
 == JunkFilterEncodingDetector — text-quality arbitration
 
-`JunkFilterEncodingDetector` is a `MetaEncodingDetector` backed by
-`JunkDetector`, a script-aware text-quality scorer that distinguishes clean text
-from mojibake, wrong-codec, and corrupted decodings.  Its presence switches the
-composite into collect-all mode.
+`JunkFilterEncodingDetector` is a `MetaEncodingDetector` backed by the pairwise head of the
+bundled `HashedJunkModel`, which was trained on pairs of a correct and a wrong decode of the
+same bytes.  Its presence switches the composite into collect-all mode.
 
 [IMPORTANT]
 ====
@@ -301,55 +300,31 @@ For plain first-match-wins, omit JunkFilter — see <<opting-out-of-arbitration>
 === Arbitration outline
 
 . **One unique candidate** — abstain; composite default ordering wins.
-. **HTML byte-stripping** — `HtmlByteStripper` removes markup before decoding, so
-  the score reflects body text.  Falls back to the raw probe if no tags are found.
-. **Decode under each candidate** — insertion-ordered, for deterministic
-  tournament seeding.
-. **Declarative-equivalent-decode preference** — a DECLARATIVE candidate whose
-  decoded output equals another candidate's wins immediately.
+. **Candidate band** — every DECLARATIVE and STRUCTURAL anchor, plus the top two STATISTICAL
+  candidates and any other STATISTICAL candidate at confidence 0.5 or more.
+. **Decode and clean** — each candidate's decode of the probe (vendor supersets for CJK), then
+  `HtmlContentCleaner`: tags stripped, character references expanded as a browser does.
+. **Declarative-equivalent-decode preference** — a DECLARATIVE candidate whose decode equals
+  another candidate's wins, unless a STRUCTURAL proof (valid wide UTF-8, a BOM, ISO-2022)
+  contradicts it.
 . **All decodings identical, no DECLARATIVE** — abstain.
-. **Pairwise tournament** — the first candidate seeds the champion; each
-  challenger is compared via `JunkDetector.compare`, higher score wins.
+. **Hashed arbitration** (`HashedArbitration`) — the decode with the highest pairwise value is
+  the champion.  When its pairwise logit over the best decode with different text is below the
+  model's deferral threshold, the STRUCTURAL anchor wins, else the DECLARATIVE one, else the
+  champion.  The trainer chooses the threshold per model by cross-fit on gold train pages.
 
-=== Post-tournament demote gates
+`JunkFilterEncodingDetector.candidates()` reports the band, the cleaned decodes, the anchors and
+the deciding rule for a stream; the trainer builds its real-decision pairs from it, so training
+and detection see the same candidates.
 
-Two refinements run after the champion is chosen.  Each fires only to *demote*
-across one boundary the whole-text score reads poorly under COMMON-dilution;
-neither can promote, so neither can cost a confident detection.
+=== Model scoring
 
-* **CJK family gate** — the whole-text score coin-flips on the CJK/non-CJK
-  boundary when markup and digits decode identically and swamp the few
-  discriminating high bytes.  A script-letter "diff" score, over only the
-  `>= 0x80` letters and ideographs where candidates actually differ, reads that
-  boundary cleanly.  If the champion is CJK and the best non-CJK diff score beats
-  the best CJK diff score by `FAMILY_DIFF_MARGIN` (2.0), demote to the best
-  non-CJK candidate.  The reverse direction is unnecessary — genuine CJK is
-  `<meta>`-declared upstream — and regressed at scale.
-
-* **Within-Latin letter gate** — among single-byte Latin siblings the score also
-  coin-flips, occasionally promoting a DOS-OEM or Mac charset (IBM850,
-  x-MacRoman) whose high bytes decode to box-drawing and symbols over the
-  windows-1252 truth.  Cased-letter count reads this where typicality cannot: if
-  the champion is a Latin SBCS, a windows-1252 candidate is present, the probe is
-  high-byte-dense, and windows-1252 decodes clearly more cased high-byte letters,
-  demote to windows-1252.  The gate is directional — a genuine Central-European
-  or DOS document has *more* letters under its true charset, so it stays silent —
-  and Latin-scoped, so it never crosses the CJK boundary or touches a non-Latin
-  SBCS whose Cyrillic/Greek cased letters would pollute the count.  It shares
-  `HighByteLetterStats` with Mojibuster's Latin-sibling fallback.
-
-=== JunkDetector scoring
-
-`JunkDetector` buckets every codepoint bigram to its Unicode script (COMMON,
-INHERITED and UNKNOWN glue folded into the adjacent script) and scores it against
-that script's codepoint-bigram table, calibrated per script.  Global
-document-level features — block transitions, control-byte fraction, script
-transitions, replacement ratio, script alternation — are combined with the
-per-script term by a single linear combiner.  Positive output means clean.
-
-Scripts not in the trained model are treated as neutral (0), not junk, so a
-garbled-but-recognisable decoding cannot beat a correct decoding whose script the
-model does not know.
+The pairwise value of a decode is the sum of its n-gram weights: text normalized (width forms
+folded, NFC), whitespace and digits folded, codepoint 1–3-grams hashed into 2^21 buckets.  The
+model is linear and has no per-script tables or calibration, so decodes in different scripts
+(windows-1251 Cyrillic against GB18030 Han) compare directly.  The pairwise logit divides the
+difference of two values by the number of n-grams the decodes do not share: it is the model's
+average opinion per differing n-gram, not the amount of evidence.
 
 See xref:advanced/junk-detection.adoc[Text Quality Scoring] for the scorer's own
 API and xref:advanced/junk-detection-build.adoc[Building the Junk Detector] for

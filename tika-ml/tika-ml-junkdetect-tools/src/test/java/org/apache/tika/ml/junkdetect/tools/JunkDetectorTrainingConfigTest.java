@@ -80,15 +80,6 @@ class JunkDetectorTrainingConfigTest {
     }
 
     @Test
-    void modelTrainValues() {
-        assertEquals(3, JunkDetectorTrainingConfig.MIN_BIGRAM_COUNT);
-        assertEquals(0.5, JunkDetectorTrainingConfig.OA_LOAD_FACTOR, 1e-9);
-        assertEquals(16, JunkDetectorTrainingConfig.KEY_INDEX_BITS);
-        assertTrue(JunkDetectorTrainingConfig.KEY_INDEX_BITS <= 16,
-                "KEY_INDEX_BITS must be <= 16 to fit packed key in an int");
-    }
-
-    @Test
     void notInstantiable() {
         // The class is a frozen configuration container; making it
         // instantiable would invite per-call mutation.

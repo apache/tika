@@ -189,12 +189,14 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
         }
         for (String label : new String[]{
                 "windows-1251", "KOI8-R", "KOI8-U", "IBM855", "IBM866",
-                "x-mac-cyrillic"}) {
+                "x-mac-cyrillic", "ISO-8859-5"}) {
             m.put(label, Cohort.CYRILLIC);
         }
         m.put("windows-1253", Cohort.GREEK);
         m.put("windows-1255", Cohort.HEBREW);
         m.put("windows-1256", Cohort.ARABIC);
+        m.put("ISO-8859-6", Cohort.ARABIC);
+        m.put("ISO-8859-7", Cohort.GREEK);
         m.put("windows-874", Cohort.THAI);
         // Bidi-suffix variants (-ltr/-rtl) share a cohort; toJavaCharsetName
         // collapses them at Charset lookup, but their bigram tables differ.

@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -35,8 +36,11 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.metadata.TIFF;
@@ -54,6 +58,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * An MIT-licensed python parser with test files is:
  * https://github.com/psd-tools/psd-tools
+ * <p>
+ * The JPEG thumbnail Photoshop stores in image resource 0x040C is emitted as the
+ * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL} embedded document.
+ * The raw BGR thumbnail of Photoshop 4.0 (0x0409) is not.
  */
 @TikaComponent
 public class PSDParser implements Parser {
@@ -68,6 +76,10 @@ public class PSDParser implements Parser {
 
     private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;
+    private static final String JPEG_MIME = "image/jpeg";
+    //format, width, height, widthbytes, total size, compressed size, bits per pixel, planes
+    private static final int THUMBNAIL_HEADER_LENGTH = 28;
+    private static final int THUMBNAIL_FORMAT_JPEG = 1;
 
     private PSDParserConfig defaultConfig = new PSDParserConfig();
 
@@ -141,6 +153,7 @@ public class PSDParser implements Parser {
         //if something is corrupt about this number, prevent an
         //infinite loop by only reading 10000 blocks
         int blocks = 0;
+        byte[] thumbnail = null;
         while (read < imageResourcesSectionSize && blocks < MAX_BLOCKS) {
             ResourceBlock rb = new ResourceBlock(tis, defaultConfig.getMaxDataLengthBytes());
             if (rb.totalLength <= 0) {
@@ -161,6 +174,15 @@ public class PSDParser implements Parser {
                 ImageXmp.scanAndExtract(
                         UnsynchronizedByteArrayInputStream.builder().setByteArray(rb.data).get(),
                         metadata, context);
+            } else if (rb.id == ResourceBlock.ID_THUMBNAIL_RESOURCE) {
+                if (rb.skipped) {
+                    EmbeddedDocumentUtil.recordException(new TikaMemoryLimitException(
+                            "thumbnail resource of " + rb.dataLength + " bytes exceeds " +
+                                    defaultConfig.getMaxDataLengthBytes() + "; skipped"),
+                            metadata, context);
+                } else {
+                    thumbnail = jpegThumbnail(rb.data);
+                }
             }
             blocks++;
         }
@@ -172,7 +194,51 @@ public class PSDParser implements Parser {
         // We don't have any helpful text, sorry...
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
+        if (thumbnail != null) {
+            emitThumbnail(thumbnail, xhtml, context);
+        }
         xhtml.endDocument();
+    }
+
+    private static byte[] jpegThumbnail(byte[] data) {
+        if (data.length < THUMBNAIL_HEADER_LENGTH + 2) {
+            return null;
+        }
+        int format = readIntBE(data, 0);
+        long compressedSize = readIntBE(data, 20) & 0xFFFFFFFFL;
+        if (format != THUMBNAIL_FORMAT_JPEG || compressedSize < 2 ||
+                compressedSize > data.length - THUMBNAIL_HEADER_LENGTH) {
+            return null;
+        }
+        if ((data[THUMBNAIL_HEADER_LENGTH] & 0xFF) != 0xFF ||
+                (data[THUMBNAIL_HEADER_LENGTH + 1] & 0xFF) != 0xD8) {
+            return null;
+        }
+        return Arrays.copyOfRange(data, THUMBNAIL_HEADER_LENGTH,
+                THUMBNAIL_HEADER_LENGTH + (int) compressedSize);
+    }
+
+    private static int readIntBE(byte[] data, int offset) {
+        return ((data[offset] & 0xFF) << 24) | ((data[offset + 1] & 0xFF) << 16) |
+                ((data[offset + 2] & 0xFF) << 8) | (data[offset + 3] & 0xFF);
+    }
+
+    private static void emitThumbnail(byte[] jpeg, XHTMLContentHandler xhtml,
+                                      ParseContext context) throws IOException, SAXException {
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        Metadata thumbnailMetadata = Metadata.newInstance(context);
+        thumbnailMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
+        thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+        EmbeddedDocumentUtil.setGeneratedResourceName(thumbnailMetadata,
+                EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, 0, JPEG_MIME);
+        if (!extractor.shouldParseEmbedded(thumbnailMetadata, context)) {
+            return;
+        }
+        try (TikaInputStream thumbnailStream = TikaInputStream.get(jpeg)) {
+            extractor.parseEmbedded(thumbnailStream, xhtml, thumbnailMetadata, context, true);
+        }
     }
 
     public PSDParserConfig getDefaultConfig() {
@@ -195,6 +261,8 @@ public class PSDParser implements Parser {
         private String name;
         private byte[] data;
         private int totalLength;
+        private int dataLength;
+        private boolean skipped;
 
         private ResourceBlock(InputStream tis, int maxDataLengthBytes)
                 throws IOException, TikaException {
@@ -247,7 +315,13 @@ public class PSDParser implements Parser {
             }
             totalLength = 4 + 2 + nameLen + 4 + dataLen;
             // Do we have use for the data segment?
-            if (captureData(id)) {
+            dataLength = dataLen;
+            if (id == ID_THUMBNAIL_RESOURCE && dataLen > maxDataLengthBytes) {
+                //the thumbnail is an extra; the caller records a warning instead of failing
+                skipped = true;
+                data = new byte[0];
+                IOUtils.skipFully(tis, dataLen);
+            } else if (captureData(id)) {
                 if (dataLen > maxDataLengthBytes) {
                     throw new TikaMemoryLimitException(
                             "data length must be < " + maxDataLengthBytes + ": " + dataLen);
@@ -270,6 +344,7 @@ public class PSDParser implements Parser {
                 case ID_EXIF_1:
                 case ID_EXIF_3:
                 case ID_XMP:
+                case ID_THUMBNAIL_RESOURCE:
                     return true;
             }
             return false;
