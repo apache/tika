@@ -183,12 +183,21 @@ public class RarParserTest extends AbstractPkgTest {
      * than -1 is written as Unix time.
      */
     private static byte[] storedRar5(long mtime, String... namesAndContents) {
+        java.util.LinkedHashMap<String, byte[]> files = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < namesAndContents.length; i += 2) {
+            files.put(namesAndContents[i], namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8));
+        }
+        return storedRar5(mtime, files);
+    }
+
+    /** As above, with the files' bytes, in the map's order. */
+    private static byte[] storedRar5(long mtime, Map<String, byte[]> files) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         out.writeBytes(new byte[]{'R', 'a', 'r', '!', 0x1a, 0x07, 0x01, 0x00});
         out.writeBytes(rar5Block(concat(vint(1), vint(0), vint(0))));
-        for (int i = 0; i < namesAndContents.length; i += 2) {
-            byte[] name = namesAndContents[i].getBytes(StandardCharsets.UTF_8);
-            byte[] data = namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8);
+        for (Map.Entry<String, byte[]> file : files.entrySet()) {
+            byte[] name = file.getKey().getBytes(StandardCharsets.UTF_8);
+            byte[] data = file.getValue();
             CRC32 crc = new CRC32();
             crc.update(data);
             byte[] time = mtime < 0 ? new byte[0] : littleEndian((int) mtime);
