@@ -81,6 +81,14 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Jupyter notebooks (.ipynb, new type application/x-ipynb+json) are parsed: cell
+     sources and plain-text outputs as text, kernel, language and format version as
+     jupyter:kernel, jupyter:language and jupyter:nbformat, and the image outputs as
+     embedded documents, as are the images markdown cells carry as attachments. The
+     thumbnail is picked as nbsphinx picks it: the output a cell marked
+     nbsphinx-thumbnail names, else the last image in the notebook, given as PNG or
+     JPEG where the output also holds them as SVG (TIKA-5037).
+     
    * FictionBook marks the cover image named in <coverpage> as a THUMBNAIL embedded
      resource, so the thumbnail preset serves it (TIKA-5035).
      

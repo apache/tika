@@ -60,6 +60,7 @@ public class TikaDetectionTest {
         assertEquals("text/javascript", tika.detect("x.js"));
         assertEquals("text/javascript", tika.detect("x.mjs"));
         assertEquals("application/json", tika.detect("x.json"));
+        assertEquals("application/x-ipynb+json", tika.detect("x.ipynb"));
         assertEquals("application/lost+xml", tika.detect("x.lostxml"));
         assertEquals("application/mac-binhex40", tika.detect("x.hqx"));
         assertEquals("application/mac-compactpro", tika.detect("x.cpt"));
