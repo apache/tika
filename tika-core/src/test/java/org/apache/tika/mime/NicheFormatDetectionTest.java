@@ -251,7 +251,11 @@ public class NicheFormatDetectionTest {
         assertDetected(MediaType.application("x-python-bytecode"), "\u0003ó\r\nSc\u0000\u0000");
         assertDetected(MediaType.application("x-python-bytecode"), "U\r\r\n\u0000\u0000\u0000\u0000");
         // CPython magic numbers: 3.0 is 3131, 3.14 is 3627, 3.15 starts at 3650
-        assertDetected(MediaType.application("x-python-bytecode"), ";\f\r\n\u0000\u0000\u0000\u0000");
+        // 3.0: mtime, then the code object; 3.6: mtime and source size, then a FLAG_REF code object
+        assertDetected(MediaType.application("x-python-bytecode"), ";\f\r\nABCDc\u0000\u0000");
+        assertDetected(MediaType.application("x-python-bytecode"), "3\r\r\nABCD\u0010\u0000\u0000\u0000ã");
+        // text with a one-character first line and CR CR LF endings
+        assertDetected(MediaType.OCTET_STREAM, " \r\r\n      \r\r\n");
         assertDetected(MediaType.application("x-python-bytecode"), "+\u000e\r\n\u0000\u0000\u0000\u0000");
         assertDetected(MediaType.application("x-python-bytecode"), "B\u000e\r\n\u0000\u0000\u0000\u0000");
         assertDetected(MediaType.application("x-python-pickle"), "\u0080\u0002}q\u0000(U\tcollector");

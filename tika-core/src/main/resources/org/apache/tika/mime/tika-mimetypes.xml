@@ -941,7 +941,9 @@
       </match>
       <!-- new-format secret (0xC5) or public (0xC6) key packet (RFC 9580 4.2, 5.5.2): 1- or 2-byte
            length, v4 or v6, 4-byte time, then a known public-key algorithm -->
-      <match value="(?s)[\\xc5\\xc6](?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06]....[\\x01\\x10-\\x13\\x16\\x19-\\x1c]" type="regex" offset="0"/>
+      <match value="0xC4" mask="0xFC" type="string" offset="0">
+        <match value="(?s)[\\xc5\\xc6](?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06]....[\\x01\\x10-\\x13\\x16\\x19-\\x1c]" type="regex" offset="0"/>
+      </match>
     </magic>
   </mime-type>
 
@@ -964,7 +966,9 @@
         <match value="0x030500" mask="0xFFFFFE" type="string" offset="3"/>
       </match>
       <!-- new-format signature packet (0xC2): v4 or v6, binary/text sig type, known algorithm -->
-      <match value="(?s)\\xc2(?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06][\\x00\\x01][\\x01\\x11\\x13\\x16\\x1b\\x1c]" type="regex" offset="0"/>
+      <match value="0xC2" type="string" offset="0">
+        <match value="(?s)\\xc2(?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06][\\x00\\x01][\\x01\\x11\\x13\\x16\\x1b\\x1c]" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.asc"/>
     <glob pattern="*.sig"/>
@@ -1034,10 +1038,14 @@
            any signature algorithm; long-form outer length, short or long inner.
            A v1 certificate with serial 1 starts the same way; its validity SEQUENCE { Time, Time }
            (never in a CRL) rules it out -->
-      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x02\\x01\\x01\\x30[\\x00-\\x7f]\\x06(?!.{0,512}?\\x30(?:\\x1e\\x17\\x0d|\\x20(?:\\x17\\x0d|\\x18\\x0f)|\\x22\\x18\\x0f))" type="regex" offset="0"/>
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x02\\x01\\x01\\x30[\\x00-\\x7f]\\x06(?!.{0,512}?\\x30(?:\\x1e\\x17\\x0d|\\x20(?:\\x17\\x0d|\\x18\\x0f)|\\x22\\x18\\x0f))" type="regex" offset="0"/>
+      </match>
       <!-- DER v1 CertificateList, no version: SEQUENCE { SEQUENCE { AlgorithmIdentifier, issuer Name
            (SEQUENCE { SET ...), then thisUpdate. A certificate's TBS opens with [0] or an INTEGER -->
-      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x30[\\x00-\\x7f]\\x06[\\x03-\\x0f].{3,20}?\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..)\\x31.{0,1024}?(?:\\x17\\x0d[0-9]{12}Z|\\x18\\x0f[0-9]{14}Z)" type="regex" offset="0"/>
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x30[\\x00-\\x7f]\\x06[\\x03-\\x0f].{3,20}?\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..)\\x31.{0,1024}?(?:\\x17\\x0d[0-9]{12}Z|\\x18\\x0f[0-9]{14}Z)" type="regex" offset="0"/>
+      </match>
     </magic>
   </mime-type>
   <mime-type type="application/pkix-pkipath">
@@ -1055,7 +1063,9 @@
     <_comment>PostScript</_comment>
     <magic priority="60">
       <!-- PJL job that switches to PostScript -->
-      <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*POSTSCRIPT" type="regex" offset="0"/>
+      <match value="\x1b%-12345X" type="stringignorecase" offset="0">
+        <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*POSTSCRIPT" type="regex" offset="0"/>
+      </match>
     </magic>
     <magic priority="50">
       <match value="%!" type="string" offset="0" />
@@ -1268,7 +1278,9 @@
     <magic priority="50">
       <!-- RFC 3161 TimeStampResp: SEQUENCE { PKIStatusInfo { INTEGER status, ... },
            then the token, a CMS signedData ContentInfo -->
-      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30[\\x03-\\x7f]\\x02\\x01[\\x00-\\x05].{0,160}?\\x06\\x09\\x2a\\x86\\x48\\x86\\xf7\\x0d\\x01\\x07\\x02" type="regex" offset="0"/>
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30[\\x03-\\x7f]\\x02\\x01[\\x00-\\x05].{0,160}?\\x06\\x09\\x2a\\x86\\x48\\x86\\xf7\\x0d\\x01\\x07\\x02" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.tsr"/>
   </mime-type>
@@ -1796,18 +1808,24 @@
   <mime-type type="application/vnd.hp-pcl">
     <magic priority="60">
       <!-- PJL job (UEL, then @PJL commands) that switches to PCL, not PCL XL -->
-      <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCL\\s" type="regex" offset="0"/>
+      <match value="\x1b%-12345X" type="stringignorecase" offset="0">
+        <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCL\\s" type="regex" offset="0"/>
+      </match>
     </magic>
     <magic priority="50">
       <!-- UEL straight into PCL, or a raw PCL5 stream: reset, then a parameterized command -->
       <match value="\x1b%-12345X\x1bE" type="string" offset="0"/>
-      <match value="\x1bE\x1b[&amp;*(%]" type="regex" offset="0"/>
+      <match value="\x1bE\x1b" type="string" offset="0">
+        <match value="\x1bE\x1b[&amp;*(%]" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.pcl"/>
   </mime-type>
   <mime-type type="application/vnd.hp-pclxl">
     <magic priority="60">
-      <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCLXL" type="regex" offset="0"/>
+      <match value="\x1b%-12345X" type="stringignorecase" offset="0">
+        <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCLXL" type="regex" offset="0"/>
+      </match>
     </magic>
     <magic priority="50">
       <!-- stream header, e.g. ") HP-PCL XL;3;0;" -->
@@ -3637,7 +3655,9 @@
     <alias type="application/x-acpi-table"/>
     <magic priority="50">
       <!-- signature, 4-byte length, revision, checksum, then a printable 6-byte OEM ID -->
-      <match value="(?s)(?:DSDT|SSDT|FACP|APIC|HPET|MCFG|SLIC|BERT|WAET)....[\\x00-\\x06].[\\x20-\\x7e]{6}" type="regex" offset="0"/>
+      <match value="0x00" mask="0xF8" type="string" offset="8">
+        <match value="(?s)(?:DSDT|SSDT|FACP|APIC|HPET|MCFG|SLIC|BERT|WAET)....[\\x00-\\x06].[\\x20-\\x7e]{6}" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.aml"/>
   </mime-type>
@@ -3986,9 +4006,13 @@
     <_comment>Blender scene</_comment>
     <magic priority="50">
       <!-- then pointer size (_ 32-bit, - 64-bit), endianness, version -->
-      <match value="BLENDER[_-][vV][0-9]" type="regex" offset="0"/>
+      <match value="BLENDER" type="string" offset="0">
+        <match value="BLENDER[_-][vV][0-9]" type="regex" offset="0"/>
+      </match>
       <!-- 5.0+: header size, pointer size, format version, endianness, 4-digit version -->
-      <match value="BLENDER[0-9]{2}[_-][0-9]{2}[vV][0-9]{4}" type="regex" offset="0"/>
+      <match value="BLENDER" type="string" offset="0">
+        <match value="BLENDER[0-9]{2}[_-][0-9]{2}[vV][0-9]{4}" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.blend"/>
   </mime-type>
@@ -4070,7 +4094,9 @@
     <_comment>Nadeo GameBox (TrackMania, ManiaPlanet)</_comment>
     <magic priority="50">
       <!-- version 3-6, then format and compression flags -->
-      <match value="GBX[\x03-\x06]\x00[BT][UC][UC]" type="regex" offset="0"/>
+      <match value="GBX" type="string" offset="0">
+        <match value="GBX[\x03-\x06]\x00[BT][UC][UC]" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.gbx"/>
   </mime-type>
@@ -4078,14 +4104,24 @@
     <_comment>gcov coverage data</_comment>
     <magic priority="50">
       <!-- "gcda" in either byte order, then a 4-character version -->
-      <match value="(?:adcg|gcda)[0-9A-Z*]{4}" type="regex" offset="0"/>
+      <match value="adcg" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
+      <match value="gcda" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
     </magic>
     <glob pattern="*.gcda"/>
   </mime-type>
   <mime-type type="application/x-gcov-notes">
     <_comment>gcov notes</_comment>
     <magic priority="50">
-      <match value="(?:oncg|gcno)[0-9A-Z*]{4}" type="regex" offset="0"/>
+      <match value="oncg" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
+      <match value="gcno" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
     </magic>
     <glob pattern="*.gcno"/>
   </mime-type>
@@ -4839,7 +4875,9 @@
     <_comment>Apache Lucene index file</_comment>
     <magic priority="50">
       <!-- CodecUtil header: magic 0x3FD76C17, then the codec name (length byte + ASCII) -->
-      <match value="(?s)\\x3f\\xd7\\x6c\\x17[\\x02-\\x40][A-Za-z]" type="regex" offset="0"/>
+      <match value="0x3FD76C17" type="string" offset="0">
+        <match value="(?s)\\x3f\\xd7\\x6c\\x17[\\x02-\\x40][A-Za-z]" type="regex" offset="0"/>
+      </match>
     </magic>
   </mime-type>
   <mime-type type="application/x-lz4">
@@ -5444,8 +5482,24 @@
       <match value="0xB3F20D0A" type="string" offset="0"/>
       <match value="0xD1F20D0A" type="string" offset="0"/>
       <match value="0x03F30D0A" type="string" offset="0"/>
-      <!-- 3.x: a little-endian magic 2816-4095 (3.0 is 3000, 3.n is 2900+50n from 3.11), then CR LF -->
-      <match value="(?s).[\\x0b-\\x0f]\\r\\n" type="regex" offset="0"/>
+      <!-- 3.x: a little-endian magic (3.0 is 3131, 3.14 is 3627), then CR LF. Text whose first line is
+           one character with CR CR LF endings looks the same, so also check the rest of the header -->
+      <match value="0x0D0A" type="string" offset="2">
+        <!-- 3.0-3.4: the code object after the 8- or 12-byte header -->
+        <match value="0x0C" type="string" offset="1">
+          <match value="c" type="string" offset="8"/>
+          <match value="c" type="string" offset="12"/>
+          <match value="0xE3" type="string" offset="12"/>
+        </match>
+        <!-- 3.5-3.6: a code object at 12; 3.7+: PEP 552 flags 0-3 -->
+        <match value="0x0D" type="string" offset="1">
+          <match value="0xE3" type="string" offset="12"/>
+          <match value="0x00000000" mask="0xFCFFFFFF" type="string" offset="4"/>
+        </match>
+        <match value="0x0E" type="string" offset="1">
+          <match value="0x00000000" mask="0xFCFFFFFF" type="string" offset="4"/>
+        </match>
+      </match>
     </magic>
     <glob pattern="*.pyc"/>
     <glob pattern="*.pyo"/>
@@ -5454,8 +5508,10 @@
     <_comment>Python pickle</_comment>
     <magic priority="50">
       <!-- protocol 2-3, then a dict/list/mark/global opcode; protocol 4-5 start with FRAME -->
-      <match value="(?s)\\x80[\\x02\\x03][}\\](c]" type="regex" offset="0"/>
-      <match value="(?s)\\x80[\\x04\\x05]\\x95" type="regex" offset="0"/>
+      <match value="0x80" type="string" offset="0">
+        <match value="(?s)\\x80[\\x02\\x03][}\\](c]" type="regex" offset="0"/>
+        <match value="(?s)\\x80[\\x04\\x05]\\x95" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.pkl"/>
     <glob pattern="*.pickle"/>
@@ -6120,7 +6176,12 @@
     <_comment>Unreal Tournament compressed package</_comment>
     <magic priority="50">
       <!-- UZ (1234) or UZ2 (5678), then the original file name: compact length, name, NUL -->
-      <match value="(?s)(?:\\xd2\\x04|\\x2e\\x16)\\x00\\x00[\\x02-\\x3f][\\x20-\\x7e]+\\.u[a-z]{0,2}\\x00" type="regex" offset="0"/>
+      <match value="0xD2040000" type="string" offset="0">
+        <match value="(?s)[\\x02-\\x3f][\\x20-\\x7e]{1,63}\\.u[a-z]{0,2}\\x00" type="regex" offset="4"/>
+      </match>
+      <match value="0x2E160000" type="string" offset="0">
+        <match value="(?s)[\\x02-\\x3f][\\x20-\\x7e]{1,63}\\.u[a-z]{0,2}\\x00" type="regex" offset="4"/>
+      </match>
     </magic>
     <glob pattern="*.uz"/>
     <glob pattern="*.uz2"/>
@@ -6180,7 +6241,9 @@
     <magic priority="50">
       <!-- Certificate { TBSCertificate { [0] version v1-v3, serialNumber INTEGER ...
            any signature algorithm (SM2, Ed25519, ...) -->
-      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:\\x81.|\\x82..|\\x83...)\\xa0\\x03\\x02\\x01[\\x00-\\x02]\\x02" type="regex" offset="0"/>
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:\\x81.|\\x82..|\\x83...)\\xa0\\x03\\x02\\x01[\\x00-\\x02]\\x02" type="regex" offset="0"/>
+      </match>
     </magic>
     <magic priority="50">
       <match value="0x3080" type="string"
@@ -6375,7 +6438,9 @@
     </magic>
     <!-- ties the text/html fragment rule (which sorts first) so a .xml name can pick XML -->
     <magic priority="15">
-      <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+      <match value="&lt;" type="string" offset="0">
+        <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.xml"/>
     <glob pattern="*.xsl"/>
@@ -8567,7 +8632,9 @@
     <!-- fragments served as pages: meta-first, PHP warnings, partials; below the weak
          %PDF-/xhtml matches so a PDF or XHTML with a junk HTML prefix keeps its type -->
     <magic priority="15">
-      <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+      <match value="&lt;" type="string" offset="0">
+        <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+      </match>
     </magic>
     <!-- The magic priority needs to be lower than that of -->
     <!--  files which contain HTML within them, eg mime emails -->
@@ -9807,7 +9874,9 @@
     <root-XML localName="ASX"/>
     <!-- often no XML declaration -->
     <magic priority="50">
-      <match value="(?i)&lt;asx[\\s>]" type="regex" offset="0"/>
+      <match value="&lt;" type="string" offset="0">
+        <match value="(?i)&lt;asx[\\s>]" type="regex" offset="0"/>
+      </match>
     </magic>
     <sub-class-of type="application/xml"/>
   </mime-type>
