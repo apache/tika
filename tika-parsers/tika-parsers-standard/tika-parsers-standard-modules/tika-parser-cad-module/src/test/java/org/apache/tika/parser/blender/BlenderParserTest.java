@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.blender;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -77,20 +78,22 @@ public class BlenderParserTest extends TikaTest {
     public void testCompressedFiles() throws Exception {
         byte[] blend = blend(Header.POINTER8, true);
         for (byte[] file : new byte[][]{gzip(blend), Zstd.compress(blend)}) {
-            List<Metadata> list = parse(file);
-            assertEquals("application/x-blender", list.get(0).get(HttpHeaders.CONTENT_TYPE));
-            assertEquals(2, list.size());
-            assertPreview(list.get(1), "compressed");
+            assertArrayEquals(BlenderParser.readThumbnail(new ByteArrayInputStream(blend)),
+                    BlenderParser.readThumbnail(BlendCompression.open(
+                            new ByteArrayInputStream(file))));
         }
+        // zstd is detected here; gzip by GZipSpecializationDetector, see the integration tests
+        List<Metadata> list = parse(Zstd.compress(blend));
+        assertEquals("application/x-blender", list.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(2, list.size());
+        assertPreview(list.get(1), "compressed");
     }
 
     @Test
     public void testDetection() throws Exception {
         byte[] blend = blend(Header.LARGE_BLOCKS, true);
         assertEquals("application/x-blender", detect(blend, null));
-        assertEquals("application/x-blender", detect(gzip(blend), null));
         assertEquals("application/x-blender", detect(Zstd.compress(blend), null));
-        assertEquals("application/x-blender", detect(gzip(blend), "scene.blend"));
         assertEquals("application/x-blender", detect(new byte[16], "scene.blend"));
         assertEquals("application/x-blender", detect(new byte[16], "scene.blender"));
         byte[] other = "BLENDEX and more".getBytes(StandardCharsets.US_ASCII);
@@ -100,7 +103,7 @@ public class BlenderParserTest extends TikaTest {
 
     /**
      * Without zstd-jni, a zstd-compressed file is not taken for a Blender file and fails
-     * nothing; gzip still works.
+     * nothing; gzip still opens.
      */
     @Test
     public void testWithoutZstdJni() throws Exception {
@@ -115,12 +118,9 @@ public class BlenderParserTest extends TikaTest {
                     .getConstructor().newInstance();
             Method detect = detector.getClass().getMethod("detect", TikaInputStream.class,
                     Metadata.class, ParseContext.class);
-            try (TikaInputStream zstd = TikaInputStream.get(Zstd.compress(blend));
-                    TikaInputStream gz = TikaInputStream.get(gzip(blend))) {
+            try (TikaInputStream zstd = TikaInputStream.get(Zstd.compress(blend))) {
                 assertEquals(MediaType.OCTET_STREAM,
                         detect.invoke(detector, zstd, new Metadata(), new ParseContext()));
-                assertEquals(MediaType.application("x-blender"),
-                        detect.invoke(detector, gz, new Metadata(), new ParseContext()));
             }
         }
     }

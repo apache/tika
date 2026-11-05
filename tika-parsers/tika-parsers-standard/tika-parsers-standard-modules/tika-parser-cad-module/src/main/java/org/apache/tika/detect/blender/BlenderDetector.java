@@ -31,9 +31,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.blender.BlendCompression;
 
 /**
- * Detects a compressed Blender file, which its gzip or zstd magic would otherwise make an
+ * Detects a zstd-compressed Blender file, which its zstd magic would otherwise make a zstd
  * archive, by the "BLENDER" its content starts with. Uncompressed files are left to their
- * magic.
+ * magic, gzip-compressed ones to {@code GZipSpecializationDetector}.
  */
 @TikaComponent
 public class BlenderDetector implements Detector {
@@ -43,6 +43,8 @@ public class BlenderDetector implements Detector {
     static final MediaType BLENDER = MediaType.application("x-blender");
 
     private static final byte[] MAGIC = "BLENDER".getBytes(StandardCharsets.US_ASCII);
+
+    private static final byte[] ZSTD = {(byte) 0x28, (byte) 0xb5, (byte) 0x2f, (byte) 0xfd};
 
     /**
      * How much of the stream is read to uncompress the magic: a zstd block holds up to
@@ -56,6 +58,16 @@ public class BlenderDetector implements Detector {
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
+        tis.mark(ZSTD.length);
+        byte[] head;
+        try {
+            head = tis.readNBytes(ZSTD.length);
+        } finally {
+            tis.reset();
+        }
+        if (!Arrays.equals(head, ZSTD)) {
+            return MediaType.OCTET_STREAM;
+        }
         tis.mark(MAX_PREFIX_LENGTH);
         byte[] prefix;
         try {
@@ -63,15 +75,12 @@ public class BlenderDetector implements Detector {
         } finally {
             tis.reset();
         }
-        if (prefix.length < 4 || startsWithMagic(prefix)) {
-            return MediaType.OCTET_STREAM;
-        }
         try (InputStream in = BlendCompression.open(new ByteArrayInputStream(prefix))) {
             if (in != null && startsWithMagic(in.readNBytes(MAGIC.length))) {
                 return BLENDER;
             }
         } catch (IOException e) {
-            // not gzip or zstd after all, or the first frame is longer than the prefix
+            // not zstd after all, or the first frame is longer than the prefix
         }
         return MediaType.OCTET_STREAM;
     }

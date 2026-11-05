@@ -27,6 +27,7 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -93,15 +94,17 @@ public class BlenderParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(HttpHeaders.CONTENT_TYPE, BLENDER.toString());
-        InputStream in = BlendCompression.open(tis);
-        if (in == null) {
-            throw new TikaException("The file is zstd-compressed, and zstd-jni is not on the "
-                    + "classpath");
+        byte[] thumbnail;
+        try (InputStream in = BlendCompression.open(CloseShieldInputStream.wrap(tis))) {
+            if (in == null) {
+                throw new TikaException("The file is zstd-compressed, and zstd-jni is not on the "
+                        + "classpath");
+            }
+            thumbnail = readThumbnail(in);
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try {
-            byte[] thumbnail = readThumbnail(in);
             if (thumbnail != null) {
                 emitThumbnail(thumbnail, xhtml, context);
             }
