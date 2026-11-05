@@ -212,6 +212,12 @@ public class NicheFormatDetectionTest {
         assertDetected(pclxl, "\u001b%-12345X@PJL COMMENT x\r\n@PJL ENTER LANGUAGE = PCLXL\r\n");
         assertDetected(pclxl, ") HP-PCL XL;3;0;Comment");
         assertDetected(pcl, "\u001b%-12345X@PJL JOB\r\n@PJL ENTER LANGUAGE=PCL\r\n\u001bE");
+        assertDetected(pcl, "\u001b%-12345X@PJL ENTER LANGUAGE=PCL\u001bE\u001b&l0O");
+        // driver headers can put the command past 1K
+        String longJob = "\u001b%-12345X" + "@PJL COMMENT padding\r\n".repeat(80) + "@PJL ENTER LANGUAGE=PCLXL\r\n";
+        try (TikaInputStream tis = TikaInputStream.get(longJob.getBytes(ISO_8859_1))) {
+            assertEquals(pclxl, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
+        }
         assertDetected(pcl, "\u001b%-12345X\u001bE\u001b&u600D");
         assertDetected(pcl, "\u001bE\u001b&l0O\u001b&l0H");
         assertDetected(MediaType.application("postscript"),

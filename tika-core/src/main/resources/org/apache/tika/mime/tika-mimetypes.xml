@@ -1062,9 +1062,10 @@
   <mime-type type="application/postscript">
     <_comment>PostScript</_comment>
     <magic priority="60">
-      <!-- PJL job that switches to PostScript -->
+      <!-- PJL job that switches to PostScript; driver headers put the command up to ~2K in -->
       <match value="\x1b%-12345X" type="stringignorecase" offset="0">
-        <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*POSTSCRIPT" type="regex" offset="0"/>
+        <match value="ENTER LANGUAGE=POSTSCRIPT" type="stringignorecase" offset="0:8192"/>
+        <match value="ENTER LANGUAGE = POSTSCRIPT" type="stringignorecase" offset="0:8192"/>
       </match>
     </magic>
     <magic priority="50">
@@ -1806,10 +1807,12 @@
     <glob pattern="*.jlt"/>
   </mime-type>
   <mime-type type="application/vnd.hp-pcl">
-    <magic priority="60">
-      <!-- PJL job (UEL, then @PJL commands) that switches to PCL, not PCL XL -->
+    <magic priority="55">
+      <!-- PJL job (UEL, then @PJL commands) that switches to PCL; below PCL XL, whose command
+           this prefix also matches -->
       <match value="\x1b%-12345X" type="stringignorecase" offset="0">
-        <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCL\\s" type="regex" offset="0"/>
+        <match value="ENTER LANGUAGE=PCL" type="stringignorecase" offset="0:8192"/>
+        <match value="ENTER LANGUAGE = PCL" type="stringignorecase" offset="0:8192"/>
       </match>
     </magic>
     <magic priority="50">
@@ -1824,7 +1827,8 @@
   <mime-type type="application/vnd.hp-pclxl">
     <magic priority="60">
       <match value="\x1b%-12345X" type="stringignorecase" offset="0">
-        <match value="(?s)(?i)\\x1b%-12345X.{0,1024}?@PJL\\s+ENTER\\s+LANGUAGE\\s*=\\s*PCLXL" type="regex" offset="0"/>
+        <match value="ENTER LANGUAGE=PCLXL" type="stringignorecase" offset="0:8192"/>
+        <match value="ENTER LANGUAGE = PCLXL" type="stringignorecase" offset="0:8192"/>
       </match>
     </magic>
     <magic priority="50">
