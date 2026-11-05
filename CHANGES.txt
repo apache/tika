@@ -75,6 +75,27 @@ Release 4.3.0 - ???
    * RAR5 archives are parsed: RarParser no longer refuses them, junrar has read RAR5
      since 8.0.0 (TIKA-5043).
 
+   * FictionBook marks the cover image named in <coverpage> as a THUMBNAIL embedded
+     resource, so the thumbnail preset serves it (TIKA-5035).
+     
+   * MP4Parser extracts text subtitle tracks (tx3g/mov_text, QuickTime text) as
+     embedded text/vtt documents named track-<id>.vtt, synthesized from the samples
+     and parsed by SubtitleParser, with the track language as dc:language (ISO 639-2;
+     QuickTime Mac language codes are mapped); chapter tracks are skipped. Samples are
+     found through the sample tables, and through moof/traf/trun in fragmented files,
+     and read by seeking. This needs a file, content already in memory (a byte array
+     or a digest-drained stream), or an archive entry up to 1 MB (more within a cache
+     memory budget); other inputs are silently not searched. Off with extractSubtitles
+     on mp4-parser (TIKA-5030).
+
+   * New MatroskaParser for Matroska and WebM, which previously had no parser: it
+     extracts SubRip, ASS/SSA and WebVTT text subtitle tracks the same way, with the
+     track name as dc:title and the track language (BCP 47 or ISO 639-2; "eng" when
+     the track names none, as the format specifies). It stops at the first Cluster
+     when there is no text track; otherwise it reads every block header, seeking past
+     other tracks' blocks in a file and reading through them in a stream. No container
+     metadata yet. Off with extractSubtitles on matroska-parser (TIKA-5030).
+
    * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
      cover as the THUMBNAIL embedded document, the other images, and the text, stored,
      PalmDOC- or HUFF/CDIC-compressed, through the HTML parser (of a KF8 book the HTML flow
@@ -100,7 +121,7 @@ Release 4.3.0 - ???
    * PSD files emit the JPEG thumbnail Photoshop stores in image resource 0x040C as a
      THUMBNAIL embedded resource, so the thumbnail preset serves it; one over
      maxDataLengthBytes is skipped with a warning (TIKA-5033).
-     
+
    * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
      sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
 

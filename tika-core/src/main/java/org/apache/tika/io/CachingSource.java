@@ -279,6 +279,13 @@ class CachingSource extends InputStream implements TikaInputSource {
         return cachingStream == null ? null : cachingStream.completeSpillFile();
     }
 
+    /** True once the whole source is cached in memory; never drains to get there. */
+    @Override
+    public boolean tryRetainInMemory() {
+        return spilledPath == null && cachingStream != null && cachingStream.isSourceExhausted()
+                && !cachingStream.isFileBacked();
+    }
+
     @Override
     public boolean hasPath() {
         // the cache can spill on its own, without any getPath() call
