@@ -334,6 +334,12 @@ MicroStation DGN v8 files, and
 link:{api}/org/apache/tika/parser/prt/PRTParser.html[PRTParser] from Cadkey
 PRT files.
 
+link:{api}/org/apache/tika/parser/blender/BlenderParser.html[BlenderParser] emits the
+preview Blender stores in a `.blend` file as the THUMBNAIL embedded document. Files
+compressed with gzip are read as they are; files compressed with zstd, as Blender 3.0 and
+later save them with "Compress" on, need zstd-jni on the classpath, as the compressor
+formats do.
+
 link:{api}/org/apache/tika/parser/sketchup/SketchUpParser.html[SketchUpParser] emits the
 preview SketchUp stores in a `.skp` file as the THUMBNAIL embedded document: the PNG in
 the file's preview record up to SketchUp 2020, the model thumbnail in its zip from 2021.

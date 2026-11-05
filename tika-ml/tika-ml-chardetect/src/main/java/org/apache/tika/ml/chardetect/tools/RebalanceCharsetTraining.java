@@ -187,13 +187,13 @@ public final class RebalanceCharsetTraining {
         }
         System.out.println();
         System.out.println("Other classes in " + trainDir + " are unchanged.");
-        System.out.println("To train on the rebalanced data, point TrainNaiveBayesBigram at"
+        System.out.println("To train on the rebalanced data, point the trainer at"
                 + " a dir that combines this output with the other unchanged classes.");
     }
 
     /**
      * Mirrors the training-label → Java charset mapping in
-     * BuildCharsetTrainingData / NaiveBayesBigramEncodingDetector.
+     * BuildCharsetTrainingData / HashedNgramEncodingDetector.
      */
     private static String toJavaCharsetName(String label) {
         switch (label) {
