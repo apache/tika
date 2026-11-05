@@ -1343,6 +1343,7 @@
     <glob pattern="*.c4u"/>
   </mime-type>
   <mime-type type="application/vnd.comicbook+zip">
+    <alias type="application/x-cbz"/>
     <acronym>CBZ</acronym>
     <_comment>Comic Book Archive</_comment>
     <tika:link>https://en.wikipedia.org/wiki/Comic_book_archive</tika:link>

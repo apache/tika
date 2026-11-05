@@ -302,8 +302,13 @@ public class ZipParser extends AbstractArchiveParser {
                     centralDirectoryEntries.add(entry.getName());
                 }
                 if (!entry.isDirectory()) {
+                    boolean thumbnail = entry.getName().equals(thumbnailEntry);
+                    if (thumbnail) {
+                        // duplicate entry names: mark only the first
+                        thumbnailEntry = null;
+                    }
                     parseZipFileEntry(zipFile, headers, entry, extractor, metadata, xhtml, context, config,
-                            entry.getName().equals(thumbnailEntry));
+                            thumbnail);
                 }
             }
         } finally {

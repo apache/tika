@@ -34,6 +34,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.imageio.ImageIO;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -206,6 +208,30 @@ public class ZipParserTest extends AbstractPkgTest {
                 entriesByName(zip(new String[]{"mergedimage.png"}, png()), "art.kra");
         assertEquals("application/x-krita", entries.get("").get(HttpHeaders.CONTENT_TYPE));
         assertNull(entries.get("mergedimage.png").get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testDuplicatePreviewNameMarkedOnce() throws Exception {
+        byte[] png = png();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipArchiveOutputStream zos = new ZipArchiveOutputStream(bos)) {
+            for (int i = 0; i < 3; i++) {
+                zos.putArchiveEntry(new ZipArchiveEntry("preview.png"));
+                zos.write(png);
+                zos.closeArchiveEntry();
+            }
+        }
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "art.kra");
+        try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+            List<Metadata> list = getRecursiveMetadata(tis, metadata, new ParseContext(), false);
+            assertEquals(4, list.size());
+            long thumbnails = list.stream()
+                    .filter(m -> TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString()
+                            .equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE)))
+                    .count();
+            assertEquals(1, thumbnails);
+        }
     }
 
     @Test
