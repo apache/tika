@@ -25,7 +25,7 @@ import java.nio.charset.Charset;
  * <h3>Result types</h3>
  * <ul>
  *   <li>{@link ResultType#DECLARATIVE} — the document explicitly stated its
- *       encoding (BOM, HTML {@code <meta charset>}).  These are authoritative
+ *       encoding (HTML {@code <meta charset>}).  These are authoritative
  *       claims about author intent and get preference over inferred results
  *       <em>when consistent with the actual bytes</em>.</li>
  *   <li>{@link ResultType#STRUCTURAL} — byte-grammar proof (ISO-2022 escape
@@ -46,7 +46,8 @@ public class EncodingResult {
      */
     public enum ResultType {
         /**
-         * The document explicitly declared its encoding (BOM, HTML meta charset).
+         * The document explicitly declared its encoding (HTML meta charset).  A BOM is
+         * not a declaration: {@link BOMDetector} reports it as {@link #STATISTICAL}.
          * Authoritative about author intent; preferred over inferred results when
          * consistent with the actual bytes.
          */

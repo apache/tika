@@ -494,7 +494,7 @@ public abstract class ProfilerBase {
         JunkDetector jd = TikaEvalMetadataFilter.getJunkDetector();
         if (jd != null && !content.isEmpty()) {
             TextQualityScore q = jd.score(content);
-            if (!q.isUnknown()) {
+            if (!q.isUnknown() && !q.isUnmodeled()) {
                 results.put(LanguagenessMarker.class, q.getZScore());
             }
         }

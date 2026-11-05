@@ -145,6 +145,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
                 MediaType.application("vnd.ms-visio.template"));
 
         OOXML_CONTENT_TYPES.put("application/vnd.ms-package.xps-fixeddocumentsequence+xml", XPS);
+        OOXML_CONTENT_TYPES.put(THREE_MF.toString(), THREE_MF);
 
     }
 

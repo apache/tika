@@ -77,7 +77,12 @@ public class AutoDetectReader extends BufferedReader {
 
     private AutoDetectReader(TikaInputStream tis, Metadata metadata,
                              EncodingDetector encodingDetector) throws IOException, TikaException {
-        this(tis, detect(tis, metadata, encodingDetector));
+        this(tis, skipForeignBom(tis, detect(tis, metadata, encodingDetector)));
+    }
+
+    private static Charset skipForeignBom(TikaInputStream tis, Charset charset) throws IOException {
+        BOMDetector.skipForeignBom(tis, charset);
+        return charset;
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
