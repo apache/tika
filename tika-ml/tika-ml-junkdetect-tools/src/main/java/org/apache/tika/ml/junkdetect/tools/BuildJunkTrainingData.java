@@ -25,7 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +35,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
+
+import org.apache.tika.ml.junkdetect.HashedJunkModel;
 
 /**
  * Builds per-script positive training data for the junk detector from MADLAD-400
@@ -66,7 +67,7 @@ import java.util.zip.GZIPOutputStream;
  * <p>Output:
  * <pre>
  *   output-dir/
- *     {script}.train.gz   — 80% split, one NFC-normalised sentence per line
+ *     {script}.train.gz   — 80% split, one sentence per line, normalized by {@link HashedJunkModel#normalize}
  *     {script}.dev.gz     — 10% split, used for calibration (mu/sigma)
  *     {script}.test.gz    — 10% split, held out for final evaluation only
  *     manifest.tsv        — per-script stats: entropy, budget, bytes written, languages
@@ -578,7 +579,7 @@ public class BuildJunkTrainingData {
     // -----------------------------------------------------------------------
 
     /**
-     * Loads filtered, NFC-normalised sentences from {@code langDir} until
+     * Loads filtered, normalized sentences from {@code langDir} until
      * {@code maxBytes} UTF-8 bytes have been accumulated, and appends them
      * to {@code result}.
      *
@@ -619,15 +620,7 @@ public class BuildJunkTrainingData {
                     new InputStreamReader(Files.newInputStream(file), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = r.readLine()) != null && bytesLoaded < maxBytes) {
-                    String raw = extractText(line);
-                    for (String part : raw.split("\\\\n")) {
-                        String text = part.replace("\\r", "")
-                                .replace("\\t", " ")
-                                .strip()
-                                .replaceAll("\\s+", " ");
-                        if (text.isEmpty()) {
-                            continue;
-                        }
+                    for (String text : lineParts(line)) {
                         String filtered = filterSentence(text, minBytes, maxPuncFrac,
                                 targetScript, minTargetScriptFrac);
                         if (filtered != null) {
@@ -648,7 +641,7 @@ public class BuildJunkTrainingData {
     }
 
     /**
-     * Applies quality filters to a single sentence and NFC-normalises it.
+     * Applies quality filters to a single sentence and normalizes it ({@link HashedJunkModel#normalize}).
      *
      * @return the normalised sentence, or {@code null} if it should be discarded
      */
@@ -668,15 +661,8 @@ public class BuildJunkTrainingData {
         if (text.indexOf('\uFFFD') >= 0) {
             return null;
         }
-        // NFKC so the training tally matches JunkDetector.aggregate at
-        // inference time (which also NFKC-normalises — see comment at
-        // JunkDetector#aggregate).  Like NFC it stores precomposed characters
-        // (Latin diacritics, Vietnamese, Indic combining-mark sequences) as
-        // single codepoints so bigram counts collapse mark + letter into one
-        // unit; additionally it folds legacy compatibility forms to canonical
-        // — critically half-width katakana (U+FF66-FF9F) -> full-width — so
-        // those bigrams match the trained HAN tables instead of flooring.
-        text = Normalizer.normalize(text, Normalizer.Form.NFKC);
+        // The hashed model's normalization (width fold, then NFC), shared with the trainer and scorer.
+        text = HashedJunkModel.normalize(text);
         if (text.getBytes(StandardCharsets.UTF_8).length < minBytes) {
             return null;
         }
@@ -716,6 +702,21 @@ public class BuildJunkTrainingData {
     // -----------------------------------------------------------------------
     // I/O helpers
     // -----------------------------------------------------------------------
+
+    /** The sentences one corpus line holds, before filtering and normalization. */
+    static List<String> lineParts(String line) {
+        List<String> out = new ArrayList<>();
+        for (String part : extractText(line).split("\\\\n")) {
+            String text = part.replace("\\r", "")
+                    .replace("\\t", " ")
+                    .strip()
+                    .replaceAll("\\s+", " ");
+            if (!text.isEmpty()) {
+                out.add(text);
+            }
+        }
+        return out;
+    }
 
     private static String extractText(String line) {
         int tab = line.indexOf('\t');

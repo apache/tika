@@ -46,6 +46,8 @@ import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 public class MaxRequestSizeFilter implements ContainerRequestFilter {
 
     static final String TOO_LARGE_MESSAGE = "Request body exceeds maxRequestSizeBytes";
+    static final String RAISE_HINT = "; raise it in the config's server block or with "
+            + TikaServerConfig.SETTINGS_ENV_PREFIX + "MAX_REQUEST_SIZE_BYTES";
     static final String TOO_SLOW_MESSAGE = "Request body not received within maxRequestReadMillis";
     static final String IDLE_MESSAGE = "Request body stalled past idleTimeoutMillis";
     static final String BUSY_MESSAGE = "Request body would exceed maxInFlightRequestBytes across requests in flight";
@@ -76,7 +78,7 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
         if (maxRequestSizeBytes >= 0 && requestContext.getLength() > maxRequestSizeBytes) {
             TransferLimitLog.log("declared Content-Length " + requestContext.getLength()
                     + " exceeds maxRequestSizeBytes (" + maxRequestSizeBytes + ")");
-            requestContext.abortWith(tooLarge());
+            requestContext.abortWith(tooLarge(maxRequestSizeBytes));
             return;
         }
         RequestBodyBudget.Reservation reservation =
@@ -86,10 +88,10 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
                 new BoundedInputStream(requestContext.getEntityStream(), maxRequestSizeBytes, reservation));
     }
 
-    private static Response tooLarge() {
+    private static Response tooLarge(long limit) {
         return Response
                 .status(Response.Status.REQUEST_ENTITY_TOO_LARGE)
-                .entity(TOO_LARGE_MESSAGE)
+                .entity(TOO_LARGE_MESSAGE + " (" + limit + " bytes)" + RAISE_HINT)
                 .type(MediaType.TEXT_PLAIN)
                 .build();
     }
@@ -203,7 +205,7 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
         private void add(int n) {
             count += n;
             if (limit >= 0 && count > limit) {
-                throw new RequestTooLargeException(TOO_LARGE_MESSAGE + " (" + limit + " bytes)");
+                throw new RequestTooLargeException(TOO_LARGE_MESSAGE + " (" + limit + " bytes)" + RAISE_HINT);
             }
             if (reservation != null && !reservation.ensure(count)) {
                 throw new RequestBudgetExceededException(BUSY_MESSAGE);

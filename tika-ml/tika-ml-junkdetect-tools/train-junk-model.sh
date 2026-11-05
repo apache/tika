@@ -15,23 +15,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Rebuilds the bundled junk-detector model from a clean-text corpus.
+# Rebuilds the bundled junk model (junkdetect.bin, a HashedJunkModel) from train data only.
 #
-# CORPUS is the committed record of which data trained the bundled model:
-# change it here and commit, never pass it on the command line. The run writes
-# junkdetect.bin plus junkdetect.bin.provenance (model digest, corpus manifest
-# digest, git state, every training constant); commit both together.
+# The data names below are the committed record of what trained the model: change them here
+# and commit, never pass them on the command line. The run writes junkdetect.bin and
+# junkdetect.bin.provenance (digests of every input, git state, every HashedTrainingConfig
+# constant, the deferral sweep); commit both together. The run directory keeps the log, the
+# built corpus, the provenance and the per-page deferral sweep. Training choices live in
+# HashedTrainingConfig.
 #
-# Usage: TIKA_JUNK_DATA=<dir containing $CORPUS> tika-ml/tika-ml-junkdetect-tools/train-junk-model.sh
-# Optional: JAVA_OPTS (default -Xmx12g), MAVEN_REPO_LOCAL (default <repo>/.local_m2_repo).
+# Usage: TIKA_JUNK_DATA=<dir holding the data below> tika-ml/tika-ml-junkdetect-tools/train-hashed-junk-model.sh
+# Optional: JAVA_OPTS (default -Xmx22g), MAVEN_REPO_LOCAL (default <repo>/.local_m2_repo).
 
 set -euo pipefail
 
-CORPUS=junk-clean-20261103
+CORPUS=junk-clean-20261103                                   # Wikipedia sentences per language
+GOLD=charsets/gold-v112-train-halves.tsv                     # gold v1.12 cc-html train, even/odd halves, damage spans
+SAMPLE=charsets/cchtml-train-unanimous/sample-gen-20261103.tsv  # cc-html train pages for real-decision pairs
+SAMPLE_DOCS=charsets/cchtml-train-unanimous/docs
 
-: "${TIKA_JUNK_DATA:?set TIKA_JUNK_DATA to the directory that holds ${CORPUS}}"
-SRC="${TIKA_JUNK_DATA}/${CORPUS}"
-[ -f "${SRC}/manifest.tsv" ] || { echo "no manifest.tsv in ${SRC}" >&2; exit 1; }
+: "${TIKA_JUNK_DATA:?set TIKA_JUNK_DATA to the directory that holds ${CORPUS} and charsets/}"
+D="${TIKA_JUNK_DATA}"
+[ -f "${D}/${CORPUS}/manifest.tsv" ] || { echo "no manifest.tsv in ${D}/${CORPUS}" >&2; exit 1; }
+for f in "${D}/${GOLD}" "${D}/${SAMPLE}"; do [ -f "$f" ] || { echo "missing $f" >&2; exit 1; }; done
+[ -d "${D}/${SAMPLE_DOCS}" ] || { echo "missing ${D}/${SAMPLE_DOCS}" >&2; exit 1; }
 
 ROOT=$(git rev-parse --show-toplevel)
 cd "${ROOT}"
@@ -48,25 +55,28 @@ if [ -s "${UNCOMMITTED}" ]; then
   DIFF_SHA=$(sha256sum < "${UNCOMMITTED}" | cut -c1-12)
   GIT="${GIT}-dirty-${DIFF_SHA}"
 fi
-RUN="${TIKA_JUNK_DATA}/${CORPUS}-runs/$(date +%Y%m%d-%H%M%S)-${GIT:0:12}"
+RUN="${D}/${CORPUS}-runs/$(date +%Y%m%d-%H%M%S)-${GIT:0:12}"
 BUILT="${RUN}/built"
 mkdir -p "${RUN}"
 mv "${UNCOMMITTED}" "${RUN}/uncommitted.diff"
 LOG="${RUN}/train.log"
-echo "corpus=${CORPUS} git=${GIT} run=${RUN}" | tee "${LOG}"
+echo "corpus=${CORPUS} gold=${GOLD} sample=${SAMPLE} git=${GIT} run=${RUN}" | tee "${LOG}"
 
 REPO="${MAVEN_REPO_LOCAL:-${ROOT}/.local_m2_repo}"
 ./mvnw clean install -pl tika-ml/tika-ml-junkdetect-tools -am -Pfast,train \
   -Dmaven.repo.local="${REPO}" >> "${LOG}" 2>&1
 JAR=$(ls tika-ml/tika-ml-junkdetect-tools/target/tika-ml-junkdetect-tools-*-tools.jar)
 OUT=tika-ml/tika-ml-junkdetect/src/main/resources/org/apache/tika/ml/junkdetect/junkdetect.bin
-JOPTS=${JAVA_OPTS:--Xmx12g}
+JOPTS=${JAVA_OPTS:--Xmx22g}
 
 # shellcheck disable=SC2086
 java ${JOPTS} -cp "${JAR}" org.apache.tika.ml.junkdetect.tools.BuildJunkTrainingData \
-  --data-dir "${SRC}" --output-dir "${BUILT}" 2>&1 | tee -a "${LOG}"
+  --data-dir "${D}/${CORPUS}" --output-dir "${BUILT}" 2>&1 | tee -a "${LOG}"
 # shellcheck disable=SC2086
-java ${JOPTS} -cp "${JAR}" org.apache.tika.ml.junkdetect.tools.TrainJunkModel \
-  --data-dir "${BUILT}" --output "${OUT}" --git-commit "${GIT}" 2>&1 | tee -a "${LOG}"
+java ${JOPTS} -cp "${JAR}" org.apache.tika.ml.junkdetect.tools.TrainHashedJunkModel \
+  --corpus "${D}/${CORPUS}" --built "${BUILT}" --gold "${D}/${GOLD}" \
+  --sample "${D}/${SAMPLE}" --sample-docs "${D}/${SAMPLE_DOCS}" \
+  --output "${OUT}" --git-commit "${GIT}" 2>&1 | tee -a "${LOG}"
 cp "${OUT}.provenance" "${RUN}/"
+mv "${OUT}.defer-sweep.tsv" "${OUT}.crossfit.bin" "${RUN}/"
 echo "model: ${OUT}  provenance: ${OUT}.provenance  log: ${LOG}" | tee -a "${LOG}"

@@ -1250,7 +1250,15 @@
     <glob pattern="*.azs"/>
   </mime-type>
   <mime-type type="application/vnd.amazon.ebook">
+    <_comment>Kindle Ebook</_comment>
     <glob pattern="*.azw"/>
+    <sub-class-of type="application/x-mobipocket-ebook"/>
+  </mime-type>
+  <mime-type type="application/vnd.amazon.mobi8-ebook">
+    <acronym>KF8</acronym>
+    <_comment>Kindle Format 8 Ebook</_comment>
+    <glob pattern="*.azw3"/>
+    <sub-class-of type="application/x-mobipocket-ebook"/>
   </mime-type>
   <mime-type type="application/vnd.americandynamics.acc">
     <glob pattern="*.acc"/>
@@ -1342,6 +1350,15 @@
     <glob pattern="*.c4p"/>
     <glob pattern="*.c4u"/>
   </mime-type>
+  <mime-type type="application/vnd.comicbook+zip">
+    <alias type="application/x-cbz"/>
+    <acronym>CBZ</acronym>
+    <_comment>Comic Book Archive</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Comic_book_archive</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.cbz"/>
+  </mime-type>
+
   <mime-type type="application/vnd.commerce-battelle"/>
   <mime-type type="application/vnd.commonspace">
     <glob pattern="*.csp"/>
@@ -1396,6 +1413,13 @@
     <_comment>frictionless data package zip package</_comment>
     <sub-class-of type="application/zip"/>
   </mime-type>
+  <mime-type type="application/x-ipynb+json">
+    <_comment>Jupyter Notebook</_comment>
+    <tika:link>https://nbformat.readthedocs.io/en/latest/format_description.html</tika:link>
+    <sub-class-of type="application/json"/>
+    <glob pattern="*.ipynb"/>
+  </mime-type>
+
   <mime-type type="application/x-vnd.datapackage+json">
     <_comment>frictionless data package - standalong datapackage.json</_comment>
     <sub-class-of type="application/json"/>
@@ -2223,14 +2247,6 @@
     <glob pattern="*.ost"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml">
-    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
-    <_comment>3D manufacturing format</_comment>
-    <!-- a zip package; without this, the +xml suffix would make it an XML document -->
-    <sub-class-of type="application/zip"/>
-    <glob pattern="*.3mf"/>
-  </mime-type>
-
   <mime-type type="application/vnd.ms-pki.seccat">
     <glob pattern="*.cat"/>
   </mime-type>
@@ -2292,6 +2308,12 @@
     <glob pattern="*.mpp"/>
     <glob pattern="*.mpt"/>
     <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/x-procreate">
+    <_comment>Procreate artwork</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.procreate"/>
   </mime-type>
 
   <mime-type type="application/x-project">
@@ -4107,6 +4129,13 @@
     <glob pattern="*.kil"/>
   </mime-type>
 
+  <mime-type type="application/x-krita">
+    <_comment>Krita document</_comment>
+    <tika:link>https://docs.krita.org/en/general_concepts/file_formats/file_kra.html</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.kra"/>
+  </mime-type>
+
   <mime-type type="application/x-object">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
@@ -4121,6 +4150,13 @@
     <glob pattern="*.scad"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
+  <mime-type type="application/x-extension-fcstd">
+    <_comment>FreeCAD document</_comment>
+    <tika:link>https://wiki.freecad.org/File_Format_FCStd</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.fcstd"/>
+  </mime-type>
+
   <mime-type type="application/x-executable">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
@@ -5252,6 +5288,13 @@
     <glob pattern="*.sh"/>
     <glob pattern="*.bash"/>
     <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="application/x-sketch">
+    <_comment>Sketch document</_comment>
+    <tika:link>https://developer.sketch.com/file-format/</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sketch"/>
   </mime-type>
 
   <mime-type type="application/x-shar">
@@ -6801,6 +6844,14 @@
     <glob pattern="*.nitf"/>
   </mime-type>
 
+  <mime-type type="image/openraster">
+    <acronym>ORA</acronym>
+    <_comment>OpenRaster image</_comment>
+    <tika:link>https://www.freedesktop.org/wiki/Specifications/OpenRaster/</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.ora"/>
+  </mime-type>
+
   <mime-type type="image/png">
     <acronym>PNG</acronym>
     <_comment>Portable Network Graphics</_comment>
@@ -7678,6 +7729,16 @@
   <mime-type type="message/sipfrag"/>
   <mime-type type="message/tracking-status"/>
   <mime-type type="message/vnd.si.simp"/>
+  <mime-type type="model/3mf">
+    <!-- the package; the old name is the content type of its model part -->
+    <alias type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>
+    <tika:link>https://www.iana.org/assignments/media-types/model/3mf</tika:link>
+    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
+    <_comment>3D manufacturing format</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.3mf"/>
+  </mime-type>
+
   <mime-type type="model/e57">
     <_comment>3d imaging data exchange</_comment>
     <magic priority="60">

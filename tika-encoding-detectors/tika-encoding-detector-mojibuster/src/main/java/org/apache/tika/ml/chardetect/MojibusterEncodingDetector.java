@@ -131,10 +131,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      *  genuine false-CJK ≥5.3%, so ~2.5% separates them (see CjkDecodeValidator). */
     private static final double CJK_FAILURE_VETO_THRESHOLD = 0.025;
 
-    /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes.
-     *  MUST equal JunkFilterEncodingDetector.NO_INFO_CONFIDENCE (tika-ml-junkdetect):
-     *  its strict {@code confidence > NO_INFO_CONFIDENCE} test treats exactly this
-     *  value as "statistical layer abstained" so a declaration can win. */
+    /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes: an "I don't know". */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
 
     /**

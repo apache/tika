@@ -68,8 +68,8 @@ public class TrainingProvenanceTest {
         assertEquals("--data-dir " + TrainingProvenance.shortPath(built) + " --git-commit abc123",
                 kv.get("args"));
         assertTrue(!kv.get("args").contains(tmp.toString()), "machine path leaked: " + kv.get("args"));
-        assertEquals(String.valueOf(JunkDetectorTrainingConfig.MIN_BIGRAM_COUNT),
-                kv.get("config.JunkDetectorTrainingConfig.MIN_BIGRAM_COUNT"));
+        assertEquals(String.valueOf(JunkDetectorTrainingConfig.SEED),
+                kv.get("config.JunkDetectorTrainingConfig.SEED"));
         assertTrue(kv.containsKey("training_data_manifest_sha256"));
     }
 }

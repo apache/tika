@@ -1,4 +1,80 @@
-model_sha256	509b4a2d0b5b6eee26f01d94d2373081dc628e31e27ea90e5fd280e2fdc613b2
-source_corpus	junk-augmented-symbolboost (MADLAD-400 + Wikipedia + symbol-boost augmentation; lost, language list not recorded)
-git_commit	8d9900e211 (last commit to change the model, TIKA-4745)
-note	trained before provenance was recorded; retrain with train-junk-model.sh
+model_sha256	c84ffc3d45b76e7ff3d3993e6b695abd1e54a4f42d5e193351854680b7503cdd
+trained_at	2026-11-05T14:55:39.297407548Z
+source_corpus	junk-clean-20261103
+source_manifest_sha256	cad620363ea1a4eceac5775197b62068795531930a759493b644caafe930ca4a
+source_content_sha256	32c371b35d7b00291e7cf1d1f7c305cf1db56908c76d2f42a1ac80f8d0c530d2
+training_data	20261105-094302-7e7b9d60ab19/built
+training_data_manifest_sha256	176b567837c33ca0dd16b6f8879539b0e54193be259923616e946e0b5952a4b7
+git_commit	7e7b9d60ab19ffb85a7321585a1bf2b87891f1ac-dirty-f2b8d3686315
+args	--corpus data/junk-clean-20261103 --built 20261105-094302-7e7b9d60ab19/built --gold charsets/gold-v112-train-halves.tsv --sample cchtml-train-unanimous/sample-gen-20261103.tsv --sample-docs cchtml-train-unanimous/docs --output junkdetect/junkdetect.bin --git-commit 7e7b9d60ab19ffb85a7321585a1bf2b87891f1ac-dirty-f2b8d3686315
+java_version	25.0.4.1
+format	JUNKHNG1
+gold	charsets/gold-v112-train-halves.tsv
+gold_sha256	5bad69f8050f6b0596b3c0a3fac40cb6d9884d68520960e2a24f8e10b2b5a213
+real_decision_sample	cchtml-train-unanimous/sample-gen-20261103.tsv
+real_decision_sample_sha256	6366919ca3ab598046b18cb3e6d1dc4b050ee14614c80ccbc47d4fa59a7ef1e1
+source_corpus_dir	data/junk-clean-20261103
+wiki_units	96667
+wiki_units_upper_case_added	6144
+wiki_units_without_language	0.0000
+pairs_wiki	365788
+gold_pages_even	13268
+gold_pages_odd	13225
+chain	BOMDetector,MetadataCharsetDetector,MojibusterEncodingDetector,HtmlEncodingDetector
+real_decision_pages	66022
+real_decision_variants	280708
+real_decision_errors	0
+pairs_real_decision_fit	159485
+pairs_real_decision_select	19219
+pairs_gold_decoders_odd	253834
+pairs_gold_chain_odd	7481
+defer_sweep_pages	13268
+defer_sweep_decisive_pages	106
+defer_sweep_curve	0.25:+10/-0 0.50:+12/-0 0.75:+18/-0 1.00:+21/-0 1.25:+29/-1 1.50:+33/-2 1.75:+34/-2 2.00:+36/-2 2.25:+37/-4 2.50:+37/-6 2.75:+39/-8 3.00:+39/-8 3.25:+41/-9 3.50:+42/-10 3.75:+44/-11 4.00:+44/-12 4.25:+44/-15 4.50:+44/-19 4.75:+44/-19 5.00:+47/-19 5.25:+48/-22 5.50:+48/-23 5.75:+48/-26 6.00:+48/-30 6.25:+48/-37 6.50:+48/-39 6.75:+48/-39 7.00:+48/-42 7.25:+48/-44 7.50:+48/-45 7.75:+48/-46 8.00:+48/-46 8.25:+48/-48 8.50:+48/-50 8.75:+48/-51 9.00:+49/-52 9.25:+49/-52 9.50:+49/-52 9.75:+49/-55 10.00:+49/-55
+defer_sweep_at_threshold	+36/-2
+pairs_gold_decoders_even	253773
+pairs_gold_chain_even	7230
+point_clean_wiki	102857
+point_clean_web	12682
+point_damaged_windows	1698
+point_damaged_clean_rest	196
+point_damaged_stale_pages	1
+point_examples	246342
+trained_scripts	[LATIN, GREEK, CYRILLIC, ARMENIAN, HEBREW, ARABIC, DEVANAGARI, BENGALI, GURMUKHI, GUJARATI, ORIYA, TAMIL, TELUGU, KANNADA, MALAYALAM, SINHALA, THAI, LAO, TIBETAN, MYANMAR, GEORGIAN, HANGUL, ETHIOPIC, KHMER, HIRAGANA, KATAKANA, HAN, NKO, OL_CHIKI]
+deferral_threshold	2.0000
+train_seconds	666
+config.HashedTrainingConfig.LOG2_SIZE	21
+config.HashedTrainingConfig.MAX_N	3
+config.HashedTrainingConfig.CLIP_CHARS	6000
+config.HashedTrainingConfig.WIKI_SENTENCES_PER_LANGUAGE	1000
+config.HashedTrainingConfig.WIKI_DOCS_PER_LANGUAGE	50
+config.HashedTrainingConfig.WIKI_DOC_CHARS	2000
+config.HashedTrainingConfig.WIKI_PAIR_SEED	1
+config.HashedTrainingConfig.WIKI_POINT_SEED	11
+config.HashedTrainingConfig.MAX_MISSING_LANGUAGE	0.01
+config.HashedTrainingConfig.UPPER_CASE_MODULUS	10
+config.HashedTrainingConfig.MIN_TRAINED_SCRIPT_LETTERS	2000
+config.HashedTrainingConfig.WIKI_WRONG_DECODES	4
+config.HashedTrainingConfig.GOLD_PAIR_WEIGHT	2
+config.HashedTrainingConfig.CHAIN_PAIR_WEIGHT	4
+config.HashedTrainingConfig.REAL_DECISION_PAIR_WEIGHT	1
+config.HashedTrainingConfig.REAL_DECISION_SELECT_MODULUS	10
+config.HashedTrainingConfig.PAIR_EPOCHS	6
+config.HashedTrainingConfig.PAIR_LEARNING_RATE	0.5
+config.HashedTrainingConfig.PAIR_L2	1.0E-7
+config.HashedTrainingConfig.PAIR_SEED	42
+config.HashedTrainingConfig.GOLD_DECODERS	[windows-1252, windows-1250, windows-1257, windows-1254, ISO-8859-2, ISO-8859-15, ISO-8859-16, x-MacRoman, windows-1251, KOI8-R, IBM866, windows-1253, ISO-8859-7, windows-1256, windows-1255, x-windows-874, GB18030, Big5-HKSCS, windows-31j, x-eucJP-Open, x-windows-949, UTF-8]
+config.HashedTrainingConfig.POINT_EPOCHS	5
+config.HashedTrainingConfig.POINT_LEARNING_RATE	0.5
+config.HashedTrainingConfig.POINT_L2	1.0E-6
+config.HashedTrainingConfig.POINT_SEED	7
+config.HashedTrainingConfig.DAMAGED_SPAN_WEIGHT	10
+config.HashedTrainingConfig.DAMAGED_SPAN_PAD	100
+config.HashedTrainingConfig.DAMAGED_SPAN_BASES	[rule, adjudicated]
+config.HashedTrainingConfig.POINT_MIN_PAGE_CODEPOINTS	50
+config.HashedTrainingConfig.QUANT_QUANTILE	0.9999
+config.HashedTrainingConfig.DEFER_STEP	0.25
+config.HashedTrainingConfig.DEFER_BAND	1.0
+config.HashedTrainingConfig.DEFER_MAX	10.0
+config.HashedTrainingConfig.DEFER_MIN_RATIO	2.0
+config.HashedTrainingConfig.DEFER_CONFIDENCE_Z	1.96

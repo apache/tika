@@ -76,8 +76,8 @@ checks for UTF-32, ISO-2022 and UTF-8 grammar.
 |`junk-filter-encoding-detector`
 |`tika-ml-junkdetect`
 |Yes, last
-|`MetaEncodingDetector` that picks among the other detectors' candidates by script-aware decode
-quality.
+|`MetaEncodingDetector` that picks among the other detectors' candidates by which decode reads as
+real text (a hashed n-gram model); on a thin margin it keeps the declared or structural charset.
 
 |`standard-html-encoding-detector`
 |`tika-encoding-detector-html`
