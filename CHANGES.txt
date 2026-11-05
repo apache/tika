@@ -72,6 +72,20 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
+     cover as the THUMBNAIL embedded document, the other images, and the text, stored,
+     PalmDOC- or HUFF/CDIC-compressed, through the HTML parser (of a KF8 book the HTML flow
+     only). A hybrid file yields its version 6 book; extractKf8 emits the KF8 copy as an
+     embedded document too. An encrypted book yields its metadata and images, sets
+     tika:encrypted and records the locked text as a warning. New keys mobi:version,
+     mobi:compression, mobi:encryption, mobi:cde-type, mobi:hybrid. maxTextLength caps the
+     text (16 MB, and 32 times the file size), maxFileSize the bytes read (256 MB).
+     application/vnd.amazon.mobi8-ebook (*.azw3) is new, and with
+     application/vnd.amazon.ebook a sub-type of application/x-mobipocket-ebook: a .azw file
+     is now detected as application/vnd.amazon.ebook, not application/x-mobipocket-ebook,
+     and a .prc or .azw that is not a Mobipocket book yields nothing and a warning
+     (TIKA-5026).
+
    * Zip-based formats that carry a preview image have it emitted as the THUMBNAIL, so
      the thumbnail preset serves it: comic book archives (.cbz, new type
      application/vnd.comicbook+zip, the first page in name order), Krita (.kra,

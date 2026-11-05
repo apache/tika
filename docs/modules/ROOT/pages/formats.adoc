@@ -124,6 +124,18 @@ first page in name order as the cover thumbnail. The zip parser also emits the
 stored preview of Krita (`.kra`), OpenRaster (`.ora`), FreeCAD (`.FCStd`),
 Procreate (`.procreate`) and Sketch (`.sketch`) files as their thumbnail.
 
+link:{api}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser] reads Mobipocket
+books and their Kindle descendants (`.mobi`, `.prc`, `.azw`, and the KF8 generation
+`.azw3`): the EXTH metadata, the cover as the thumbnail and the other images as embedded
+documents, and the text, whether stored, PalmDOC- or HUFF/CDIC-compressed; of a KF8
+book only the HTML flow, not its stylesheets. A hybrid file yields its version 6 book; the
+KF8 book it also carries holds the same content and is emitted as an embedded document only
+with `extractKf8`. An encrypted book yields its metadata and images only and sets
+`tika:encrypted`. The text is cut at `maxTextLength` (16 MB by default) and at 32 times the
+file's size, whatever the header declares; of a book over `maxFileSize` (256 MB by default)
+the beginning is read. A `.prc` or `.azw` that is not a Mobipocket book (a Palm application,
+a PalmDOC text, a Topaz or KFX book) yields nothing and a warning.
+
 == Rich Text Format
 
 link:{api}/org/apache/tika/parser/microsoft/rtf/RTFParser.html[RTFParser]
