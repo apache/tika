@@ -84,6 +84,15 @@ Release 4.3.0 - ???
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
 
+   * Blender files (.blend, .blender, application/x-blender, new) yield the preview Blender stores
+     as the THUMBNAIL embedded document, for every file format version including the one
+     of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read
+     the same way; zstd needs zstd-jni on the classpath (TIKA-5036).
+     
+   * RAR5 archives are parsed: RarParser no longer refuses them, junrar has read RAR5
+     since 8.0.0 (TIKA-5043).
+
+
    * Jupyter notebooks (.ipynb, new type application/x-ipynb+json) are parsed: cell
      sources and plain-text outputs as text, kernel, language and format version as
      jupyter:kernel, jupyter:language and jupyter:nbformat, and the image outputs as
@@ -202,6 +211,15 @@ Release 4.3.0 - ???
      declaration names the same charset, rather than letting text-quality scoring override
      two agreeing signals; and UTF-8 with sparse corruption (up to one bad sequence per
      ten valid ones, existing U+FFFD not counted) is read as UTF-8 (TIKA-5019).
+
+   * Charset detection uses a hashed byte n-gram model in place of the byte-bigram Naive
+     Bayes model, with UTF-16 and UTF-32 detected by the same model instead of a separate
+     UTF-16 detector. BOM-less UTF-16 with an emoji is no longer misread, UTF-32 is no longer
+     reported as UTF-16, a surrogate pair cut at the end of the sample no longer rules UTF-16
+     out, and short BOM-less UTF-16 Thai, Cyrillic or Indic text is no longer read as
+     windows-1252. Input the model calls binary gets the low-confidence windows-1252
+     fallback, as undetectable input did before. Adds IBM437 as a detected charset
+     (TIKA-5052, TIKA-5048).
 
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>

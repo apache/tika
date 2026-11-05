@@ -1,0 +1,43 @@
+#  Licensed to the Apache Software Foundation (ASF) under one or more
+#  contributor license agreements.  See the NOTICE file distributed with
+#  this work for additional information regarding copyright ownership.
+#  The ASF licenses this file to You under the Apache License, Version 2.0
+#  (the "License"); you may not use this file except in compliance with
+#  the License.  You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+model_sha256	2342e4c26e1a09371c9d80f616e4a4e89397484e24fa883b5d72298f35060b5f
+model_md5	9915a5d2d98f7128d7419c82127fdf08
+model_bytes	2742509
+format	HNG2 (see tika-ml/tika-ml-chardetect/README.md)
+status	final-v112 "R", seed 11, 2026-11-05; trained on gold v1.12
+
+Architecture
+  43 classes: 37 legacy/UTF-8 charsets (IBM420/IBM424 as -ltr/-rtl pairs), IBM437, binary,
+  UTF-16LE, UTF-16BE, UTF-32LE, UTF-32BE.
+  Byte n-grams of order 1, 2 (direct, 2^8 and 2^16 rows) and 3 (hashed, 2^16 rows), 16-dim int8
+  rows, counted only in windows holding a byte outside printable ASCII/TAB/LF/CR.
+  Column channels: byte at even offset, byte at odd offset, first 512 bytes (256 x 16 each).
+  Mean + max pooling, log-count feature, one ReLU hidden layer of 128, raw logits.
+
+Training data (nothing from the 1.2M regression corpus)
+  Wikipedia text by language, re-encoded per charset (train buckets; web-symbol, NBSP and ’ injection,
+  synthetic DOS screens for IBM437/850/852/866, a per-language floor of 0.5 in sparse Latin classes).
+  Gold of record v1.12 (Common Crawl HTML, Common Crawl non-HTML, CC v3) fit part only:
+  tier A, re-encoded non-HTML UTF-8 units (weight 0.2); tier B, real legacy-charset bytes (weight 0.2).
+  UTF-16LE/BE positives (generated, all scripts, with/without BOM, emoji rates, lengths from 16 bytes,
+  even-aligned crops).
+  Negatives: generated UTF-32LE/BE rows (own classes); generated binary (NUL records, deflate, bytecode,
+  integer arrays, random, executables, scattered NULs) plus the gold v1.12 fit binary-verdict documents
+  (1,123) as class "binary".
+  Web probes went through the production HTML strip rule (maybeStripHtml, no content type).
+  Selection on held-out train-side sets (gold v1.12 train sel split, Wikipedia bucket 8) by a rule fixed
+  before training; gold v1.12 dev scored once, after the freeze.  Test and sealed splits and Wikipedia
+  buckets 0 and 9 were not read.
