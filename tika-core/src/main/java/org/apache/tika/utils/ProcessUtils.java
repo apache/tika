@@ -20,7 +20,6 @@ package org.apache.tika.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -57,28 +56,18 @@ public class ProcessUtils {
         }));
     }
 
-    private record Descendant(ProcessHandle handle, Instant start) {
-    }
-
     /**
      * Forcibly destroys {@code process} and the descendants it has at the time of the call.
-     * A descendant whose pid has since been reused is skipped.
      *
      * @param process the process to destroy
      */
     public static void destroyForciblyWithDescendants(Process process) {
-        List<Descendant> descendants = listDescendants(process);
+        List<ProcessHandle> descendants = listDescendants(process);
         process.destroyForcibly();
-        for (Descendant d : descendants) {
-            Optional<Instant> start = ProcessHandle.of(d.handle().pid())
-                    .flatMap(h -> h.info().startInstant());
-            if (start.isPresent() && start.get().equals(d.start())) {
-                d.handle().destroyForcibly();
-            }
-        }
+        descendants.forEach(ProcessHandle::destroyForcibly);
     }
 
-    private static List<Descendant> listDescendants(Process process) {
+    private static List<ProcessHandle> listDescendants(Process process) {
         ProcessHandle handle;
         try {
             handle = process.toHandle();
@@ -89,10 +78,12 @@ public class ProcessUtils {
         if (!handle.isAlive()) {
             return List.of();
         }
-        List<Descendant> descendants = new ArrayList<>();
-        handle.descendants().forEach(h -> h.info().startInstant()
-                .ifPresent(start -> descendants.add(new Descendant(h, start))));
-        // isAlive() checks the start time, so the walk did not follow a reused pid
+        // the JDK signals a handle only if its pid still has the handle's start time, and it
+        // skips that check when the start time is unknown
+        List<ProcessHandle> descendants = handle.descendants()
+                .filter(h -> h.info().startInstant().isPresent())
+                .toList();
+        // descendants() finds the parent by pid; isAlive() checks its start time
         return handle.isAlive() ? descendants : List.of();
     }
 
@@ -495,7 +486,7 @@ public class ProcessUtils {
             throw err;
         } finally {
             if (process != null) {
-                process.destroyForcibly();
+                destroyForciblyWithDescendants(process);
             }
         }
     }
