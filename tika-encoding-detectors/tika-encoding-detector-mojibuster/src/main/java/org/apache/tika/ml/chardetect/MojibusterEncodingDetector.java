@@ -17,9 +17,7 @@
 package org.apache.tika.ml.chardetect;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,23 +40,21 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Naive-Bayes pipeline detector: structural checks for wide Unicode
- * + BOMs before falling through to the bigram NB classifier for
- * everything else.
+ * Charset detection pipeline: structural checks for UTF-32, UTF-8 and
+ * ISO-2022, then the hashed byte n-gram model ({@link HashedNgramEncodingDetector})
+ * for everything else, UTF-16 and UTF-32 included.
  *
  * <p>Order of operations:</p>
  * <ol>
- *   <li><strong>UTF-32 codepoint validity</strong> via
- *       {@link WideUnicodeDetector}.  4-byte-aligned probes with
- *       valid Unicode codepoints in exactly one endian order are
- *       deterministically UTF-32.</li>
- *   <li><strong>UTF-16 column-asymmetry specialist</strong>.  Stride-2
- *       column histograms reliably distinguish UTF-16-LE / BE from
- *       other content — a question bigram NB fundamentally can't
- *       answer (LE and BE produce the same bigram multiset).</li>
- *   <li><strong>Naive-Bayes bigram classifier</strong>.  Handles the
- *       single-byte and multi-byte CJK classes where byte-bigrams
- *       are the natural discriminative signal.</li>
+ *   <li><strong>Pure ASCII</strong> (no NUL, no byte &ge; 0x80, no C0 control other than
+ *       TAB, LF, FF, CR, ESC): ISO-2022 if its escapes decode to CJK, else the
+ *       windows-1252 fallback.</li>
+ *   <li><strong>UTF-32 codepoint validity</strong> via {@link WideUnicodeDetector}: a
+ *       STRUCTURAL candidate.</li>
+ *   <li><strong>UTF-8 grammar</strong>: a STRUCTURAL candidate when the probe is UTF-8;
+ *       vetoes the model's UTF-8 when it cannot be.</li>
+ *   <li><strong>Hashed n-gram model</strong> on the HTML-stripped probe: STATISTICAL
+ *       candidates, with UTF-16 vetoed under an endianness whose surrogates are broken.</li>
  * </ol>
  *
  * <p><strong>BOM detection is NOT handled here.</strong>  The canonical
@@ -66,10 +62,6 @@ import org.apache.tika.parser.ParseContext;
  * SPI-registered, runs first in {@code DefaultEncodingDetector}'s
  * chain and emits a {@code DECLARATIVE} candidate.  This pipeline
  * composes with that detector externally, not internally.</p>
- *
- * <p>Each prefix layer short-circuits when it produces a confident
- * candidate.  Conservative: only return at a layer when that layer's
- * structural check is clean.</p>
  */
 @TikaComponent(spi = false, name = "mojibuster-encoding-detector")
 public class MojibusterEncodingDetector implements EncodingDetector {
@@ -77,14 +69,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private static final Logger LOG =
             LoggerFactory.getLogger(MojibusterEncodingDetector.class);
 
-    /** Default NB bigram model on the classpath. */
-    public static final String DEFAULT_MODEL_RESOURCE =
-            "/org/apache/tika/ml/chardetect/nb-bigram.bin";
-
     // Probe sized by tag-stripped content (16 KB target), capped at 512 KB raw.
     // Markup-heavy pages whose distinguishing bytes (esp. UTF-8 multi-byte
     // sequences) sit past a fixed 16 KB raw window would otherwise starve the
-    // structural UTF-8 check and NB scoring. See AdaptiveProbe.
+    // structural UTF-8 check and the model. See AdaptiveProbe.
     private static final int PROBE_CONTENT_TARGET = AdaptiveProbe.DEFAULT_CONTENT_TARGET;
     private static final int PROBE_RAW_CAP = AdaptiveProbe.DEFAULT_RAW_CAP;
 
@@ -138,7 +126,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private static final int ISO2022_MIN_CJK = 4;
     private static final double ISO2022_MAX_FFFD_RATE = 0.05;
 
-    /** False-CJK veto: drop an NB legacy-CJK candidate whose UTF-8-stripped decode
+    /** False-CJK veto: drop a legacy-CJK model candidate whose UTF-8-stripped decode
      *  fails above this rate.  Post-strip, real CJK (pure or mixed) is ≤1.6% and
      *  genuine false-CJK ≥5.3%, so ~2.5% separates them (see CjkDecodeValidator). */
     private static final double CJK_FAILURE_VETO_THRESHOLD = 0.025;
@@ -151,7 +139,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     /**
      * Maximum fraction of malformed-UTF-8 bytes we tolerate before
-     * disqualifying NB's UTF-8 pick.  Real-world UTF-8 files often contain
+     * disqualifying the model's UTF-8 pick.  Real-world UTF-8 files often contain
      * one or two corrupted bytes (copy-paste accidents, truncation,
      * transport flips) — rejecting them outright would force the detector
      * to drop a high-confidence UTF-8 classification on otherwise-valid
@@ -196,34 +184,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     /** Windows-1252: the WHATWG-canonical default for unlabeled Western content. */
     private static final String WIN1252 = "windows-1252";
 
-    private final NaiveBayesBigramEncodingDetector nb;
-    private final Utf16SpecialistEncodingDetector utf16;
+    private final HashedNgramEncodingDetector model;
 
-    /**
-     * Default SPI constructor: load the NB bigram model from the
-     * classpath at {@link #DEFAULT_MODEL_RESOURCE}.  The UTF-16
-     * specialist loads its own model the same way.
-     */
+    /** Loads the bundled model from the classpath. */
     public MojibusterEncodingDetector() throws IOException {
-        this.nb = loadFromClasspath();
-        this.utf16 = new Utf16SpecialistEncodingDetector();
-    }
-
-    public MojibusterEncodingDetector(Path nbModelPath) throws IOException {
-        this.nb = new NaiveBayesBigramEncodingDetector(nbModelPath);
-        this.utf16 = new Utf16SpecialistEncodingDetector();
-    }
-
-    private static NaiveBayesBigramEncodingDetector loadFromClasspath() throws IOException {
-        InputStream in = MojibusterEncodingDetector.class
-                .getResourceAsStream(DEFAULT_MODEL_RESOURCE);
-        if (in == null) {
-            throw new IOException(
-                    "NB bigram model not found on classpath at " + DEFAULT_MODEL_RESOURCE);
-        }
-        try (InputStream stream = in) {
-            return new NaiveBayesBigramEncodingDetector(stream);
-        }
+        this.model = new HashedNgramEncodingDetector();
     }
 
     @Override
@@ -241,13 +206,13 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     /**
      * Byte-array entry point with optional metadata.  If metadata's
      * content-type suggests HTML/XML (or is absent), HTML is stripped
-     * before the NB stage — but never before the wide-Unicode
+     * before the model — but never before the wide-Unicode
      * structural checks, which need byte alignment intact.
      */
     public List<EncodingResult> detect(byte[] probe, Metadata metadata) {
         // BOMDetector reports the BOM; here its bytes are noise (EF BB BF alone is valid
-        // multi-byte UTF-8, and they feed the bigram model).  A BOM is a hint, not proof.
-        // The wide-Unicode checks still see it: the UTF-16 specialist leans on it.
+        // multi-byte UTF-8, and they feed the model).  A BOM is a hint, not proof.
+        // The wide-Unicode checks still see it.
         byte[] withBom = probe;
         int bom = probe == null ? 0 : BOMDetector.bomLength(probe);
         if (bom > 0) {
@@ -268,43 +233,26 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             return windows1252Fallback();
         }
 
-        // Pure-ASCII: no high bytes and no nulls.  Bigram NB cannot
-        // discriminate Latin code pages from their ASCII prefix — all
-        // ASCII-compatible SBCS encodings produce the same bigram
-        // multiset on pure-ASCII bytes.  Return windows-1252 (HTML5 /
-        // WHATWG default for unlabeled Western content) before
-        // consulting NB so we don't hand back a bias-driven x-MacRoman
-        // or IBM850 pick.
-        if (isPureAscii(probe)) {
-            // ISO-2022-JP/KR/CN are 7-bit escape-based encodings: NB sees no high
-            // bytes, so without this they fall to the windows-1252 default and
-            // decode to gibberish (a 4.x-vs-3.x regression; icu4j catches them).
-            // Gated to the pure-ASCII branch on purpose — high-byte binary that
-            // happens to contain an ESC sequence never reaches here, it takes the
-            // normal NB path.  decode-verify guards the rare 7-bit stray-ESC case.
+        // ISO-2022 is 7-bit and escape-based; ISO-2022-KR also shifts with SO/SI.
+        boolean asciiRange = isAsciiRange(probe);
+        if (asciiRange) {
             Charset iso2022 = detectIso2022Verified(probe);
             if (iso2022 != null) {
                 LOG.trace("mojibuster -> {} (iso-2022 structural)", iso2022.name());
                 return List.of(new EncodingResult(iso2022, ISO2022_STRUCTURAL_CONF,
                         iso2022.name(), EncodingResult.ResultType.STRUCTURAL));
             }
+        }
+        // Pure ASCII decodes the same under every ASCII-compatible charset: answer with the
+        // WHATWG default rather than a model pick among identical decodes.
+        if (isPureAscii(probe)) {
             LOG.trace("mojibuster -> windows-1252 fallback (pure ASCII)");
             return windows1252Fallback();
         }
 
-        // Build a candidate pool from all layers.  Every layer
-        // contributes 0-N candidates with appropriate ResultType and
-        // confidence.  Structural signals get high but not absolute
-        // confidence — content can be mislabeled or structurally
-        // coincidental.
-        //
-        // BOM detection lives outside this pipeline — tika-core's
-        // BOMDetector is SPI-registered and emits its own candidate.
-
         java.util.List<EncodingResult> pool = new java.util.ArrayList<>();
 
-        // UTF-32 codepoint validity — structural candidate.  Also
-        // collects UTF-16 surrogate invalidity flags used below.
+        // UTF-32 codepoint validity, plus UTF-16 surrogate validity for the model's UTF-16 picks.
         WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(withBom);
         LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={}",
                 wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be);
@@ -313,49 +261,16 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                     wide.charset.name(), EncodingResult.ResultType.STRUCTURAL));
         }
 
-        // UTF-16 specialist (stride-2 column histogram features,
-        // maxent).  Gated externally by column-asymmetry evidence to
-        // prevent over-fires on legacy CJK bytes whose stride-1 byte
-        // patterns don't distinguish UTF-16 from legacy encodings.
-        // When the gate fires and the specialist has a confident
-        // winner, short-circuit: return a single UTF-16LE/BE
-        // STRUCTURAL candidate.  Stride-1 byte bigrams cannot
-        // discriminate UTF-16 reliably (CJK in UTF-16 produces byte
-        // pairs that alias common ASCII bigrams), so we keep UTF-16
-        // out of NB training and delegate to the specialist.
-        boolean utf16Gate = StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(withBom);
-        LOG.trace("mojibuster utf16Gate={}", utf16Gate);
-        if (utf16Gate) {
-            List<EncodingResult> utf16Results = utf16.detect(withBom);
-            LOG.trace("mojibuster utf16Specialist returned {} candidates", utf16Results.size());
-            for (EncodingResult r : utf16Results) {
-                String name = r.getCharset().name();
-                boolean invalid =
-                        ("UTF-16LE".equals(name) && wide.invalidUtf16Le)
-                        || ("UTF-16BE".equals(name) && wide.invalidUtf16Be);
-                LOG.trace("mojibuster utf16Specialist candidate={} invalid={}", name, invalid);
-                if (!invalid) {
-                    LOG.trace("mojibuster -> utf16 short-circuit {}", name);
-                    return List.of(new EncodingResult(r.getCharset(),
-                            UTF32_STRUCTURAL_CONF, r.getLabel(),
-                            EncodingResult.ResultType.STRUCTURAL));
-                }
-            }
-        }
-
-        // UTF-8 is a trained NB class.  Two structural contributions
+        // UTF-8 is a model class.  Two structural contributions
         // from the grammar check:
-        //   • NOT_UTF8 → post-NB disqualifier: if grammar proves the
-        //     probe cannot be valid UTF-8, drop UTF-8 from NB's output
+        //   • NOT_UTF8 → post-model disqualifier: if grammar proves the
+        //     probe cannot be valid UTF-8, drop UTF-8 from the model's output
         //     regardless of confidence.
-        //   • LIKELY_UTF8 → emit a STRUCTURAL candidate alongside NB.
-        //     Safety net for short probes (e.g. 2-byte probes where
-        //     NB picks a coincidental Korean/CJK class because the
-        //     single bigram is more common in that class's vocab).
-        //     sortAndDedup then picks UTF-8 over NB's statistical call
+        //   • LIKELY_UTF8 → emit a STRUCTURAL candidate alongside the model.
+        //     sortAndDedup then picks UTF-8 over the model's statistical call
         //     because STRUCTURAL confidence outranks STATISTICAL.
         //   • AMBIGUOUS (pure ASCII or only truncated lead): no
-        //     emission; NB + fallbacks handle it.
+        //     emission; the model + fallbacks handle it.
         StructuralEncodingRules.Utf8Stats utf8Stats = StructuralEncodingRules.utf8Stats(probe);
         StructuralEncodingRules.Utf8Result utf8 = utf8Stats.toResult();
         // TACTICAL: tolerate small corruption.  If the grammar check returned
@@ -388,10 +303,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         LOG.trace("mojibuster utf8Check={} tolerated={}", utf8, utf8Tolerated);
         // Promote on LIKELY_UTF8, or on tolerated errors backed by abundant
         // evidence (evidenceTolerated).  Bare tolerance isn't enough: on a short
-        // probe (e.g. a zip entry name, routed here by ZipParser) NB already
+        // probe (e.g. a zip entry name, routed here by ZipParser) the model already
         // covers a real UTF-8 case as STATISTICAL, so a lone tolerated error is
         // more likely a coincidentally-valid legacy string.  But on a long,
-        // genuinely-UTF-8 document NB can return an empty pool for some scripts
+        // genuinely-UTF-8 document the statistical stage can return an empty pool
         // (TIKA-4810) — without this, one stray legacy byte costs the whole
         // document its STRUCTURAL proof and JunkFilter has nothing to prefer
         // over the declared charset.
@@ -405,24 +320,22 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         }
 
         // Conditionally strip HTML.  Only if (a) content-type
-        // suggests HTML/XML or is unknown, AND (b) the probe looks
-        // ASCII-compatible (so we don't corrupt EBCDIC).  If stripping
-        // removes < 5% of bytes, treat as non-HTML and use original
-        // bytes — protects against stray `<` bytes in plain text.
-        byte[] nbInput = maybeStripHtml(probe, metadata);
+        // suggests HTML/XML or is unknown, AND (b) the stripper parsed
+        // well-formed tags or entities (so we don't corrupt EBCDIC).
+        byte[] modelInput = maybeStripHtml(probe, metadata);
 
-        // Naive-Bayes top-K candidates — statistical.
-        List<EncodingResult> nbResults = nb.detect(nbInput);
+        // Empty when the model abstains or calls the probe binary.
+        List<EncodingResult> modelResults = model.detect(modelInput);
         if (LOG.isTraceEnabled()) {
             StringBuilder sb = new StringBuilder();
-            for (EncodingResult r : nbResults) {
+            for (EncodingResult r : modelResults) {
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(r.getCharset().name())
                   .append("@").append(String.format(Locale.ROOT, "%.2f", r.getConfidence()));
             }
-            LOG.trace("mojibuster nb({}B input) -> [{}]", nbInput.length, sb);
+            LOG.trace("mojibuster model({}B input) -> [{}]", modelInput.length, sb);
         }
-        for (EncodingResult r : nbResults) {
+        for (EncodingResult r : modelResults) {
             String name = r.getCharset().name();
             // NOT_UTF8 disqualifier — applied unless the malformed-byte
             // fraction is tiny (see UTF8_MALFORMED_TOLERANCE).
@@ -431,12 +344,17 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                     && !utf8Tolerated) {
                 continue;
             }
+            if (("UTF-16LE".equals(name) && wide.invalidUtf16Le)
+                    || ("UTF-16BE".equals(name) && wide.invalidUtf16Be)) {
+                LOG.trace("mojibuster veto {} (broken surrogates)", name);
+                continue;
+            }
             // False-CJK veto: a legacy multi-byte CJK pick whose bytes don't
             // validate (high decode-failure on the UTF-8-stripped remainder) is
-            // Latin/Cyrillic/garbage mis-read as CJK.  Drop it — if it was NB's
+            // Latin/Cyrillic/garbage mis-read as CJK.  Drop it — if it was the model's
             // only candidate the pool empties and the windows-1252 fallback wins.
             if (CjkDecodeValidator.appliesTo(name)) {
-                double failRate = CjkDecodeValidator.strippedFailureRate(nbInput, r.getCharset());
+                double failRate = CjkDecodeValidator.strippedFailureRate(modelInput, r.getCharset());
                 if (failRate >= CJK_FAILURE_VETO_THRESHOLD) {
                     LOG.trace("mojibuster veto {} (cjk decode-failure {}%)", name,
                             String.format(Locale.ROOT, "%.2f", failRate * 100));
@@ -455,12 +373,17 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // "Failed to detect the character encoding of a document" in
         // AutoDetectReader.detect, which kills parsing entirely.  When
         // every layer has rejected its candidates (NOT_UTF8 disqualifier
-        // dropped NB's only pick, NB returned no candidates at all,
-        // wide-Unicode and UTF-16 specialists abstained), fall back to
-        // the WHATWG default.  Downstream JunkFilter / declarative
-        // candidates can still override at low confidence.
+        // dropped the model's only pick, the model abstained or called the
+        // probe binary), fall back to the WHATWG default.  Downstream
+        // JunkFilter / declarative candidates can still override at low confidence.
         if (finalResults.isEmpty()) {
             LOG.trace("mojibuster pool empty -> windows-1252 fallback");
+            return windows1252Fallback();
+        }
+        // 7-bit, NUL-free bytes with C0 controls: the model ran only to catch short BOM-less
+        // UTF-16 (Thai 0E xx, Cyrillic 04 xx, ...).  Any other pick decodes like windows-1252.
+        if (asciiRange && !isWideUnicode(finalResults.get(0).getCharset())) {
+            LOG.trace("mojibuster -> windows-1252 fallback (7-bit with controls)");
             return windows1252Fallback();
         }
         // When the top result is STRUCTURAL (clean UTF-8/UTF-32/ISO-2022 grammar),
@@ -473,9 +396,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         //
         // When the top result is STATISTICAL, keep the full ranked list so that
         // JunkFilter can arbitrate within-family ambiguities (e.g. GB18030 vs
-        // x-windows-949: NB scores Chinese higher than Korean on JS-heavy files
-        // because ASCII bigram distributions differ between training corpora, but
-        // JunkFilter's language-quality scoring correctly prefers Korean text).
+        // x-windows-949), using its language-quality scoring.
         EncodingResult top = finalResults.get(0);
         List<EncodingResult> toReturn = (top.getResultType() == EncodingResult.ResultType.STRUCTURAL)
                 ? List.of(top) : finalResults;
@@ -502,7 +423,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     /**
      * Detect ISO-2022-JP/KR/CN by escape sequence, then verify the decode is
      * real CJK (not a stray {@code ESC $} in ASCII text).  Returns the charset
-     * or {@code null}.  Caller guarantees {@code probe} is pure 7-bit ASCII.
+     * or {@code null}.  Caller guarantees {@code probe} is 7-bit with no NUL.
      */
     private static Charset detectIso2022Verified(byte[] probe) {
         Charset cs = StructuralEncodingRules.detectIso2022(probe);
@@ -555,19 +476,34 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     }
 
     /**
-     * Pure 7-bit ASCII test: no bytes &ge; 0x80 and no null bytes.
-     * Null-byte exclusion prevents misclassifying UTF-16/32 content
-     * whose bytes happen to be all &lt; 0x80 (all-Cyrillic UTF-16-LE
-     * would satisfy the high-byte test alone).
+     * Pure ASCII text: no byte &ge; 0x80, no NUL, and no C0 control other than TAB, LF, FF,
+     * CR and ESC (ANSI escapes).  Short BOM-less UTF-16 Thai, Cyrillic or Indic has neither NUL
+     * nor high bytes (0E xx, 04 xx, 09 xx), only C0 controls, so those must disqualify.
      */
-    private static boolean isPureAscii(byte[] probe) {
+    static boolean isPureAscii(byte[] probe) {
         for (byte b : probe) {
             int c = b & 0xFF;
-            if (c == 0 || c >= 0x80) {
+            if (c >= 0x80 || (c < 0x20 && c != '\t' && c != '\n' && c != '\f' && c != '\r'
+                    && c != 0x1B)) {
                 return false;
             }
         }
         return true;
+    }
+
+    /** No byte &ge; 0x80 and no NUL. */
+    private static boolean isAsciiRange(byte[] probe) {
+        for (byte b : probe) {
+            if (b <= 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isWideUnicode(Charset cs) {
+        String name = cs.name();
+        return name.startsWith("UTF-16") || name.startsWith("UTF-32");
     }
 
     /**
@@ -576,7 +512,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * windows-1252 decodes at least as many Unicode-Letter codepoints
      * at high-byte positions as the candidate does.
      *
-     * <p>Rationale: NB has a residual bias toward MacRoman / IBM850 /
+     * <p>Rationale: the statistical model can lean toward MacRoman / IBM850 /
      * IBM852 / ISO-8859-X siblings on Western European text where the
      * underlying bytes are actually windows-1252.  Under the wrong
      * sibling, the high bytes decode to symbols / punctuation /
@@ -634,9 +570,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * Sort pool by trust type (STRUCTURAL &gt; DECLARATIVE &gt; STATISTICAL),
      * then by confidence within a type, and deduplicate by charset name keeping
      * the first (highest-priority) instance.  Type priority is load-bearing:
-     * NB pins its statistical winner to confidence 1.0, so a structural
+     * the model pins its statistical winner to confidence 1.0, so a structural
      * candidate (UTF-8 grammar proof, UTF-32 codepoint validity) emitted below
-     * 1.0 would otherwise lose the sort to NB despite being the stronger signal.
+     * 1.0 would otherwise lose the sort despite being the stronger signal.
      */
     private static List<EncodingResult> sortAndDedup(List<EncodingResult> pool) {
         if (pool.isEmpty()) {

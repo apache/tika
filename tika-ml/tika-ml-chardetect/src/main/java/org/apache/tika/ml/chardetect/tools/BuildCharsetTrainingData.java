@@ -158,15 +158,8 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("IBM852",         "IBM852");
         // Mac Roman
         CHARSET_JAVA.put("x-MacRoman",     "x-MacRoman");
-        // EBCDIC — all variants are generated into the training corpus so a future
-        // EBCDIC specialist can be trained against them.  Today's main SBCS model
-        // consumes only a subset of these (see TrainNaiveBayesBigram's hardcoded
-        // exclusion list): IBM424 (Hebrew) and IBM420 (Arabic) live entirely in
-        // the 0x41–0x6A range, below the 0x80 threshold our feature extractor
-        // considers, so excluding them from today's model avoids training on a
-        // signal the inference path cannot see; IBM1047 is byte-identical to
-        // IBM500 on most prose bytes and is excluded to avoid near-duplicate
-        // classes in the SBCS kitchen-sink model.
+        // EBCDIC — all variants are generated into the training corpus; the trainer
+        // picks the classes it uses.
         CHARSET_JAVA.put("IBM500",         "IBM500");
         CHARSET_JAVA.put("IBM1047",        "IBM1047");
         CHARSET_JAVA.put("IBM424-ltr",     "IBM424");

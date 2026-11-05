@@ -23,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -34,8 +33,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * BOM'd UTF-16 Latin text with emoji: U+1F600's low surrogate (DE00) puts a NUL in the
- * "wrong" column, which leaves the UTF-16 specialist undecided unless it sees the BOM.
+ * UTF-16 Latin text with emoji: U+1F600's low surrogate (DE00) puts a NUL in the "wrong"
+ * column, which left the old UTF-16 specialist undecided unless it saw the BOM.
  */
 public class Utf16BomDetectionTest {
 
@@ -65,8 +64,7 @@ public class Utf16BomDetectionTest {
         assertEquals(cs.name(), results.get(0).getDecodeAs().name());
     }
 
-    // TODO BOM-less UTF-16 with U+xx00 code units: UTF-16 specialist rework (see utf16-hashed)
-    @Disabled
+    /** TIKA-5048. */
     @ParameterizedTest
     @ValueSource(strings = {"UTF-16LE", "UTF-16BE"})
     public void noBomUtf16WithEmoji(String charset) throws Exception {
