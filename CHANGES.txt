@@ -19,11 +19,11 @@ Release 4.3.0 - ???
      Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
      configured password, after a redirect to another host, port or scheme. That includes
      http to https, so use the https URL in the fetch key. Applies only with
-     maxRedirects > 0 (TIKA-XXXX).
+     maxRedirects > 0.
 
    * tika-server no longer requires a "server" block in its config file; an absent block
      means the server defaults, as "server": {} did. A tika-app config, or the documented
-     Docker example { "text-recognizers": [] }, now works as is (TIKA-XXXX).
+     Docker example { "text-recognizers": [] }, now works as is.
 
    * The tika-server full and tika-grpc Docker images no longer install
      ttf-mscorefonts-installer, which downloaded Microsoft's fonts from SourceForge
@@ -107,8 +107,7 @@ Release 4.3.0 - ???
 
    * VLM text recognizers keep superscripts and subscripts: inline <sup>/<sub> in model
      output (x<sup>2</sup>, H<sub>2</sub>O, footnote markers) reach the XHTML as sup/sub
-     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML
-     (TIKA-XXXX).
+     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML.
 
    * Charset detection recognizes ISO-8859-5 (Cyrillic), ISO-8859-6 (Arabic) and ISO-8859-7
      (Greek) without a declaration; they were reported as windows-1251/1256/1253, x-EUC-TW
@@ -147,7 +146,7 @@ Release 4.3.0 - ???
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
      list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
      and checks tk:parsed-by-full-set, not pdf:ocr-page-count, to confirm OCR ran. A test
-     loads every config in the user skills in tika-app and tika-server (TIKA-XXXX).
+     loads every config in the user skills in tika-app and tika-server.
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
      their next fetch, through a change token on file and ignite stores
