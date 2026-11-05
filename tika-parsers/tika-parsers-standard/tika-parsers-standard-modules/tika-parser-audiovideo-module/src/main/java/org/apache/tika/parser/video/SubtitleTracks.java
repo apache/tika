@@ -35,7 +35,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * The text subtitle tracks of one container file, read up front (random access needs the
  * stream unread) and held, under limits they share, until {@link #emit}, so a container
- * parser can emit them after its own metadata pass.
+ * parser can emit them after its own metadata pass. Used by Tika's MP4 and Matroska parsers;
+ * not a stable API.
  */
 public final class SubtitleTracks {
 
@@ -44,7 +45,7 @@ public final class SubtitleTracks {
     static final int MAX_TOTAL_CHARS = 16 * 1024 * 1024;
     // bytes decoded per file, markup and blanks included: bounds the work, not the output
     static final long MAX_DECODED_BYTES = 256L * 1024 * 1024;
-    // samples or blocks read per file, empty ones included
+    // samples or blocks walked per file, empty ones included
     static final int MAX_SAMPLES = 1_000_000;
     private static final int MAX_WARNINGS = 32;
 
@@ -56,6 +57,7 @@ public final class SubtitleTracks {
     private int samples;
     private int chars;
     private boolean spent;
+    private EmbeddedLimitReachedException limit;
 
     SubtitleTracks(Metadata containerMetadata, ParseContext context) {
         this.containerMetadata = containerMetadata;
@@ -70,38 +72,26 @@ public final class SubtitleTracks {
     public static SubtitleTracks readMp4(TikaInputStream tis, Metadata containerMetadata,
                                          ParseContext context) {
         SubtitleTracks out = new SubtitleTracks(containerMetadata, context);
-        if (wanted(context)) {
-            Mp4SubtitleExtractor.extract(tis, out);
-        }
-        return out;
-    }
-
-    /** The text tracks of a Matroska or WebM file; a stream input is read to its end. */
-    public static SubtitleTracks readMatroska(TikaInputStream tis, Metadata containerMetadata,
-                                              ParseContext context) {
-        SubtitleTracks out = new SubtitleTracks(containerMetadata, context);
-        if (wanted(context)) {
-            MkvSubtitleExtractor.extract(tis, out);
-        }
+        Mp4SubtitleExtractor.extract(tis, out);
         return out;
     }
 
     /**
-     * Whether the embedded document extractor takes subtitle tracks at all, asked before any
-     * decoding is spent on them. A limit reached here is reported when a later document hits it.
+     * The text tracks of a Matroska or WebM file. A stream input is read up to the first
+     * Cluster if no text track is taken, else to its end or until a budget is spent.
      */
-    static boolean wanted(ParseContext context) {
-        try {
-            return EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)
-                    .shouldParseEmbedded(SubtitleTrack.metadata("track-0.vtt", null, null,
-                            context), context);
-        } catch (EmbeddedLimitReachedException e) {
-            return false;
-        }
+    public static SubtitleTracks readMatroska(TikaInputStream tis, Metadata containerMetadata,
+                                              ParseContext context) {
+        SubtitleTracks out = new SubtitleTracks(containerMetadata, context);
+        MkvSubtitleExtractor.extract(tis, out);
+        return out;
     }
 
-    /** A new track, or null past {@link #MAX_TRACKS} or once a budget is spent. */
-    SubtitleTrack add(String name, String language) {
+    /**
+     * A new track, or null if the embedded document extractor refuses it (asked before any
+     * of it is decoded), past {@link #MAX_TRACKS}, or once a budget is spent.
+     */
+    SubtitleTrack add(String name, String language, String title) {
         if (spent) {
             return null;
         }
@@ -109,7 +99,18 @@ public final class SubtitleTracks {
             warn("more than " + MAX_TRACKS + " subtitle tracks; the rest skipped");
             return null;
         }
-        SubtitleTrack t = new SubtitleTrack(this, name, language);
+        try {
+            if (!EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context).shouldParseEmbedded(
+                    SubtitleTrack.metadata(name, language, title, context), context)) {
+                return null;
+            }
+        } catch (EmbeddedLimitReachedException e) {
+            // thrown from emit, after the container parser's own metadata pass
+            limit = e;
+            spent = true;
+            return null;
+        }
+        SubtitleTrack t = new SubtitleTrack(this, name, language, title);
         tracks.add(t);
         return t;
     }
@@ -166,7 +167,7 @@ public final class SubtitleTracks {
 
     /** Records damage that ended the walk; what was read before it is kept. */
     void damaged(IOException e) {
-        EmbeddedDocumentUtil.recordException(e, containerMetadata, context);
+        warn(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
     }
 
     private void spend(String why) {
@@ -174,10 +175,16 @@ public final class SubtitleTracks {
         warn(why + "; the rest skipped");
     }
 
-    /** Emits every track with cues as an embedded {@code text/vtt} document. */
+    /**
+     * Emits every track with cues as an embedded {@code text/vtt} document, then throws the
+     * {@link EmbeddedLimitReachedException} a track met when it was found, if any.
+     */
     public void emit(XHTMLContentHandler xhtml) throws IOException, SAXException {
         for (SubtitleTrack t : tracks) {
             t.emit(xhtml, context);
+        }
+        if (limit != null) {
+            throw limit;
         }
     }
 }

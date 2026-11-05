@@ -52,7 +52,10 @@ public class MatroskaParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    /** Whether text subtitle tracks are extracted as embedded documents. Default true. */
+    /**
+     * Whether text subtitle tracks are extracted as embedded documents. Default true. Set in
+     * tika-config.json; not read from a per-request config.
+     */
     public boolean isExtractSubtitles() {
         return extractSubtitles;
     }

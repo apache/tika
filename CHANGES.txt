@@ -57,19 +57,22 @@ Release 4.3.0 - ???
   EXTRACTION AND FORMATS
 
    * MP4Parser extracts text subtitle tracks (tx3g/mov_text, QuickTime text) as
-     embedded text/vtt documents named track-<id>.vtt, synthesized from the samples,
-     with the track language as dc:language (ISO or QuickTime Mac language codes);
-     chapter tracks are skipped. Samples are found through the sample tables, and
-     through moof/traf/trun in fragmented files, and read by seeking. This needs a
-     file, or content of measured length up to 64 MB, or a source that can hold it in
-     memory; other streams are not buffered for it. Off with extractSubtitles on
-     mp4-parser (TIKA-5030).
+     embedded text/vtt documents named track-<id>.vtt, synthesized from the samples
+     and parsed by SubtitleParser, with the track language as dc:language (ISO 639-2;
+     QuickTime Mac language codes are mapped); chapter tracks are skipped. Samples are
+     found through the sample tables, and through moof/traf/trun in fragmented files,
+     and read by seeking. This needs a file, content already in memory (a byte array
+     or a digest-drained stream), or an archive entry up to 1 MB (more within a cache
+     memory budget); other inputs are silently not searched. Off with extractSubtitles on mp4-parser
+     (TIKA-5030).
 
    * New MatroskaParser for Matroska and WebM, which previously had no parser: it
      extracts SubRip, ASS/SSA and WebVTT text subtitle tracks the same way, with the
-     track name as dc:title, in one forward pass that stops at the first Cluster when
-     there is no text track. No container metadata yet. Off with extractSubtitles on
-     matroska-parser (TIKA-5030).
+     track name as dc:title and the track language (BCP 47 or ISO 639-2; "eng" when
+     the track names none, as the format specifies). It stops at the first Cluster
+     when there is no text track; otherwise it reads every block header, seeking past
+     other tracks' blocks in a file and reading through them in a stream. No container
+     metadata yet. Off with extractSubtitles on matroska-parser (TIKA-5030).
 
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).

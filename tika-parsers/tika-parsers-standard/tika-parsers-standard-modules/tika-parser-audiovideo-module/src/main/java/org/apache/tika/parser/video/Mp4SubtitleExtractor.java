@@ -23,6 +23,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,10 +45,12 @@ import org.apache.tika.io.TikaInputStream;
  */
 final class Mp4SubtitleExtractor {
 
+    // absent from runtimes built without jdk.charsets
+    private static final Charset MAC_ROMAN =
+            Charset.isSupported("x-MacRoman") ? Charset.forName("x-MacRoman") : null;
+
     // a sample table above this is not loaded; a text track's tables are kilobytes
     static final int MAX_TABLE_BYTES = 16 * 1024 * 1024;
-    // samples walked per track, read or not; reads are charged per file
-    private static final int MAX_TRACK_SAMPLES = 1_000_000;
     private static final int MAX_CHILDREN = 100_000;
     // uint16 length prefix plus the longest text it can declare
     private static final int MAX_SAMPLE_READ = 2 + 0xFFFF;
@@ -64,17 +68,24 @@ final class Mp4SubtitleExtractor {
     }
 
     private static void extract(SeekableByteChannel ch, SubtitleTracks out) throws IOException {
+        // moov alone first: most files have no text track, and a long fragmented one has
+        // a moof every few seconds
         Box moov = null;
-        List<Box> moofs = new ArrayList<>();
-        for (Box b : children(ch, 0, ch.size(), out)) {
-            if (b.is("moov") && moov == null) {
-                moov = b;
-            } else if (b.is("moof")) {
-                moofs.add(b);
+        long pos = 0;
+        long size = ch.size();
+        for (int n = 0; moov == null; n++) {
+            Box b = next(ch, pos, size);
+            if (b == null) {
+                return;
             }
-        }
-        if (moov == null) {
-            return;
+            if (n >= MAX_CHILDREN) {
+                out.warn("more than " + MAX_CHILDREN + " MP4 boxes before moov; skipped");
+                return;
+            }
+            if (b.is("moov")) {
+                moov = b;
+            }
+            pos = b.end;
         }
         List<Box> traks = new ArrayList<>();
         Map<Long, long[]> trex = new HashMap<>();
@@ -88,25 +99,30 @@ final class Mp4SubtitleExtractor {
         Set<Long> chapterTracks = chapterTracks(ch, traks, out);
         Map<Long, Track> tracks = new LinkedHashMap<>();
         for (Box trak : traks) {
-            Track t = Track.read(ch, trak, out);
-            if (t == null || chapterTracks.contains(t.id) || tracks.containsKey(t.id)) {
+            Track t = Track.read(ch, trak, chapterTracks, tracks.keySet(), out);
+            if (t == null) {
                 continue;
             }
-            t.out = out.add("track-" + t.id + ".vtt", t.language);
+            t.out = out.add("track-" + t.id + ".vtt", t.language, null);
             if (t.out == null) {
-                break;
+                continue;
             }
             tracks.put(t.id, t);
-        }
-        for (Track t : tracks.values()) {
             t.readCues(ch, out);
             if (out.isSpent()) {
                 return;
             }
         }
-        if (!tracks.isEmpty()) {
-            readFragments(ch, moofs, trex, tracks, out);
+        if (tracks.isEmpty()) {
+            return;
         }
+        List<Box> moofs = new ArrayList<>();
+        for (Box b : children(ch, 0, size, out)) {
+            if (b.is("moof")) {
+                moofs.add(b);
+            }
+        }
+        readFragments(ch, moofs, trex, tracks, out);
     }
 
     /** trex defaults by track ID: {duration, size}. */
@@ -299,10 +315,10 @@ final class Mp4SubtitleExtractor {
                 i += 4;
             }
             i += ((flags & 0x400) != 0 ? 4 : 0) + ((flags & 0x800) != 0 ? 4 : 0);
-            if (t != null && (++t.walked > MAX_TRACK_SAMPLES
-                    || !t.cue(ch, offset, size, duration, fileSize, out))) {
+            if (t != null && !t.cue(ch, offset, size, duration, fileSize, out)) {
+                // the run's end still places the next traf
                 t.done = true;
-                return offset;
+                t = null;
             }
             offset += size;
         }
@@ -320,15 +336,19 @@ final class Mp4SubtitleExtractor {
         byte[] chunkOffsets;
         boolean co64;
         SubtitleTrack out;
+        // QuickTime text: BOM-less samples may be in a Mac script, not UTF-8
+        boolean macText;
         // set once the track takes no more cues
         boolean done;
-        // running decode time and samples walked, carried from stbl into the fragments
+        // running decode time, carried from stbl into the fragments
         long time;
-        int walked;
 
-        /** The track's tables if it is a text subtitle track, else null. */
-        static Track read(SeekableByteChannel ch, Box trak, SubtitleTracks out)
-                throws IOException {
+        /**
+         * The track's tables if it is a text subtitle track not among {@code skip} or
+         * {@code seen}, else null.
+         */
+        static Track read(SeekableByteChannel ch, Box trak, Set<Long> skip, Set<Long> seen,
+                          SubtitleTracks out) throws IOException {
             Track t = new Track();
             Box mdia = null;
             for (Box b : children(ch, trak.payload, trak.end, out)) {
@@ -339,7 +359,7 @@ final class Mp4SubtitleExtractor {
                     mdia = b;
                 }
             }
-            if (mdia == null) {
+            if (mdia == null || skip.contains(t.id) || seen.contains(t.id)) {
                 return null;
             }
             Box minf = null;
@@ -374,13 +394,21 @@ final class Mp4SubtitleExtractor {
             if (stbl == null) {
                 return null;
             }
+            List<Box> tables = children(ch, stbl.payload, stbl.end, out);
             String format = null;
-            for (Box b : children(ch, stbl.payload, stbl.end, out)) {
+            for (Box b : tables) {
+                if (b.is("stsd")) {
+                    byte[] p = payload(ch, b, 16);
+                    format = p.length >= 16 ? fourCc(p, 12) : "";
+                }
+            }
+            // other formats (wvtt, stpp) are valid tracks Tika does not decode: no warning
+            if (format == null || !(format.equals("tx3g") || format.equals("text"))) {
+                return null;
+            }
+            t.macText = format.equals("text");
+            for (Box b : tables) {
                 switch (b.type) {
-                    case "stsd":
-                        byte[] p = payload(ch, b, 16);
-                        format = p.length >= 16 ? fourCc(p, 12) : "";
-                        break;
                     case "stts":
                         t.stts = table(ch, b, out);
                         break;
@@ -401,23 +429,30 @@ final class Mp4SubtitleExtractor {
                         break;
                 }
             }
-            if (format == null || !(format.equals("tx3g") || format.equals("text"))) {
-                if (format != null && !format.isEmpty()) {
-                    out.warn("track " + t.id + ": sample entry '" + printable(format)
-                            + "' not supported");
-                }
-                return null;
-            }
             // a fragmented file may leave the stbl sample tables out
             return t;
         }
 
+        /** The stbl samples; the tables are dropped after, as the fragments need only time. */
         void readCues(SeekableByteChannel ch, SubtitleTracks budget) throws IOException {
+            try {
+                readTables(ch, budget);
+            } finally {
+                stts = null;
+                stsc = null;
+                stsz = null;
+                chunkOffsets = null;
+            }
+        }
+
+        private void readTables(SeekableByteChannel ch, SubtitleTracks budget)
+                throws IOException {
             if (stsz == null || stsc == null || chunkOffsets == null) {
                 return;
             }
             SampleSizes sizes = new SampleSizes(stsz, stz2);
-            int samples = Math.min(sizes.count, MAX_TRACK_SAMPLES);
+            int samples = sizes.count;
+            int walked = 0;
             int chunkWidth = co64 ? 8 : 4;
             long chunks = Math.min(getUIntBE(chunkOffsets, 4),
                     (chunkOffsets.length - 8) / chunkWidth);
@@ -465,11 +500,13 @@ final class Mp4SubtitleExtractor {
         /** Emits one sample and advances {@link #time}; false once the file's budget is spent. */
         boolean cue(SeekableByteChannel ch, long offset, long size, long duration,
                     long fileSize, SubtitleTracks budget) throws IOException {
+            // empty samples are charged too: they cost a walk, not a read
+            if (!budget.chargeSample()) {
+                return false;
+            }
             if (offset >= 0 && size >= 2 && offset <= fileSize - 2) {
-                if (!budget.chargeSample()) {
-                    return false;
-                }
-                String text = sampleText(ch, offset, Math.min(size, MAX_SAMPLE_READ), budget);
+                String text = sampleText(ch, offset, Math.min(size, MAX_SAMPLE_READ), budget,
+                        macText);
                 if (text == null || !out.addCue(millis(time), millis(time + duration), text)) {
                     return false;
                 }
@@ -539,10 +576,12 @@ final class Mp4SubtitleExtractor {
 
     /**
      * uint16 length, then UTF-8 text or UTF-16 with a BOM; style boxes follow and are ignored.
-     * Only the declared text is read and charged; null once the budget is spent.
+     * QuickTime text ({@code macText}) that is not valid UTF-8 is read as MacRoman, the Mac
+     * script of Western languages. Only the declared text is read and charged; null once the
+     * budget is spent.
      */
     static String sampleText(SeekableByteChannel ch, long offset, long size,
-                             SubtitleTracks budget) throws IOException {
+                             SubtitleTracks budget, boolean macText) throws IOException {
         byte[] h = read(ch, offset, 2);
         long available = Math.min(size, ch.size() - offset) - 2;
         int len = (int) Math.min(getUShortBE(h, 0), available);
@@ -559,6 +598,13 @@ final class Mp4SubtitleExtractor {
         }
         if (len >= 2 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xFE) {
             return new String(b, 2, len - 2, StandardCharsets.UTF_16LE);
+        }
+        if (macText && MAC_ROMAN != null) {
+            try {
+                return StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(b)).toString();
+            } catch (CharacterCodingException e) {
+                return new String(b, MAC_ROMAN);
+            }
         }
         return new String(b, StandardCharsets.UTF_8);
     }
@@ -614,32 +660,39 @@ final class Mp4SubtitleExtractor {
                                       SubtitleTracks out) throws IOException {
         List<Box> boxes = new ArrayList<>();
         long pos = start;
-        while (pos + 8 <= end) {
+        for (Box b = next(ch, pos, end); b != null; b = next(ch, pos, end)) {
             if (boxes.size() >= MAX_CHILDREN) {
                 out.warn("more than " + MAX_CHILDREN + " MP4 boxes in one box; the rest skipped");
                 break;
             }
-            byte[] h = read(ch, pos, 8);
-            long size = getUIntBE(h, 0);
-            String type = fourCc(h, 4);
-            long header = 8;
-            if (size == 1) {
-                if (pos + 16 > end) {
-                    break;
-                }
-                size = s64(read(ch, pos + 8, 8), 0);
-                header = 16;
-            } else if (size == 0) {
-                size = end - pos;
-            }
-            if (size < header) {
-                break;
-            }
-            long boxEnd = size > end - pos ? end : pos + size;
-            boxes.add(new Box(type, pos, pos + header, boxEnd));
-            pos = boxEnd;
+            boxes.add(b);
+            pos = b.end;
         }
         return boxes;
+    }
+
+    /** The box at {@code pos}, clipped to {@code end}; null at the end or on a bad header. */
+    private static Box next(SeekableByteChannel ch, long pos, long end) throws IOException {
+        if (pos + 8 > end) {
+            return null;
+        }
+        byte[] h = read(ch, pos, 8);
+        long size = getUIntBE(h, 0);
+        String type = fourCc(h, 4);
+        long header = 8;
+        if (size == 1) {
+            if (pos + 16 > end) {
+                return null;
+            }
+            size = s64(read(ch, pos + 8, 8), 0);
+            header = 16;
+        } else if (size == 0) {
+            size = end - pos;
+        }
+        if (size < header) {
+            return null;
+        }
+        return new Box(type, pos, pos + header, size > end - pos ? end : pos + size);
     }
 
     private static byte[] payload(SeekableByteChannel ch, Box b, int max) throws IOException {
@@ -672,15 +725,6 @@ final class Mp4SubtitleExtractor {
 
     private static String fourCc(byte[] b, int off) {
         return new String(b, off, 4, StandardCharsets.ISO_8859_1);
-    }
-
-    private static String printable(String s) {
-        StringBuilder sb = new StringBuilder(s.length());
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            sb.append(c >= 0x20 && c < 0x7F ? c : '?');
-        }
-        return sb.toString();
     }
 
     private static long s64(byte[] b, int off) {

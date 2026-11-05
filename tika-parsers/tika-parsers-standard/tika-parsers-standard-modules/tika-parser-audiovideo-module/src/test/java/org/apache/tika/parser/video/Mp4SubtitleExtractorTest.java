@@ -17,35 +17,46 @@
 package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Predicate;
 
+import org.apache.commons.io.function.IOSupplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.CacheMemoryBudget;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -67,10 +78,22 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
 
     private static final class Capture implements EmbeddedDocumentExtractor {
         final List<Emitted> docs = new ArrayList<>();
+        final List<String> asked = new ArrayList<>();
+        final Predicate<String> accept;
+
+        Capture() {
+            this(name -> true);
+        }
+
+        Capture(Predicate<String> accept) {
+            this.accept = accept;
+        }
 
         @Override
         public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
-            return true;
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            asked.add(name);
+            return accept.test(name);
         }
 
         @Override
@@ -83,7 +106,11 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     private static List<Emitted> extract(byte[] mp4, Metadata container) throws Exception {
-        Capture capture = new Capture();
+        return extract(mp4, container, new Capture());
+    }
+
+    private static List<Emitted> extract(byte[] mp4, Metadata container, Capture capture)
+            throws Exception {
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, capture);
         XHTMLContentHandler xhtml =
@@ -149,6 +176,8 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 TikaInputStream.get(new Builder().build(true)), parser, m, new ParseContext(),
                 true);
         assertEquals(1, list.size());
+        assertTrue(Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY))
+                .contains(MP4Parser.class.getName()), list.get(0).toString());
     }
 
     @Test
@@ -179,10 +208,13 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     @Test
     public void testUnsizedStreamIsNotSpooled() throws Exception {
         byte[] mp4 = new Builder().build(true);
-        List<Metadata> list = getRecursiveMetadata(
-                TikaInputStream.get(new ByteArrayInputStream(mp4)), new MP4Parser(),
-                new Metadata(), new ParseContext(), true);
-        assertEquals(1, list.size());
+        Metadata m = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(mp4))) {
+            new MP4Parser().parse(tis, new BodyContentHandler(-1), m, new ParseContext());
+            assertFalse(tis.hasFile(), "the stream was spooled");
+        }
+        assertTrue(Arrays.stream(m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .noneMatch(w -> w.contains("subtitles")), m.toString());
     }
 
     @Test
@@ -356,11 +388,37 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(data);
                 CountingChannel ch = new CountingChannel(tis.getSeekableByteChannel())) {
             SubtitleTracks budget = new SubtitleTracks(new Metadata(), new ParseContext());
-            assertEquals("", Mp4SubtitleExtractor.sampleText(ch, 0, 0xFFFF + 2, budget));
+            assertEquals("", Mp4SubtitleExtractor.sampleText(ch, 0, 0xFFFF + 2, budget, false));
             assertEquals(2, ch.read);
             assertEquals("hi",
-                    Mp4SubtitleExtractor.sampleText(ch, 0xFFFF + 2, 0xFFFF + 2, budget));
+                    Mp4SubtitleExtractor.sampleText(ch, 0xFFFF + 2, 0xFFFF + 2, budget, false));
             assertEquals(2 + 4, ch.read);
+        }
+    }
+
+    @Test
+    public void testQuickTimeTextFallsBackToMacRoman() throws Exception {
+        // 0x8E is é in MacRoman and invalid as UTF-8
+        byte[] mac = Builder.sample(new byte[]{'C', 'a', 'f', (byte) 0x8E});
+        byte[] utf8 = Builder.sample("Café".getBytes(StandardCharsets.UTF_8));
+        assertEquals("Café", sampleText(mac, true));
+        assertEquals("Caf\uFFFD", sampleText(mac, false), "tx3g is UTF-8 by spec");
+        assertEquals("Café", sampleText(utf8, true));
+
+        // through a track: only a QuickTime text sample entry falls back
+        byte[] mp4 = new Builder().build(true);
+        mp4[indexOf(mp4, ascii("& co")) + 3] = (byte) 0x8E;
+        assertTrue(extract(mp4, new Metadata()).get(0).body().contains("&amp; c\uFFFD"));
+        System.arraycopy(ascii("text"), 0, mp4, indexOf(mp4, ascii("tx3g")), 4);
+        assertTrue(extract(mp4, new Metadata()).get(0).body().contains("&amp; cé"),
+                "QuickTime text");
+    }
+
+    private static String sampleText(byte[] sample, boolean macText) throws IOException {
+        try (TikaInputStream tis = TikaInputStream.get(sample);
+                SeekableByteChannel ch = tis.getSeekableByteChannel()) {
+            return Mp4SubtitleExtractor.sampleText(ch, 0, sample.length,
+                    new SubtitleTracks(new Metadata(), new ParseContext()), macText);
         }
     }
 
@@ -418,11 +476,16 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    @Timeout(60)
     public void testCorruptedBytes(boolean fragmented) throws Exception {
         byte[] good = fragmented ? fragmented(5, 1) : new Builder().build(true);
-        long seed = new Random().nextLong();
+        // -Dtika.test.seed=<seed> replays a failure
+        long seed = Long.getLong("tika.test.seed", new Random().nextLong());
         Random r = new Random(seed);
+        assertTimeoutPreemptively(Duration.ofSeconds(60), () -> corrupt(good, r, seed),
+                () -> "seed=" + seed);
+    }
+
+    private void corrupt(byte[] good, Random r, long seed) throws Exception {
         for (int i = 0; i < 2000; i++) {
             byte[] bad = good.clone();
             int flips = 1 + r.nextInt(8);
@@ -434,9 +497,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
             }
             try {
                 extract(bad, new Metadata());
-            } catch (IOException e) {
-                // a box running past the end is an IOException; anything else fails the test
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | Error e) {
                 throw new AssertionError("seed=" + seed + " iteration=" + i, e);
             }
         }
@@ -600,27 +661,39 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
 
 
     @Test
-    public void testFileInputOverSpoolLimit() throws Exception {
+    public void testByteArrayOverSpoolLimit() throws Exception {
+        // already in memory, so random access is free at any size
+        byte[] small = new Builder().build(true);
+        int free = 65 * 1024 * 1024;
+        byte[] mp4 = Arrays.copyOf(small, small.length + free);
+        System.arraycopy(u32(free), 0, mp4, small.length, 4);
+        System.arraycopy(ascii("free"), 0, mp4, small.length + 4, 4);
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "x.mp4");
+        List<Metadata> list = getRecursiveMetadata(TikaInputStream.get(mp4),
+                AUTO_DETECT_PARSER, m, new ParseContext(), true);
+        assertEquals(2, list.size());
+        assertEquals("track-2.vtt", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
+
+    @Test
+    public void testFileInputOverSpoolLimit(@TempDir Path tmp) throws Exception {
         // the production path: a file input of any size; a sparse 100 MB tail proves it
         byte[] mp4 = new Builder().build(true);
-        Path p = Files.createTempFile("subs", ".mp4");
-        try {
-            long free = 100L * 1024 * 1024;
-            try (RandomAccessFile f = new RandomAccessFile(p.toFile(), "rw")) {
-                f.write(mp4);
-                f.write(u32(free));
-                f.write(ascii("free"));
-                f.setLength(mp4.length + free);
-            }
-            Metadata m = new Metadata();
-            m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "x.mp4");
-            List<Metadata> list = getRecursiveMetadata(TikaInputStream.get(p),
-                    AUTO_DETECT_PARSER, m, new ParseContext(), true);
-            assertEquals(2, list.size());
-            assertEquals("track-2.vtt", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        } finally {
-            Files.delete(p);
+        Path p = Files.createTempFile(tmp, "subs", ".mp4");
+        long free = 100L * 1024 * 1024;
+        try (RandomAccessFile f = new RandomAccessFile(p.toFile(), "rw")) {
+            f.write(mp4);
+            f.write(u32(free));
+            f.write(ascii("free"));
+            f.setLength(mp4.length + free);
         }
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "x.mp4");
+        List<Metadata> list = getRecursiveMetadata(TikaInputStream.get(p),
+                AUTO_DETECT_PARSER, m, new ParseContext(), true);
+        assertEquals(2, list.size());
+        assertEquals("track-2.vtt", list.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test
@@ -676,16 +749,107 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     @Test
-    public void testUnsupportedSampleEntryIsReported() throws Exception {
+    public void testUnsupportedSampleEntryIsSkippedSilently() throws Exception {
         byte[] mp4 = new Builder().build(true);
-        // the subtitle track's tx3g entry becomes wvtt
+        // the subtitle track's tx3g entry becomes wvtt: a valid track Tika does not decode
         int i = indexOf(mp4, ascii("tx3g"));
         System.arraycopy(ascii("wvtt"), 0, mp4, i, 4);
         Metadata container = new Metadata();
-        extract(mp4, container);
-        assertTrue(String.join("\n",
-                container.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                .contains("sample entry 'wvtt' not supported"), container.toString());
+        assertEquals(0, extract(mp4, container).size());
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING),
+                container.toString());
+    }
+
+    private static byte[] withoutTextTrack() throws IOException {
+        byte[] mp4 = new Builder().build(true);
+        System.arraycopy(ascii("vide"), 0, mp4, indexOf(mp4, ascii("sbtl")), 4);
+        return mp4;
+    }
+
+    private static byte[] withDuration(byte[] mp4) {
+        int mvhd = indexOf(mp4, ascii("mvhd")) + 4;
+        ByteBuffer.wrap(mp4).putInt(mvhd + 12, 1000).putInt(mvhd + 16, 5000);
+        return mp4;
+    }
+
+    private static Metadata parseWithLimits(byte[] mp4, EmbeddedLimits limits) throws Exception {
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "x.mp4");
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedLimits.class, limits);
+        try (TikaInputStream tis = TikaInputStream.get(mp4)) {
+            AUTO_DETECT_PARSER.parse(tis, new BodyContentHandler(-1), m, context);
+        }
+        return m;
+    }
+
+    @Test
+    public void testNoTextTrackReportsNoEmbeddedLimit() throws Exception {
+        Metadata m = parseWithLimits(withoutTextTrack(), new EmbeddedLimits(0, false, -1, false));
+        assertNull(m.get(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED), m.toString());
+        // a real track at the limit is reported
+        m = parseWithLimits(new Builder().build(true), new EmbeddedLimits(0, false, -1, false));
+        assertEquals("true", m.get(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED), m.toString());
+    }
+
+    @Test
+    public void testThrowOnLimitThrowsAfterContainerMetadata() throws Exception {
+        byte[] mp4 = withDuration(new Builder().build(true));
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "x.mp4");
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedLimits.class, new EmbeddedLimits(0, true, -1, false));
+        try (TikaInputStream tis = TikaInputStream.get(mp4)) {
+            assertThrows(EmbeddedLimitReachedException.class, () ->
+                    AUTO_DETECT_PARSER.parse(tis, new BodyContentHandler(-1), m, context));
+        }
+        assertEquals("5.0", m.get(XMPDM.DURATION), m.toString());
+    }
+
+    @Test
+    public void testExtractorJudgesEachTrackByItsOwnName() throws Exception {
+        Capture refuseAll = new Capture(name -> false);
+        assertEquals(0, extract(new Builder().build(true), new Metadata(), refuseAll).size());
+        assertEquals(List.of("track-2.vtt"), refuseAll.asked);
+        Capture onlyTrack2 = new Capture(name -> name.equals("track-2.vtt"));
+        assertEquals(1, extract(new Builder().build(true), new Metadata(), onlyTrack2).size());
+    }
+
+    @Test
+    public void testZeroLengthSamplesAreChargedAndReported() throws Exception {
+        int n = SubtitleTracks.MAX_SAMPLES + 10;
+        byte[] ftyp = box("ftyp", ascii("isom"), u32(0), ascii("isom"));
+        byte[] mdat = box("mdat", new byte[16]);
+        byte[] t2 = Builder.trak(2, "sbtl", ENG, new long[][]{{n, 1}}, new int[]{1}, n,
+                new int[n], -1, new long[]{ftyp.length + 8L}, false, null);
+        Metadata container = new Metadata();
+        assertEquals(0, extract(cat(ftyp, mdat, box("moov", box("mvhd", new byte[100]), t2)),
+                container).size());
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("subtitle samples"), container.toString());
+    }
+
+    private int tracksFromReopenable(byte[] mp4, CacheMemoryBudget budget)
+            throws Exception {
+        IOSupplier<InputStream> opener = () -> new ByteArrayInputStream(mp4);
+        try (TemporaryResources tmp = new TemporaryResources();
+                TikaInputStream tis = TikaInputStream.get(opener, tmp, null)) {
+            if (budget != null) {
+                tis.enableRewind(budget);
+            }
+            return getRecursiveMetadata(tis, new MP4Parser(), new Metadata(), new ParseContext(),
+                    true).size() - 1;
+        }
+    }
+
+    @Test
+    public void testReopenableSourceIsRetainedWithinBudget() throws Exception {
+        // an archive entry: under the 1 MB floor it is retained; above it only with a budget
+        byte[] small = new Builder().build(true);
+        assertEquals(1, tracksFromReopenable(small, null));
+        byte[] big = cat(small, box("free", new byte[2 * 1024 * 1024]));
+        assertEquals(0, tracksFromReopenable(big, null));
+        assertEquals(1, tracksFromReopenable(big, new CacheMemoryBudget(64L * 1024 * 1024)));
     }
 
     @Test

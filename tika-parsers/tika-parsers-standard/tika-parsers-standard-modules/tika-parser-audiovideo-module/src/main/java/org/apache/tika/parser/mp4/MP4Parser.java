@@ -89,7 +89,8 @@ public class MP4Parser implements Parser {
     //needs more. See TikaMp4Reader and TIKA-4812.
     private static final long DEFAULT_MAX_BOX_SIZE = 100L * 1024L * 1024L;
 
-    //subtitles need random access: a stream above this is not buffered for them
+    //subtitles need random access: a stream declaring more than this is not buffered for
+    //them; one with no or a lying length is held only within the cache memory budget
     private static final long MAX_SUBTITLE_SPOOL_BYTES = 64L * 1024L * 1024L;
 
     private long maxBoxSize = DEFAULT_MAX_BOX_SIZE;
@@ -131,9 +132,11 @@ public class MP4Parser implements Parser {
 
     /**
      * Whether text subtitle tracks are extracted as embedded {@code text/vtt} documents.
-     * Default true. Only when random access is cheap: the input is a file, or its measured
-     * length is up to 64 MB, or the source can hold it in memory; any other stream is not
-     * buffered to look for subtitles.
+     * Default true. Only when random access is cheap: the input is a file or already in
+     * memory (a byte array, or a stream drained by digesting), or the source can retain it
+     * in memory (an archive entry up to 1 MB, or more within the cache memory budget); any
+     * other input is silently not searched for subtitles. Set in tika-config.json; not read
+     * from a per-request config.
      */
     public boolean isExtractSubtitles() {
         return extractSubtitles;
@@ -196,7 +199,8 @@ public class MP4Parser implements Parser {
                 return null;
             }
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata, context);
+            EmbeddedDocumentUtil.recordException(
+                    new TikaException("subtitles: " + e.getMessage(), e), metadata, context);
             return null;
         }
         return SubtitleTracks.readMp4(tis, metadata, context);
@@ -206,7 +210,8 @@ public class MP4Parser implements Parser {
     //a declared length may lie, so only the source's own bounded retention trusts it
     private static boolean cheapRandomAccess(TikaInputStream tis) throws IOException {
         if (tis.hasReliableLength()) {
-            return tis.hasFile() || tis.getLength() <= MAX_SUBTITLE_SPOOL_BYTES;
+            return tis.hasFile() || tis.getLength() <= MAX_SUBTITLE_SPOOL_BYTES
+                    || tis.tryRetainInMemory();
         }
         return (!tis.hasLength() || tis.getLength() <= MAX_SUBTITLE_SPOOL_BYTES)
                 && tis.tryRetainInMemory();

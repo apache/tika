@@ -42,14 +42,15 @@ final class SubtitleTrack {
     private final SubtitleTracks owner;
     private final String name;
     private final String language;
+    private final String title;
     private final StringBuilder vtt = new StringBuilder("WEBVTT\n");
-    private String title;
     private int cues;
 
-    SubtitleTrack(SubtitleTracks owner, String name, String language) {
+    SubtitleTrack(SubtitleTracks owner, String name, String language, String title) {
         this.owner = owner;
         this.name = name;
         this.language = language;
+        this.title = title;
     }
 
     /**
@@ -75,11 +76,6 @@ final class SubtitleTrack {
         }
         cues++;
         return true;
-    }
-
-    /** The track's own name, e.g. "Director's commentary"; emitted as {@code dc:title}. */
-    void setTitle(String title) {
-        this.title = title;
     }
 
     void emit(XHTMLContentHandler xhtml, ParseContext context) throws IOException, SAXException {

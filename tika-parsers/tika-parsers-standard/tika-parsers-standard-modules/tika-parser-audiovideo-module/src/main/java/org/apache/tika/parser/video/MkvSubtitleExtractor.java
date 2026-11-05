@@ -39,7 +39,8 @@ import org.apache.tika.io.TikaInputStream;
  * {@code D_WEBVTT/*}), uncompressed, zlib or header-stripped. One forward pass over the
  * EBML structure, which stops at the first Cluster if there is no text track; a file input
  * seeks past other tracks' blocks, a stream reads through them, so nothing is spooled. Laced
- * and encrypted subtitle blocks, and a Tracks element after the first Cluster, are not handled.
+ * and encrypted subtitle blocks and a Tracks element after the first Cluster are not handled,
+ * and are reported; image subtitles (PGS, VobSub, DVB) are valid tracks, skipped silently.
  */
 final class MkvSubtitleExtractor {
 
@@ -73,10 +74,13 @@ final class MkvSubtitleExtractor {
     private static final int BLOCK_GROUP = 0xA0;
     private static final int BLOCK = 0xA1;
     private static final int BLOCK_DURATION = 0x9B;
+    private static final int DEFAULT_DURATION = 0x23E383;
 
     private static final Pattern SRT_TAG =
             Pattern.compile("</?(?:i|b|u|s|font)(?:\\s[^<>]*)?>", Pattern.CASE_INSENSITIVE);
+    // ASS hides every {...} block; SRT renderers only honour {\...} override tags
     private static final Pattern SSA_OVERRIDE = Pattern.compile("\\{[^{}]*}");
+    private static final Pattern SRT_OVERRIDE = Pattern.compile("\\{\\\\[^{}]*}");
     private static final Pattern VTT_TAG = Pattern.compile("<[^>]*>?");
 
     private enum Kind { SRT, ASS, VTT, WEBM_VTT }
@@ -90,8 +94,11 @@ final class MkvSubtitleExtractor {
             // a cache that spilled part of a stream has a file but no measured length
             Source src = tis.hasFile() && tis.hasReliableLength()
                     ? new ChannelSource(tis.getSeekableByteChannel()) : new StreamSource(tis);
+            Walk walk = new Walk(src, out);
             try (src) {
-                new Walk(src, out).run();
+                walk.run();
+            } finally {
+                walk.flush();
             }
         } catch (IOException e) {
             out.damaged(e);
@@ -108,6 +115,11 @@ final class MkvSubtitleExtractor {
         // why the track cannot be read, or null
         String unsupported;
         SubtitleTrack out;
+        // nanoseconds, or -1
+        long defaultDuration = -1;
+        // a cue without a duration, ended by the track's next cue
+        long pendingStart = -1;
+        String pendingText;
     }
 
     private static final class Walk {
@@ -116,6 +128,7 @@ final class MkvSubtitleExtractor {
         private final Map<Long, Track> tracks = new HashMap<>();
         private long timecodeScale = 1_000_000;
         private long clusterTime;
+        private boolean sawTracks;
 
         Walk(Source src, SubtitleTracks out) {
             this.src = src;
@@ -133,6 +146,9 @@ final class MkvSubtitleExtractor {
                 long size = src.readSize();
                 if (id == CLUSTER) {
                     if (tracks.isEmpty()) {
+                        if (!sawTracks) {
+                            out.warn("Matroska Tracks after the first Cluster not supported");
+                        }
                         return;
                     }
                     clusterTime = 0;
@@ -150,6 +166,7 @@ final class MkvSubtitleExtractor {
                 } else if (id == INFO) {
                     info(src.readBytes(size, MAX_HEADER_ELEMENT_BYTES));
                 } else if (id == TRACKS) {
+                    sawTracks = true;
                     tracks(src.readBytes(size, MAX_HEADER_ELEMENT_BYTES));
                 } else if (id == SIMPLE_BLOCK) {
                     Cue cue = readBlock(size);
@@ -186,9 +203,8 @@ final class MkvSubtitleExtractor {
                     out.warn("track " + t.number + ": " + t.unsupported + "; skipped");
                     return;
                 }
-                t.out = out.add("track-" + t.number + ".vtt", t.language);
+                t.out = out.add("track-" + t.number + ".vtt", t.language, t.name);
                 if (t.out != null) {
-                    t.out.setTitle(t.name);
                     tracks.put(t.number, t);
                 }
             });
@@ -211,6 +227,9 @@ final class MkvSubtitleExtractor {
                         break;
                     case LANGUAGE_BCP47:
                         t.language = ascii(p, off, len);
+                        break;
+                    case DEFAULT_DURATION:
+                        t.defaultDuration = uint(p, off, len);
                         break;
                     case NAME:
                         t.name = new String(p, off, Math.min(len, MAX_NAME_BYTES),
@@ -348,9 +367,31 @@ final class MkvSubtitleExtractor {
         }
 
         private void addCue(Cue cue, long duration) {
+            Track t = cue.track;
             long startMs = millis(cue.time);
-            long endMs = duration < 0 ? startMs : millis(cue.time + duration);
-            cue.track.out.addCue(startMs, endMs, cue.text);
+            endPending(t, startMs);
+            if (duration >= 0) {
+                t.out.addCue(startMs, millis(cue.time + duration), cue.text);
+            } else if (t.defaultDuration > 0) {
+                t.out.addCue(startMs, startMs + t.defaultDuration / 1_000_000, cue.text);
+            } else {
+                t.pendingStart = startMs;
+                t.pendingText = cue.text;
+            }
+        }
+
+        private void endPending(Track t, long endMs) {
+            if (t.pendingText != null) {
+                t.out.addCue(t.pendingStart, endMs, t.pendingText);
+                t.pendingText = null;
+            }
+        }
+
+        /** Ends each track's last duration-less cue where it starts: nothing follows it. */
+        void flush() {
+            for (Track t : tracks.values()) {
+                endPending(t, t.pendingStart);
+            }
         }
 
         private long millis(long ticks) {
@@ -412,7 +453,7 @@ final class MkvSubtitleExtractor {
             case VTT:
                 return vttText(text);
             default:
-                return SSA_OVERRIDE.matcher(SRT_TAG.matcher(text).replaceAll(""))
+                return SRT_OVERRIDE.matcher(SRT_TAG.matcher(text).replaceAll(""))
                         .replaceAll("");
         }
     }

@@ -18,6 +18,7 @@ package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -28,6 +29,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +37,6 @@ import java.util.Random;
 import java.util.zip.Deflater;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -132,14 +133,14 @@ public class MkvSubtitleExtractorTest extends TikaTest {
         // Language absent: the spec default
         assertEquals("eng", docs.get(1).metadata().get(TikaCoreProperties.LANGUAGE));
 
-        // header stripping; SimpleBlock has no duration
+        // header stripping; a SimpleBlock with nothing after it on its track ends where it starts
         assertEquals("WEBVTT\n\n00:00:02.000 --> 00:00:02.000\nHello stripped\n",
                 docs.get(2).body());
 
         assertEquals("WEBVTT\n\n00:00:03.000 --> 00:00:04.000\nHi &amp; bye\n",
                 docs.get(3).body());
         assertEquals("de", docs.get(3).metadata().get(TikaCoreProperties.LANGUAGE));
-        // the encrypted and laced tracks are skipped, and said so
+        // the encrypted and laced tracks lose text, and say so; the PGS track is just skipped
         String[] warnings = container.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
         assertEquals(2, warnings.length, String.join("\n", warnings));
         assertTrue(warnings[0].contains("track 7: encrypted; skipped"), warnings[0]);
@@ -188,11 +189,16 @@ public class MkvSubtitleExtractorTest extends TikaTest {
     }
 
     @Test
-    @Timeout(60)
     public void testCorruptedBytes() throws Exception {
         byte[] good = sample();
-        long seed = new Random().nextLong();
+        // -Dtika.test.seed=<seed> replays a failure
+        long seed = Long.getLong("tika.test.seed", new Random().nextLong());
         Random r = new Random(seed);
+        assertTimeoutPreemptively(Duration.ofSeconds(60), () -> corrupt(good, r, seed),
+                () -> "seed=" + seed);
+    }
+
+    private void corrupt(byte[] good, Random r, long seed) throws Exception {
         for (int i = 0; i < 2000; i++) {
             byte[] bad = good.clone();
             int flips = 1 + r.nextInt(8);
@@ -204,10 +210,30 @@ public class MkvSubtitleExtractorTest extends TikaTest {
             }
             try {
                 extract(bad, r.nextBoolean(), new Metadata());
-            } catch (RuntimeException e) {
+            } catch (RuntimeException | Error e) {
                 throw new AssertionError("seed=" + seed + " iteration=" + i, e);
             }
         }
+    }
+
+    @Test
+    public void testCueWithoutDurationEndsAtNextCue() throws Exception {
+        byte[] ebml = el(0x1A45DFA3, el(0x4282, ascii("matroska")));
+        byte[] tracks = el(0x1654AE6B,
+                track(1, "S_TEXT/UTF8", null, null, null, null),
+                el(0xAE, el(0xD7, uint(2)), el(0x83, uint(0x11)), el(0x86, ascii("S_TEXT/UTF8")),
+                        el(0x23E383, uint(1_500_000_000L))));
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)),
+                el(0xA3, block(1, 0, utf8("Press {Enter} {\\an8}now"))),
+                el(0xA3, block(2, 1000, utf8("default"))),
+                el(0xA3, block(1, 2000, utf8("next"))));
+        List<Emitted> docs = extract(cat(ebml, el(0x18538067, tracks, cluster)), true,
+                new Metadata());
+        assertEquals(2, docs.size(), docs.toString());
+        // SRT keeps literal braces; only {\...} override tags are dropped
+        assertEquals("WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nPress {Enter} now\n"
+                + "\n00:00:02.000 --> 00:00:02.000\nnext\n", docs.get(0).body());
+        assertEquals("WEBVTT\n\n00:00:01.000 --> 00:00:02.500\ndefault\n", docs.get(1).body());
     }
 
     @Test
@@ -337,6 +363,30 @@ public class MkvSubtitleExtractorTest extends TikaTest {
         }
         assertTrue(read[0] <= head.length + 8192, "read " + read[0] + " of " + mkv.length);
         assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    @Test
+    public void testTracksAfterFirstClusterIsReported() throws Exception {
+        byte[] tracks = el(0x1654AE6B, track(2, "S_TEXT/UTF8", "eng", null, null, null));
+        byte[] cluster = el(0x1F43B675, el(0xE7, uint(0)),
+                el(0xA0, el(0xA1, block(2, 0, utf8("late"))), el(0x9B, uint(1000))));
+        byte[] mkv = cat(el(0x1A45DFA3, el(0x4282, ascii("matroska"))),
+                el(0x18538067, cluster, tracks));
+        Metadata container = new Metadata();
+        assertEquals(0, extract(mkv, false, container).size());
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("subtitles: Matroska Tracks after the first Cluster"),
+                container.toString());
+    }
+
+    @Test
+    public void testDamageIsReportedAsSubtitles() throws Exception {
+        byte[] mkv = sample();
+        Metadata container = new Metadata();
+        extract(Arrays.copyOf(mkv, mkv.length - 3), false, container);
+        String[] warnings = container.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(Arrays.stream(warnings).allMatch(w -> w.contains("subtitles: ")),
+                String.join("\n", warnings));
     }
 
     @Test
