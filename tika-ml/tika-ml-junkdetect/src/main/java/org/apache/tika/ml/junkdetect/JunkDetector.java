@@ -615,13 +615,14 @@ public final class JunkDetector implements TextQualityDetector {
             // No scoreable LETTER at all (zero runs) — doc-level fallback:
             // density=0 -> very negative; density=1 coherence=1 -> positive
             // (unmodeled coherent script); density=1 coherence=0 -> very negative.
-            // z6 is included so a letter-free but FFFD/anomaly-heavy doc (which can
-            // no longer flood z1) is still penalized here — no path ignores the
-            // replacement ratio.  z6 is 1 for anomaly-free text, so (z6 - 1) keeps
-            // it inert there: all-whitespace -1, coherent unmodeled script ~+2.4.
+            // The raw replacement ratio penalizes a letter-free but FFFD/anomaly-heavy
+            // doc (which can no longer flood z1); it is 0 for anomaly-free text:
+            // all-whitespace -1, coherent unmodeled script ~+2.4.  Raw, not z6, so a
+            // retrained z6 calibration cannot shift these scores.
             agg.dominantScript = null;
             agg.z1 = Float.NaN;
-            agg.logit = -7f + 4f * agg.z7 + 6f * agg.z8 + 4f * (agg.z6 - 1f);
+            double rr = TextQualityFeatures.replacementRatio(text);
+            agg.logit = -7f + 4f * agg.z7 + 6f * agg.z8 - 4f * (Double.isNaN(rr) ? 0f : (float) rr);
             return agg;
         }
         agg.z1 = (float) (weightedZ1 / z1Count);
