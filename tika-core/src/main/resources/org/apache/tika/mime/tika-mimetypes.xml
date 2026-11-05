@@ -6355,6 +6355,10 @@
     <magic priority="30">
       <match value="&lt;!--" type="string" offset="0"/>
     </magic>
+    <!-- ties the text/html fragment rule (which sorts first) so a .xml name can pick XML -->
+    <magic priority="15">
+      <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+    </magic>
     <glob pattern="*.xml"/>
     <glob pattern="*.xsl"/>
     <glob pattern="*.xsd"/>

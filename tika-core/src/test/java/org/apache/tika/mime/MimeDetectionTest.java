@@ -308,6 +308,14 @@ public class MimeDetectionTest {
         assertDetected(MediaType.application("xhtml+xml"),
                 ("<script src=\"urchin.js\"></script>\n" + "<!-- x -->\n".repeat(12)
                         + "<html xmlns=\"http://www.w3.org/1999/xhtml\">").getBytes(US_ASCII));
+        // a .xml name still picks XML, except for roots text/html claims (TIKA-377)
+        byte[] table = "<table name=\"t\"><row id=\"1\"/></table>".getBytes(US_ASCII);
+        assertEquals(MediaType.APPLICATION_XML, detect(table, "test.xml"));
+        assertEquals(MediaType.TEXT_HTML, detect(table, "test.html"));
+        assertEquals(MediaType.TEXT_HTML, detect(table, null));
+        assertEquals(MediaType.TEXT_HTML, detect("<p>x</p>".getBytes(US_ASCII), "test.xml"));
+        assertEquals(MediaType.TEXT_HTML,
+                detect("<br />\n<b>Warning</b>: x".getBytes(US_ASCII), "test.php"));
     }
 
     @Test
