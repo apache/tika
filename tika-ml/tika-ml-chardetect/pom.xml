@@ -58,6 +58,26 @@
       <version>${revision}</version>
     </dependency>
 
+    <!-- Full 4.x default encoding chain for ScoreCharsetEvalData; tools only, not passed on -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-ml-junkdetect</artifactId>
+      <version>${revision}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-html</artifactId>
+      <version>${revision}</version>
+      <optional>true</optional>
+    </dependency>
+    <!-- JSONL reading/writing for BuildCharsetEvalData -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -107,7 +127,7 @@
           ./mvnw package -pl tika-ml/tika-ml-chardetect -am -Ptrain -DskipTests \
               -Dmaven.repo.local=.local_m2_repo
           java -jar tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
-              [TrainNaiveBayesBigram|EvalCharsetDetectors|BenchmarkCharsetDetectors|TrainUtf16Specialist] \
+              [EvalCharsetDetectors|BenchmarkCharsetDetectors] \
               [args...]
       -->
       <id>train</id>
@@ -125,7 +145,7 @@
                   <shadedClassifierName>tools</shadedClassifierName>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.apache.tika.ml.chardetect.tools.TrainNaiveBayesBigram</mainClass>
+                      <mainClass>org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors</mainClass>
                     </transformer>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />

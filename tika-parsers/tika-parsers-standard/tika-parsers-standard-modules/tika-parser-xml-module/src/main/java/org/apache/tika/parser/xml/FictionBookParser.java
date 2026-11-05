@@ -59,11 +59,17 @@ public class FictionBookParser extends XMLParser {
         private static final String ELEMENT_BINARY = "binary";
         private static final String ATTRIBUTE_ID = "id";
         private static final String ATTRIBUTE_CONTENT_TYPE = "content-type";
+        private static final String ELEMENT_COVERPAGE = "coverpage";
+        private static final String ELEMENT_IMAGE = "image";
+        private static final String XLINK_NS = "http://www.w3.org/1999/xlink";
+        private static final String ATTRIBUTE_HREF = "href";
         private final EmbeddedDocumentExtractor partExtractor;
         private final ContentHandler handler;
         private final ParseContext context;
         private final StringBuilder binaryData = new StringBuilder();
         private boolean binaryMode = false;
+        private boolean inCoverpage = false;
+        private String coverId;
         private Metadata metadata;
 
         private BinaryElementsDataHandler(EmbeddedDocumentExtractor partExtractor,
@@ -76,19 +82,34 @@ public class FictionBookParser extends XMLParser {
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
+            if (ELEMENT_COVERPAGE.equals(localName)) {
+                inCoverpage = true;
+            } else if (inCoverpage && coverId == null && ELEMENT_IMAGE.equals(localName)) {
+                String href = attributes.getValue(XLINK_NS, ATTRIBUTE_HREF);
+                if (href != null && href.startsWith("#")) {
+                    coverId = href.substring(1);
+                }
+            }
             binaryMode = ELEMENT_BINARY.equals(localName);
             if (binaryMode) {
                 binaryData.setLength(0);
                 metadata = Metadata.newInstance(context);
 
-                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                        attributes.getValue(ATTRIBUTE_ID));
+                String id = attributes.getValue(ATTRIBUTE_ID);
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, id);
                 metadata.set(HttpHeaders.CONTENT_TYPE, attributes.getValue(ATTRIBUTE_CONTENT_TYPE));
+                if (id != null && id.equals(coverId)) {
+                    metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+                }
             }
         }
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (ELEMENT_COVERPAGE.equals(localName)) {
+                inCoverpage = false;
+            }
             if (binaryMode) {
                 try (TikaInputStream tis = TikaInputStream.get(Base64.decodeBase64(binaryData.toString()))) {
                     partExtractor.parseEmbedded(

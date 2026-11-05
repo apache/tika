@@ -23,80 +23,49 @@ xref:advanced/junk-detection.adoc[Text Quality Scoring (Junk Detection)].
 
 Corpus paths below are written as `<corpus>` and `<workdir>`; substitute your own.
 
-== Model shape
+== Model
 
-The model scores text with nine features and one global linear combiner:
+A `HashedJunkModel` (`junkdetect.bin`): hashed codepoint 1–3-grams, 2^21 buckets, two int8
+weight vectors over the same features.
 
-[cols="1,4"]
-|===
-| Feature | What it measures
-
-| z1
-| Codepoint-bigram log-probability.  Every bigram is bucketed to its Unicode
-  script and scored against that script's own table; unseen pairs fall back to a
-  unigram independence score.  *The only per-script feature*, and the only one
-  with per-script mu/sigma calibration.
-
-| z2
-| Unicode block-transition log-probability.  One global table.
-
-| z3
-| Control-byte fraction over [0x01–0x08, 0x0B, 0x0C, 0x0E–0x1F, 0x7F].
-
-| z4
-| Script-transition log-probability.  One global table over raw
-  `Character.UnicodeScript` values.
-
-| z5–z9
-| Document-level quality: letter-adjacent-to-mark ratio, replacement-character
-  ratio, script density, script coherence, script alternation.
-|===
-
-`logit = w1*z1 + … + w9*z9 + bias`, fit on clean versus corrupted windows.
-Positive means clean; the natural threshold is 0.  The bundled model covers 72
-scripts (including COMMON, which is treated as a script in its own right so that
-digits and punctuation do not pollute the neighbouring script's evidence).
+* **Features.** `HashedJunkModel.normalize` (full-width ASCII and half-width kana folded, soft
+  hyphens dropped, then NFC), every whitespace run to one space, every digit to `0`, a space
+  at each end; then each codepoint n-gram (n = 1..3; a lone space is skipped) is hashed into a
+  bucket.  The corpus builder, the trainer and the scorer call the same code.
+* **Pairwise head.** Logistic regression with no bias on the L1-normalized difference of the
+  n-gram counts of a correct and a wrong decode of the same bytes; antisymmetric by
+  construction.  Used by the junk filter (`HashedArbitration`) and `compare()`.
+* **Pointwise head.** Logistic regression with a bias on n-gram counts divided by the n-gram
+  total: clean text against junk.  Used by `score()` and tika-eval; the worst-window score
+  uses the same weights over 200-codepoint windows.
+* **Deferral threshold.** Below this pairwise margin the junk filter trusts the structural,
+  else the declared, charset.  Chosen per model by the trainer.
+* **Trained scripts.** Scripts with enough letters in the training text; letters in other
+  scripts are uncovered.
 
 == Pipeline
 
-[source]
-----
-1. BuildJunkTrainingData      — collect and split corpus per script group
-2. BuildJunkAugmentationData  — optional: fold in real-document text
-3. TrainJunkModel             — train tables, calibrate, write the model
-----
-
-Tools live in `tika-ml/tika-ml-junkdetect-tools` and are packaged as a
-self-contained jar by the `train` profile:
+Tools live in `tika-ml/tika-ml-junkdetect-tools`; the `train` profile builds a self-contained
+jar.  Rebuild the bundled model with the driver script from the repository root:
 
 [source,bash]
 ----
-./mvnw clean package -pl tika-ml/tika-ml-junkdetect-tools -am -Ptrain -DskipTests
+TIKA_JUNK_DATA=<dir holding the data> tika-ml/tika-ml-junkdetect-tools/train-junk-model.sh
 ----
 
-The result is `tika-ml-junkdetect-tools-*-tools.jar`.
-
-To rebuild the bundled model, run the driver script from the repository root
-rather than the tools one by one:
-
-[source,bash]
-----
-TIKA_JUNK_DATA=<dir holding the corpus> tika-ml/tika-ml-junkdetect-tools/train-junk-model.sh
-----
-
-The script names the source corpus (its `CORPUS` constant is the committed record
-of which data trained the bundled model), builds the tools, runs stages 1 and 3
-into a fresh run directory `<TIKA_JUNK_DATA>/<corpus>-runs/<time>-<commit>/` (log,
-built data, and the exact uncommitted diff if the tree was dirty), and writes the
-model to its classpath location.
+The script names the data (its `CORPUS`, `GOLD`, `SAMPLE` and `SAMPLE_DOCS` lines are the
+committed record of what trained the bundled model), builds the tools, runs
+`BuildJunkTrainingData` and `TrainHashedJunkModel` into a fresh run directory
+`<TIKA_JUNK_DATA>/<corpus>-runs/<time>-<commit>/` (log, built corpus, the exact uncommitted
+diff if the tree was dirty, the deferral sweep, the cross-fit model) and writes
+`junkdetect.bin` and `junkdetect.bin.provenance` to their classpath location.  Commit both
+together; `ModelProvenanceTest` fails when they disagree.
 
 [IMPORTANT]
 ====
-Durable training parameters are *not* CLI flags.  They are `public static final`
-constants in `JunkDetectorTrainingConfig`, and both tools **refuse to start** if a
-CLI argument tries to override one.  A model file's identity therefore always
-matches a committed config: to change a parameter, edit that file and commit the
-change together with the retrained model.
+Training choices are *not* CLI flags.  They are constants in `HashedTrainingConfig` (model) and
+`JunkDetectorTrainingConfig` (corpus build); the provenance file records every one of them.
+To change one, edit the file and commit it with the retrained model.
 ====
 
 == Stage 1: corpus collection (`BuildJunkTrainingData`)
@@ -155,11 +124,11 @@ a multi-language bucket.
 
 | `\{script}.train.gz`
 | 80%
-| Bigram count accumulation in `TrainJunkModel`.
+| Training units for `TrainHashedJunkModel`.
 
 | `\{script}.dev.gz`
 | 10%
-| Calibration (mu/sigma).  Also the split to use for iterative evaluation.
+| Not read by the trainer; the split for iterative evaluation.
 
 | `\{script}.test.gz`
 | 10%
@@ -238,174 +207,68 @@ directory.
 
 | `DROP_SCRIPTS`
 | GOTHIC, THAANA
-| Script buckets to exclude from the next build: THAANA has 216 native train
-  sentences, and 40% of the Wikipedia "gothic" directory is English text *about*
-  Gothic.  The javadoc also expects `MIN_TARGET_SCRIPT_FRAC` to remove
-  CANADIAN_ABORIGINAL, CHEROKEE, and TIFINAGH.  None of that has been applied yet:
-  the bundled `junkdetect.bin` predates these settings and still carries tables for
-  all five, so `knownScripts()` returns them today.
+| Script buckets excluded: THAANA has 216 native train sentences, and 40% of the
+  Wikipedia "gothic" directory is English text *about* Gothic.
+  `MIN_TARGET_SCRIPT_FRAC` removes CANADIAN_ABORIGINAL, CHEROKEE and TIFINAGH implicitly.
 
-| `MIN_BIGRAM_COUNT`
-| 3
-| Drop z1 bigrams occurring fewer than 3 times in a script.  Singletons and
-  doubletons are overwhelmingly OCR artifacts and proper-noun noise that inflate
-  the clean-side tail without adding signal.  Set to 1 to disable.
-
-| `OA_LOAD_FACTOR`
-| 0.5
-| Target load factor for the per-script open-addressed table: ~2 probes per
-  lookup.
-
-| `KEY_INDEX_BITS`
-| 16
-| Bits per codepoint index in a packed bigram key.  Supports 65,535 codepoints per
-  script; HAN is the worst case at ~15 K.
 |===
 
-== Stage 2: augmentation (`BuildJunkAugmentationData`, optional)
+== Stage 2: training (`TrainHashedJunkModel`)
 
-The Wikipedia/MADLAD corpus is clean linguistic text and carries almost no HTML
-symbols (©, ®, ™, €, £).  On real web pages those bytes then look anomalously
-surprising, which tips charset arbitration toward whichever encoding happens to
-put a frequent training letter at the same byte position.
+Train data only.  The gold file must hold `split = train` on every row; the trainer refuses
+anything else.
 
-`BuildJunkAugmentationData` folds quality-filtered text from tika-app RMETA JSON
-output into the `.train.gz` files to close that gap.  It is strictly additive: the
-baseline directory is never modified, `.dev.gz` / `.test.gz` are copied verbatim
-so evaluation stays honest, and the tool refuses to run if the output directory
-resolves to the baseline.  Per-script gates require a minimum document count and
-cap appended lines as a fraction of the baseline, so augmentation cannot skew the
-distribution toward data-rich scripts.
+*Inputs*
 
-== Stage 3: training (`TrainJunkModel`)
+* the built Wikipedia corpus (stage 1), sampled per (script, language): sentences and ~2 KB
+  documents, capped; each sentence's language is found through the corpus, with the builder's
+  own line parsing and normalization (the run stops if more than 1% of units find none); a fixed
+  share is also used in upper case, so all-caps headings read as clean;
+* gold train web pages with charset labels, split into an even and an odd half; optional
+  `damage_spans` mark damaged regions;
+* a sample of web pages with unanimous charset votes (no gold pages), for real-decision pairs.
 
-Reads each script's `.train.gz`, accumulates codepoint-bigram counts, builds the
-quantized per-script tables, then calibrates z1's mu and sigma from `.dev.gz`.
-The global tables (z2, z4) and the global calibrations (z3, z5–z9) and combiner
-weights are fit in the same run.
+*Pairwise pairs*
 
-[source,bash]
-----
-java -cp tika-ml-junkdetect-tools-*-tools.jar \
-  org.apache.tika.ml.junkdetect.tools.TrainJunkModel \
-  --data-dir <workdir>/junkdetect --output <model.bin> [--git-commit <sha>]
-----
+* Wikipedia units against synthetic wrong decodes (encode in a plausible source charset, decode
+  with the others);
+* gold pages (even half) under a fixed list of decoders, and through the real detector chain:
+  the label's decode of the probe against every other candidate the junk filter would weigh;
+* the web sample, as is and re-encoded into every charset of its script that holds its letters,
+  through the chain the same way.  One page in ten is held out to monitor the fit.
 
-`--data-dir` (a `BuildJunkTrainingData` output directory, with its `manifest.tsv`
-and `source.tsv`) and `--output` are required.  Next to the model the tool writes
-`<model>.provenance`: the model's SHA-256, the source corpus name and manifest
-digest, the training data's manifest digest, the git commit, the command line, and
-every training constant.  Commit the model and its provenance file together;
-`ModelProvenanceTest` fails the build if the bundled model's digest does not match
-its provenance.  There is one bundled model in git: train through
-`train-junk-model.sh`, never keep parallel model variants.
+*Deferral threshold (cross-fit)*
 
-=== Calibration
+A second pairwise model is fitted on the odd half and run over the even half as the junk filter
+would.  On the pages where deferring to the anchor changes correctness, the threshold grows in
+bands of 1.0 while each band fixes at least twice as many pages as it breaks.  The per-page
+records and the cross-fit model are kept in the run directory.
 
-For each dev sentence, `meanLogProb = Σ table[bigram] / (bigrams - 1)`; mu and
-sigma are its mean and standard deviation across the split.  At inference
-`z = (meanLogProb - mu) / sigma`, so 0 means "exactly as likely as average clean
-text for this script" and negative means less likely than clean.
+*Pointwise examples*
 
-== Model binary format (JUNKDET1)
+Clean: Wikipedia units and clean gold pages (even half).  Junk: one synthetic version of each
+(wrong decode, word or character shuffle, injected U+FFFD / control characters, random bytes),
+and the damaged regions of gold pages whose spans were located by rule, padded by 100 code
+points (the rest of those pages counts as clean).
 
-Gzipped; the loader detects the wrapper from the first two bytes (`0x1f 0x8b`).
-The version byte is a hard gate — older files are rejected rather than read
-through a compatibility path, because parallel scoring paths are a known source of
-silent miscalibration.
+*Quantization and checks*
 
-[source]
-----
-[8 bytes]  magic "JUNKDET1" (ASCII)
-[1 byte]   version (15)
-[4 bytes]  num_scripts (int32 BE)
-[1 byte]   block_scheme_version
+Weights are quantized to int8 (the 99.99th percentile of |w| maps to 127).  The trainer fails
+unless the written model scores its own features identically.
 
-// z4 — global script-transition section
-[1 byte]   num_script_buckets
-  per bucket: [2 bytes] name length, [N bytes] name (UTF-8)
-[4 bytes]  scriptTrans quant min (float32 BE)
-[4 bytes]  scriptTrans quant max
-[num_script_buckets² × 2 bytes]  transition table (int16 quantized)
-[8 bytes]  z4 calibration {mu, sigma}
+== Model binary format (JUNKHNG1)
 
-// z2 — global block-transition section
-[4 bytes]  block quant min
-[4 bytes]  block quant max
-[block_N² × 2 bytes]  transition table (int16 quantized)
-[8 bytes]  z2 calibration {mu, sigma}
+Gzipped, big-endian: magic `JUNKHNG1`, version byte, log2 of the bucket count, max n; pairwise
+scale (float), the pairwise int8 weights, deferral threshold (float); pointwise scale (float),
+bias (float), the pointwise int8 weights; trained-script count (int) and
+`Character.UnicodeScript` names.  The loader rejects anything else, including trailing bytes.
 
-// remaining global calibrations, {mu, sigma} float32 pairs
-[8 bytes]  z3 (control-byte ratio)
-[8 bytes]  z5 (letter-adjacent-to-mark)
-[8 bytes]  z6 (replacement-char ratio)
-[8 bytes]  z9 (script-alternation)
+== Tests
 
-// global combiner
-[1 byte]   num_features
-[(num_features + 1) × 4 bytes]  weights w1..wN then bias
-
-// per-script section, sorted by script name
-  [2 bytes]  name length, [N bytes] name (UTF-8)
-  [8 bytes]  z1 calibration {mu, sigma}
-  [variable] bigram + unigram tables: codepoint index, then sorted-occupied
-             bigram keys (first as int32 BE, rest as LEB128 varint deltas) with
-             8-bit quantized bigram and unigram log-prob values
-----
-
-Default classpath resource: `org/apache/tika/ml/junkdetect/junkdetect.bin`.
-
-== Known limitations
-
-=== Baltic and closely related Latin languages
-
-The LATIN bucket pools hundreds of languages.  Baltic languages (Lithuanian,
-Latvian) use distinctive diacritics encoded differently in cp1257 and cp1252, but
-those bigrams are diluted by the shared Latin vocabulary.  The model picks the
-right winner with a delta below the production confidence threshold of 1.0.
-
-Candidate improvements: weight Baltic languages more heavily within the LATIN
-bucket, or split LATIN into a dedicated LATIN-EAST bucket trained primarily on
-Baltic, Slavic-Latin (Polish, Czech, Slovak), and Romanian.
-
-=== RTL script reversal on short text
-
-For Arabic and Hebrew, codepoint reversal is a realistic failure mode (text stored
-in the wrong visual order).  Separation is good at 50+ characters and weak at
-15–30, where there are too few bigrams to be stable.  A short-text RTL specialist
-using finer-grained features (trigrams, or unigram frequency distributions) is the
-obvious next step.
-
-== Smoke tests
-
-`JunkDetectorSmokeTest` verifies the bundled model through the `TextQualityDetector`
-interface, using `TextQualityScore` and `TextQualityComparison` from `tika-core`.
-
-[cols="1,3"]
-|===
-| Test | What it checks
-
-| `cleanVsGarbage`
-| Clean English scores above random high-byte garbage (decoded from ISO-8859-1 so
-  it is scoreable at all).
-
-| `forwardVsReversedArabic`
-| Forward Arabic scores above codepoint-reversed Arabic.  Reversal is at codepoint
-  granularity, so the text stays valid Unicode.
-
-| `cp1252VsCp1257OnBalticText`
-| `compare()` picks cp1257 for Lithuanian text.  The asserted floor is only
-  delta > 0.05 — weak, per the Baltic limitation above.
-
-| `cp1252VsCp1251OnRussianText`
-| `compare()` picks cp1251 for Russian text.  Delta > 1.0; Cyrillic bigrams are
-  highly distinctive.
-
-| `cleanVsShuffledCjk`
-| Clean Japanese scores above byte-shuffled Japanese.
-|===
-
-NOTE: Codepoint reversal is *not* a useful test for LTR scripts.  Their byte-bigram
-distributions are nearly symmetric, so forward and reversed are barely
-distinguishable.  The Russian test therefore uses codec comparison
-(cp1251 vs cp1252), which is the real-world failure mode for Cyrillic.
+* `HashedJunkModelTest`: golden buckets and scores under a seeded test model (any change to
+  feature extraction fails it), the loader's rejections, round trips.
+* `HashedTrainerTest` (tools): the trainer's features equal the runtime's, the language lookup
+  finds every builder sentence, the threshold rule, damage spans, an end-to-end train on a
+  synthetic corpus.
+* Behaviour of the bundled model: `JunkDetectorSmokeTest`, `DecodeCorruptionDiscriminationTest`,
+  `LatinSiblingComparisonTest`, `UnmodeledScriptTest`, `JunkFilterEncodingDetectorTest`.

@@ -119,6 +119,22 @@ link:{api}/org/apache/tika/parser/epub/EpubParser.html[EpubParser] supports the
 EPUB format used for many digital books.
 link:{api}/org/apache/tika/parser/xml/FictionBookParser.html[FictionBookParser]
 supports the XML-based FictionBook (`.fb2`) publishing format.
+Comic book archives (`.cbz`) are read by the zip parser, which emits the
+first page in name order as the cover thumbnail. The zip parser also emits the
+stored preview of Krita (`.kra`), OpenRaster (`.ora`), FreeCAD (`.FCStd`),
+Procreate (`.procreate`) and Sketch (`.sketch`) files as their thumbnail.
+
+link:{api}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser] reads Mobipocket
+books and their Kindle descendants (`.mobi`, `.prc`, `.azw`, and the KF8 generation
+`.azw3`): the EXTH metadata, the cover as the thumbnail and the other images as embedded
+documents, and the text, whether stored, PalmDOC- or HUFF/CDIC-compressed; of a KF8
+book only the HTML flow, not its stylesheets. A hybrid file yields its version 6 book; the
+KF8 book it also carries holds the same content and is emitted as an embedded document only
+with `extractKf8`. An encrypted book yields its metadata and images only and sets
+`tika:encrypted`. The text is cut at `maxTextLength` (16 MB by default) and at 32 times the
+file's size, whatever the header declares; of a book over `maxFileSize` (256 MB by default)
+the beginning is read. A `.prc` or `.azw` that is not a Mobipocket book (a Palm application,
+a PalmDOC text, a Topaz or KFX book) yields nothing and a warning.
 
 == Rich Text Format
 
@@ -244,7 +260,30 @@ link:{api}/org/apache/tika/parser/video/FLVParser.html[FLVParser] supports the
 Flash video format with a simple parsing algorithm.
 link:{api}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser] covers the MP4
 family (MP4, QuickTime, 3GPP, ...), extracting video metadata and any audio
-stream metadata. For the Ogg family,
+stream metadata. Its text subtitle tracks (`tx3g`/`mov_text`, QuickTime `text`)
+become embedded WebVTT documents (`track-<id>.vtt`, with the track's `dc:language`),
+written by Tika from the samples rather than copied from the file, and parsed by
+SubtitleParser (see <<Text formats>>). Cue times ignore edit lists. Finding the
+samples needs random access, so this happens only when the input is a file; a byte
+array, or a stream already drained by digesting; or an archive entry of up to 1 MB,
+or larger within the cache memory budget. Any other input, including a
+stream with only a declared `Content-Length`, is silently not searched. Set
+`extractSubtitles` to false on `mp4-parser` to turn it off.
+`extractSubtitles` is read from tika-config.json only, not from a per-request config.
+link:{api}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser] does the
+same for Matroska and WebM: SubRip, ASS/SSA and WebVTT text tracks (also when
+zlib-compressed or header-stripped), with the track's `Name` as `dc:title`. It reads in
+a single forward pass, so streams are not spooled. It stops at the first Cluster when
+the file has no text track; otherwise it reads every block header, seeking past other
+tracks' blocks in a file and reading through them in a stream. It extracts no container
+metadata yet. Its switch is `extractSubtitles` on `matroska-parser`, again from
+tika-config.json only.
+Per file, extraction stops at 64 tracks, 16 million characters of cue text, 256 MB of
+decoded subtitle bytes or one million samples. Text that is lost (encrypted, laced or
+unsupported encodings, damage, a limit) is reported on the container as
+`X-TIKA:EXCEPTION:warn` values starting with `subtitles:`. Subtitle formats Tika does not
+decode (image subtitles such as PGS and VobSub, MP4 `wvtt` and `stpp`) are skipped silently.
+For the Ogg family,
 link:{api}/org/apache/tika/parser/ogg/OggParser.html[OggParser] and
 link:{api}/org/apache/tika/parser/ogg/TheoraParser.html[TheoraParser] extract a
 limited amount of metadata.
@@ -265,6 +304,13 @@ supports jar archives.
 link:{api}/org/apache/tika/parser/code/SourceCodeParser.html[SourceCodeParser]
 handles a number of source code formats, including Java, C, C++ and Groovy,
 providing a formatted form of the code along with simple metadata.
+
+link:{api}/org/apache/tika/parser/jupyter/JupyterParser.html[JupyterParser] reads Jupyter
+notebooks (`.ipynb`): the cell sources and plain-text outputs as text and the image
+outputs and cell attachments as embedded documents. The thumbnail is chosen the way
+https://nbsphinx.readthedocs.io/en/latest/subdir/gallery.html[nbsphinx] chooses a gallery
+thumbnail: the output of a cell marked `nbsphinx-thumbnail`, otherwise the last image in
+the notebook.
 
 == Mail formats
 

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.ml.chardetect;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -32,15 +33,13 @@ import org.junit.jupiter.api.Test;
 /**
  * Belt-and-suspenders check for a failure mode we've been burned by:
  * a test-tree copy of a model file shadowing the production copy and
- * quietly producing wrong eval numbers.  These tests assert there is
- * exactly one copy of each specialist's model on the classpath, so
- * accidentally planting a second (test or stale) copy fails the build
- * immediately instead of at eval time.
+ * quietly producing wrong eval numbers.  There must be exactly one copy
+ * of the charset model on the classpath.
  */
 public class ModelResourceUniquenessTest {
 
-    private static final String UTF16_RESOURCE =
-            "org/apache/tika/ml/chardetect/utf16-specialist.bin";
+    private static final String MODEL_RESOURCE =
+            "org/apache/tika/ml/chardetect/hashed-ngram.hng";
 
     private static List<URL> findAll(String resource) throws IOException {
         Enumeration<URL> urls =
@@ -49,43 +48,28 @@ public class ModelResourceUniquenessTest {
     }
 
     @Test
-    public void utf16ModelResourceIsUnique() throws IOException {
-        List<URL> urls = findAll(UTF16_RESOURCE);
+    public void modelResourceIsUnique() throws IOException {
+        List<URL> urls = findAll(MODEL_RESOURCE);
         assertEquals(1, urls.size(),
-                "Expected exactly one copy of " + UTF16_RESOURCE
+                "Expected exactly one copy of " + MODEL_RESOURCE
                         + " on the classpath, found: " + urls);
     }
 
     @Test
-    public void specialistConstructorLoadsSameBytesAsClasspathResource()
-            throws IOException {
-        // The specialist classes load via their own DEFAULT_MODEL_RESOURCE
-        // constants.  If those constants ever drift from the production
-        // resource path, both the md5 match and the load would succeed but
-        // point at different files.  Assert bytes-equal.
-        byte[] utf16ResourceBytes;
+    public void defaultResourceConstantPointsAtTheModel() throws IOException {
+        byte[] viaClassLoader;
         try (InputStream is = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(UTF16_RESOURCE)) {
-            assertNotNull(is, "classpath missing " + UTF16_RESOURCE);
-            utf16ResourceBytes = IOUtils.toByteArray(is);
+                .getResourceAsStream(MODEL_RESOURCE)) {
+            assertNotNull(is, "classpath missing " + MODEL_RESOURCE);
+            viaClassLoader = IOUtils.toByteArray(is);
         }
-        byte[] utf16ViaConstant;
-        try (InputStream is = Utf16SpecialistEncodingDetector.class
-                .getResourceAsStream(
-                        Utf16SpecialistEncodingDetector.DEFAULT_MODEL_RESOURCE)) {
+        byte[] viaConstant;
+        try (InputStream is = HashedNgramEncodingDetector.class
+                .getResourceAsStream(HashedNgramEncodingDetector.DEFAULT_MODEL_RESOURCE)) {
             assertNotNull(is, "constant resolves to null: "
-                    + Utf16SpecialistEncodingDetector.DEFAULT_MODEL_RESOURCE);
-            utf16ViaConstant = IOUtils.toByteArray(is);
+                    + HashedNgramEncodingDetector.DEFAULT_MODEL_RESOURCE);
+            viaConstant = IOUtils.toByteArray(is);
         }
-        assertArraysEqual(utf16ResourceBytes, utf16ViaConstant,
-                "UTF-16 model loaded via DEFAULT_MODEL_RESOURCE differs from "
-                        + "classpath " + UTF16_RESOURCE);
-    }
-
-    private static void assertArraysEqual(byte[] a, byte[] b, String message) {
-        if (!java.util.Arrays.equals(a, b)) {
-            throw new AssertionError(message
-                    + " (len " + a.length + " vs " + b.length + ")");
-        }
+        assertArrayEquals(viaClassLoader, viaConstant);
     }
 }

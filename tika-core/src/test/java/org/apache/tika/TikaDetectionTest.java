@@ -60,6 +60,7 @@ public class TikaDetectionTest {
         assertEquals("text/javascript", tika.detect("x.js"));
         assertEquals("text/javascript", tika.detect("x.mjs"));
         assertEquals("application/json", tika.detect("x.json"));
+        assertEquals("application/x-ipynb+json", tika.detect("x.ipynb"));
         assertEquals("application/lost+xml", tika.detect("x.lostxml"));
         assertEquals("application/mac-binhex40", tika.detect("x.hqx"));
         assertEquals("application/mac-compactpro", tika.detect("x.cpt"));
@@ -163,6 +164,7 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.airzip.filesecure.azf", tika.detect("x.azf"));
         assertEquals("application/vnd.airzip.filesecure.azs", tika.detect("x.azs"));
         assertEquals("application/vnd.amazon.ebook", tika.detect("x.azw"));
+        assertEquals("application/vnd.amazon.mobi8-ebook", tika.detect("x.azw3"));
         assertEquals("application/vnd.americandynamics.acc", tika.detect("x.acc"));
         assertEquals("application/vnd.amiga.ami", tika.detect("x.ami"));
         assertEquals("application/vnd.android.package-archive", tika.detect("x.apk"));

@@ -88,7 +88,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
     static final MediaType XLAM = MediaType.application("vnd.ms-excel.addin.macroEnabled.12");
     static final MediaType XPS = MediaType.application("vnd.ms-xpsdocument");
 
-    static final MediaType THREE_MF = MediaType.application("vnd.ms-package.3dmanufacturing-3dmodel+xml");
+    static final MediaType THREE_MF = MediaType.parse("model/3mf");
 
     static final Set<String> OOXML_HINTS =
             fillSet("word/", "xl/", "ppt/", "docProps/",
@@ -145,7 +145,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
                 MediaType.application("vnd.ms-visio.template"));
 
         OOXML_CONTENT_TYPES.put("application/vnd.ms-package.xps-fixeddocumentsequence+xml", XPS);
-        OOXML_CONTENT_TYPES.put(THREE_MF.toString(), THREE_MF);
+        OOXML_CONTENT_TYPES.put("application/vnd.ms-package.3dmanufacturing-3dmodel+xml", THREE_MF);
 
     }
 

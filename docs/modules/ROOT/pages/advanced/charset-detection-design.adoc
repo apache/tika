@@ -19,8 +19,8 @@
 :toc:
 :toc-placement: left
 
-Byte-bigram Naive Bayes classification, structural detectors for
-UTF-16/UTF-32/ISO-2022, and a script-aware text-quality arbitrator.  The design
+A hashed byte n-gram model, structural checks for UTF-8/UTF-32/ISO-2022, and a
+script-aware text-quality arbitrator.  The design
 decision that shapes everything else: collect candidates from every layer, then
 arbitrate by decode quality — not first-detector-wins.
 
@@ -50,9 +50,10 @@ are collected into an `EncodingDetectorContext` on the `ParseContext`; when a
 | 3
 | `MojibusterEncodingDetector`
 | `tika-encoding-detector-mojibuster`
-| Structural UTF-32/UTF-16/ISO-2022 detection, UTF-8 grammar gate, HTML
-  stripping, then a 34-class byte-bigram NB classifier.  STRUCTURAL for
-  structural hits, STATISTICAL for NB predictions.  See <<nb-pipeline>>.
+| Structural UTF-32/ISO-2022 detection, UTF-8 grammar gate, HTML stripping,
+  then a hashed byte n-gram model that also covers UTF-16 and UTF-32.
+  STRUCTURAL for structural hits, STATISTICAL for model predictions.  See
+  <<nb-pipeline>>.
 
 | 4
 | `HtmlEncodingDetector`
@@ -65,8 +66,8 @@ are collected into an `EncodingDetectorContext` on the `ParseContext`; when a
 | 5
 | `JunkFilterEncodingDetector`
 | `tika-ml-junkdetect`
-| `MetaEncodingDetector`.  Arbitrates across all base-detector candidates using
-  a script-aware text-quality model.  See <<junk-filter>>.
+| `MetaEncodingDetector`.  Arbitrates across all base-detector candidates with
+  a hashed n-gram text model.  See <<junk-filter>>.
 |===
 
 === EncodingResult and ResultType
@@ -76,7 +77,7 @@ Detectors return `List<EncodingResult>`.  Each carries:
 * `charset` — the detected `java.nio.charset.Charset`.
 * `confidence` — 0.0 to 1.0.
 * `label` — the detector's internal label, which may be finer than the Java
-  charset name (e.g. `IBM424-ltr`, `UTF-16-BE`).
+  charset name.
 * `resultType` — `DECLARATIVE`, `STRUCTURAL`, or `STATISTICAL`.
 
 In the default chain JunkFilter arbitrates across all three tiers by decode
@@ -120,59 +121,53 @@ DECLARATIVE.
 [[nb-pipeline]]
 == MojibusterEncodingDetector
 
-Layers run in order; the first confident structural answer short-circuits,
-otherwise the probe falls through to NB.
+Pure-ASCII probes stop early; every other probe collects candidates from the
+structural checks and the model, which are then ranked STRUCTURAL first.
 
-=== Layer 1 — UTF-32 structural (`WideUnicodeDetector`)
+=== Pure ASCII and ISO-2022
+
+A probe with no byte ≥ 0x80 and no NUL is first checked for ISO-2022-JP/KR/CN.
+These encodings are 7-bit and escape-based (`ESC $ B`, `ESC $ ) C`, SO/SI), so
+the pipeline scans for the designation escape and then *verifies* by decoding:
+the result must contain real CJK at a near-zero replacement rate, which rejects
+a stray `ESC $` in ordinary ASCII.
+
+Otherwise, a *pure-ASCII* probe — one whose only control characters are TAB,
+LF, FF, CR and ESC — returns windows-1252 at 0.1 confidence: every
+ASCII-compatible charset decodes it identically, so the HTML5-canonical name is
+the answer.  Any other C0 control sends the probe to the model, because short
+BOM-less UTF-16 Thai, Cyrillic or Indic text looks exactly like that (`0E 2A`,
+`04 1F`, `09 15`: no NUL, no high byte).  If the model then names anything
+other than UTF-16 or UTF-32, the probe still gets the windows-1252 answer.
+
+=== UTF-32 structural (`WideUnicodeDetector`)
 
 Every 4-byte group is read as a 32-bit codepoint in both BE and LE order and
 checked for Unicode validity (0x000000–0x10FFFF, surrogates excluded).  Valid
 codepoints occupy ~0.004% of the 32-bit space, so non-UTF-32 bytes almost always
-produce an out-of-range value within the first 8 bytes.
+produce an out-of-range value within the first 8 bytes.  A hit is a STRUCTURAL
+candidate, so UTF-32 is never reported as UTF-16.
 
-=== Layer 2 — UTF-16 specialist (`Utf16SpecialistEncodingDetector`)
+The same pass checks UTF-16 surrogate pairing under each byte order; a model
+UTF-16 candidate whose surrogates are broken is dropped.  A pair cut by the end
+of the probe is not counted as broken.  These checks see the probe with its BOM.
 
-A maxent classifier over stride-2 column-histogram features: byte distribution
-at even positions versus odd positions, the structural property that separates
-UTF-16 from legacy byte encodings.  An external column-asymmetry evidence gate
-blocks the specialist on probes that look unambiguously single-stream (e.g.
-legacy CJK).  A confident LE-vs-BE winner short-circuits the pipeline.
-
-UTF-16 lives outside the main NB classifier because stride-1 byte bigrams cannot
-discriminate UTF-16 CJK content from legacy CJK encodings: CJK characters encode
-to byte pairs that alias common ASCII patterns (U+6572 is `72 65` in UTF-16-LE —
-the same bytes as ASCII "re").
-
-=== Layer 3 — UTF-8 grammar gate (`StructuralEncodingRules.checkUtf8`)
+=== UTF-8 grammar gate (`StructuralEncodingRules.checkUtf8`)
 
 Walks the probe looking for valid UTF-8 lead + continuation sequences:
 
 * `LIKELY_UTF8` — grammar valid and at least one complete multi-byte sequence.
-  UTF-8 is emitted as a STRUCTURAL candidate alongside NB's output, a safety net
-  for short probes where NB could be fooled by one coincidental bigram.
-* `NOT_UTF8` — grammar violated.  UTF-8 is filtered out of NB's output.
+  UTF-8 is emitted as a STRUCTURAL candidate alongside the model's output.
+* `NOT_UTF8` — grammar violated.  UTF-8 is filtered out of the model's output
+  (a few errors in a long probe are tolerated as corruption).
 * `AMBIGUOUS` — no complete multi-byte sequence (pure ASCII, or a truncated lead
   at probe end).  No emission.
 
-=== ISO-2022-JP/KR/CN structural detection
-
-ISO-2022 encodings are 7-bit and escape-based (`ESC $ B`, `ESC $ ) C`, …), so
-they carry no high bytes and are invisible to the byte-bigram classifier;
-without a structural check a real ISO-2022-JP page would fall through to the
-windows-1252 default and decode to gibberish.
-
-On a pure-ASCII probe — the only place ISO-2022 can occur — the pipeline scans
-for the designation escape and then *verifies* by decoding: the result must
-contain real CJK at a near-zero replacement rate.  That rejects a stray `ESC $`
-in ordinary ASCII.  High-byte binary containing an escape sequence fails the
-pure-ASCII gate and takes the normal NB path, so it cannot trigger a false
-ISO-2022 detection.
-
-=== Layer 4 — HTML stripping (content-type aware)
+=== HTML stripping (content-type aware)
 
 When the probe looks like HTML/XML (explicit content type, or unknown),
-`HtmlByteStripper` performs a byte-level state-machine strip so NB sees content
-bytes rather than markup:
+`HtmlByteStripper` performs a byte-level state-machine strip so the model sees
+content bytes rather than markup:
 
 * **Script / style / comment bodies** are dropped entirely — no natural-language
   signal.
@@ -185,80 +180,70 @@ bytes rather than markup:
   bytes are used.  The probe was not really HTML; common for plain text with
   stray `<` bytes, or EBCDIC content.
 
-=== Layer 5 — Naive Bayes byte-bigram classifier
+=== Hashed byte n-gram model (`HashedNgramEncodingDetector`)
 
-34 classes: CJK multibyte (Big5-HKSCS, EUC-JP, GB18030, Shift_JIS, x-EUC-TW,
-x-windows-949), EBCDIC (IBM420/424-ltr/rtl, IBM500, IBM1047), DOS OEM
-(IBM850/852/855/866), Cyrillic (KOI8-R, KOI8-U), Windows single-byte (1250–1258,
-874), ISO-8859-2/3/16, Mac (x-MacRoman, x-mac-cyrillic), and UTF-8.
+43 classes: CJK multibyte (Big5-HKSCS, EUC-JP, GB18030, Shift_JIS, x-EUC-TW,
+x-windows-949), EBCDIC (IBM420/424 in ltr and rtl forms, IBM500, IBM1047), DOS
+OEM (IBM437/850/852/855/866), Cyrillic (KOI8-R, KOI8-U, ISO-8859-5), Windows
+single-byte (1250–1258, 874), ISO-8859-2/3/6/7/16, Mac (x-MacRoman,
+x-mac-cyrillic), UTF-8, UTF-16LE/BE, UTF-32LE/BE, and `binary`.
 
-Features are **stride-1 byte bigrams**: the value for bigram
-`b[i] << 8 | b[i+1]` is its occurrence count.  No hashing — each bigram indexes
-directly into a 65 536-entry table.
+Features:
 
-==== Per-class vocabulary
+* **Byte n-grams** of order 1–3 that hold at least one byte outside printable
+  ASCII, TAB, LF and CR.  Pure-ASCII stretches contribute nothing, which keeps
+  long English markup from drowning the few bytes that matter, and lets the
+  scorer skip them outright.  Unigrams and bigrams index their rows directly;
+  trigrams are hashed into 2^16 rows.
+* **Column channels**: the byte at even offsets and the byte at odd offsets over
+  the first 512 bytes.  Byte n-grams cannot tell UTF-16LE from UTF-16BE (the
+  same pairs in a different phase); the column channels can, without relying on
+  NUL bytes, which CJK UTF-16 does not have.
 
-Each class gets its own vocabulary, sized to the top bigrams covering 99.9% of
-its training marginal.  In the shipped model that is ~3.7–10.5 K bigrams for the
-single-byte and EBCDIC classes and ~13–35 K for UTF-8 and the CJK classes.  A
-uniform top-K would either waste slots on SBCS classes or starve CJK classes.
+Each channel's int8 embedding rows are mean- and max-pooled, a log count of
+non-text bytes is appended, and one ReLU hidden layer produces a raw logit per
+class.  The model was trained with decode-equivalent siblings as acceptable
+answers for each other, so siblings that decode a probe identically score close
+together.
 
-==== Per-class Laplace smoothing
+A probe with no non-text byte is not scored.
 
-`α(c) = α_base / V(c)`.  Peaky Latin classes get tight smoothing — their
-observed frequencies are trustworthy; diffuse CJK classes get flatter smoothing,
-because no single bigram is strong evidence there.
+Long probes stop early.  The windows around the first 4,096 non-text bytes are
+always scored; if the top class then leads the runner-up by at least 2 logits,
+the rest of the probe adds only the windows around byte values not seen yet (a
+sibling charset often differs in a single rare byte, which may appear late).
+Otherwise the whole probe is scored.
 
-==== Shared reference denominator
+==== Candidate emission
 
-The Laplace denominator uses `N_ref = max(total_c)` across classes rather than
-per-class totals.  Otherwise classes with smaller training corpora (Mac variants
-at 10M bigrams vs 30M for the main classes) get milder unseen log-probabilities
-and a systematic free lift on sparse-evidence probes.
+* At most `DEFAULT_TOP_K` (5) charsets are emitted.  Top-1 gets confidence 1.0;
+  a runner-up within `MARGIN_LOGITS` (4.0) of it gets `1 - gap / MARGIN_LOGITS`,
+  and anything further away is dropped.  Confidence is a margin, not a softmax,
+  which saturates on out-of-distribution input.
+* Labels that share a Java charset (`IBM420-ltr` / `-rtl`) are merged and score
+  as their best member.
+* `binary` is not a charset: when it is the top class nothing is emitted, so the
+  pool holds only structural candidates, if any, and otherwise the
+  windows-1252 fallback at 0.1 confidence.  JunkFilter treats that as
+  abstention and defers to a declaration when there is one.
 
-==== IDF reweighting
+==== Fallbacks and rewrites
 
-A global `float[65_536]` IDF table multiplies each bigram's contribution to every
-class score: `idf[b] = log((C + 1) / (df[b] + 1))`, where `df[b]` is the number
-of classes in which bigram `b` has a non-zero training count.  Bigrams in every
-class (common ASCII) contribute near zero; class-specific bigrams (CJK signal
-bytes, EBCDIC-unique patterns) carry full weight.  Bigrams whose IDF quantizes to
-zero skip the inner class loop entirely.
-
-==== Int8 quantization
-
-Weights and IDF are int8-quantized with per-class scales.  The inner loop is pure
-integer multiply-accumulate; one per-class dequant multiplication happens at
-end-of-probe.  Accuracy is byte-exact against float at every probe length
-measured.
-
-==== Post-NB fallbacks
-
-* **Probes under 2 bytes** → windows-1252 at 0.1 confidence.  The WHATWG default;
-  the detector never returns an empty result.
-* **Pure-ASCII probes** (no bytes ≥ 0x80, no nulls) → ISO-2022 structural
-  detection first, otherwise windows-1252.  Bigram NB cannot discriminate Latin
-  code pages on pure-ASCII content, so return the HTML5-canonical answer.
-* **Latin-sibling rewrite** — on low-evidence probes (< 5 high bytes), if the top
-  NB candidate is a non-1252 member of the Latin family and the probe decodes
-  byte-identically under windows-1252, rewrite to windows-1252.
-* **Margin-gated emission** — at most `DEFAULT_TOP_K` (5) candidates are emitted,
-  and a runner-up only if its score is within
-  `MARGIN_THRESHOLD_NATS_PER_BIGRAM` (0.20) × scored bigrams of top-1.
-  Confidence is that linear margin distance, not a softmax: top-1 is 1.0, a
-  candidate at half the threshold is 0.5, and one at the threshold is 0.0 and is
-  dropped.  So JunkFilter never scores a weak coincidence pick against NB's
-  confident top.
+* **Probes under 2 bytes**, or an empty pool → windows-1252 at 0.1 confidence.
+  The WHATWG default; the detector never returns an empty result.
+* **Latin-sibling rewrite** — if the top candidate is a Western Latin sibling
+  (x-MacRoman, IBM850, ISO-8859-15) and the probe has at least as many cased
+  letters at high-byte positions under windows-1252, rewrite it to windows-1252.
 
 ==== CJK decode-failure veto (`CjkDecodeValidator`)
 
 A legacy multi-byte CJK class (GB18030, Big5-HKSCS, Shift_JIS, EUC-JP,
-x-windows-949, x-EUC-TW) that NB picks on Latin/Cyrillic/garbage bytes is
+x-windows-949, x-EUC-TW) picked on Latin/Cyrillic/garbage bytes is
 *false-CJK*: those bytes do not validate under the charset, so decoding produces
 many malformed/unmappable events, whereas real CJK decodes cleanly.  Each
 legacy-CJK candidate is decoded under its vendor superset (`CharsetSupersets`)
 and its `failures / high-bytes` rate measured; above ~2.5% the candidate is
-dropped, and if it was NB's only pick the pool empties and windows-1252 wins.
+dropped, and if it was the model's only pick the pool empties and windows-1252 wins.
 
 Two corrections make the rate trustworthy:
 
@@ -279,10 +264,9 @@ typicality layer's job (<<junk-filter>>).
 [[junk-filter]]
 == JunkFilterEncodingDetector — text-quality arbitration
 
-`JunkFilterEncodingDetector` is a `MetaEncodingDetector` backed by
-`JunkDetector`, a script-aware text-quality scorer that distinguishes clean text
-from mojibake, wrong-codec, and corrupted decodings.  Its presence switches the
-composite into collect-all mode.
+`JunkFilterEncodingDetector` is a `MetaEncodingDetector` backed by the pairwise head of the
+bundled `HashedJunkModel`, which was trained on pairs of a correct and a wrong decode of the
+same bytes.  Its presence switches the composite into collect-all mode.
 
 [IMPORTANT]
 ====
@@ -301,55 +285,31 @@ For plain first-match-wins, omit JunkFilter — see <<opting-out-of-arbitration>
 === Arbitration outline
 
 . **One unique candidate** — abstain; composite default ordering wins.
-. **HTML byte-stripping** — `HtmlByteStripper` removes markup before decoding, so
-  the score reflects body text.  Falls back to the raw probe if no tags are found.
-. **Decode under each candidate** — insertion-ordered, for deterministic
-  tournament seeding.
-. **Declarative-equivalent-decode preference** — a DECLARATIVE candidate whose
-  decoded output equals another candidate's wins immediately.
+. **Candidate band** — every DECLARATIVE and STRUCTURAL anchor, plus the top two STATISTICAL
+  candidates and any other STATISTICAL candidate at confidence 0.5 or more.
+. **Decode and clean** — each candidate's decode of the probe (vendor supersets for CJK), then
+  `HtmlContentCleaner`: tags stripped, character references expanded as a browser does.
+. **Declarative-equivalent-decode preference** — a DECLARATIVE candidate whose decode equals
+  another candidate's wins, unless a STRUCTURAL proof (valid wide UTF-8, a BOM, ISO-2022)
+  contradicts it.
 . **All decodings identical, no DECLARATIVE** — abstain.
-. **Pairwise tournament** — the first candidate seeds the champion; each
-  challenger is compared via `JunkDetector.compare`, higher score wins.
+. **Hashed arbitration** (`HashedArbitration`) — the decode with the highest pairwise value is
+  the champion.  When its pairwise logit over the best decode with different text is below the
+  model's deferral threshold, the STRUCTURAL anchor wins, else the DECLARATIVE one, else the
+  champion.  The trainer chooses the threshold per model by cross-fit on gold train pages.
 
-=== Post-tournament demote gates
+`JunkFilterEncodingDetector.candidates()` reports the band, the cleaned decodes, the anchors and
+the deciding rule for a stream; the trainer builds its real-decision pairs from it, so training
+and detection see the same candidates.
 
-Two refinements run after the champion is chosen.  Each fires only to *demote*
-across one boundary the whole-text score reads poorly under COMMON-dilution;
-neither can promote, so neither can cost a confident detection.
+=== Model scoring
 
-* **CJK family gate** — the whole-text score coin-flips on the CJK/non-CJK
-  boundary when markup and digits decode identically and swamp the few
-  discriminating high bytes.  A script-letter "diff" score, over only the
-  `>= 0x80` letters and ideographs where candidates actually differ, reads that
-  boundary cleanly.  If the champion is CJK and the best non-CJK diff score beats
-  the best CJK diff score by `FAMILY_DIFF_MARGIN` (2.0), demote to the best
-  non-CJK candidate.  The reverse direction is unnecessary — genuine CJK is
-  `<meta>`-declared upstream — and regressed at scale.
-
-* **Within-Latin letter gate** — among single-byte Latin siblings the score also
-  coin-flips, occasionally promoting a DOS-OEM or Mac charset (IBM850,
-  x-MacRoman) whose high bytes decode to box-drawing and symbols over the
-  windows-1252 truth.  Cased-letter count reads this where typicality cannot: if
-  the champion is a Latin SBCS, a windows-1252 candidate is present, the probe is
-  high-byte-dense, and windows-1252 decodes clearly more cased high-byte letters,
-  demote to windows-1252.  The gate is directional — a genuine Central-European
-  or DOS document has *more* letters under its true charset, so it stays silent —
-  and Latin-scoped, so it never crosses the CJK boundary or touches a non-Latin
-  SBCS whose Cyrillic/Greek cased letters would pollute the count.  It shares
-  `HighByteLetterStats` with Mojibuster's Latin-sibling fallback.
-
-=== JunkDetector scoring
-
-`JunkDetector` buckets every codepoint bigram to its Unicode script (COMMON,
-INHERITED and UNKNOWN glue folded into the adjacent script) and scores it against
-that script's codepoint-bigram table, calibrated per script.  Global
-document-level features — block transitions, control-byte fraction, script
-transitions, replacement ratio, script alternation — are combined with the
-per-script term by a single linear combiner.  Positive output means clean.
-
-Scripts not in the trained model are treated as neutral (0), not junk, so a
-garbled-but-recognisable decoding cannot beat a correct decoding whose script the
-model does not know.
+The pairwise value of a decode is the sum of its n-gram weights: text normalized (width forms
+folded, NFC), whitespace and digits folded, codepoint 1–3-grams hashed into 2^21 buckets.  The
+model is linear and has no per-script tables or calibration, so decodes in different scripts
+(windows-1251 Cyrillic against GB18030 Han) compare directly.  The pairwise logit divides the
+difference of two values by the number of n-grams the decodes do not share: it is the model's
+average opinion per differing n-gram, not the amount of evidence.
 
 See xref:advanced/junk-detection.adoc[Text Quality Scoring] for the scorer's own
 API and xref:advanced/junk-detection-build.adoc[Building the Junk Detector] for
@@ -385,121 +345,49 @@ top result in registration order:
 ----
 
 BOM, metadata, and meta-tag declarations are then authoritative when present, and
-NB runs only when no declaration fires.  The trade-off: lying declarations
+Mojibuster runs only when no declaration fires.  The trade-off: lying declarations
 propagate unfiltered, and Mojibuster's top statistical guess is taken with no
 text-quality cross-check.
 
 == Accuracy and latency
 
-Held-out MADLAD-400 + Wikipedia devtest, 1 469 647 samples across 41 charsets
-including the structural-only ones (US-ASCII, ISO-2022-JP/KR/CN, UTF-32-BE/LE).
-"Mojibuster (All)" is the production configuration: NB model + structural
-pre-filters + all post-processing rules.  UTF-32 is handled by the structural
-pre-filter (a validity-only codepoint check, in the spirit of ICU4J's
-`CharsetRecog_UTF_32`) and UTF-16 by the structural phases plus the specialist
-model, so neither appears among the NB model's 34 classes.
+The model was selected on held-out Common Crawl pages and Wikipedia text and
+replaces the byte-bigram Naive Bayes model of 4.0–4.2, with UTF-16 and UTF-32
+folded in rather than handled by a separate specialist.  In those selection
+runs it was more accurate than the Naive Bayes model across the board, by the
+widest margin on non-HTML text.  The model's provenance record
+(`hashed-ngram.hng.provenance` next to the model) names the data and gold
+version it was trained and selected on.
 
-Four metrics are reported.  **Strict** = exact charset name match.  **Soft** =
-exact or confusable-group match (predicting IBM500 for an IBM1047 file is
-soft-correct; they share 247 of 256 byte mappings).  **Decode-match** = the
-predicted charset decodes the probe to the same string as the true charset, so
-the prediction is functionally correct even when the label differs.
-**Alpha-match** = decode-match ignoring non-alphanumeric characters.
+The scorer visits only windows around non-ASCII bytes and stops early on long
+probes (above).  On a laptop core a full detection takes about 0.07 ms for a
+1 KB probe of dense non-ASCII text and 0.2 to 1.4 ms for 16 to 64 KB, at most
+about 1.5 times the Naive Bayes model's, and less than it on mostly-ASCII text.  Probes whose top two classes stay close (Greek
+ISO-8859-7 against windows-1253, EBCDIC variants) are scored in full and are
+the slowest.
 
-IMPORTANT: No accuracy figures are published here.  The last full run predates
-the `nb-bigram.bin` requantization in TIKA-4745, and no test asserts an accuracy
-floor, so nothing has confirmed the model's numbers against the shipped binary
-since.  Run `EvalCharsetDetectors` to measure the current model.
+IMPORTANT: No accuracy figures are published here.  Run `EvalCharsetDetectors`
+(below) to measure the current model on your own data.
 
-The qualitative shape of that run, which a requantization is not expected to
-change: Mojibuster roughly doubles ICU4J's strict accuracy and roughly triples
-juniversalchardet's, at an order of magnitude less latency than ICU4J.
-Decode-match runs well ahead of strict accuracy, because most residual errors
-pick a charset that decodes to the same string anyway.  Accuracy climbs steeply
-with probe length and is weakest at 8 bytes — the default chain trades occasional
-overrides of correct declarations on short probes for resilience against lying
-declarations and wrong-codec decodings.
-
-Earlier ablation runs are preserved under
+Earlier ablation runs of the Naive Bayes model are preserved under
 `tika-encoding-detectors/tika-encoding-detector-mojibuster/docs/performance/`.
 
-== Why Naive Bayes rather than hashed maxent
+== Model format and training
 
-* **Speed** — direct bigram indexing removes the hash and bucket lookup.  The
-  inner loop is `score[c] += logP[b × numClasses + c] × idf[b]` with no branching,
-  since zero-IDF bigrams are skipped before the class loop.  Roughly an order of
-  magnitude faster than ICU4J, and modestly faster than juniversalchardet, with
-  better accuracy than both at every probe length.
-* **Memory layout** — bigram-major byte arrays keep the full table in L3 cache,
-  and the hot loop walks it sequentially.
-* **Interpretability** — per-class training totals, vocabulary sizes, and per-class
-  α are all visible in the saved model, which makes calibration problems (class
-  bias from training size, smoothing spread) diagnosable rather than mysterious.
-
-== On-disk model format
-
-`.bin` files use magic `NBB3`:
-
-[source]
-----
-int32   magic 0x4E424233 ("NBB3")
-int32   version (3)
-int32   numClasses
-float32 idfScale                      (global)
-byte[65536] idf8                      (int8 quantized, non-negative)
-
-for each class:
-  uint16 labelLen, UTF-8 label bytes
-  float32 scale                       (per-class dequant)
-  byte    unseenQ                     (int8 quantized unseen floor)
-  int32   vocabSize                   (number of trained pairs)
-  bigram keys ascending, each stored as:
-    varint deltaFromPrevKey           (LEB128; first is the key itself)
-    byte   logP8                      (int8 quantized)
-----
-
-Only trained pairs are stored.  The loader materializes a dense
-`logP8[65 536 × numClasses]` array filled with per-class unseen floors and
-overwrites it with the trained values.  The shipped 34-class model is ~680 KB on
-disk and ~2.2 MB resident.
-
-== Training
-
-Tools live in `org.apache.tika.ml.chardetect.tools` (`tika-ml/tika-ml-chardetect`,
-packaged as a fat jar by the `train` profile).
+The model (`hashed-ngram.hng`, format HNG2) is trained outside the Tika
+repository and exported to int8 embedding tables plus float dense layers.  The
+format, the provenance record, the parity fixture and the steps for replacing
+the model are documented in `tika-ml/tika-ml-chardetect/README.md`.  There is
+one bundled model and no option to load another.
 
 [source,bash]
 ----
-# 1. Train (bigram Naive Bayes, per-class 99.9% vocab, int8 quantized)
-java -cp tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
-  org.apache.tika.ml.chardetect.tools.TrainNaiveBayesBigram \
-  --data <corpus>/charset-detect/train \
-  --output nb-bigram.bin \
-  --coverage 0.999 \
-  --alpha-base 1.0 \
-  --max-samples-per-class 50000
-
-# 2. Install the model into the mojibuster module resources
-cp nb-bigram.bin \
-  tika-encoding-detectors/tika-encoding-detector-mojibuster/src/main/resources/\
-org/apache/tika/ml/chardetect/nb-bigram.bin
-
-# 3. Rebuild
-./mvnw clean install -pl tika-encoding-detectors/tika-encoding-detector-mojibuster \
-  -DskipTests
-
-# 4. Evaluate against ICU4J and juniversalchardet on devtest
-java -cp tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
-  org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors \
-  --nb-model nb-bigram.bin \
+# Evaluate the bundled pipeline against ICU4J and juniversalchardet
+./mvnw clean package -pl tika-ml/tika-ml-chardetect -am -Ptrain -DskipTests
+java -jar tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
   --data <corpus>/charset-detect/devtest \
   --lengths 8,32,128,full
 ----
-
-Training data comes from MADLAD-400 (multilingual web text) and Wikipedia dumps,
-encoded to each target charset with charset-specific normalization: Arabic Yeh
-forms for windows-1256, Hebrew nikkud stripping for IBM424, punctuation mapping
-for legacy charsets that cannot encode typographic characters.
 
 == See also
 
