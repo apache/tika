@@ -33,7 +33,7 @@ import org.apache.tika.parser.ParseContext;
  * <p>Detectors return a ranked list of {@link EncodingResult}s in descending
  * confidence order. An empty list means no opinion. Results carry a
  * {@link EncodingResult.ResultType} indicating the nature of the evidence:
- * {@code DECLARATIVE} (BOM, HTML meta charset), {@code STRUCTURAL} (byte-grammar
+ * {@code DECLARATIVE} (HTML meta charset), {@code STRUCTURAL} (byte-grammar
  * proof), or {@code STATISTICAL} (probabilistic model). A
  * {@link MetaEncodingDetector} uses these types to arbitrate when detectors
  * disagree.</p>

@@ -29,6 +29,10 @@ package org.apache.tika.quality;
  * {@code zScore}.  For short strings these bounds are wide; for long strings
  * they narrow.  Prefer {@code ciLow < threshold} over {@code zScore < threshold}
  * when triggering actions, to reduce false positives on short strings.
+ *
+ * <p>{@code coverage} is the fraction of the scored text the detector actually
+ * has a model for.  At 0 the score says nothing about language; a consumer
+ * reporting text quality should treat it as unknown.
  */
 public final class TextQualityScore {
 
@@ -40,15 +44,23 @@ public final class TextQualityScore {
     private final float ciLow;
     private final float ciHigh;
     private final String dominantScript;
+    private final float coverage;
 
     public TextQualityScore(float zScore, float pClean,
                             float ciLow, float ciHigh,
                             String dominantScript) {
+        this(zScore, pClean, ciLow, ciHigh, dominantScript, Float.NaN);
+    }
+
+    public TextQualityScore(float zScore, float pClean,
+                            float ciLow, float ciHigh,
+                            String dominantScript, float coverage) {
         this.zScore = zScore;
         this.pClean = pClean;
         this.ciLow = ciLow;
         this.ciHigh = ciHigh;
         this.dominantScript = dominantScript;
+        this.coverage = coverage;
     }
 
     /** Z-score relative to clean text for the detected script. 0 = average clean; negative = worse. */
@@ -76,6 +88,19 @@ public final class TextQualityScore {
         return dominantScript;
     }
 
+    /**
+     * Fraction in [0,1] of the text's scoreable units covered by the detector's
+     * model; NaN if the text had none (e.g. digits only) or the detector does not report it.
+     */
+    public float getCoverage() {
+        return coverage;
+    }
+
+    /** True if the text had scoreable units but none in a script the detector models. */
+    public boolean isUnmodeled() {
+        return coverage == 0f;
+    }
+
     /** True if scoring could not be performed (e.g. empty or unsupported-script input). */
     public boolean isUnknown() {
         return Float.isNaN(zScore);
@@ -87,7 +112,7 @@ public final class TextQualityScore {
             return "TextQualityScore[UNKNOWN script=" + dominantScript + "]";
         }
         return String.format(java.util.Locale.ROOT,
-                "TextQualityScore[z=%.3f p=%.3f ci=(%.3f,%.3f) script=%s]",
-                zScore, pClean, ciLow, ciHigh, dominantScript);
+                "TextQualityScore[z=%.3f p=%.3f ci=(%.3f,%.3f) script=%s coverage=%.3f]",
+                zScore, pClean, ciLow, ciHigh, dominantScript, coverage);
     }
 }

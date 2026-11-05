@@ -49,6 +49,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.detect.BOMDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
@@ -205,6 +206,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         tis.setCloseShield();
         Document document;
         try {
+            BOMDetector.skipForeignBom(tis, decodeAs);
             document = Jsoup.parse(tis, decodeAs.name(), "",
                     Parser.htmlParser().tagSet(tagSet));
         } finally {

@@ -1342,6 +1342,15 @@
     <glob pattern="*.c4p"/>
     <glob pattern="*.c4u"/>
   </mime-type>
+  <mime-type type="application/vnd.comicbook+zip">
+    <alias type="application/x-cbz"/>
+    <acronym>CBZ</acronym>
+    <_comment>Comic Book Archive</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Comic_book_archive</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.cbz"/>
+  </mime-type>
+
   <mime-type type="application/vnd.commerce-battelle"/>
   <mime-type type="application/vnd.commonspace">
     <glob pattern="*.csp"/>
@@ -2223,12 +2232,6 @@
     <glob pattern="*.ost"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml">
-    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
-    <_comment>3D manufacturing format</_comment>
-    <glob pattern="*.3mf"/>
-  </mime-type>
-
   <mime-type type="application/vnd.ms-pki.seccat">
     <glob pattern="*.cat"/>
   </mime-type>
@@ -2290,6 +2293,12 @@
     <glob pattern="*.mpp"/>
     <glob pattern="*.mpt"/>
     <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/x-procreate">
+    <_comment>Procreate artwork</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.procreate"/>
   </mime-type>
 
   <mime-type type="application/x-project">
@@ -2983,13 +2992,15 @@
   <mime-type type="application/x-subrip">
     <_comment>SubRip (srt) subtitles</_comment>
     <magic priority="50">
-      <!-- 1[CR|LF|CRLF]00 -->
+      <!-- 1[CR|LF|CRLF|CRCRLF]00 -->
       <match value="0x310A3030" type="string" offset="0"/>
       <match value="0x310D3030" type="string" offset="0"/>
-      <match value="0x310D0A13030" type="string" offset="0"/>
+      <match value="0x310D0A3030" type="string" offset="0"/>
+      <match value="0x310D0D0A3030" type="string" offset="0"/>
       <match value="0xEFBBBF310A3030" type="string" offset="0"/>
       <match value="0xEFBBBF310D3030" type="string" offset="0"/>
-      <match value="0xEFBBBF310D0A13030" type="string" offset="0"/>
+      <match value="0xEFBBBF310D0A3030" type="string" offset="0"/>
+      <match value="0xEFBBBF310D0D0A3030" type="string" offset="0"/>
     </magic>
     <glob pattern="*.srt"/>
     <sub-class-of type="text/plain"/>
@@ -4103,6 +4114,13 @@
     <glob pattern="*.kil"/>
   </mime-type>
 
+  <mime-type type="application/x-krita">
+    <_comment>Krita document</_comment>
+    <tika:link>https://docs.krita.org/en/general_concepts/file_formats/file_kra.html</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.kra"/>
+  </mime-type>
+
   <mime-type type="application/x-object">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
@@ -4117,6 +4135,13 @@
     <glob pattern="*.scad"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
+  <mime-type type="application/x-extension-fcstd">
+    <_comment>FreeCAD document</_comment>
+    <tika:link>https://wiki.freecad.org/File_Format_FCStd</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.fcstd"/>
+  </mime-type>
+
   <mime-type type="application/x-executable">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
@@ -5248,6 +5273,13 @@
     <glob pattern="*.sh"/>
     <glob pattern="*.bash"/>
     <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="application/x-sketch">
+    <_comment>Sketch document</_comment>
+    <tika:link>https://developer.sketch.com/file-format/</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sketch"/>
   </mime-type>
 
   <mime-type type="application/x-shar">
@@ -6797,6 +6829,14 @@
     <glob pattern="*.nitf"/>
   </mime-type>
 
+  <mime-type type="image/openraster">
+    <acronym>ORA</acronym>
+    <_comment>OpenRaster image</_comment>
+    <tika:link>https://www.freedesktop.org/wiki/Specifications/OpenRaster/</tika:link>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.ora"/>
+  </mime-type>
+
   <mime-type type="image/png">
     <acronym>PNG</acronym>
     <_comment>Portable Network Graphics</_comment>
@@ -7674,6 +7714,16 @@
   <mime-type type="message/sipfrag"/>
   <mime-type type="message/tracking-status"/>
   <mime-type type="message/vnd.si.simp"/>
+  <mime-type type="model/3mf">
+    <!-- the package; the old name is the content type of its model part -->
+    <alias type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>
+    <tika:link>https://www.iana.org/assignments/media-types/model/3mf</tika:link>
+    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
+    <_comment>3D manufacturing format</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.3mf"/>
+  </mime-type>
+
   <mime-type type="model/e57">
     <_comment>3d imaging data exchange</_comment>
     <magic priority="60">
@@ -8177,37 +8227,30 @@
   <mime-type type="text/vtt">
     <_comment>Web Video Text Tracks Format</_comment>
     <acronym>WebVTT</acronym>
+    <!-- "WEBVTT" then a space, tab or line terminator; UTF-8 BOM optional -->
     <magic priority="40">
-      <!-- Simple Form -->
-      <match value="WEBVTT\r" type="string" offset="0"/>
       <match value="WEBVTT\n" type="string" offset="0"/>
-      <!-- With Byte Order Mark -->
-      <match value="0xfeff" offset="0">
-         <match value="WEBVTT\r" type="string" offset="2"/>
-         <match value="WEBVTT\n" type="string" offset="2"/>
+      <match value="WEBVTT\r" type="string" offset="0"/>
+      <match value="WEBVTT " type="string" offset="0"/>
+      <match value="WEBVTT\t" type="string" offset="0"/>
+      <match value="0xefbbbf" type="string" offset="0">
+        <match value="WEBVTT\n" type="string" offset="3"/>
+        <match value="WEBVTT\r" type="string" offset="3"/>
+        <match value="WEBVTT " type="string" offset="3"/>
+        <match value="WEBVTT\t" type="string" offset="3"/>
       </match>
-      <match value="0xfeff" offset="0">
-         <match value="WEBVTT\r" type="string" offset="2"/>
-         <match value="WEBVTT\n" type="string" offset="2"/>
+      <!-- UTF-16 is outside the spec, but some editors write it -->
+      <match value="0xfeff005700450042005600540054" type="string" offset="0">
+        <match value="0x000a" type="string" offset="14"/>
+        <match value="0x000d" type="string" offset="14"/>
+        <match value="0x0020" type="string" offset="14"/>
+        <match value="0x0009" type="string" offset="14"/>
       </match>
-      <match value="0xefbbbf" offset="0">
-         <match value="WEBVTT\r" type="string" offset="3"/>
-         <match value="WEBVTT\n" type="string" offset="3"/>
-      </match>
-      <!-- Common Header -->
-      <match value="WEBVTT FILE\r" type="string" offset="0"/>
-      <match value="WEBVTT FILE\n" type="string" offset="0"/>
-    </magic>
-    <magic priority="30">
-      <!-- With a custom header - needs a lower priority -->
-      <match value="WEBVTT " type="string" offset="0">
-        <match value="\n\n" type="string" offset="10:50" />
-      </match>
-      <match value="WEBVTT " type="string" offset="0">
-        <match value="\r\r" type="string" offset="10:50" />
-      </match>
-      <match value="WEBVTT " type="string" offset="0">
-        <match value="\r\n\r\n" type="string" offset="10:50" />
+      <match value="0xfffe570045004200560054005400" type="string" offset="0">
+        <match value="0x0a00" type="string" offset="14"/>
+        <match value="0x0d00" type="string" offset="14"/>
+        <match value="0x2000" type="string" offset="14"/>
+        <match value="0x0900" type="string" offset="14"/>
       </match>
     </magic>
     <glob pattern="*.vtt"/>
