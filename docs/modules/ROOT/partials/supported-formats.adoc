@@ -266,6 +266,10 @@
 ** `audio/x-matroska`
 ** `video/webm`
 ** `video/x-matroska`
+* `org.apache.tika.parser.mobi.` link:{tika-javadoc-url}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser]
+** `application/vnd.amazon.ebook`
+** `application/vnd.amazon.mobi8-ebook`
+** `application/x-mobipocket-ebook`
 * `org.apache.tika.parser.mp3.` link:{tika-javadoc-url}/org/apache/tika/parser/mp3/Mp3Parser.html[Mp3Parser]
 ** `audio/mpeg`
 * `org.apache.tika.parser.mp4.` link:{tika-javadoc-url}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser]

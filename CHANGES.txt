@@ -13,7 +13,23 @@ Release 4.3.0 - ???
      the forks never saw such a fetcher, so every fetch through it failed. Use file or
      ignite (TIKA-5001).
 
+   * 3MF packages are detected as model/3mf, their IANA type, instead of
+     application/vnd.ms-package.3dmanufacturing-3dmodel+xml, which is the content type of
+     the model part inside the package. The old name is an alias, so it still resolves as
+     input, but detection output and metadata now carry model/3mf (TIKA-5049).
+
   SERVER, PIPES AND OPERATIONS
+
+   * tika-server sets any field of the config's "server" block from the command line
+     (--serverSetting <field>=<value>, repeatable) and the environment (TIKA_SERVER_SETTING_<FIELD>,
+     e.g. TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES), over the file's own value, so raising the
+     1 GiB request body limit no longer needs a config file. The 413 names the limit and
+     where to raise it (TIKA-5025).
+     
+   * When pipes kills a forked server, it now kills the server's descendant processes too,
+     such as ExternalParser commands and their children; they kept running. On a timeout,
+     an interrupt or JVM shutdown, ProcessUtils.execute also kills the descendants of the
+     process it started (TIKA-5040).
 
    * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,
      Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
@@ -73,6 +89,28 @@ Release 4.3.0 - ???
      when there is no text track; otherwise it reads every block header, seeking past
      other tracks' blocks in a file and reading through them in a stream. No container
      metadata yet. Off with extractSubtitles on matroska-parser (TIKA-5030).
+
+   * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
+     cover as the THUMBNAIL embedded document, the other images, and the text, stored,
+     PalmDOC- or HUFF/CDIC-compressed, through the HTML parser (of a KF8 book the HTML flow
+     only). A hybrid file yields its version 6 book; extractKf8 emits the KF8 copy as an
+     embedded document too. An encrypted book yields its metadata and images, sets
+     tika:encrypted and records the locked text as a warning. New keys mobi:version,
+     mobi:compression, mobi:encryption, mobi:cde-type, mobi:hybrid. maxTextLength caps the
+     text (16 MB, and 32 times the file size), maxFileSize the bytes read (256 MB).
+     application/vnd.amazon.mobi8-ebook (*.azw3) is new, and with
+     application/vnd.amazon.ebook a sub-type of application/x-mobipocket-ebook: a .azw file
+     is now detected as application/vnd.amazon.ebook, not application/x-mobipocket-ebook,
+     and a .prc or .azw that is not a Mobipocket book yields nothing and a warning
+     (TIKA-5026).
+
+   * Zip-based formats that carry a preview image have it emitted as the THUMBNAIL, so
+     the thumbnail preset serves it: comic book archives (.cbz, new type
+     application/vnd.comicbook+zip, the first page in name order), Krita (.kra,
+     preview.png), OpenRaster (.ora, Thumbnails/thumbnail.png), FreeCAD (.FCStd,
+     thumbnails/Thumbnail.png), Procreate (.procreate, QuickLook/Thumbnail.png) and
+     Sketch (.sketch, previews/preview.png). All six are new types and sub-types of
+     application/zip (TIKA-5032).
 
    * PSD files emit the JPEG thumbnail Photoshop stores in image resource 0x040C as a
      THUMBNAIL embedded resource, so the thumbnail preset serves it; one over
