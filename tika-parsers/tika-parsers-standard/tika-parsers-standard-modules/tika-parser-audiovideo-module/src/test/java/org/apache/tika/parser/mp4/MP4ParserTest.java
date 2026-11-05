@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -649,6 +650,49 @@ public class MP4ParserTest extends TikaTest {
         bos.write(new byte[]{0, 0, 0, 0});              //minor version
 
         assertEquals("isom", majorBrand(bos.toByteArray(), 1000L));
+    }
+
+    @Test
+    public void testBoxOver2GbDoesNotStopTheWalk() throws Exception {
+        long mdatSize = 3L * 1024 * 1024 * 1024 + 16;
+        ByteBuffer mdat = ByteBuffer.allocate(16);
+        mdat.putInt(1).put("mdat".getBytes(StandardCharsets.ISO_8859_1)).putLong(mdatSize);
+        byte[] ftyp = ftypBox();
+        long length = mdatSize + ftyp.length;
+        InputStream stream = new SequenceInputStream(Collections.enumeration(List.of(
+                new ByteArrayInputStream(mdat.array()), new ZeroInputStream(mdatSize - 16),
+                new ByteArrayInputStream(ftyp))));
+        com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
+        Metadata tikaMetadata = new Metadata();
+        TikaMp4BoxHandler handler = new TikaMp4BoxHandler(mp4Metadata, tikaMetadata,
+                new XHTMLContentHandler(new DefaultHandler(), tikaMetadata), new ParseContext());
+        TikaMp4Reader.extract(stream, handler, 1000L, length, tikaMetadata, new ParseContext());
+        Mp4Directory dir = mp4Metadata.getFirstDirectoryOfType(Mp4Directory.class);
+        assertEquals("isom", dir == null ? null : dir.getString(Mp4Directory.TAG_MAJOR_BRAND));
+    }
+
+    private static final class ZeroInputStream extends InputStream {
+        private long remaining;
+
+        ZeroInputStream(long length) {
+            remaining = length;
+        }
+
+        @Override
+        public int read() {
+            if (remaining == 0) {
+                return -1;
+            }
+            remaining--;
+            return 0;
+        }
+
+        @Override
+        public long skip(long n) {
+            long skipped = Math.min(n, remaining);
+            remaining -= skipped;
+            return skipped;
+        }
     }
 
     private static String majorBrand(byte[] boxes, long maxBoxSize) throws Exception {

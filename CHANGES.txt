@@ -56,6 +56,9 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
+     moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
+
    * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
      sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
 
