@@ -36,6 +36,8 @@
 * `org.apache.tika.parser.audio.` link:{tika-javadoc-url}/org/apache/tika/parser/audio/MidiParser.html[MidiParser]
 ** `application/x-midi`
 ** `audio/midi`
+* `org.apache.tika.parser.blender.` link:{tika-javadoc-url}/org/apache/tika/parser/blender/BlenderParser.html[BlenderParser]
+** `application/x-blender`
 * `org.apache.tika.parser.code.` link:{tika-javadoc-url}/org/apache/tika/parser/code/SourceCodeParser.html[SourceCodeParser]
 ** `text/x-c++src`
 ** `text/x-groovy`

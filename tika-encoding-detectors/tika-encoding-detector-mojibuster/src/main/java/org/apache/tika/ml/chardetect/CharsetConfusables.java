@@ -255,7 +255,7 @@ public final class CharsetConfusables {
                 // IBM437 vs IBM850: IBM437's distinguishing bytes are box-drawing
                 // and graphical characters (0xB0–0xDF range) that never appear
                 // in prose text. IBM850 is the preferred Western European DOS
-                // code page; IBM437 is not trained as a separate class.
+                // code page.
                 // This group exists so that evaluation tools and
                 // post-processing handle legacy files labelled "IBM437"
                 // gracefully by treating IBM850 as an equally acceptable result.
