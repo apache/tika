@@ -81,6 +81,12 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Comic book archives in RAR, 7z and tar (.cbr, .cb7, .cbt; application/vnd.comicbook-rar,
+     application/x-cb7, application/x-cbt, all new) have their first page in name order
+     emitted as the THUMBNAIL, as .cbz has. A name or declared type does not replace the
+     versioned RAR magic type or GNU tar's, so ComicBookDetector recognizes them by their
+     name or declared type together with the container's magic (TIKA-5041).
+
    * Blender files (.blend, .blender, application/x-blender, new) yield the preview Blender stores
      as the THUMBNAIL embedded document, for every file format version including the one
      of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read

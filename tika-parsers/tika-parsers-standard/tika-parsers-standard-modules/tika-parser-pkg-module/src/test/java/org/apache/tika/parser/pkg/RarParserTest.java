@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.CRC32;
 
@@ -136,6 +137,25 @@ public class RarParserTest extends AbstractPkgTest {
         assertTrue(hasEmbeddedPath(metadataList, "/page-001.txt"));
         assertTrue(hasEmbeddedPath(metadataList, "/page-002.txt"));
         assertContains("page-001.txt", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    /**
+     * A .cbr is a comic book: its first page by name is the cover, wherever it is stored.
+     * The same archive named .rar has no cover.
+     */
+    @Test
+    public void testComicBookCover(@TempDir Path tmp) throws Exception {
+        byte[] rar = storedRar5(-1, "page-002.jpg", "2", "notes.txt", "n", "page-001.jpg", "1");
+        List<Metadata> list = getRecursiveMetadata(Files.write(tmp.resolve("comic.cbr"), rar),
+                new ParseContext(), false);
+        assertEquals("application/vnd.comicbook-rar", list.get(0).get(HttpHeaders.CONTENT_TYPE));
+        Map<String, String> types = resourceTypes(list);
+        assertEquals("THUMBNAIL", types.get("page-001.jpg"), types.toString());
+        assertEquals("null", types.get("page-002.jpg"));
+
+        list = getRecursiveMetadata(Files.write(tmp.resolve("plain.rar"), rar),
+                new ParseContext(), false);
+        assertEquals("null", resourceTypes(list).get("page-001.jpg"));
     }
 
     /** RAR5 stores a Unix time, an instant: it does not move with the JVM's time zone. */
