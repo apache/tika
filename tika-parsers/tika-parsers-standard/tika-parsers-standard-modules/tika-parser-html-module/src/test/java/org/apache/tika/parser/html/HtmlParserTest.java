@@ -1441,4 +1441,26 @@ public class HtmlParserTest extends TikaTest {
         }
         assertContains("E = mc<sup>2</sup> and H<sub>2</sub>O", xml);
     }
+
+    /** A rejected UTF-8 BOM must not reach the text, nor make jsoup override the declared charset. */
+    @Test
+    public void testRejectedUtf8Bom() throws Exception {
+        byte[] body = ("<html><head><meta charset=\"windows-1252\"></head><body><p>Caf\u00e9 au lait, cr\u00e8me br\u00fbl\u00e9e et "
+                + "g\u00e2teau \u00e0 la fran\u00e7aise.</p></body></html>")
+                .getBytes("windows-1252");
+        byte[] bytes = new byte[body.length + 3];
+        bytes[0] = (byte) 0xEF;
+        bytes[1] = (byte) 0xBB;
+        bytes[2] = (byte) 0xBF;
+        System.arraycopy(body, 0, bytes, 3, body.length);
+        Metadata metadata = new Metadata();
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            xml = getXML(tis, AUTO_DETECT_PARSER, metadata).xml;
+        }
+        assertEquals("windows-1252", metadata.get(HttpHeaders.CONTENT_ENCODING));
+        assertContains("<p>Caf\u00e9 au lait, cr\u00e8me br\u00fbl\u00e9e", xml);
+        assertNotContained("\u00ef\u00bb\u00bf", xml);
+        assertNotContained("\ufeff", xml);
+    }
 }

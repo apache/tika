@@ -16,6 +16,9 @@
  */
 package org.apache.tika.utils;
 
+import static org.apache.tika.utils.ProcessTestHelper.awaitProcessesWith;
+import static org.apache.tika.utils.ProcessTestHelper.describe;
+import static org.apache.tika.utils.ProcessTestHelper.processesWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,9 +27,16 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
@@ -167,6 +177,55 @@ public class ProcessUtilsTest {
         long elapsed = System.nanoTime() - start;
 
         assertSubprocessDidNotStart(result, elapsed);
+    }
+
+    /**
+     * When execute() stops waiting (timeout or interrupt), {@code sh} and its child {@code sleep}
+     * end, and a process started outside execute() is left alone.
+     */
+    @ParameterizedTest(name = "redirect={0} interrupt={1}")
+    @CsvSource({"false, false", "true, false", "false, true", "true, true"})
+    @EnabledOnOs(OS.LINUX)
+    public void testStoppedWaitDestroysTheProcessesItStarted(boolean redirect, boolean interrupt)
+            throws Exception {
+        // doubles as the sleep duration, so both command lines contain it; random per run
+        int suffix = ThreadLocalRandom.current().nextInt(1_000_000);
+        String marker = String.format(Locale.ROOT, "301.%06d", suffix);
+        ProcessBuilder pb = new ProcessBuilder("sh", "-c", "sleep " + marker + "; true");
+        long timeoutMillis = interrupt ? 60_000 : 2000;
+        Process bystander = new ProcessBuilder("sleep", String.format(Locale.ROOT, "302.%06d", suffix))
+                .start();
+        Path stdoutRedirect = redirect ? createTmpRedirect() : null;
+        Thread runner = new Thread(() -> {
+            try {
+                if (redirect) {
+                    ProcessUtils.execute(pb, null, timeoutMillis, stdoutRedirect, 1000);
+                } else {
+                    ProcessUtils.execute(pb, null, timeoutMillis, 1000, 1000);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        try {
+            runner.start();
+            List<ProcessHandle> running = awaitProcessesWith(marker, 2, 10_000);
+            assertEquals(2, running.size(), "sh and its sleep should be running: " + describe(running));
+            if (interrupt) {
+                runner.interrupt();
+            }
+            runner.join(10_000);
+            assertFalse(runner.isAlive(), "execute() should have returned");
+
+            List<ProcessHandle> survivors = awaitProcessesWith(marker, 0, 2_000);
+            assertTrue(survivors.isEmpty(), "redirect=" + redirect + " interrupt=" + interrupt
+                    + ": processes outlived execute(): " + describe(survivors));
+            assertTrue(bystander.isAlive(), "a process execute() did not start was destroyed");
+        } finally {
+            runner.interrupt();
+            processesWith(marker).forEach(ProcessHandle::destroyForcibly);
+            bystander.destroyForcibly();
+        }
     }
 
     private static @NonNull Path createTmpRedirect() throws IOException {
