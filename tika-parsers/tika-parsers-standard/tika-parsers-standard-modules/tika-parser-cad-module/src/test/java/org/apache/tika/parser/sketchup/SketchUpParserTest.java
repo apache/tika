@@ -54,6 +54,26 @@ public class SketchUpParserTest extends TikaTest {
 
     private static final byte[] VIEW = png(0x00ff00);
 
+    /**
+     * testSKP_2017.skp (CDib record) and testSKP_2026.skp (zip, model and view thumbnails)
+     * are the files these tests build, as cdib() and zipped(), saved for trying the parser
+     * by hand. The model thumbnail is the orange one.
+     */
+    @Test
+    public void testFixtures() throws Exception {
+        for (String name : new String[]{"testSKP_2017.skp", "testSKP_2026.skp"}) {
+            List<Metadata> list;
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + name)) {
+                list = getRecursiveMetadata(tis, true);
+            }
+            assertEquals("application/vnd.sketchup.skp", list.get(0).get(HttpHeaders.CONTENT_TYPE),
+                    name);
+            assertEquals(2, list.size(), name);
+            assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                    list.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE), name);
+        }
+    }
+
     @Test
     public void testCDibPreview() throws Exception {
         byte[] file = cdib("17.0.18899", MODEL);
@@ -271,6 +291,24 @@ public class SketchUpParserTest extends TikaTest {
             zip.write(new byte[16]);
             zip.putNextEntry(new ZipEntry("model.dat"));
             zip.write(new byte[64]);
+        }
+        return out.toByteArray();
+    }
+
+    /** A 64x48 PNG: a light background with a colored block in the middle. */
+    private static byte[] picture(int rgb) {
+        BufferedImage image = new BufferedImage(64, 48, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < 48; y++) {
+            for (int x = 0; x < 64; x++) {
+                boolean block = x >= 16 && x < 48 && y >= 12 && y < 36;
+                image.setRGB(x, y, block ? 0xff000000 | rgb : 0x00ffffff);
+            }
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "png", out);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
         return out.toByteArray();
     }
