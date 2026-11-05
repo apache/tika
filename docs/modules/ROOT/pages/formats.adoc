@@ -260,7 +260,30 @@ link:{api}/org/apache/tika/parser/video/FLVParser.html[FLVParser] supports the
 Flash video format with a simple parsing algorithm.
 link:{api}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser] covers the MP4
 family (MP4, QuickTime, 3GPP, ...), extracting video metadata and any audio
-stream metadata. For the Ogg family,
+stream metadata. Its text subtitle tracks (`tx3g`/`mov_text`, QuickTime `text`)
+become embedded WebVTT documents (`track-<id>.vtt`, with the track's `dc:language`),
+written by Tika from the samples rather than copied from the file, and parsed by
+SubtitleParser (see <<Text formats>>). Cue times ignore edit lists. Finding the
+samples needs random access, so this happens only when the input is a file; a byte
+array, or a stream already drained by digesting; or an archive entry of up to 1 MB,
+or larger within the cache memory budget. Any other input, including a
+stream with only a declared `Content-Length`, is silently not searched. Set
+`extractSubtitles` to false on `mp4-parser` to turn it off.
+`extractSubtitles` is read from tika-config.json only, not from a per-request config.
+link:{api}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser] does the
+same for Matroska and WebM: SubRip, ASS/SSA and WebVTT text tracks (also when
+zlib-compressed or header-stripped), with the track's `Name` as `dc:title`. It reads in
+a single forward pass, so streams are not spooled. It stops at the first Cluster when
+the file has no text track; otherwise it reads every block header, seeking past other
+tracks' blocks in a file and reading through them in a stream. It extracts no container
+metadata yet. Its switch is `extractSubtitles` on `matroska-parser`, again from
+tika-config.json only.
+Per file, extraction stops at 64 tracks, 16 million characters of cue text, 256 MB of
+decoded subtitle bytes or one million samples. Text that is lost (encrypted, laced or
+unsupported encodings, damage, a limit) is reported on the container as
+`X-TIKA:EXCEPTION:warn` values starting with `subtitles:`. Subtitle formats Tika does not
+decode (image subtitles such as PGS and VobSub, MP4 `wvtt` and `stpp`) are skipped silently.
+For the Ogg family,
 link:{api}/org/apache/tika/parser/ogg/OggParser.html[OggParser] and
 link:{api}/org/apache/tika/parser/ogg/TheoraParser.html[TheoraParser] extract a
 limited amount of metadata.
