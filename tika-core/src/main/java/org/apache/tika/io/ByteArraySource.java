@@ -139,6 +139,11 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public boolean tryRetainInMemory() {
+        return true;
+    }
+
+    @Override
     public SeekableByteChannel getSeekableByteChannel() {
         // The array stays valid even after a getPath() spill copy
         return new MemorySeekableByteChannel(data, length);
