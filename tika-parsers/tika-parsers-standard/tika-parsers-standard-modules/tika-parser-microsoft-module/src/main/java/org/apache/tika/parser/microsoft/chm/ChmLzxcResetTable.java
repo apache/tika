@@ -139,7 +139,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
      * @return boolean
      * @throws TikaException
      */
-    private boolean validateParamaters(byte[] data, ChmLzxcResetTable chmLzxcResetTable)
+    private boolean validateParameters(byte[] data, ChmLzxcResetTable chmLzxcResetTable)
             throws TikaException {
         int goodParameter = 0;
         ChmAssert.assertByteArrayNotNull(data);
@@ -309,7 +309,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
     // @Override
     public void parse(byte[] data, ChmLzxcResetTable chmLzxcResetTable) throws TikaException {
         setDataRemained(data.length);
-        if (validateParamaters(data, chmLzxcResetTable)) {
+        if (validateParameters(data, chmLzxcResetTable)) {
             /* unmarshal fields */
             chmLzxcResetTable.setVersion(unmarshalUInt32(data, chmLzxcResetTable.getVersion()));
             chmLzxcResetTable
