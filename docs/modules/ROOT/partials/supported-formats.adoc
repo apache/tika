@@ -261,6 +261,11 @@
 ** `application/vnd.mif`
 ** `application/x-maker`
 ** `application/x-mif`
+* `org.apache.tika.parser.mkv.` link:{tika-javadoc-url}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser]
+** `application/x-matroska`
+** `audio/x-matroska`
+** `video/webm`
+** `video/x-matroska`
 * `org.apache.tika.parser.mobi.` link:{tika-javadoc-url}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser]
 ** `application/vnd.amazon.ebook`
 ** `application/vnd.amazon.mobi8-ebook`
