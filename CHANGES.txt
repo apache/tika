@@ -15,6 +15,11 @@ Release 4.3.0 - ???
 
   SERVER, PIPES AND OPERATIONS
 
+   * When pipes kills a forked server, it now kills the server's descendant processes too,
+     such as ExternalParser commands and their children; they kept running. On a timeout,
+     an interrupt or JVM shutdown, ProcessUtils.execute also kills the descendants of the
+     process it started (TIKA-5040).
+
    * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,
      Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
      configured password, after a redirect to another host, port or scheme. That includes
