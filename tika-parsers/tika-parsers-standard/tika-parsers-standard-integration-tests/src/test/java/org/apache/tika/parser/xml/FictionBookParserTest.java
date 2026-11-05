@@ -17,8 +17,10 @@
 package org.apache.tika.parser.xml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.InputStream;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,9 +28,11 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 
-public class FictionBookParserTest {
+public class FictionBookParserTest extends TikaTest {
 
     @Test
     public void testEmbedded() throws Exception {
@@ -44,6 +48,21 @@ public class FictionBookParserTest {
             extractor.extract(tis, null, handler, parseContext);
 
             assertEquals(2, handler.filenames.size());
+        }
+    }
+
+    @Test
+    public void testCoverIsThumbnail() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("test.fb2");
+        assertEquals(3, metadataList.size());
+        for (Metadata m : metadataList.subList(1, metadataList.size())) {
+            String name = m.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            String type = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+            if ("cover.jpg".equals(name)) {
+                assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(), type);
+            } else {
+                assertNull(type, name);
+            }
         }
     }
 }

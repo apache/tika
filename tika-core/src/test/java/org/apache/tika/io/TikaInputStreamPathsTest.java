@@ -330,6 +330,29 @@ public class TikaInputStreamPathsTest {
     }
 
     @Test
+    public void retainReportsContentAlreadyInMemory() throws Exception {
+        byte[] d = data(5000);
+        try (TikaInputStream bytes = TikaInputStream.get(d)) {
+            assertTrue(bytes.tryRetainInMemory(), "a byte array is held already");
+        }
+        TikaInputStream cached = TikaInputStream.get(new Probe(d, 0), tmp(), new Metadata());
+        cached.enableRewind(null);
+        assertFalse(cached.tryRetainInMemory());
+        assertFalse(cached.hasReliableLength(), "asking does not drain");
+        IOUtils.toByteArray(cached);
+        assertTrue(cached.tryRetainInMemory(), "drained into memory");
+        cached.close();
+        TikaInputStream spilled =
+                TikaInputStream.get(new Probe(data(3 * MB), 0), tmp(), new Metadata());
+        spilled.enableRewind(null);
+        IOUtils.toByteArray(spilled);
+        assertTrue(spilled.hasFile());
+        assertFalse(spilled.tryRetainInMemory(), "drained to disk");
+        spilled.close();
+        assertEquals(0, tempFiles());
+    }
+
+    @Test
     public void unknownLengthIsRetainedWhenItFits() throws Exception {
         byte[] d = data(500 * 1024);
         AtomicInteger opens = new AtomicInteger();
