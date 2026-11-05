@@ -149,6 +149,43 @@ public class HashedJunkModelTest {
         assertEquals(12, m.pairwiseDifference("Preis 5 \u20ac pro", "Preis 5 \u00a4 pro"));
     }
 
+    /** The O(n) difference table gives exactly what merging the two sorted bucket lists gives. */
+    @Test
+    public void pairwiseDifferenceMatchesASortedMerge() {
+        HashedJunkModel m = testModel();
+        Random r = new Random(13);
+        for (int i = 0; i < 300; i++) {
+            String a = randomText(r);
+            String b = r.nextInt(4) == 0 ? a + randomText(r) : randomText(r);
+            int[] x = m.buckets(a);
+            int[] y = m.buckets(b);
+            long l1 = 0;
+            int p = 0;
+            int q = 0;
+            while (p < x.length || q < y.length) {
+                int bucket = Math.min(p < x.length ? x[p] : Integer.MAX_VALUE, q < y.length ? y[q] : Integer.MAX_VALUE);
+                long d = 0;
+                while (p < x.length && x[p] == bucket) {
+                    d++;
+                    p++;
+                }
+                while (q < y.length && y[q] == bucket) {
+                    d--;
+                    q++;
+                }
+                l1 += Math.abs(d);
+            }
+            assertEquals(l1, m.pairwiseDifference(a, b), a + " | " + b);
+            assertEquals(l1 == 0 ? 0 : m.compare(a, b) / l1, m.pairwiseLogit(a, b), 1e-9);
+        }
+        // a long text after short ones reuses and grows the per-thread table
+        StringBuilder big = new StringBuilder();
+        for (int i = 0; i < 5000; i++) {
+            big.append(randomText(r)).append(' ');
+        }
+        assertEquals(0, m.pairwiseDifference(big.toString(), big.toString()));
+    }
+
     @Test
     public void compareIsAntisymmetricAndZeroOnIdentity() {
         HashedJunkModel m = testModel();

@@ -17,6 +17,7 @@
 package org.apache.tika.ml.junkdetect;
 
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -49,11 +50,13 @@ public final class HashedArbitration {
         if (texts.isEmpty()) {
             throw new IllegalArgumentException("no candidates");
         }
+        // features once per distinct text: candidates often share a decode
+        Map<String, HashedJunkModel.Features> feats = new HashMap<>();
         Charset champion = null;
         String championText = null;
         double best = Double.NEGATIVE_INFINITY;
         for (Map.Entry<Charset, String> e : texts.entrySet()) {
-            double v = model.pairValue(e.getValue());
+            double v = model.pairValue(feats.computeIfAbsent(e.getValue(), model::features));
             if (champion == null || v > best) {
                 best = v;
                 champion = e.getKey();
@@ -64,15 +67,20 @@ public final class HashedArbitration {
         double runner = Double.NEGATIVE_INFINITY;
         for (String t : texts.values()) {
             if (!t.equals(championText)) {
-                double v = model.pairValue(t);
+                double v = model.pairValue(feats.get(t));
                 if (runnerText == null || v > runner) {
                     runner = v;
                     runnerText = t;
                 }
             }
         }
-        double logit = runnerText == null ? Double.NaN : model.pairwiseLogit(championText, runnerText);
-        long difference = runnerText == null ? 0 : model.pairwiseDifference(championText, runnerText);
+        double logit = Double.NaN;
+        long difference = 0;
+        if (runnerText != null) {
+            double[] ld = model.pairwiseLogitAndDifference(feats.get(championText), feats.get(runnerText));
+            logit = ld[0];
+            difference = (long) ld[1];
+        }
         return new Decision(champion, logit, difference, structural != null ? structural : declared,
                 model.getDeferThreshold());
     }

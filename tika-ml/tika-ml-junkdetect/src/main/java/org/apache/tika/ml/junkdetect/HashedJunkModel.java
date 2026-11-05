@@ -396,29 +396,95 @@ public final class HashedJunkModel {
     }
 
     private long[] pairwiseDotAndL1(String a, String b) {
-        int[] x = buckets(a);
-        int[] y = buckets(b);
+        return pairwiseDotAndL1(new Units(a), new Units(b));
+    }
+
+    /** A text's normalized units and pairwise sum, computed once for several comparisons (junk filter). */
+    static final class Features {
+        private final Units units;
+        private final long pairSum;
+
+        private Features(Units units, long pairSum) {
+            this.units = units;
+            this.pairSum = pairSum;
+        }
+    }
+
+    Features features(String text) {
+        Units u = new Units(text);
+        long[] sum = new long[1];
+        forEachBucket(u, (pos, b) -> sum[0] += pairWeights[b]);
+        return new Features(u, sum[0]);
+    }
+
+    double pairValue(Features f) {
+        return pairScale * (double) f.pairSum;
+    }
+
+    /** {pairwise logit, difference} in one pass over the two texts' n-grams. */
+    double[] pairwiseLogitAndDifference(Features a, Features b) {
+        long[] dl = pairwiseDotAndL1(a.units, b.units);
+        return new double[]{dl[1] == 0 ? 0 : pairScale * (double) dl[0] / dl[1], dl[1]};
+    }
+
+    private long[] pairwiseDotAndL1(Units ua, Units ub) {
+        // count differences in a per-thread open-addressing table: O(n), no sorting, no per-call allocation
+        DiffTable t = DIFF.get();
+        t.reset((ua.n + ub.n) * maxN);
+        forEachBucket(ua, (pos, bucket) -> t.add(bucket, 1));
+        forEachBucket(ub, (pos, bucket) -> t.add(bucket, -1));
         long dot = 0;
         long l1 = 0;
-        int i = 0;
-        int j = 0;
-        while (i < x.length || j < y.length) {
-            int bx = i < x.length ? x[i] : Integer.MAX_VALUE;
-            int by = j < y.length ? y[j] : Integer.MAX_VALUE;
-            int bucket = Math.min(bx, by);
-            long d = 0;
-            while (i < x.length && x[i] == bucket) {
-                d++;
-                i++;
+        for (int k = 0; k < t.used; k++) {
+            int slot = t.slots[k];
+            int d = t.vals[slot];
+            if (d != 0) {
+                dot += (long) d * pairWeights[t.keys[slot]];
+                l1 += Math.abs(d);
             }
-            while (j < y.length && y[j] == bucket) {
-                d--;
-                j++;
-            }
-            dot += d * pairWeights[bucket];
-            l1 += Math.abs(d);
         }
         return new long[]{dot, l1};
+    }
+
+    private static final ThreadLocal<DiffTable> DIFF = ThreadLocal.withInitial(DiffTable::new);
+
+    /** Bucket -> count difference; reset() clears only the slots the last use touched. */
+    private static final class DiffTable {
+        int[] keys = new int[0];
+        int[] vals = new int[0];
+        boolean[] full = new boolean[0];
+        int[] slots = new int[0];
+        int used;
+        int mask;
+
+        void reset(int entries) {
+            for (int k = 0; k < used; k++) {
+                full[slots[k]] = false;
+                vals[slots[k]] = 0;
+            }
+            used = 0;
+            int cap = Integer.highestOneBit(Math.max(16, entries)) << 2;
+            if (keys.length < cap) {
+                keys = new int[cap];
+                vals = new int[cap];
+                full = new boolean[cap];
+                slots = new int[cap];
+            }
+            mask = Math.min(keys.length, cap) - 1;
+        }
+
+        void add(int bucket, int delta) {
+            int i = (bucket * 0x9E3779B1) >>> 7 & mask;
+            while (full[i] && keys[i] != bucket) {
+                i = (i + 1) & mask;
+            }
+            if (!full[i]) {
+                full[i] = true;
+                keys[i] = bucket;
+                slots[used++] = i;
+            }
+            vals[i] += delta;
+        }
     }
 
     /** Pairwise-logit margin below which the junk filter defers to a declared anchor. */
