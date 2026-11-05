@@ -2223,14 +2223,6 @@
     <glob pattern="*.ost"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml">
-    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
-    <_comment>3D manufacturing format</_comment>
-    <!-- a zip package; without this, the +xml suffix would make it an XML document -->
-    <sub-class-of type="application/zip"/>
-    <glob pattern="*.3mf"/>
-  </mime-type>
-
   <mime-type type="application/vnd.ms-pki.seccat">
     <glob pattern="*.cat"/>
   </mime-type>
@@ -7678,6 +7670,16 @@
   <mime-type type="message/sipfrag"/>
   <mime-type type="message/tracking-status"/>
   <mime-type type="message/vnd.si.simp"/>
+  <mime-type type="model/3mf">
+    <!-- the package; the old name is the content type of its model part -->
+    <alias type="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>
+    <tika:link>https://www.iana.org/assignments/media-types/model/3mf</tika:link>
+    <tika:link>https://en.wikipedia.org/wiki/3D_Manufacturing_Format</tika:link>
+    <_comment>3D manufacturing format</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.3mf"/>
+  </mime-type>
+
   <mime-type type="model/e57">
     <_comment>3d imaging data exchange</_comment>
     <magic priority="60">
