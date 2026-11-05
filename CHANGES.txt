@@ -120,6 +120,11 @@ Release 4.3.0 - ???
      (g1m family) files, Haihaisoft DRM-X protected files and Navitel maps; they were
      application/octet-stream (TIKA-5029).
 
+   * gcov coverage data and notes, Python bytecode and pickles, Apache Lucene index files,
+     git packfiles, ACPI tables, TZif time zone files (application/tzif), Firefox mozLz4
+     files and JPEG XR images (image/jxr) are detected by content; they were
+     application/octet-stream (TIKA-5029).
+
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
 

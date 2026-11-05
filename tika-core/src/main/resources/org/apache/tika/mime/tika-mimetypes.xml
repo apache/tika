@@ -1265,6 +1265,15 @@
     <glob pattern="*.tsr"/>
   </mime-type>
   <mime-type type="application/tve-trigger"/>
+  <mime-type type="application/tzif">
+    <_comment>Time Zone Information Format (RFC 8536)</_comment>
+    <magic priority="50">
+      <match value="TZif\x00" type="string" offset="0"/>
+      <match value="TZif2" type="string" offset="0"/>
+      <match value="TZif3" type="string" offset="0"/>
+      <match value="TZif4" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/ulpfec"/>
   <mime-type type="application/vemmi"/>
   <mime-type type="application/vividence.scriptfile"/>
@@ -3609,6 +3618,14 @@
   <mime-type type="application/x-ace-compressed">
     <glob pattern="*.ace"/>
   </mime-type>
+  <mime-type type="application/x-acpi-table">
+    <_comment>ACPI table (DSDT, SSDT, FACP, APIC, ...)</_comment>
+    <magic priority="50">
+      <!-- signature, 4-byte length, revision, checksum, then a printable 6-byte OEM ID -->
+      <match value="(?s)(?:DSDT|SSDT|FACP|APIC|HPET|MCFG|SLIC|BERT|WAET)....[\\x00-\\x06].[\\x20-\\x7e]{6}" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.aml"/>
+  </mime-type>
   <mime-type type="application/x-activemime">
     <magic priority="60">
       <!-- ActiveMime\u0000\u0000 -->
@@ -4040,6 +4057,21 @@
     </magic>
     <glob pattern="*.gbx"/>
   </mime-type>
+  <mime-type type="application/x-gcov-data">
+    <_comment>gcov coverage data</_comment>
+    <magic priority="50">
+      <!-- "gcda" in either byte order, then a 4-character version -->
+      <match value="(?:adcg|gcda)[0-9A-Z*]{4}" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.gcda"/>
+  </mime-type>
+  <mime-type type="application/x-gcov-notes">
+    <_comment>gcov notes</_comment>
+    <magic priority="50">
+      <match value="(?:oncg|gcno)[0-9A-Z*]{4}" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.gcno"/>
+  </mime-type>
   <mime-type type="application/x-gettext-translation">
     <_comment>GNU gettext message catalog</_comment>
     <magic priority="50">
@@ -4049,6 +4081,13 @@
     </magic>
     <glob pattern="*.mo"/>
     <glob pattern="*.gmo"/>
+  </mime-type>
+  <mime-type type="application/x-git-pack">
+    <_comment>git packfile</_comment>
+    <magic priority="50">
+      <match value="PACK\x00\x00\x00\x02" type="string" offset="0"/>
+      <match value="PACK\x00\x00\x00\x03" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
@@ -4776,6 +4815,13 @@
     </magic>
     <glob pattern="*.lrz"/>
   </mime-type>
+  <mime-type type="application/x-lucene-index">
+    <_comment>Apache Lucene index file</_comment>
+    <magic priority="50">
+      <!-- CodecUtil header: magic 0x3FD76C17, then the codec name (length byte + ASCII) -->
+      <match value="(?s)\\x3f\\xd7\\x6c\\x17[\\x02-\\x40][A-Za-z]" type="regex" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-lz4">
      <_comment>First match LZ4 Frame</_comment>
      <_comment>Second match Legacy Frame</_comment>
@@ -5368,6 +5414,31 @@
     </magic>
     <glob pattern="*.p3t"/>
   </mime-type>
+  <mime-type type="application/x-python-bytecode">
+    <_comment>Python bytecode</_comment>
+    <magic priority="50">
+      <!-- 2.3-2.7 magic numbers, then CR LF -->
+      <match value="0x3BF20D0A" type="string" offset="0"/>
+      <match value="0x6DF20D0A" type="string" offset="0"/>
+      <match value="0xB3F20D0A" type="string" offset="0"/>
+      <match value="0xD1F20D0A" type="string" offset="0"/>
+      <match value="0x03F30D0A" type="string" offset="0"/>
+      <!-- 3.x: a 16-bit magic 3000-3599, then CR LF -->
+      <match value="0x000C0D0A" mask="0x00FEFFFF" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.pyc"/>
+    <glob pattern="*.pyo"/>
+  </mime-type>
+  <mime-type type="application/x-python-pickle">
+    <_comment>Python pickle</_comment>
+    <magic priority="50">
+      <!-- protocol 2-3, then a dict/list/mark/global opcode; protocol 4-5 start with FRAME -->
+      <match value="(?s)\\x80[\\x02\\x03][}\\](c]" type="regex" offset="0"/>
+      <match value="(?s)\\x80[\\x04\\x05]\\x95" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.pkl"/>
+    <glob pattern="*.pickle"/>
+  </mime-type>
 
   <mime-type type="application/x-quattro-pro">
     <_comment>
@@ -5752,6 +5823,15 @@
       </match>
     </magic>
     <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+  <mime-type type="application/x-mozlz4">
+    <_comment>Mozilla LZ4 (Firefox jsonlz4/mozlz4)</_comment>
+    <magic priority="50">
+      <match value="mozLz40\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jsonlz4"/>
+    <glob pattern="*.mozlz4"/>
+    <glob pattern="*.baklz4"/>
   </mime-type>
   <mime-type type="application/x-esri-spatially-enabled-db">
     <magic priority="60">
@@ -7686,6 +7766,15 @@
       <match value="0x0000000C4A584C200D0A870A" type="string" offset="0"/>
     </magic>
     <glob pattern="*.jxl"/>
+  </mime-type>
+  <mime-type type="image/jxr">
+    <_comment>JPEG XR (HD Photo)</_comment>
+    <magic priority="50">
+      <match value="0x4949BC01" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jxr"/>
+    <glob pattern="*.wdp"/>
+    <glob pattern="*.hdp"/>
   </mime-type>
 
   <mime-type type="image/x-niff">

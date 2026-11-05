@@ -230,6 +230,28 @@ public class NicheFormatDetectionTest {
                         + "\u0084Sÿ\u0018\u0084\u0000\u0000\u0000\u0084\u0000\u0000\u0000");
     }
 
+    @Test
+    public void testDeveloperArtifacts() throws Exception {
+        assertDetected(MediaType.application("x-gcov-data"), "adcg*504qc\u0000\u0000");
+        assertDetected(MediaType.application("x-gcov-notes"), "oncg*204\u0000\u0000");
+        assertDetected(MediaType.application("x-python-bytecode"), "\u0003ó\r\nSc\u0000\u0000");
+        assertDetected(MediaType.application("x-python-bytecode"), "U\r\r\n\u0000\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-python-pickle"), "\u0080\u0002}q\u0000(U\tcollector");
+        assertDetected(MediaType.application("x-python-pickle"), "\u0080\u0004\u0095\u0010\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-lucene-index"), "?×l\u0017\u0013Lucene62SegmentInfo");
+        assertDetected(MediaType.application("x-git-pack"), "PACK\u0000\u0000\u0000\u0002\u0000\u0000\u0000\u0003");
+        assertDetected(MediaType.OCTET_STREAM, "PACK\u0000\u0000\u0000\u0001\u0000\u0000\u0002-");
+    }
+
+    @Test
+    public void testSystemDataFormats() throws Exception {
+        assertDetected(MediaType.application("tzif"), "TZif2\u0000\u0000\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-mozlz4"), "mozLz40\u0000]\u0000\u0000\u0000{\"type\"");
+        assertDetected(MediaType.image("jxr"), "II¼\u0001 \u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-acpi-table"),
+                "SSDTÈ\u0000\u0000\u0000\u0001\u008eBOCHS BXPCSSDT");
+    }
+
     private static void assertDetected(MediaType expected, String latin1) throws IOException {
         byte[] bytes = new byte[64];
         byte[] header = latin1.getBytes(ISO_8859_1);
