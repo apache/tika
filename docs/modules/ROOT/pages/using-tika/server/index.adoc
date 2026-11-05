@@ -200,11 +200,13 @@ renders, so the presets do not make them. Both name the standard parsers, so the
 `tika-parsers-standard-package` on the classpath.
 
 `/unpack/preset/thumbnail` — "just give me the thumbnail". The zip holds at most one raster
-image per request and nothing else: the stored thumbnail (Office docProps, audio cover art,
-raw camera previews, epub, Jupyter notebooks, iWork), the rasterized EMF/WMF thumbnail, or the PDF page; `204`
-when the document has none. An image file is its own thumbnail: it has no embedded documents,
-so it answers `204` too. Text is read from the first PDF page only, no OCR or inference runs,
-and embedded documents are parsed two levels deep at most, so the parse is cheap.
+image per request and nothing else: the stored thumbnail (Office docProps, audio cover art, raw
+camera previews, epub, Mobipocket, PSD, Jupyter notebooks, iWork, the cover of a cbz, the
+preview of Krita and other zip-based formats), the rasterized EMF/WMF thumbnail, or the PDF
+page; `204` when the document has none. An image file is its own thumbnail: it has no embedded
+documents, so it answers `204` too. Text is read from the first PDF page only, no OCR or
+inference runs, and embedded documents are parsed two levels deep at most, so the parse is
+cheap.
 
 `/rmeta/preset/render-thumbnail` — "give me everything, thumbnail included". A full parse
 plus the two renders above, so an index gets the thumbnail's type and dimensions from the same
@@ -379,13 +381,18 @@ xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus].
 |Activate a catalog preset, as `"presets": {"<name>": true}` in the config would. Repeatable.
 The environment variable `TIKA_PRESETS` takes a comma-separated list. See <<_presets_named_configuration_without_config,Presets>>.
 
+|`--serverSetting <field>=<value>`
+|Set a field of the config's `server` block, e.g. `--serverSetting maxRequestSizeBytes=4294967296`.
+Repeatable. The environment variable `TIKA_SERVER_SETTING_<FIELD>` sets the same field, the name in upper
+snake case: `TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES`. See <<_configuration,Configuration>>.
+
 |`-?`, `--help`
 |Print the usage message.
 |===
 
-NOTE: `-h`, `-p`, `-i` and `--metricsPort` override the JSON config; `--preset` and `TIKA_PRESETS`
-add to its `presets`. Everything else — `allowPipes`, `allowPerRequestConfig`, CORS, TLS,
-timeouts — is JSON-only.
+NOTE: `-h`, `-p`, `-i`, `--metricsPort`, `--serverSetting` and `TIKA_SERVER_SETTING_<FIELD>` override the
+JSON config's `server` block; `--preset` and `TIKA_PRESETS` add to its `presets`. Everything else
+— parsers, detectors, pipes — is JSON-only.
 
 == Endpoints
 
@@ -675,7 +682,25 @@ hard failure.
 == Configuration
 
 Server behavior beyond host/port comes from the `server` section of the JSON config passed via
-`-c`/`--config`. That section maps to fields on `TikaServerConfig`:
+`-c`/`--config`. That section maps to fields on `TikaServerConfig`.
+
+Every field except `tlsConfig` and `endpoints`, which take an object and a list and stay in the
+file, can also be set without it: `--serverSetting <field>=<value>` (repeatable) or the environment
+variable `TIKA_SERVER_SETTING_<FIELD>`, the field's name in upper snake case (the prefix is
+deliberately not `TIKA_SERVER_`, which Kubernetes uses for the variables it gives every pod for a
+Service named `tika-server`). Either goes through the same binding as the file, so the value is
+checked as it would be there, an unknown field fails startup, and the option wins over the
+variable, which wins over the file. Startup also fails when two options or two variables set the
+same field, and when a setting names `host`, `port`, `id` or `metricsPort` while `-h`, `-p`, `-i` or
+`--metricsPort` sets it too. The Docker image's entry point passes `-h 0.0.0.0`, so
+`TIKA_SERVER_SETTING_HOST` fails there; limit access with the container's port mapping instead.
+`presets` is set with `--preset` or `TIKA_PRESETS`.
+
+[source,bash]
+----
+java -jar tika-server-standard-X.Y.Z.jar --serverSetting maxRequestSizeBytes=4294967296
+TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES=4294967296 java -jar tika-server-standard-X.Y.Z.jar
+----
 
 [cols="1,1,3"]
 |===

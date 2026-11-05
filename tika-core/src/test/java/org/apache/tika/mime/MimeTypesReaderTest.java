@@ -201,6 +201,15 @@ public class MimeTypesReaderTest {
         assertEquals("application/x-berkeley-db", mtAltP.toString());
     }
 
+    @Test
+    public void test3MFNameAndSupertype() throws Exception {
+        MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+        MediaType threeMF = MediaType.parse("model/3mf");
+        assertEquals(threeMF, mimeTypes.forName(
+                "application/vnd.ms-package.3dmanufacturing-3dmodel+xml").getType());
+        assertEquals(MediaType.APPLICATION_ZIP, registry.getSupertype(threeMF));
+    }
+
     /**
      * TIKA-746 Ensures that the custom mimetype maps were also
      * loaded and used

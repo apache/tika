@@ -35,10 +35,15 @@ import org.apache.tika.ml.chardetect.HtmlByteStripper;
  */
 public final class HtmlContentCleaner {
 
-    private static final Pattern ENTITY_DEC = Pattern.compile("&#(\\d{1,7});");
-    private static final Pattern ENTITY_HEX = Pattern.compile("&#[xX]([0-9a-fA-F]{1,6});");
-    private static final Pattern ENTITY_NAMED =
-            Pattern.compile("&(amp|lt|gt|quot|apos|nbsp|copy|reg);");
+    private static final Pattern ENTITY = Pattern.compile(
+            "&(?:#[xX]([0-9a-fA-F]+)|#(\\d+)|(amp|lt|gt|quot|apos|nbsp|copy|reg));");
+
+    /** WHATWG remaps numeric references 0x80-0x9F to these windows-1252 characters; 0 = kept. */
+    private static final char[] C1_REMAP = {
+            '\u20AC', 0, '\u201A', '\u0192', '\u201E', '\u2026', '\u2020', '\u2021',
+            '\u02C6', '\u2030', '\u0160', '\u2039', '\u0152', 0, '\u017D', 0,
+            0, '\u2018', '\u2019', '\u201C', '\u201D', '\u2022', '\u2013', '\u2014',
+            '\u02DC', '\u2122', '\u0161', '\u203A', '\u0153', 0, '\u017E', '\u0178'};
 
     private HtmlContentCleaner() {
     }
@@ -64,34 +69,20 @@ public final class HtmlContentCleaner {
 
     /**
      * Expand HTML entities to codepoints.  Numeric refs ({@code &#169;},
-     * {@code &#xA9;}) are fully decoded; a small set of common named entities
-     * is mapped; other named entities pass through literally.
+     * {@code &#xA9;}) are decoded as a browser does (WHATWG "numeric character
+     * reference end state"); a small set of common named entities is mapped;
+     * other named entities pass through literally.
      */
     static String expandHtmlEntities(String s) {
-        s = ENTITY_DEC.matcher(s).replaceAll(mr -> {
-            try {
-                int cp = Integer.parseInt(mr.group(1));
-                if (cp >= 0 && cp <= 0x10FFFF) {
-                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
-                }
-            } catch (NumberFormatException ignored) {
-                // overflow — leave literal
+        // one pass, so an expansion is never re-read as a reference ("&#38;#x41;" stays "&#x41;")
+        return ENTITY.matcher(s).replaceAll(mr -> {
+            if (mr.group(1) != null) {
+                return numericReference(mr.group(1), 16);
             }
-            return Matcher.quoteReplacement(mr.group());
-        });
-        s = ENTITY_HEX.matcher(s).replaceAll(mr -> {
-            try {
-                int cp = Integer.parseInt(mr.group(1), 16);
-                if (cp >= 0 && cp <= 0x10FFFF) {
-                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
-                }
-            } catch (NumberFormatException ignored) {
-                // overflow — leave literal
+            if (mr.group(2) != null) {
+                return numericReference(mr.group(2), 10);
             }
-            return Matcher.quoteReplacement(mr.group());
-        });
-        s = ENTITY_NAMED.matcher(s).replaceAll(mr -> {
-            switch (mr.group(1)) {
+            switch (mr.group(3)) {
                 case "amp":  return "&";
                 case "lt":   return "<";
                 case "gt":   return ">";
@@ -99,10 +90,27 @@ public final class HtmlContentCleaner {
                 case "apos": return "'";
                 case "nbsp": return " ";
                 case "copy": return "©";
-                case "reg":  return "®";
-                default:     return Matcher.quoteReplacement(mr.group());
+                default:     return "®";
             }
         });
-        return s;
+    }
+
+    /** NUL, surrogates and values past U+10FFFF become U+FFFD; 0x80-0x9F map via windows-1252. */
+    private static String numericReference(String digits, int radix) {
+        int start = 0;
+        while (start < digits.length() - 1 && digits.charAt(start) == '0') {
+            start++;
+        }
+        int cp = -1;
+        if (digits.length() - start <= 7) {
+            cp = Integer.parseInt(digits.substring(start), radix);
+        }
+        if (cp <= 0 || cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
+            return "\uFFFD";
+        }
+        if (cp >= 0x80 && cp <= 0x9F && C1_REMAP[cp - 0x80] != 0) {
+            return String.valueOf(C1_REMAP[cp - 0x80]);
+        }
+        return Matcher.quoteReplacement(new String(Character.toChars(cp)));
     }
 }
