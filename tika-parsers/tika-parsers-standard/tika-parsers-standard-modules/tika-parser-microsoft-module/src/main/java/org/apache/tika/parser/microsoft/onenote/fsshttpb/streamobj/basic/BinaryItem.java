@@ -18,22 +18,31 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class BinaryItem extends BasicObject {
+    private static final byte[] EMPTY = new byte[0];
+
     public Compact64bitInt length;
-    public List<Byte> content;
+    /**
+     * The binary payload. Object data BLOBs (embedded images and files) and every object's
+     * property set live here, so it is held as a primitive array: a boxed list cost a
+     * Byte reference per payload byte and dominated OneNote parse time.
+     */
+    public byte[] content;
 
     /**
      * Initializes a new instance of the BinaryItem class.
      */
     public BinaryItem() {
         this.length = new Compact64bitInt();
-        this.content = new ArrayList<>();
+        this.content = EMPTY;
     }
 
     /**
@@ -42,10 +51,19 @@ public class BinaryItem extends BasicObject {
      * @param content Specify the binary content.
      */
     public BinaryItem(Collection<Byte> content) {
+        this(ByteUtil.toByteArray(new ArrayList<>(content)));
+    }
+
+    /**
+     * Initializes a new instance of the BinaryItem class with the specified content. The
+     * array is used as-is, not copied.
+     *
+     * @param content Specify the binary content.
+     */
+    public BinaryItem(byte[] content) {
         this.length = new Compact64bitInt();
-        this.content = new ArrayList<>();
-        this.content.addAll(content);
-        this.length.setDecodedValue(this.content.size());
+        this.content = content;
+        this.length.setDecodedValue(content.length);
     }
 
     /**
@@ -55,11 +73,11 @@ public class BinaryItem extends BasicObject {
      */
     @Override
     public List<Byte> serializeToByteList() throws IOException {
-        this.length.setDecodedValue(this.content.size());
+        this.length.setDecodedValue(this.content.length);
 
         List<Byte> result = new ArrayList<>();
         result.addAll(this.length.serializeToByteList());
-        result.addAll(this.content);
+        ByteUtil.appendByteArrayToListOfByte(result, this.content);
 
         return result;
     }
@@ -78,10 +96,16 @@ public class BinaryItem extends BasicObject {
 
         this.length = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
-        this.content.clear();
-        for (long i = 0; i < this.length.getDecodedValue(); i++) {
-            this.content.add(byteArray[index.getAndIncrement()]);
+        long contentLength = this.length.getDecodedValue();
+        int contentStart = index.get();
+        if (contentLength < 0 || contentLength > byteArray.length - contentStart) {
+            throw new TikaException("BinaryItem length " + contentLength + " at offset " +
+                    contentStart + " exceeds the " + (byteArray.length - contentStart) +
+                    " bytes remaining");
         }
+        this.content = Arrays.copyOfRange(byteArray, contentStart,
+                contentStart + (int) contentLength);
+        index.addAndGet((int) contentLength);
 
         return index.get() - startIndex;
     }

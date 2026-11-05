@@ -1115,8 +1115,7 @@ public class MSOneStorePackage {
         if (object == null) {
             return false;
         }
-        byte[] data = object.fileDataObject == null ? null : object.fileDataObject.getData();
-        if (data != null && data.length > 0) {
+        if (object.fileDataObject != null && object.fileDataObject.hasData()) {
             return true;
         }
         if (object.propertySet == null || object.propertySet.objectSpaceObjectPropSet == null) {

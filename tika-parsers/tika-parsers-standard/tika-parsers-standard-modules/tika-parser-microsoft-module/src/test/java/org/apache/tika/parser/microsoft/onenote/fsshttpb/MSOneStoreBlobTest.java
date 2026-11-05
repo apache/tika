@@ -184,8 +184,7 @@ public class MSOneStoreBlobTest {
         ObjectSpaceObjectPropSet propSet = new ObjectSpaceObjectPropSet();
         propSet.body = propertySet;
         ObjectGroupObjectData objectData = new ObjectGroupObjectData();
-        objectData.data.content.addAll(ByteUtil.toListOfByte(new byte[]{0, 0, 0, (byte) 0x80,
-                0, 0, 0, 0}));
+        objectData.data.content = new byte[]{0, 0, 0, (byte) 0x80, 0, 0, 0, 0};
         PropertySetObject propertySetObject = new PropertySetObject(null, objectData);
         propertySetObject.objectSpaceObjectPropSet = propSet;
         parent.propertySet = propertySetObject;
@@ -212,12 +211,11 @@ public class MSOneStoreBlobTest {
         blob.data = new BinaryItem();
         blob.data.content = null;
         assertNull(blob.getData());
-        blob.data = new BinaryItem();
-        blob.data.content.add((byte) 1);
+        blob.data = new BinaryItem(new byte[]{1});
         assertFalse(blob.serializeToByteList().isEmpty());
 
         ObjectDataBLOB validBlob = new ObjectDataBLOB();
-        validBlob.data.content.add((byte) 1);
+        validBlob.data.content = new byte[]{1};
         byte[] itemBytes = ByteUtil.toByteArray(validBlob.data.serializeToByteList());
         AtomicInteger index = new AtomicInteger(0);
         java.lang.reflect.Method deserialize = ObjectDataBLOB.class.getDeclaredMethod(
@@ -282,7 +280,7 @@ public class MSOneStoreBlobTest {
         ObjectGroupObjectDeclare declaration = new ObjectGroupObjectDeclare();
         declaration.objectPartitionID.setDecodedValue(1);
         ObjectGroupObjectData objectData = new ObjectGroupObjectData();
-        objectData.data.content.add((byte) 42);
+        objectData.data.content = new byte[]{42};
         encryptedData.objectGroupDeclarations.objectDeclarationList.add(declaration);
         encryptedData.objectGroupData.objectGroupObjectDataList.add(objectData);
 
@@ -337,9 +335,7 @@ public class MSOneStoreBlobTest {
 
     private DataElement roundTripBlobElement() throws Exception {
         ObjectDataBLOBDataElementData blobData = new ObjectDataBLOBDataElementData();
-        for (byte b : BLOB_BYTES) {
-            blobData.objectDataBLOB.data.content.add(b);
-        }
+        blobData.objectDataBLOB.data.content = BLOB_BYTES.clone();
         DataElement blobElement =
                 new DataElement(DataElementType.ObjectDataBLOBDataElementData, blobData);
         byte[] serialized = ByteUtil.toByteArray(blobElement.serializeToByteList());

@@ -29,13 +29,22 @@ public class FileDataObject {
      * resolved.
      */
     public byte[] getData() {
+        ObjectDataBLOB blob = getBlob();
+        return blob == null ? null : blob.getData();
+    }
+
+    /**
+     * @return whether the file data resolves to non-empty binary data, without copying it.
+     */
+    public boolean hasData() {
+        ObjectDataBLOB blob = getBlob();
+        return blob != null && blob.hasData();
+    }
+
+    private ObjectDataBLOB getBlob() {
         if (objectDataBLOBDataElement != null &&
                 objectDataBLOBDataElement.data instanceof ObjectDataBLOBDataElementData) {
-            ObjectDataBLOBDataElementData blobData =
-                    (ObjectDataBLOBDataElementData) objectDataBLOBDataElement.data;
-            if (blobData.objectDataBLOB != null) {
-                return blobData.objectDataBLOB.getData();
-            }
+            return ((ObjectDataBLOBDataElementData) objectDataBLOBDataElement.data).objectDataBLOB;
         }
         return null;
     }

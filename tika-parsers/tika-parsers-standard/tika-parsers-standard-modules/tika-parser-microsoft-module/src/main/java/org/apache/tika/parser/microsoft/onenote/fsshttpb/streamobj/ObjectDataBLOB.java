@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 /**
  * Specifies an object data BLOB stream object - the opaque binary data of an object,
@@ -38,13 +37,20 @@ public class ObjectDataBLOB extends StreamObject {
     }
 
     /**
-     * @return the opaque binary data as a byte array, or null if not present.
+     * @return a copy of the opaque binary data, or null if not present.
      */
     public byte[] getData() {
         if (this.data == null || this.data.content == null) {
             return null;
         }
-        return ByteUtil.toByteArray(this.data.content);
+        return this.data.content.clone();
+    }
+
+    /**
+     * @return whether there is non-empty binary data, without copying it.
+     */
+    public boolean hasData() {
+        return this.data != null && this.data.content != null && this.data.content.length > 0;
     }
 
     @Override

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class RevisionStoreObjectGroup {
     public ExGuid objectGroupID;
@@ -124,7 +123,7 @@ public class RevisionStoreObjectGroup {
                 if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
                     EncryptionObject encrypObject = new EncryptionObject();
                     encrypObject.objectDeclaration = objectDeclaration;
-                    encrypObject.objectData = ByteUtil.toByteArray(objectData.data.content);
+                    encrypObject.objectData = objectData.data.content;
                     objectGroup.encryptionObjects.add(encrypObject);
                 }
             }

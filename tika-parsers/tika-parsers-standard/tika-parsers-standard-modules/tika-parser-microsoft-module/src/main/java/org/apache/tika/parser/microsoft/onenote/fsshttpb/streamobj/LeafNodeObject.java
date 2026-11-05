@@ -128,7 +128,7 @@ public class LeafNodeObject extends NodeObject {
             AtomicReference<IntermediateNodeObject> rootNode = new AtomicReference<>();
 
             AtomicInteger index = new AtomicInteger(0);
-            if (StreamObject.tryGetCurrent(ByteUtil.toByteArray(dataObj.data.content), index, node,
+            if (StreamObject.tryGetCurrent(dataObj.data.content, index, node,
                     LeafNodeObject.class)) {
                 if (dataObj.objectExGUIDArray == null) {
                     throw new TikaException(
@@ -146,7 +146,7 @@ public class LeafNodeObject extends NodeObject {
                     BinaryItem data = dataNodeData.data;
 
                     node.get().dataNodeObjectData =
-                            new DataNodeObjectData(ByteUtil.toByteArray(data.content), 0,
+                            new DataNodeObjectData(data.content, 0,
                                     (int) data.length.getDecodedValue());
                     node.get().dataNodeObjectData.exGuid = dataObj.objectExGUIDArray.content.get(0);
                     node.get().intermediateNodeObjectList = null;
@@ -164,7 +164,7 @@ public class LeafNodeObject extends NodeObject {
                                         intermediateData, extGuid));
                     }
                 }
-            } else if (StreamObject.tryGetCurrent(ByteUtil.toByteArray(dataObj.data.content), index,
+            } else if (StreamObject.tryGetCurrent(dataObj.data.content, index,
                     rootNode, IntermediateNodeObject.class)) {
                 // In Sub chunking for larger than 1MB zip file, MOSS2010 could return IntermediateNodeObject.
                 // For easy further process, the rootNode will be replaced by intermediate node instead.

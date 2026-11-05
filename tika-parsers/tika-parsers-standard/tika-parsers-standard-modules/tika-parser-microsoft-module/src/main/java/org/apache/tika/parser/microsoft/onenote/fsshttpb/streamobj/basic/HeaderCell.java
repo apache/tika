@@ -22,7 +22,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupDa
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectDeclare;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class HeaderCell {
     public ObjectGroupObjectDeclare objectDeclaration;
@@ -49,8 +48,7 @@ public class HeaderCell {
                 ObjectGroupObjectData objectData =
                         objectElement.objectGroupData.objectGroupObjectDataList.get(i);
                 instance.objectData = new ObjectSpaceObjectPropSet();
-                instance.objectData.doDeserializeFromByteArray(
-                        ByteUtil.toByteArray(objectData.data.content), 0);
+                instance.objectData.doDeserializeFromByteArray(objectData.data.content, 0);
                 break;
             }
         }
