@@ -63,6 +63,24 @@ public class ZipEntryPathsTest {
                 "Text/ch1.xhtml"));
     }
 
+    /** The entry the reference sits in is a name, not a URI: its %, # and ? are literal. */
+    @Test
+    public void testLiteralBase() {
+        assertEquals("My%20Book/Text/ch1.xhtml", ZipEntryPaths.resolve("My%20Book/content.opf",
+                "Text/ch1.xhtml"));
+        assertEquals("OEBPS#1/Text/ch1.xhtml", ZipEntryPaths.resolve("OEBPS#1/content.opf",
+                "Text/ch1.xhtml"));
+        assertEquals("a?b/ch1.xhtml", ZipEntryPaths.resolve("a?b/content.opf", "ch1.xhtml"));
+    }
+
+    /** A reference without a path points at no other entry. */
+    @Test
+    public void testNoPath() {
+        assertNull(ZipEntryPaths.resolve("OEBPS/content.opf", ""));
+        assertNull(ZipEntryPaths.resolve("OEBPS/content.opf", "#frag"));
+        assertNull(ZipEntryPaths.resolve("OEBPS/content.opf", "?query"));
+    }
+
     @Test
     public void testOutsideThePackage() {
         assertNull(ZipEntryPaths.resolve("OEBPS/content.opf", "../../etc/passwd"));
