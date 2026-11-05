@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -52,8 +51,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * The file starts with "SketchUp Model" and the version, both as length-prefixed UTF-16
  * strings. Up to SketchUp 2020 the preview follows in a "CDib" record: the class tag
- * {@code ff ff}, a 16-bit schema, the 16-bit name length and "CDib", then two 32-bit
- * little-endian integers, the second the length of the PNG after them. From SketchUp 2021,
+ * {@code ff ff}, a 16-bit schema (3 in every file seen), the 16-bit name length and "CDib",
+ * then two 32-bit little-endian integers, the second the length of the PNG after them. From
+ * SketchUp 2021,
  * a zip follows a few bytes after the version; its "meta/model_thumbnail.png" is the model
  * alone on a transparent background, "meta/preview_thumbnail.png" the view with its
  * background and axes. The first is taken when it is there.
@@ -69,7 +69,10 @@ public class SketchUpParser implements Parser {
 
     private static final byte[] MAGIC = utf16("SketchUp Model");
 
-    private static final byte[] CDIB = {(byte) 0xff, (byte) 0xff, 3, 0, 4, 0, 'C', 'D', 'i', 'b'};
+    /** The class name of the preview record; the class tag and the 16-bit schema precede it. */
+    private static final byte[] CDIB = {4, 0, 'C', 'D', 'i', 'b'};
+
+    private static final int CLASS_TAG_AND_SCHEMA = 4;
 
     private static final byte[] ZIP = {'P', 'K', 3, 4};
 
@@ -125,7 +128,16 @@ public class SketchUpParser implements Parser {
         if (zip >= 0) {
             return fromZip(rest(head, zip, in));
         }
-        int cdib = indexOf(head, CDIB, afterVersion, head.length);
+        int cdib = -1;
+        for (int at = indexOf(head, CDIB, afterVersion, head.length); at >= 0;
+                at = indexOf(head, CDIB, at + 1, head.length)) {
+            if (at - CLASS_TAG_AND_SCHEMA >= afterVersion
+                    && (head[at - CLASS_TAG_AND_SCHEMA] & 0xff) == 0xff
+                    && (head[at - CLASS_TAG_AND_SCHEMA + 1] & 0xff) == 0xff) {
+                cdib = at;
+                break;
+            }
+        }
         if (cdib < 0) {
             return null;
         }
@@ -135,7 +147,11 @@ public class SketchUpParser implements Parser {
         if (length > MAX_THUMBNAIL_LENGTH) {
             throw new TikaMemoryLimitException(length, MAX_THUMBNAIL_LENGTH);
         }
-        return png(IOUtils.toByteArray(record, (int) length));
+        byte[] png = record.readNBytes((int) length);
+        if (png.length < length) {
+            throw new TikaException("Preview of " + length + " bytes, " + png.length + " there");
+        }
+        return png(png);
     }
 
     /** The offset after "SketchUp Model" and the version string. */

@@ -107,9 +107,29 @@ public class SketchUpParserTest extends TikaTest {
     }
 
     @Test
+    public void testOtherSchema() throws Exception {
+        assertArrayEquals(MODEL, SketchUpParser.readThumbnail(
+                new ByteArrayInputStream(cdib("21.0.0", 7, MODEL))));
+    }
+
+    /** A length beyond the file is refused once the bytes run out, not allocated upfront. */
+    @Test
+    public void testLengthBeyondTheFile() throws Exception {
+        byte[] file = cdib("17.0.18899", MODEL);
+        int length = indexOf(file, new byte[]{(byte) 0xff, (byte) 0xff, 3, 0, 4, 0, 'C', 'D',
+                'i', 'b'}) + 10 + 4;
+        ByteBuffer.wrap(file).order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(length, SketchUpParser.MAX_THUMBNAIL_LENGTH);
+        TikaException e = assertThrows(TikaException.class,
+                () -> SketchUpParser.readThumbnail(new ByteArrayInputStream(file)));
+        assertContains("there", e.getMessage());
+    }
+
+    @Test
     public void testOversizedPreview() throws Exception {
         byte[] file = cdib("17.0.18899", MODEL);
-        int length = indexOf(file, "CDib".getBytes(StandardCharsets.US_ASCII)) + 8;
+        int length = indexOf(file, new byte[]{(byte) 0xff, (byte) 0xff, 3, 0, 4, 0, 'C', 'D',
+                'i', 'b'}) + 10 + 4;
         ByteBuffer.wrap(file).order(ByteOrder.LITTLE_ENDIAN)
                 .putInt(length, SketchUpParser.MAX_THUMBNAIL_LENGTH + 1);
         assertThrows(TikaMemoryLimitException.class,
@@ -212,10 +232,20 @@ public class SketchUpParserTest extends TikaTest {
 
     /** A file of SketchUp 2020 and before: the header, other records, the CDib record. */
     private static byte[] cdib(String version, byte[] png) {
+        return cdib(version, 3, png);
+    }
+
+    /**
+     * As above with the given schema, after a decoy "CDib" that is not a class record, as
+     * when the name turns up in other data.
+     */
+    private static byte[] cdib(String version, int schema, byte[] png) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         out.writeBytes(header(version));
-        out.writeBytes(new byte[1500]);
-        out.writeBytes(new byte[]{(byte) 0xff, (byte) 0xff, 3, 0, 4, 0, 'C', 'D', 'i', 'b'});
+        out.writeBytes(new byte[700]);
+        out.writeBytes(new byte[]{1, 2, 3, 4, 4, 0, 'C', 'D', 'i', 'b'});
+        out.writeBytes(new byte[790]);
+        out.writeBytes(new byte[]{(byte) 0xff, (byte) 0xff, (byte) schema, 0, 4, 0, 'C', 'D', 'i', 'b'});
         out.writeBytes(ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putInt(4)
                 .putInt(png.length).array());
         out.writeBytes(png);
