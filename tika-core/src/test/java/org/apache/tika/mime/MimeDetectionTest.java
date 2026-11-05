@@ -234,7 +234,7 @@ public class MimeDetectionTest {
 
     @Test
     public void testPalmDocDetection() throws Exception {
-        assertDetected(MediaType.application("x-palmdoc"), header(60, "TEXtREAd"));
+        assertDetected(MediaType.application("x-aportisdoc"), header(60, "TEXtREAd"));
         assertDetected(MediaType.application("x-mobipocket-ebook"), header(60, "BOOKMOBI"));
     }
 

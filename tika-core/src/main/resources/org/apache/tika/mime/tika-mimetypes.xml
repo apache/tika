@@ -2921,8 +2921,9 @@
     <glob pattern="*.pqa"/>
     <glob pattern="*.oprc"/>
   </mime-type>
-  <mime-type type="application/x-palmdoc">
+  <mime-type type="application/x-aportisdoc">
     <_comment>PalmDOC (AportisDoc) e-book</_comment>
+    <alias type="application/x-palmdoc"/>
     <sub-class-of type="application/vnd.palm"/>
     <magic priority="60">
       <!-- Palm database type + creator -->
@@ -3622,8 +3623,9 @@
   <mime-type type="application/x-ace-compressed">
     <glob pattern="*.ace"/>
   </mime-type>
-  <mime-type type="application/x-acpi-table">
+  <mime-type type="application/x-intel-aml">
     <_comment>ACPI table (DSDT, SSDT, FACP, APIC, ...)</_comment>
+    <alias type="application/x-acpi-table"/>
     <magic priority="50">
       <!-- signature, 4-byte length, revision, checksum, then a printable 6-byte OEM ID -->
       <match value="(?s)(?:DSDT|SSDT|FACP|APIC|HPET|MCFG|SLIC|BERT|WAET)....[\\x00-\\x06].[\\x20-\\x7e]{6}" type="regex" offset="0"/>
@@ -3976,6 +3978,8 @@
     <magic priority="50">
       <!-- then pointer size (_ 32-bit, - 64-bit), endianness, version -->
       <match value="BLENDER[_-][vV][0-9]" type="regex" offset="0"/>
+      <!-- 5.0+: header size, pointer size, format version, endianness, 4-digit version -->
+      <match value="BLENDER[0-9]{2}[_-][0-9]{2}[vV][0-9]{4}" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.blend"/>
   </mime-type>
@@ -4088,6 +4092,7 @@
   </mime-type>
   <mime-type type="application/x-git-pack">
     <_comment>git packfile</_comment>
+    <alias type="application/x-git"/>
     <magic priority="50">
       <match value="PACK\x00\x00\x00\x02" type="string" offset="0"/>
       <match value="PACK\x00\x00\x00\x03" type="string" offset="0"/>
@@ -4176,6 +4181,7 @@
   </mime-type>
   <mime-type type="application/x-clamav-database">
     <_comment>ClamAV signature database</_comment>
+    <alias type="application/x-clamav"/>
     <magic priority="50">
       <match value="ClamAV-VDB:" type="string" offset="0"/>
     </magic>
@@ -4286,7 +4292,6 @@
       <match value="POT14" type="string" offset="0"/>
       <match value="POT06" type="string" offset="0"/>
     </magic>
-    <glob pattern="*.lev"/>
   </mime-type>
   <mime-type type="application/x-elc">
     <_comment>Emacs Lisp bytecode</_comment>
@@ -4434,6 +4439,7 @@
   </mime-type>
   <mime-type type="application/x-windows-kernel-dump">
     <_comment>Windows kernel memory dump</_comment>
+    <alias type="application/x-ms-dmp"/>
     <magic priority="50">
       <match value="PAGEDUMP" type="string" offset="0"/>
       <match value="PAGEDU64" type="string" offset="0"/>
@@ -5399,10 +5405,10 @@
   </mime-type>
   <mime-type type="application/x-promethean-flipchart">
     <_comment>Promethean ActivInspire flipchart</_comment>
+    <!-- unverified: seen on .flipchart files, an extension Wacom Bamboo Paper also uses -->
     <magic priority="50">
       <match value=" Bamboo " type="string" offset="0"/>
     </magic>
-    <glob pattern="*.flipchart"/>
   </mime-type>
   <mime-type type="application/x-ps3-package">
     <_comment>PlayStation 3/PSP package</_comment>
@@ -5427,8 +5433,8 @@
       <match value="0xB3F20D0A" type="string" offset="0"/>
       <match value="0xD1F20D0A" type="string" offset="0"/>
       <match value="0x03F30D0A" type="string" offset="0"/>
-      <!-- 3.x: a 16-bit magic 3000-3599, then CR LF -->
-      <match value="0x000C0D0A" mask="0x00FEFFFF" type="string" offset="0"/>
+      <!-- 3.x: a little-endian magic 2816-4095 (3.0 is 3000, 3.n is 2900+50n from 3.11), then CR LF -->
+      <match value="(?s).[\\x0b-\\x0f]\\r\\n" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.pyc"/>
     <glob pattern="*.pyo"/>
@@ -5727,7 +5733,6 @@
         <match value="0x11" mask="0xF0" type="string" offset="4"/>
       </match>
     </magic>
-    <glob pattern="*.bsp"/>
   </mime-type>
   <mime-type type="application/x-spectrum-rzx">
     <_comment>ZX Spectrum input recording (RZX)</_comment>
@@ -5830,6 +5835,7 @@
   </mime-type>
   <mime-type type="application/x-mozlz4">
     <_comment>Mozilla LZ4 (Firefox jsonlz4/mozlz4)</_comment>
+    <alias type="application/x-lz4+json"/>
     <magic priority="50">
       <match value="mozLz40\x00" type="string" offset="0"/>
     </magic>
@@ -6143,7 +6149,6 @@
         <match value="## time resolution: " type="string" offset="4"/>
       </match>
     </magic>
-    <glob pattern="*.atr"/>
   </mime-type>
 
   <mime-type type="application/x-x509-cert">
@@ -6749,6 +6754,7 @@
   </mime-type>
   <mime-type type="audio/x-soundfont">
     <_comment>SoundFont 2 bank</_comment>
+    <alias type="audio/x-sfbk"/>
     <magic priority="50">
       <match value="RIFF" type="string" offset="0">
         <match value="sfbk" type="string" offset="8"/>

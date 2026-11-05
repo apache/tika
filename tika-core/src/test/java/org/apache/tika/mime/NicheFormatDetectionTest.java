@@ -18,6 +18,7 @@ package org.apache.tika.mime;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -174,6 +175,8 @@ public class NicheFormatDetectionTest {
         assertDetected(MediaType.parse("model/gltf-binary"), "glTF\u0002\u0000\u0000\u0000ð@\u001c\u0000");
         assertDetected(MediaType.application("x-blender"), "BLENDER-v300REND");
         assertDetected(MediaType.application("x-blender"), "BLENDER_v244REND");
+        // 5.0 header layout
+        assertDetected(MediaType.application("x-blender"), "BLENDER17-01v0500REND");
         assertDetected(MediaType.application("x-fbx"), "Kaydara FBX Binary  \u0000\u001a\u0000");
         assertDetected(MediaType.application("x-jw-cad"), "JwwData.¼\u0002\u0000\u0000");
         assertDetected(MediaType.application("x-fastcad"), "FCW (FastCAD for Windows) 6.20.0\r\n\u001a");
@@ -236,6 +239,10 @@ public class NicheFormatDetectionTest {
         assertDetected(MediaType.application("x-gcov-notes"), "oncg*204\u0000\u0000");
         assertDetected(MediaType.application("x-python-bytecode"), "\u0003ó\r\nSc\u0000\u0000");
         assertDetected(MediaType.application("x-python-bytecode"), "U\r\r\n\u0000\u0000\u0000\u0000");
+        // CPython magic numbers: 3.0 is 3131, 3.14 is 3627, 3.15 starts at 3650
+        assertDetected(MediaType.application("x-python-bytecode"), ";\f\r\n\u0000\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-python-bytecode"), "+\u000e\r\n\u0000\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-python-bytecode"), "B\u000e\r\n\u0000\u0000\u0000\u0000");
         assertDetected(MediaType.application("x-python-pickle"), "\u0080\u0002}q\u0000(U\tcollector");
         assertDetected(MediaType.application("x-python-pickle"), "\u0080\u0004\u0095\u0010\u0000\u0000\u0000");
         assertDetected(MediaType.application("x-lucene-index"), "?×l\u0017\u0013Lucene62SegmentInfo");
@@ -248,8 +255,36 @@ public class NicheFormatDetectionTest {
         assertDetected(MediaType.application("tzif"), "TZif2\u0000\u0000\u0000\u0000\u0000");
         assertDetected(MediaType.application("x-mozlz4"), "mozLz40\u0000]\u0000\u0000\u0000{\"type\"");
         assertDetected(MediaType.image("jxr"), "II¼\u0001 \u0000\u0000\u0000");
-        assertDetected(MediaType.application("x-acpi-table"),
+        assertDetected(MediaType.application("x-intel-aml"),
                 "SSDTÈ\u0000\u0000\u0000\u0001\u008eBOCHS BXPCSSDT");
+    }
+
+    @Test
+    public void testEstablishedNamesAreAliases() throws Exception {
+        String[][] pairs = {
+                {"application/x-palmdoc", "application/x-aportisdoc"},
+                {"application/x-acpi-table", "application/x-intel-aml"},
+                {"audio/x-sfbk", "audio/x-soundfont"},
+                {"application/x-ms-dmp", "application/x-windows-kernel-dump"},
+                {"application/x-lz4+json", "application/x-mozlz4"},
+                {"application/x-git", "application/x-git-pack"},
+                {"application/x-clamav", "application/x-clamav-database"}};
+        for (String[] pair : pairs) {
+            assertEquals(MediaType.parse(pair[1]), MIME_TYPES.forName(pair[0]).getType(), pair[0]);
+        }
+    }
+
+    @Test
+    public void testSharedExtensionsAreNotClaimed() throws Exception {
+        // .atr Atari disks, .bsp Quake/GoldSrc maps, .lev other games, .flipchart Wacom
+        String[][] cases = {
+                {"x.atr", "application/x-wfdb-annotation"},
+                {"x.bsp", "application/x-source-bsp"},
+                {"x.lev", "application/x-elasto-mania-level"},
+                {"x.flipchart", "application/x-promethean-flipchart"}};
+        for (String[] c : cases) {
+            assertNotEquals(MediaType.parse(c[1]), MIME_TYPES.getMimeType(c[0]).getType(), c[0]);
+        }
     }
 
     private static void assertDetected(MediaType expected, String latin1) throws IOException {
