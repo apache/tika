@@ -1,15 +1,16 @@
-model_sha256	5c039ef401e8e98675483bcdfe2e3a81dbb2f60cbe694b2489fa917912b85bf3
-trained_at	2026-11-04T20:46:52.150638200Z
+model_sha256	c84ffc3d45b76e7ff3d3993e6b695abd1e54a4f42d5e193351854680b7503cdd
+trained_at	2026-11-05T14:55:39.297407548Z
 source_corpus	junk-clean-20261103
 source_manifest_sha256	cad620363ea1a4eceac5775197b62068795531930a759493b644caafe930ca4a
-training_data	20261104-152217-724489ea6990/built
+source_content_sha256	32c371b35d7b00291e7cf1d1f7c305cf1db56908c76d2f42a1ac80f8d0c530d2
+training_data	20261105-094302-7e7b9d60ab19/built
 training_data_manifest_sha256	176b567837c33ca0dd16b6f8879539b0e54193be259923616e946e0b5952a4b7
-git_commit	724489ea699015cdfbe251b66545cd6d7a299ca4-dirty-3d803a734d9b
-args	--corpus data/junk-clean-20261103 --built 20261104-152217-724489ea6990/built --gold charsets/gold-v181-train-halves.tsv --sample cchtml-train-unanimous/sample-gen-20261103.tsv --sample-docs cchtml-train-unanimous/docs --output junkdetect/junkdetect.bin --git-commit 724489ea699015cdfbe251b66545cd6d7a299ca4-dirty-3d803a734d9b
+git_commit	7e7b9d60ab19ffb85a7321585a1bf2b87891f1ac-dirty-f2b8d3686315
+args	--corpus data/junk-clean-20261103 --built 20261105-094302-7e7b9d60ab19/built --gold charsets/gold-v112-train-halves.tsv --sample cchtml-train-unanimous/sample-gen-20261103.tsv --sample-docs cchtml-train-unanimous/docs --output junkdetect/junkdetect.bin --git-commit 7e7b9d60ab19ffb85a7321585a1bf2b87891f1ac-dirty-f2b8d3686315
 java_version	25.0.4.1
 format	JUNKHNG1
-gold	charsets/gold-v181-train-halves.tsv
-gold_sha256	fd12887e1ed5ebfea2178a2030adb2614f1e0c48844bf1feade64759bd7c4840
+gold	charsets/gold-v112-train-halves.tsv
+gold_sha256	5bad69f8050f6b0596b3c0a3fac40cb6d9884d68520960e2a24f8e10b2b5a213
 real_decision_sample	cchtml-train-unanimous/sample-gen-20261103.tsv
 real_decision_sample_sha256	6366919ca3ab598046b18cb3e6d1dc4b050ee14614c80ccbc47d4fa59a7ef1e1
 source_corpus_dir	data/junk-clean-20261103
@@ -17,31 +18,31 @@ wiki_units	96667
 wiki_units_upper_case_added	6144
 wiki_units_without_language	0.0000
 pairs_wiki	365788
-gold_pages_even	12907
-gold_pages_odd	12912
+gold_pages_even	13268
+gold_pages_odd	13225
 chain	BOMDetector,MetadataCharsetDetector,MojibusterEncodingDetector,HtmlEncodingDetector
 real_decision_pages	66022
 real_decision_variants	280708
 real_decision_errors	0
 pairs_real_decision_fit	159485
 pairs_real_decision_select	19219
-pairs_gold_decoders_odd	247704
-pairs_gold_chain_odd	7297
-defer_sweep_pages	12907
-defer_sweep_decisive_pages	98
-defer_sweep_curve	0.25:+2/-0 0.50:+12/-4 0.75:+14/-4 1.00:+18/-4 1.25:+18/-5 1.50:+23/-7 1.75:+23/-8 2.00:+26/-8 2.25:+27/-9 2.50:+28/-11 2.75:+30/-13 3.00:+30/-14 3.25:+31/-14 3.50:+32/-18 3.75:+33/-19 4.00:+34/-19 4.25:+34/-21 4.50:+37/-21 4.75:+39/-21 5.00:+40/-21 5.25:+40/-26 5.50:+40/-27 5.75:+41/-28 6.00:+41/-32 6.25:+41/-36 6.50:+41/-38 6.75:+41/-40 7.00:+41/-44 7.25:+41/-45 7.50:+41/-45 7.75:+41/-45 8.00:+41/-46 8.25:+41/-48 8.50:+41/-48 8.75:+41/-48 9.00:+41/-52 9.25:+41/-52 9.50:+42/-53 9.75:+42/-54 10.00:+42/-54
-defer_sweep_at_threshold	+26/-8
-pairs_gold_decoders_even	246613
-pairs_gold_chain_even	7036
+pairs_gold_decoders_odd	253834
+pairs_gold_chain_odd	7481
+defer_sweep_pages	13268
+defer_sweep_decisive_pages	106
+defer_sweep_curve	0.25:+10/-0 0.50:+12/-0 0.75:+18/-0 1.00:+21/-0 1.25:+29/-1 1.50:+33/-2 1.75:+34/-2 2.00:+36/-2 2.25:+37/-4 2.50:+37/-6 2.75:+39/-8 3.00:+39/-8 3.25:+41/-9 3.50:+42/-10 3.75:+44/-11 4.00:+44/-12 4.25:+44/-15 4.50:+44/-19 4.75:+44/-19 5.00:+47/-19 5.25:+48/-22 5.50:+48/-23 5.75:+48/-26 6.00:+48/-30 6.25:+48/-37 6.50:+48/-39 6.75:+48/-39 7.00:+48/-42 7.25:+48/-44 7.50:+48/-45 7.75:+48/-46 8.00:+48/-46 8.25:+48/-48 8.50:+48/-50 8.75:+48/-51 9.00:+49/-52 9.25:+49/-52 9.50:+49/-52 9.75:+49/-55 10.00:+49/-55
+defer_sweep_at_threshold	+36/-2
+pairs_gold_decoders_even	253773
+pairs_gold_chain_even	7230
 point_clean_wiki	102857
-point_clean_web	12423
-point_damaged_windows	1644
-point_damaged_clean_rest	177
-point_damaged_stale_pages	0
-point_examples	245092
+point_clean_web	12682
+point_damaged_windows	1698
+point_damaged_clean_rest	196
+point_damaged_stale_pages	1
+point_examples	246342
 trained_scripts	[LATIN, GREEK, CYRILLIC, ARMENIAN, HEBREW, ARABIC, DEVANAGARI, BENGALI, GURMUKHI, GUJARATI, ORIYA, TAMIL, TELUGU, KANNADA, MALAYALAM, SINHALA, THAI, LAO, TIBETAN, MYANMAR, GEORGIAN, HANGUL, ETHIOPIC, KHMER, HIRAGANA, KATAKANA, HAN, NKO, OL_CHIKI]
 deferral_threshold	2.0000
-train_seconds	1312
+train_seconds	666
 config.HashedTrainingConfig.LOG2_SIZE	21
 config.HashedTrainingConfig.MAX_N	3
 config.HashedTrainingConfig.CLIP_CHARS	6000
@@ -76,3 +77,4 @@ config.HashedTrainingConfig.DEFER_STEP	0.25
 config.HashedTrainingConfig.DEFER_BAND	1.0
 config.HashedTrainingConfig.DEFER_MAX	10.0
 config.HashedTrainingConfig.DEFER_MIN_RATIO	2.0
+config.HashedTrainingConfig.DEFER_CONFIDENCE_Z	1.96
