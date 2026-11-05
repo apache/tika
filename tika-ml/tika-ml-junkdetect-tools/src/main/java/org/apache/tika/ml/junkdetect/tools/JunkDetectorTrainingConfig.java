@@ -37,8 +37,8 @@ import java.util.Set;
  *       file remove that failure mode.
  * </ol>
  *
- * <p>{@link BuildJunkTrainingData} and {@link TrainJunkModel} read the
- * values here; both tools <b>refuse to start</b> if any CLI argument
+ * <p>{@link BuildJunkTrainingData} reads the
+ * values here (the model trainer's live in {@link HashedTrainingConfig}); it <b>refuses to start</b> if any CLI argument
  * attempts to override a config-controlled parameter, surfacing the
  * mistake at launch time rather than silently producing a non-canonical
  * model.
@@ -119,10 +119,9 @@ public final class JunkDetectorTrainingConfig {
 
     /**
      * Script bucket names whose source data is too thin or too off-target
-     * to produce reliable per-script F1 calibration.  Excluded from the
-     * model entirely; the {@link
-     * org.apache.tika.ml.junkdetect.JunkDetector#score(String)} routing
-     * falls back to "unknown script" behavior for these scripts.
+     * to train on.  Excluded from the training data, so these scripts are
+     * not in the model's trained-script set and their letters count as
+     * uncovered.
      *
      * <p>The current selection is based on a corpus audit that found these
      * scripts either had thin native source data (e.g. THAANA: 216 train
@@ -151,40 +150,6 @@ public final class JunkDetectorTrainingConfig {
      */
     public static final Map<String, Long> SCRIPT_BUDGET_OVERRIDES =
             Collections.emptyMap();
-
-    // =======================================================================
-    // Model train (TrainJunkModel)
-    // =======================================================================
-
-    /**
-     * Drop per-script F1 bigrams whose per-pair occurrence count (within
-     * that script's training data) is below this threshold.  Set to 3 on
-     * evidence that singleton and doubleton pairs are overwhelmingly OCR
-     * artifacts and proper-noun noise that inflate the clean-side score
-     * distribution tail without contributing signal.
-     *
-     * <p>Set to 1 to disable the filter (every observed pair retained).
-     */
-    public static final int MIN_BIGRAM_COUNT = 3;
-
-    /**
-     * Target load factor for the per-script open-addressing F1 hash
-     * table.  Table capacity is sized as the smallest power of two
-     * larger than {@code keptPairs / loadFactor}, giving an average of
-     * 1 / (1 - loadFactor) probes per lookup.  0.5 → ~2 probes; modestly
-     * wasteful in space but very cheap to probe.
-     */
-    public static final double OA_LOAD_FACTOR = 0.5;
-
-    /**
-     * Bit width of each codepoint's dense index within a script's F1
-     * table.  Each bigram is packed as {@code (idxA << KEY_INDEX_BITS) |
-     * idxB}, so each side must fit in this many bits.  16 bits supports
-     * up to 65535 distinct codepoints per script, which is comfortably
-     * above the largest per-script count we have measured (HAN is the
-     * worst case at ~15K kept codepoints).
-     */
-    public static final int KEY_INDEX_BITS = 16;
 
     private JunkDetectorTrainingConfig() {
         // No instances.

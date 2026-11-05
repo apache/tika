@@ -51,21 +51,23 @@ public class UnmodeledScriptTest {
             "ADLAM|𞤀𞤣𞤤𞤢𞤥 𞤫𞤼𞤵 𞤦𞤭𞤲𞤣𞤭 𞤯𞤫𞤲𞤺𞤢𞤤 𞤆𞤵𞤤𞤢𞤪 𞤲𞤣𞤫𞤪 𞤀𞤬𞤪𞤭𞤳𞤢"
     })
     void unmodeledScriptIsNotJunk(String script, String text) {
-        assertFalse(detector.knownScripts().contains(script), script + " should be unmodeled");
+        assertFalse(detector.getModel().getTrainedScripts().contains(Character.UnicodeScript.valueOf(script)), script + " should be unmodeled");
         TextQualityScore s = detector.score(text);
         assertTrue(s.isUnmodeled(), "coverage should be 0: " + s);
         assertEquals(script, s.getDominantScript());
-        assertTrue(s.getZScore() > 0, "coherent unmodeled-script text scored as junk: " + s);
+        assertTrue(s.isUnknown(), "unmodeled-script text must be unknown, not junk: " + s);
     }
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
             "GREEK|Η Ελλάδα είναι χώρα της νοτιοανατολικής Ευρώπης. Άρθρα για την ιστορία της χώρας.",
             "LATIN|The quick brown fox jumps over the lazy dog and keeps running down the road.",
-            "CYRILLIC|Москва является столицей России и крупнейшим городом страны."
+            "CYRILLIC|Москва является столицей России и крупнейшим городом страны.",
+            "HIRAGANA|これはひらがなのぶんしょうです。きょうはいいてんきですね。",
+            "KATAKANA|コンピュータのソフトウェアをインストールしてください。"
     })
     void modeledScriptFullyCovered(String script, String text) {
-        assertTrue(detector.knownScripts().contains(script));
+        assertTrue(detector.getModel().getTrainedScripts().contains(Character.UnicodeScript.valueOf(script)));
         TextQualityScore s = detector.score(text);
         assertEquals(1f, s.getCoverage(), 1e-6f, s.toString());
         assertEquals(script, s.getDominantScript());
@@ -80,6 +82,17 @@ public class UnmodeledScriptTest {
         assertTrue(s.getCoverage() > 0f && s.getCoverage() < 1f, s.toString());
     }
 
+    /** Clean text mostly in an untrained script scores like junk, so below MIN_COVERAGE it is unknown. */
+    @Test
+    void mostlyUnmodeledTextIsUnknown() {
+        TextQualityScore s = detector.score("Mongolia ᠮᠣᠩᠭᠣᠯ ᠤᠯᠤᠰ ᠪᠣᠯ ᠳᠣᠷᠤᠨᠠᠳᠤ ᠠᠽᠢ ᠶᠢᠨ ᠬᠣᠢᠳᠤ is a country.");
+        assertTrue(s.getCoverage() > 0 && s.getCoverage() < JunkDetector.MIN_COVERAGE, s.toString());
+        assertTrue(s.isUnknown() && !s.isUnmodeled(), s.toString());
+        TextQualityScore mostlyLatin = detector.score("The Mongolian name of the country, ᠮᠣᠩᠭᠣᠯ, is written in the "
+                + "traditional script, which runs in vertical columns from left to right across the page.");
+        assertTrue(mostlyLatin.getCoverage() >= JunkDetector.MIN_COVERAGE && !mostlyLatin.isUnknown(), mostlyLatin.toString());
+    }
+
     @Test
     void unmodeledScriptSaladIsJunk() {
         int[] pool = "ꆈꌠꁱꂷᠮᠣᠩᠭᐃᓄᒃᑎᏣᎳᎩᎦ".codePoints().toArray();
@@ -92,7 +105,7 @@ public class UnmodeledScriptTest {
             }
         }
         TextQualityScore s = detector.score(sb.toString());
-        assertTrue(s.getZScore() < 0, "script salad should stay junk: " + s);
+        assertTrue(s.isUnmodeled() && s.isUnknown(), "no trained letters: nothing to judge: " + s);
     }
 
     @Test
@@ -102,8 +115,7 @@ public class UnmodeledScriptTest {
         for (String letterFree : new String[]{"      \n\n\t   ", "╔══╗ ║░░║ ╚══╝ ▒▓█ ┌─┐", "2026-11-03 3.14159"}) {
             TextQualityScore s = detector.score(letterFree);
             assertTrue(Float.isNaN(s.getCoverage()), s.toString());
-            assertTrue(s.getZScore() < 0 && s.getZScore() < prose,
-                    "letter-free text must not look like clean prose: " + s);
+            assertTrue(s.isUnknown() && prose > 0, "letter-free text must be unknown: " + s);
         }
     }
 }

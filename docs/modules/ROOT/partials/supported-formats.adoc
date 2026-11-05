@@ -170,6 +170,8 @@
 ** `application/vnd.apple.keynote.18`
 ** `application/vnd.apple.numbers.18`
 ** `application/vnd.apple.pages.18`
+* `org.apache.tika.parser.jupyter.` link:{tika-javadoc-url}/org/apache/tika/parser/jupyter/JupyterParser.html[JupyterParser]
+** `application/x-ipynb+json`
 * `org.apache.tika.parser.mail.` link:{tika-javadoc-url}/org/apache/tika/parser/mail/RFC822Parser.html[RFC822Parser]
 ** `message/rfc822`
 ** `message/x-emlx`
@@ -263,6 +265,11 @@
 ** `application/vnd.mif`
 ** `application/x-maker`
 ** `application/x-mif`
+* `org.apache.tika.parser.mkv.` link:{tika-javadoc-url}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser]
+** `application/x-matroska`
+** `audio/x-matroska`
+** `video/webm`
+** `video/x-matroska`
 * `org.apache.tika.parser.mobi.` link:{tika-javadoc-url}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser]
 ** `application/vnd.amazon.ebook`
 ** `application/vnd.amazon.mobi8-ebook`
