@@ -215,6 +215,8 @@ final class Notebook {
             }
             String type = null;
             String text = null;
+            String ename = null;
+            String evalue = null;
             Map<String, String> data = new LinkedHashMap<>();
             while (p.nextToken() == JsonToken.FIELD_NAME) {
                 String name = p.currentName();
@@ -222,15 +224,20 @@ final class Notebook {
                 switch (name) {
                     case "output_type" -> type = textValue(p, token);
                     case "text" -> text = textValue(p, token);
-                    case "ename", "evalue" -> {
+                    case "ename" -> {
                         String part = textValue(p, token);
-                        if (part != null) {
-                            text = text == null ? part : text + ": " + part;
-                        }
+                        ename = ename != null ? ename : part;
+                    }
+                    case "evalue" -> {
+                        String part = textValue(p, token);
+                        evalue = evalue != null ? evalue : part;
                     }
                     case "data" -> readData(p, token, data);
                     default -> p.skipChildren();
                 }
+            }
+            if (text == null && (ename != null || evalue != null)) {
+                text = ename == null ? evalue : evalue == null ? ename : ename + ": " + evalue;
             }
             outputs.add(new Output(type, data, text));
         }

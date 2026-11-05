@@ -147,6 +147,21 @@ public class JupyterParser implements Parser {
         return null;
     }
 
+    /**
+     * Notebooks break base64 into lines; the strict decoder refuses what is not base64, where
+     * the MIME one would skip it and decode the rest into a broken image.
+     */
+    private static String withoutWhitespace(String data) {
+        StringBuilder sb = new StringBuilder(data.length());
+        for (int i = 0; i < data.length(); i++) {
+            char c = data.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     private static void emitImage(String data, String mimeType, boolean thumbnail, int index,
                                   String name, EmbeddedDocumentExtractor extractor,
                                   XHTMLContentHandler xhtml, Metadata parentMetadata,
@@ -156,7 +171,7 @@ public class JupyterParser implements Parser {
             bytes = data.getBytes(StandardCharsets.UTF_8);
         } else {
             try {
-                bytes = Base64.getMimeDecoder().decode(data);
+                bytes = Base64.getDecoder().decode(withoutWhitespace(data));
             } catch (IllegalArgumentException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                 return;
