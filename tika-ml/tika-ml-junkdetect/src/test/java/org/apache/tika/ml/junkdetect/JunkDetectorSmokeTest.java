@@ -272,4 +272,29 @@ public class JunkDetectorSmokeTest {
         }
         return copy;
     }
+
+    /**
+     * UTF-16 text read as a single-byte charset interleaves NULs: the pairwise head must prefer the
+     * UTF-16 decode by a margin well above the deferral threshold, and the NUL-interleaved decode must
+     * score as junk.  Guards the case where UTF-16 arrives as a statistical candidate, not a proof.
+     */
+    @Test
+    void utf16BeatsItsNulInterleavedSingleByteDecode() throws Exception {
+        String[] texts = {"The ministry was founded in Paris, where it has resided ever since the reform.",
+                "Москва является столицей России и крупнейшим городом страны.",
+                "東京は日本の首都であり、多くの人々がここで働いています。"};
+        HashedJunkModel m = detector.getModel();
+        for (String t : texts) {
+            for (String enc : new String[]{"UTF-16LE", "UTF-16BE"}) {
+                byte[] b = t.getBytes(enc);
+                String good = new String(b, enc);
+                for (String wrong : new String[]{"windows-1252", "windows-1251", "GB18030"}) {
+                    String bad = new String(b, java.nio.charset.Charset.forName(wrong));
+                    double logit = m.pairwiseLogit(good, bad);
+                    assertTrue(logit > 2 * Math.max(1, m.getDeferThreshold()), enc + " vs " + wrong + ": " + logit);
+                    assertTrue(m.score(bad).getLogit() < 0, enc + " read as " + wrong + " should be junk");
+                }
+            }
+        }
+    }
 }
