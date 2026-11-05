@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.zip.CRC32;
 
 import org.apache.commons.io.IOUtils;
@@ -36,6 +37,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -125,7 +127,7 @@ public class RarParserTest extends AbstractPkgTest {
 
     @Test
     public void testRar5(@TempDir Path tmp) throws Exception {
-        Path rar5 = Files.write(tmp.resolve("stored.rar"), storedRar5(
+        Path rar5 = Files.write(tmp.resolve("stored.rar"), storedRar5(-1,
                 "page-002.txt", "second page", "page-001.txt", "first page"));
         List<Metadata> metadataList = getRecursiveMetadata(rar5, new ParseContext(), false);
         assertContains("version=5", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
@@ -136,12 +138,31 @@ public class RarParserTest extends AbstractPkgTest {
         assertContains("page-001.txt", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    /** RAR5 stores a Unix time, an instant: it does not move with the JVM's time zone. */
+    @Test
+    public void testRar5TimesAreInstants(@TempDir Path tmp) throws Exception {
+        Path rar5 = Files.write(tmp.resolve("timed.rar"),
+                storedRar5(1_700_000_000L, "a.txt", "a"));
+        TimeZone zone = TimeZone.getDefault();
+        try {
+            for (String id : new String[]{"UTC", "America/New_York", "Asia/Tokyo"}) {
+                TimeZone.setDefault(TimeZone.getTimeZone(id));
+                List<Metadata> metadataList = getRecursiveMetadata(rar5, new ParseContext(), false);
+                assertEquals("2023-11-14T22:13:20Z",
+                        metadataList.get(1).get(FileSystem.MODIFIED), id);
+            }
+        } finally {
+            TimeZone.setDefault(zone);
+        }
+    }
+
     /**
      * A RAR5 archive of stored (uncompressed) files, written after the RAR 5.0 archive format
      * description (https://www.rarlab.com/technote.htm): signature, main archive header, one
-     * file header with its data per file, end of archive header.
+     * file header with its data per file, end of archive header. A modification time other
+     * than -1 is written as Unix time.
      */
-    private static byte[] storedRar5(String... namesAndContents) {
+    private static byte[] storedRar5(long mtime, String... namesAndContents) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         out.writeBytes(new byte[]{'R', 'a', 'r', '!', 0x1a, 0x07, 0x01, 0x00});
         out.writeBytes(rar5Block(concat(vint(1), vint(0), vint(0))));
@@ -150,9 +171,11 @@ public class RarParserTest extends AbstractPkgTest {
             byte[] data = namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8);
             CRC32 crc = new CRC32();
             crc.update(data);
-            out.writeBytes(rar5Block(concat(vint(2), vint(0x0002), vint(data.length), vint(0x0004),
-                    vint(data.length), vint(0x20), littleEndian((int) crc.getValue()), vint(0),
-                    vint(0), vint(name.length), name)));
+            byte[] time = mtime < 0 ? new byte[0] : littleEndian((int) mtime);
+            out.writeBytes(rar5Block(concat(vint(2), vint(0x0002), vint(data.length),
+                    vint(mtime < 0 ? 0x0004 : 0x0006), vint(data.length), vint(0x20), time,
+                    littleEndian((int) crc.getValue()), vint(0), vint(0), vint(name.length),
+                    name)));
             out.writeBytes(data);
         }
         out.writeBytes(rar5Block(concat(vint(5), vint(0), vint(0))));

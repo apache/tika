@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.github.junrar.Archive;
+import com.github.junrar.ArchiveOptions;
+import com.github.junrar.RarFormat;
 import com.github.junrar.exception.RarException;
 import com.github.junrar.rarfile.FileHeader;
 import org.apache.commons.io.input.ProxyInputStream;
@@ -49,6 +51,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class RarParser implements Parser {
     private static final long serialVersionUID = 6157727985054451501L;
 
+    /**
+     * The largest dictionary an archive may declare. WinRAR 5 and 6 write up to 1 GB; junrar's
+     * default is 4 GB, and a RAR5 window grows with the data unpacked into it.
+     */
+    static final long MAX_DICTIONARY_SIZE = 1024L * 1024 * 1024;
+
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-rar-compressed"));
 
@@ -68,7 +76,8 @@ public class RarParser implements Parser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         Archive rar = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
-            rar = new Archive(tis.getFile());
+            rar = new Archive(tis.getFile(),
+                    ArchiveOptions.builder().maxDictionarySize(MAX_DICTIONARY_SIZE).build());
 
             if (rar.isEncrypted()) {
                 throw new EncryptedDocumentException();
@@ -82,10 +91,17 @@ public class RarParser implements Parser {
                 if (!header.isDirectory()) {
                     Metadata entrydata = AbstractArchiveParser.handleEntryMetadata(
                             header.getFileName(), null, null, header.getFullUnpackSize(), xhtml, context);
-                    // RAR4 times are DOS local time; junrar resolves them in the JVM default zone
-                    AbstractArchiveParser.setLocalTime(entrydata, FileSystem.CREATED, header.getCTime());
-                    AbstractArchiveParser.setLocalTime(entrydata, FileSystem.MODIFIED, header.getMTime());
-                    AbstractArchiveParser.setLocalTime(entrydata, FileSystem.ACCESSED, header.getATime());
+                    if (rar.getFormat() == RarFormat.RAR50) {
+                        // RAR5 stores instants, as Unix time or Windows FILETIME
+                        AbstractArchiveParser.setInstant(entrydata, FileSystem.CREATED, header.getCTime());
+                        AbstractArchiveParser.setInstant(entrydata, FileSystem.MODIFIED, header.getMTime());
+                        AbstractArchiveParser.setInstant(entrydata, FileSystem.ACCESSED, header.getATime());
+                    } else {
+                        // RAR4 times are DOS local time; junrar resolves them in the JVM default zone
+                        AbstractArchiveParser.setLocalTime(entrydata, FileSystem.CREATED, header.getCTime());
+                        AbstractArchiveParser.setLocalTime(entrydata, FileSystem.MODIFIED, header.getMTime());
+                        AbstractArchiveParser.setLocalTime(entrydata, FileSystem.ACCESSED, header.getATime());
+                    }
                     EntryStream entryStream = new EntryStream(rar.getInputStream(header));
                     try (TikaInputStream rarTis = TikaInputStream.get(entryStream)) {
                         if (extractor.shouldParseEmbedded(entrydata, context)) {
