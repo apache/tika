@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.detect.BOMDetector;
 import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingProbeCache;
@@ -166,10 +167,25 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
                         prepared.getRuleCharset().name());
                 return List.of(new EncodingResult(prepared.getRuleCharset(),
                         context.getTopConfidenceFor(prepared.getRuleCharset())));
-            case IDENTICAL_DECODINGS:
+            case IDENTICAL_DECODINGS: {
+                // Text cannot tell them apart.  A validated BOM is then the only discriminating
+                // evidence (it also tells the reader to drop the BOM bytes); else the legacy-page
+                // frequency prior; else the composite's default ordering.
+                Map<Charset, String> texts = prepared.getTexts();
+                Charset bom = bomHinted(context, texts);
+                if (bom != null) {
+                    context.setArbitrationInfo("junk-filter-identical-decodings-bom");
+                    return List.of(new EncodingResult(bom, context.getTopConfidenceFor(bom)));
+                }
+                Charset frequent = mostFrequentLegacy(texts.keySet());
+                if (frequent != null) {
+                    context.setArbitrationInfo("junk-filter-identical-decodings-frequency");
+                    return List.of(new EncodingResult(frequent, context.getTopConfidenceFor(frequent)));
+                }
                 context.setArbitrationInfo("junk-filter-identical-decodings");
                 LOG.trace("junk-filter all decodings identical, deferring");
                 return Collections.emptyList();
+            }
             default:
                 break;
         }
@@ -252,7 +268,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             // decoded as the author intended.
             Charset declared = pickDeclarativeWithEquivalentDecode(context, texts);
             if (declared != null) {
-                // A STRUCTURAL proof (valid multi-byte UTF-8, ISO-2022, BOM) outranks a
+                // A STRUCTURAL proof (valid multi-byte UTF-8, ISO-2022) outranks a
                 // DECLARATIVE self-claim on conflict.  The equivalent-decode shortcut
                 // compares tag-stripped text, so a doc whose only high bytes live in
                 // markup (a <meta> attribute, an <o:..> tag) ties on visible text and
@@ -524,38 +540,81 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
      * starts with the UTF-16 LE BOM ({@code FF FE}).
      */
     private static byte[] stripBomBytes(byte[] bytes) {
-        int bomLen = bomLength(bytes);
+        int bomLen = BOMDetector.bomLength(bytes);
         if (bomLen == 0) {
             return bytes;
         }
         return Arrays.copyOfRange(bytes, bomLen, bytes.length);
     }
 
-    private static int bomLength(byte[] b) {
-        if (b.length >= 4
-                && (b[0] & 0xFF) == 0x00 && (b[1] & 0xFF) == 0x00
-                && (b[2] & 0xFF) == 0xFE && (b[3] & 0xFF) == 0xFF) {
-            return 4; // UTF-32BE
+    private static final String BOM_DETECTOR = BOMDetector.class.getSimpleName();
+
+    /**
+     * {@link BOMDetector}'s result.  The context records detectors by simple class name
+     * (see {@code CompositeEncodingDetector}); a BOM is a hint, not a vote of the statistical layer.
+     */
+    private static boolean isBomResult(EncodingDetectorContext.Result r) {
+        return BOM_DETECTOR.equals(r.getDetectorName());
+    }
+
+    /** The candidate {@link BOMDetector} reported, if it survived decoding. */
+    private static Charset bomHinted(EncodingDetectorContext context, Map<Charset, String> candidates) {
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            if (isBomResult(r) && candidates.containsKey(r.getCharset())) {
+                return r.getCharset();
+            }
         }
-        if (b.length >= 4
-                && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xFE
-                && (b[2] & 0xFF) == 0x00 && (b[3] & 0xFF) == 0x00) {
-            return 4; // UTF-32LE
+        return null;
+    }
+
+    private static final Map<String, Long> LEGACY_FREQUENCY = loadLegacyFrequency();
+
+    private static Map<String, Long> loadLegacyFrequency() {
+        Map<String, Long> m = new HashMap<>();
+        try (java.io.InputStream in = JunkFilterEncodingDetector.class
+                .getResourceAsStream("legacy-charset-frequency.txt")) {
+            if (in == null) {
+                throw new IllegalStateException("legacy-charset-frequency.txt missing");
+            }
+            for (String line : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                String[] f = line.split("\t");
+                m.put(f[0], Long.parseLong(f[1].trim()));
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
-        if (b.length >= 3
-                && (b[0] & 0xFF) == 0xEF && (b[1] & 0xFF) == 0xBB
-                && (b[2] & 0xFF) == 0xBF) {
-            return 3; // UTF-8
+        return m;
+    }
+
+    /**
+     * Among candidates that decode identically, the most frequent on legacy-charset web pages: with
+     * identical text the bytes carry no evidence, so the prior decides. Null when a Unicode charset
+     * is tied (the frequency table covers legacy pages only) or nothing is more frequent than the rest.
+     */
+    private static Charset mostFrequentLegacy(Set<Charset> candidates) {
+        Charset best = null;
+        long bestCount = 0;
+        boolean tie = false;
+        for (Charset cs : candidates) {
+            if (cs.name().startsWith("UTF-") || cs.name().equals("US-ASCII")) {
+                return null;
+            }
+            Long count = LEGACY_FREQUENCY.get(cs.name());
+            if (count == null) {
+                count = LEGACY_FREQUENCY.getOrDefault(CharsetSupersets.decodeAs(cs).name(), 0L);
+            }
+            if (count > bestCount) {
+                best = cs;
+                bestCount = count;
+                tie = false;
+            } else if (count == bestCount) {
+                tie = true;
+            }
         }
-        if (b.length >= 2
-                && (b[0] & 0xFF) == 0xFE && (b[1] & 0xFF) == 0xFF) {
-            return 2; // UTF-16BE
-        }
-        if (b.length >= 2
-                && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xFE) {
-            return 2; // UTF-16LE
-        }
-        return 0;
+        return tie ? null : best;
     }
 
 }

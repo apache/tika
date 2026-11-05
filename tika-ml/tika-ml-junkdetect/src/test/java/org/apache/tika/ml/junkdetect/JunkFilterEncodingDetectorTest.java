@@ -332,4 +332,20 @@ public class JunkFilterEncodingDetectorTest {
             assertEquals(sources[i], d.pick(), texts[i]);
         }
     }
+
+    /** A structurally valid UTF-8 page beats a declared and statistically likely windows-1252. */
+    @Test
+    public void structuralUtf8BeatsDeclaredAndStatisticalLatin() throws Exception {
+        Charset utf8 = StandardCharsets.UTF_8;
+        Charset win1252 = Charset.forName("windows-1252");
+        byte[] bytes = "Le minist\u00e8re a \u00e9t\u00e9 cr\u00e9\u00e9 \u00e0 Paris o\u00f9 il r\u00e9side depuis la r\u00e9forme."
+                .getBytes(utf8);
+        ParseContext pc = contextWith(
+                new EncodingResult(win1252, 1.0f, "windows-1252", EncodingResult.ResultType.DECLARATIVE),
+                new EncodingResult(utf8, 1.0f, "UTF-8", EncodingResult.ResultType.STRUCTURAL),
+                new EncodingResult(win1252, 0.6f, "windows-1252", EncodingResult.ResultType.STATISTICAL));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            assertEquals(utf8, new JunkFilterEncodingDetector(MODEL).detect(tis, new Metadata(), pc).get(0).getCharset());
+        }
+    }
 }
