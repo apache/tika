@@ -76,9 +76,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.ml.junkdetect.JunkDetector;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.quality.TextQualityScore;
 import org.apache.tika.sax.BasicContentHandlerFactory.HANDLER_TYPE;
 import org.apache.tika.utils.StringUtils;
 
@@ -491,17 +489,11 @@ public abstract class ProfilerBase {
         }
         Map<Class, Object> results = compositeTextStatsCalculator.calculate(content);
 
-        JunkDetector jd = TikaEvalMetadataFilter.getJunkDetector();
-        if (jd != null && !content.isEmpty()) {
-            TextQualityScore q = jd.score(content);
-            if (!q.isUnknown() && !q.isUnmodeled()) {
-                results.put(LanguagenessMarker.class, q.getZScore());
-            }
-        }
+        results.put(LanguagenessMarker.class, TikaEvalMetadataFilter.languageness(content));
         return results;
     }
 
-    /** Sentinel key for the junk-detector z-score in the textStats map. */
+    /** Key for the junk detector's {languageness, min, coverage} in the textStats map. */
     static final class LanguagenessMarker { }
 
     /**
@@ -549,9 +541,13 @@ public abstract class ProfilerBase {
             double oov = commonTokenResult.getAlphabeticTokens() > 0 ? commonTokenResult.getOOV() : -1.0;
             data.put(Cols.OOV, Double.toString(oov));
         }
-        Float zScore = (Float) textStats.get(LanguagenessMarker.class);
-        double langness = (zScore != null && !Float.isNaN(zScore)) ? zScore : -99.0;
-        data.put(Cols.LANGUAGENESS, Double.toString(langness));
+        float[] l = (float[]) textStats.get(LanguagenessMarker.class);
+        if (l == null) {
+            l = new float[]{TikaEvalMetadataFilter.UNKNOWN_LANGUAGENESS, TikaEvalMetadataFilter.UNKNOWN_LANGUAGENESS, -1f};
+        }
+        data.put(Cols.LANGUAGENESS, Double.toString(l[0]));
+        data.put(Cols.LANGUAGENESS_MIN, Double.toString(l[1]));
+        data.put(Cols.LANGUAGENESS_COVERAGE, Double.toString(l[2]));
         TokenCounts tokenCounts = (TokenCounts) textStats.get(BasicTokenCountStatsCalculator.class);
         if (tokenCounts != null) {
 
