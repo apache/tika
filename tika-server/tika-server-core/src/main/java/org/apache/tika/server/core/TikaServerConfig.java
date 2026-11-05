@@ -24,17 +24,23 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.core.PipesConfig;
@@ -49,6 +55,36 @@ public class TikaServerConfig {
 
     /** Comma-separated catalog presets to activate, read at startup like {@code --preset}. */
     public static final String PRESETS_ENV = "TIKA_PRESETS";
+
+    /**
+     * Prefix of the environment variables that set a field of the {@code server} block:
+     * {@code TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES=4294967296} is {@code "maxRequestSizeBytes":
+     * 4294967296}, read at startup like {@code --serverSetting maxRequestSizeBytes=4294967296}.
+     * Not {@code TIKA_SERVER_}: Kubernetes gives every pod {@code TIKA_SERVER_PORT},
+     * {@code TIKA_SERVER_SERVICE_HOST} and more for a Service named {@code tika-server}, and
+     * those must neither set a field nor fail the start.
+     */
+    public static final String SETTINGS_ENV_PREFIX = "TIKA_SERVER_SETTING_";
+
+    /** The {@code --serverSetting <field>=<value>} option, repeatable. */
+    static final String SETTING_OPTION = "serverSetting";
+
+    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.getMapper();
+
+    /** A value for a {@code server} field and what set it, for the log and the error. */
+    private record Setting(String value, String source) {
+    }
+
+    /** Fields that are not settings, and where they are set instead. */
+    private static final Map<String, String> NOT_SETTINGS = Map.of(
+            "configPath", "the -c option",
+            "presets", "--preset or " + PRESETS_ENV,
+            "tlsConfig", "the config file, it takes an object",
+            "endpoints", "the config file, it takes a list");
+
+    /** Fields that have an option of their own, and that option. */
+    private static final Map<String, String> OWN_OPTIONS = Map.of(
+            "port", "p", "host", "h", "id", "i", "metricsPort", "metricsPort");
     /**
      * Endpoints that expose the pipes/fetch machinery (process-isolated pipes
      * parsing and async batch processing). Selecting any of these requires
@@ -113,10 +149,16 @@ public class TikaServerConfig {
     }
 
     public static TikaServerConfig load(CommandLine commandLine) throws IOException, TikaException {
-        return load(commandLine, System.getenv(PRESETS_ENV));
+        return load(commandLine, System.getenv(PRESETS_ENV), System.getenv());
     }
 
     static TikaServerConfig load(CommandLine commandLine, String presetsEnv)
+            throws IOException, TikaException {
+        return load(commandLine, presetsEnv, Map.of());
+    }
+
+    static TikaServerConfig load(CommandLine commandLine, String presetsEnv,
+                                 Map<String, String> environment)
             throws IOException, TikaException {
 
         Map<String, String> presets = new LinkedHashMap<>();
@@ -133,15 +175,26 @@ public class TikaServerConfig {
             }
         }
 
+        Map<String, Setting> serverSettings = serverSettings(commandLine, environment);
+        for (Map.Entry<String, String> own : OWN_OPTIONS.entrySet()) {
+            Setting setting = serverSettings.get(own.getKey());
+            if (setting != null && commandLine.hasOption(own.getValue())) {
+                String option = own.getValue().length() == 1 ? "-" + own.getValue() : "--" + own.getValue();
+                throw new TikaConfigException(setting.source() + " and " + option + " both set "
+                        + own.getKey() + "; use one of them");
+            }
+        }
+
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
 
         if (commandLine.hasOption("c")) {
             config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings,
-                    presets);
+                    presets, serverSettings);
         } else {
             config = new TikaServerConfig();
             presets.forEach((name, source) -> LOG.info("preset '{}' activated by {}", name, source));
+            applySettings(config, serverSettings, null, null);
         }
         config.presets = new ArrayList<>(presets.keySet());
 
@@ -176,11 +229,12 @@ public class TikaServerConfig {
     }
 
     static TikaServerConfig load(Path tikaConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
-        return load(tikaConfigPath, commandLine, settings, Map.of());
+        return load(tikaConfigPath, commandLine, settings, Map.of(), Map.of());
     }
 
     private static TikaServerConfig load(Path tikaConfigPath, CommandLine commandLine,
-                                         Set<String> settings, Map<String, String> presets)
+                                         Set<String> settings, Map<String, String> presets,
+                                         Map<String, Setting> serverSettings)
             throws IOException, TikaException {
         TikaJsonConfig tikaJsonConfig = TikaLoader.load(tikaConfigPath).getConfig();
         JsonNode filePresets = tikaJsonConfig.getRootNode().get("presets");
@@ -201,6 +255,8 @@ public class TikaServerConfig {
             // no "server" block: same as {}, so a tika-app config works as is
             tikaServerConfig = new TikaServerConfig();
         }
+        applySettings(tikaServerConfig, serverSettings,
+                tikaJsonConfig.getRootNode().get("server"), tikaConfigPath);
         PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
         if (pipesConfig != null) {
             pipesConfig.refuseTrustedRequests("tika-server");
@@ -208,6 +264,123 @@ public class TikaServerConfig {
         tikaServerConfig.setConfigPath(tikaConfigPath.toAbsolutePath().toString());
         return tikaServerConfig;
     }
+
+    /**
+     * The {@code server} fields given as {@code --serverSetting <field>=<value>} or as
+     * {@value #SETTINGS_ENV_PREFIX}{@code <FIELD>} in the environment, the option winning over
+     * the variable for the same field. {@code TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES} names
+     * {@code maxRequestSizeBytes}; the variable's name is upper snake case of the field's. Two
+     * options, or two variables, for the same field are refused: which one wins would be
+     * arbitrary for variables, whose order the environment does not define.
+     */
+    private static Map<String, Setting> serverSettings(CommandLine commandLine,
+                                                       Map<String, String> environment)
+            throws TikaConfigException {
+        Map<String, Setting> serverSettings = new LinkedHashMap<>();
+        if (commandLine.hasOption(SETTING_OPTION)) {
+            for (String option : commandLine.getOptionValues(SETTING_OPTION)) {
+                int eq = option.indexOf('=');
+                if (eq < 1) {
+                    throw new TikaConfigException("--" + SETTING_OPTION + " takes <field>=<value>, got '"
+                            + option + "'");
+                }
+                put(serverSettings, option.substring(0, eq).trim(),
+                        new Setting(option.substring(eq + 1), "--" + SETTING_OPTION));
+            }
+        }
+        Map<String, Setting> fromEnvironment = new LinkedHashMap<>();
+        for (Map.Entry<String, String> e : environment.entrySet()) {
+            String key = e.getKey();
+            if (!key.startsWith(SETTINGS_ENV_PREFIX) || key.length() == SETTINGS_ENV_PREFIX.length()) {
+                continue;
+            }
+            put(fromEnvironment, fieldName(key.substring(SETTINGS_ENV_PREFIX.length())),
+                    new Setting(e.getValue(), key));
+        }
+        fromEnvironment.forEach(serverSettings::putIfAbsent);
+        return serverSettings;
+    }
+
+    private static void put(Map<String, Setting> settings, String field, Setting setting)
+            throws TikaConfigException {
+        Setting earlier = settings.putIfAbsent(field, setting);
+        if (earlier != null) {
+            throw new TikaConfigException(earlier.source().equals(setting.source())
+                    ? setting.source() + " sets " + field + " twice; use one of them"
+                    : earlier.source() + " and " + setting.source() + " both set " + field
+                            + "; use one of them");
+        }
+    }
+
+    /** {@code MAX_REQUEST_SIZE_BYTES} to {@code maxRequestSizeBytes}. */
+    static String fieldName(String upperSnake) {
+        StringBuilder field = new StringBuilder();
+        for (String part : upperSnake.toLowerCase(Locale.ROOT).split("_")) {
+            if (part.isEmpty()) {
+                continue;
+            }
+            field.append(field.isEmpty() ? part
+                    : Character.toUpperCase(part.charAt(0)) + part.substring(1));
+        }
+        return field.toString();
+    }
+
+    /**
+     * Sets the fields through the same Jackson binding the config file goes through, so a
+     * value is checked by the field's setter and an unknown field fails startup, as it does
+     * in the file. {@code fileServer} is the file's {@code server} block, for the log.
+     */
+    private static void applySettings(TikaServerConfig config, Map<String, Setting> serverSettings,
+                                      JsonNode fileServer, Path tikaConfigPath)
+            throws TikaConfigException {
+        if (serverSettings.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> notSetting : NOT_SETTINGS.entrySet()) {
+            Setting setting = serverSettings.get(notSetting.getKey());
+            if (setting != null) {
+                throw new TikaConfigException(setting.source() + ": " + notSetting.getKey()
+                        + " is not a server setting, it is set with " + notSetting.getValue());
+            }
+        }
+        ObjectNode node = OBJECT_MAPPER.createObjectNode();
+        serverSettings.forEach((field, setting) -> {
+            JsonNode inFile = fileServer == null ? null : fileServer.get(field);
+            if (inFile == null) {
+                LOG.info("server setting '{}' = {} set by {}", field, setting.value(),
+                        setting.source());
+            } else {
+                LOG.warn("server setting '{}' = {} set by {}: overrides \"{}\": {} in {}", field,
+                        setting.value(), setting.source(), field, inFile, tikaConfigPath);
+            }
+            //a string, as Jackson converts it to the field's type itself: a number for a
+            //number field, but "007" stays "007" for a text field
+            node.put(field, setting.value().trim());
+        });
+        try {
+            OBJECT_MAPPER.readerForUpdating(config).readValue(node);
+        } catch (UnrecognizedPropertyException e) {
+            Setting setting = serverSettings.get(e.getPropertyName());
+            List<String> known = new ArrayList<>();
+            for (Object id : e.getKnownPropertyIds()) {
+                if (!NOT_SETTINGS.containsKey(id.toString())) {
+                    known.add(id.toString());
+                }
+            }
+            throw new TikaConfigException(setting.source() + ": the server block has no field '"
+                    + e.getPropertyName() + "'; it has " + known, e);
+        } catch (JsonMappingException e) {
+            String field = e.getPath().isEmpty() ? null : e.getPath().get(0).getFieldName();
+            Setting setting = field == null ? null : serverSettings.get(field);
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            throw new TikaConfigException((setting == null ? "server setting"
+                    : setting.source() + ": '" + setting.value() + "' for " + field)
+                    + " is not valid: " + cause.getMessage(), e);
+        } catch (IOException e) {
+            throw new TikaConfigException("could not apply the server settings", e);
+        }
+    }
+
 
 
     public int getPort() {

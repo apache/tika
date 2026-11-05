@@ -291,8 +291,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void test3MF() throws Exception {
-        assertTypeByData("test3mf.3mf", "application/vnd.ms-package.3dmanufacturing-3dmodel+xml");
-        assertTypeByNameAndData("test3mf.3mf", "application/vnd.ms-package.3dmanufacturing-3dmodel+xml");
+        assertTypeByData("test3mf.3mf", "model/3mf");
+        assertTypeByNameAndData("test3mf.3mf", "model/3mf");
     }
     @Test
     public void testODFDifferentOrder() throws Exception {

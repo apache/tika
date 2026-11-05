@@ -140,6 +140,8 @@ public class TrainNaiveBayesBigram {
             // ISO-8859 (3) — ISO-8859-2 added 2026-05-18 for Polish /
             // Central European coverage alongside the windows-1250 superset
             "ISO-8859-2", "ISO-8859-3", "ISO-8859-16",
+            // ISO-8859-5/-6/-7 added for TIKA-5019: not folds of windows-1251/1256/1253
+            "ISO-8859-5", "ISO-8859-6", "ISO-8859-7",
             // Mac (2)
             "x-MacRoman", "x-mac-cyrillic");
 

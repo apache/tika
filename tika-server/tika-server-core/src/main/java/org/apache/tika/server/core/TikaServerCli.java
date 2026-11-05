@@ -45,6 +45,10 @@ public class TikaServerCli {
         options.addOption(null, "preset", true,
                 "activate a catalog preset, as \"presets\": {\"<name>\": true} in the config "
                         + "would; repeatable, and TIKA_PRESETS takes a comma-separated list");
+        options.addOption(null, TikaServerConfig.SETTING_OPTION, true,
+                "set a field of the config's \"server\" block, <field>=<value>, e.g. "
+                        + "maxRequestSizeBytes=4294967296; repeatable, and TIKA_SERVER_SETTING_<FIELD> "
+                        + "in the environment sets the same (TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES)");
         return options;
     }
 
