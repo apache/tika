@@ -36,16 +36,22 @@ SRC="${TIKA_JUNK_DATA}/${CORPUS}"
 ROOT=$(git rev-parse --show-toplevel)
 cd "${ROOT}"
 
-# An uncommitted tree is allowed (experiments), but the exact diff is kept beside the log.
+# An uncommitted tree is allowed (experiments), but the exact diff is kept beside the log,
+# untracked (not ignored) files included: they are built into the jar too.
+UNCOMMITTED=$(mktemp)
+git diff HEAD --binary > "${UNCOMMITTED}"
+git ls-files --others --exclude-standard -z | while IFS= read -r -d '' f; do
+  git diff --no-index --binary /dev/null "$f" >> "${UNCOMMITTED}" || true
+done
 GIT=$(git rev-parse HEAD)
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-  DIFF_SHA=$(git diff HEAD | sha256sum | cut -c1-12)
+if [ -s "${UNCOMMITTED}" ]; then
+  DIFF_SHA=$(sha256sum < "${UNCOMMITTED}" | cut -c1-12)
   GIT="${GIT}-dirty-${DIFF_SHA}"
 fi
 RUN="${TIKA_JUNK_DATA}/${CORPUS}-runs/$(date +%Y%m%d-%H%M%S)-${GIT:0:12}"
 BUILT="${RUN}/built"
 mkdir -p "${RUN}"
-git diff HEAD > "${RUN}/uncommitted.diff"
+mv "${UNCOMMITTED}" "${RUN}/uncommitted.diff"
 LOG="${RUN}/train.log"
 echo "corpus=${CORPUS} git=${GIT} run=${RUN}" | tee "${LOG}"
 
