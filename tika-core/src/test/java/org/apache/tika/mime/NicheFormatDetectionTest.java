@@ -55,6 +55,9 @@ public class NicheFormatDetectionTest {
         MediaType mo = MediaType.application("x-gettext-translation");
         assertDetected(mo, "Þ\u0012\u0004\u0095\u0000\u0000\u0000\u0000\u008e\u0005\u0000\u0000");
         assertDetected(mo, "\u0095\u0004\u0012Þ\u0000\u0000\u0000\u0000\u0000\u0000\u0005\u008e");
+        // minor revision 1: msgfmt output with system-dependent strings
+        assertDetected(mo, "Þ\u0012\u0004\u0095\u0001\u0000\u0000\u0000");
+        assertDetected(mo, "\u0095\u0004\u0012Þ\u0000\u0000\u0000\u0001");
         // unknown revision
         assertDetected(MediaType.OCTET_STREAM, "Þ\u0012\u0004\u0095\u0000\u0007\u0000\u0000");
     }
@@ -75,6 +78,8 @@ public class NicheFormatDetectionTest {
         MediaType vcdiff = MediaType.application("x-vcdiff");
         assertDetected(vcdiff, "ÖÃÄ\u0000\u0005");
         assertDetected(vcdiff, "ÖÃÄ\u0000\u0000");
+        // open-vcdiff SDCH interleaved format
+        assertDetected(vcdiff, "ÖÃÄS\u0000");
         // undefined Hdr_Indicator bits
         assertDetected(MediaType.OCTET_STREAM, "ÖÃÄ\u0000\u0010");
         assertDetected(MediaType.application("x-xdelta"), "%XDZ004%\u0000\u0000");
@@ -109,6 +114,12 @@ public class NicheFormatDetectionTest {
         // secret key, 1-byte length, EdDSA
         assertDetected(keys, "\u0094X\u0004ABCD\u0016");
         assertDetected(MediaType.OCTET_STREAM, "\u0099\u0001\r\u0004ABCD\u0007");
+        // new-format v6 Ed25519 public and secret keys, as in RFC 9580 A.3 and A.4
+        assertDetected(keys, "Æ*\u0006c\u0087\u007fã\u001b\u0000\u0000\u0000 ");
+        assertDetected(keys, "ÅK\u0006c\u0087\u007fã\u001b\u0000\u0000\u0000 ");
+        // new-format v4 RSA public key, 2-byte length
+        assertDetected(keys, "ÆÁ\r\u0004ABCD\u0001");
+        assertDetected(MediaType.OCTET_STREAM, "Æ*\u0006c\u0087\u007fã\u0007");
     }
 
     @Test

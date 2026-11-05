@@ -124,6 +124,11 @@ Release 4.3.0 - ???
      files and JPEG XR images (image/jxr) are detected by content; they were
      application/octet-stream (TIKA-5029).
 
+   * More variants are detected by content: OpenPGP keys and signatures in new-format
+     packets (as written for RFC 9580 v6 keys), v1 DER certificate revocation lists (no
+     version field), gettext catalogs with minor revision 1 and VCDIFF deltas in
+     open-vcdiff's SDCH format; they were application/octet-stream (TIKA-5029).
+
    * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
      sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
 

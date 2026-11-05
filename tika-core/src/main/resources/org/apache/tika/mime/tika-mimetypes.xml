@@ -939,6 +939,9 @@
           <match value="0x16" type="string" offset="8"/>
         </match>
       </match>
+      <!-- new-format secret (0xC5) or public (0xC6) key packet (RFC 9580 4.2, 5.5.2): 1- or 2-byte
+           length, v4 or v6, 4-byte time, then a known public-key algorithm -->
+      <match value="(?s)[\\xc5\\xc6](?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06]....[\\x01\\x10-\\x13\\x16\\x19-\\x1c]" type="regex" offset="0"/>
     </magic>
   </mime-type>
 
@@ -960,6 +963,8 @@
         <match value="0x040016" mask="0xFFFEFF" type="string" offset="3"/>
         <match value="0x030500" mask="0xFFFFFE" type="string" offset="3"/>
       </match>
+      <!-- new-format signature packet (0xC2): v4 or v6, binary/text sig type, known algorithm -->
+      <match value="(?s)\\xc2(?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06][\\x00\\x01][\\x01\\x11\\x13\\x16\\x1b\\x1c]" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.asc"/>
     <glob pattern="*.sig"/>
@@ -1030,6 +1035,9 @@
            A v1 certificate with serial 1 starts the same way; its validity SEQUENCE { Time, Time }
            (never in a CRL) rules it out -->
       <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x02\\x01\\x01\\x30[\\x00-\\x7f]\\x06(?!.{0,512}?\\x30(?:\\x1e\\x17\\x0d|\\x20(?:\\x17\\x0d|\\x18\\x0f)|\\x22\\x18\\x0f))" type="regex" offset="0"/>
+      <!-- DER v1 CertificateList, no version: SEQUENCE { SEQUENCE { AlgorithmIdentifier, issuer Name
+           (SEQUENCE { SET ...), then thisUpdate. A certificate's TBS opens with [0] or an INTEGER -->
+      <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x30[\\x00-\\x7f]\\x06[\\x03-\\x0f].{3,20}?\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..)\\x31.{0,1024}?(?:\\x17\\x0d[0-9]{12}Z|\\x18\\x0f[0-9]{14}Z)" type="regex" offset="0"/>
     </magic>
   </mime-type>
   <mime-type type="application/pkix-pkipath">
@@ -2045,7 +2053,8 @@
     <magic priority="50">
       <match value="0x00001A0003100400" type="string" offset="0">
       </match>
-      <!-- 0x1005 is also seen in .123 files -->
+      <!-- 0x1005: not in PRONOM; seen in .123 attachments to LibreOffice bugs 53713, 54655, 55066
+           and 114000 and OpenOffice bugs 79309 and 122841 -->
       <match value="0x00001A0005100400" type="string" offset="0"/>
     </magic>
     <glob pattern="*.123"/>
@@ -4083,9 +4092,9 @@
   <mime-type type="application/x-gettext-translation">
     <_comment>GNU gettext message catalog</_comment>
     <magic priority="50">
-      <!-- magic in either byte order, then file format revision 0 -->
-      <match value="0xDE12049500000000" type="string" offset="0"/>
-      <match value="0x950412DE00000000" type="string" offset="0"/>
+      <!-- magic in either byte order, then major revision 0, minor 0 or 1 (system-dependent strings) -->
+      <match value="0xDE12049500000000" mask="0xFFFFFFFFFEFFFFFF" type="string" offset="0"/>
+      <match value="0x950412DE00000000" mask="0xFFFFFFFFFFFFFFFE" type="string" offset="0"/>
     </magic>
     <glob pattern="*.mo"/>
     <glob pattern="*.gmo"/>
@@ -4634,6 +4643,7 @@
   <mime-type type="application/x-haihaisoft-drm">
     <_comment>Haihaisoft DRM-X protected file</_comment>
     <magic priority="50">
+      <!-- the <XDRMHEADER> that follows names its license server at drm-x.com -->
       <match value="XDRM" type="string" offset="0">
         <match value="HEAD" type="string" offset="10"/>
       </match>
@@ -5336,6 +5346,7 @@
   <mime-type type="application/x-navitel-map">
     <_comment>Navitel Navigator map</_comment>
     <magic priority="50">
+      <!-- crawl files name their source "OpenStreetMap (converted by KonTur)", a Navitel OSM map series -->
       <match value="PMGC\x05\x00" type="string" offset="0">
         <match value="0x8400000084000000" type="string" offset="20"/>
       </match>
@@ -5405,7 +5416,7 @@
   </mime-type>
   <mime-type type="application/x-promethean-flipchart">
     <_comment>Promethean ActivInspire flipchart</_comment>
-    <!-- unverified: seen on .flipchart files, an extension Wacom Bamboo Paper also uses -->
+    <!-- " Bamboo " is the container; its zlib members carry the prometheanworld.com/Inspire XML namespace -->
     <magic priority="50">
       <match value=" Bamboo " type="string" offset="0"/>
     </magic>
@@ -6258,6 +6269,8 @@
     <magic priority="50">
       <!-- header bytes, version 0, then Hdr_Indicator with only its low 3 bits defined -->
       <match value="0xD6C3C40000" mask="0xFFFFFFFFF8" type="string" offset="0"/>
+      <!-- open-vcdiff's SDCH interleaved format puts 'S' in the version byte -->
+      <match value="0xD6C3C45300" mask="0xFFFFFFFFF8" type="string" offset="0"/>
     </magic>
     <glob pattern="*.vcdiff"/>
   </mime-type>
