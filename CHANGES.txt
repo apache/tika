@@ -81,6 +81,10 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * RAR5 archives are parsed: RarParser no longer refuses them, junrar has read RAR5
+     since 8.0.0 (TIKA-5043).
+
+
    * Jupyter notebooks (.ipynb, new type application/x-ipynb+json) are parsed: cell
      sources and plain-text outputs as text, kernel, language and format version as
      jupyter:kernel, jupyter:language and jupyter:nbformat, and the image outputs as
