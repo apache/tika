@@ -66,7 +66,35 @@ public final class TrainingProvenance {
         Map<String, String> kv = new LinkedHashMap<>();
         kv.put("source_corpus", sourceCorpus.toAbsolutePath().normalize().getFileName().toString());
         kv.put("source_manifest_sha256", sha256(m));
+        kv.put("source_content_sha256", contentSha256(sourceCorpus));
         writeKv(builtDir.resolve(SOURCE_FILE), kv);
+    }
+
+    /**
+     * SHA-256 over every regular file under {@code dir}, in path order: each file's relative
+     * path and SHA-256.  The manifest only lists languages and counts, so this is what pins the
+     * corpus text itself.
+     */
+    static String contentSha256(Path dir) throws IOException {
+        List<Path> files;
+        try (java.util.stream.Stream<Path> s = Files.walk(dir)) {
+            files = s.filter(Files::isRegularFile).sorted().collect(java.util.stream.Collectors.toList());
+        }
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        for (Path f : files) {
+            String rel = dir.relativize(f).toString().replace('\\', '/');
+            md.update((rel + "\t" + sha256(f) + "\n").getBytes(StandardCharsets.UTF_8));
+        }
+        StringBuilder sb = new StringBuilder(64);
+        for (byte b : md.digest()) {
+            sb.append(String.format(java.util.Locale.ROOT, "%02x", b));
+        }
+        return sb.toString();
     }
 
     /** Reads a key/value file written by {@link #writeKv}. */

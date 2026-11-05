@@ -13,17 +13,33 @@ Release 4.3.0 - ???
      the forks never saw such a fetcher, so every fetch through it failed. Use file or
      ignite (TIKA-5001).
 
+   * 3MF packages are detected as model/3mf, their IANA type, instead of
+     application/vnd.ms-package.3dmanufacturing-3dmodel+xml, which is the content type of
+     the model part inside the package. The old name is an alias, so it still resolves as
+     input, but detection output and metadata now carry model/3mf (TIKA-5049).
+
   SERVER, PIPES AND OPERATIONS
+
+   * tika-server sets any field of the config's "server" block from the command line
+     (--serverSetting <field>=<value>, repeatable) and the environment (TIKA_SERVER_SETTING_<FIELD>,
+     e.g. TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES), over the file's own value, so raising the
+     1 GiB request body limit no longer needs a config file. The 413 names the limit and
+     where to raise it (TIKA-5025).
+     
+   * When pipes kills a forked server, it now kills the server's descendant processes too,
+     such as ExternalParser commands and their children; they kept running. On a timeout,
+     an interrupt or JVM shutdown, ProcessUtils.execute also kills the descendants of the
+     process it started (TIKA-5040).
 
    * Fetchers and plugins built on HttpClientFactory (HTTP, Atlassian JWT, ES, OpenSearch,
      Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
      configured password, after a redirect to another host, port or scheme. That includes
      http to https, so use the https URL in the fetch key. Applies only with
-     maxRedirects > 0 (TIKA-XXXX).
+     maxRedirects > 0.
 
    * tika-server no longer requires a "server" block in its config file; an absent block
      means the server defaults, as "server": {} did. A tika-app config, or the documented
-     Docker example { "text-recognizers": [] }, now works as is (TIKA-XXXX).
+     Docker example { "text-recognizers": [] }, now works as is.
 
    * The tika-server full and tika-grpc Docker images no longer install
      ttf-mscorefonts-installer, which downloaded Microsoft's fonts from SourceForge
@@ -58,6 +74,35 @@ Release 4.3.0 - ???
 
    * FictionBook marks the cover image named in <coverpage> as a THUMBNAIL embedded
      resource, so the thumbnail preset serves it (TIKA-5035).
+
+   * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
+     cover as the THUMBNAIL embedded document, the other images, and the text, stored,
+     PalmDOC- or HUFF/CDIC-compressed, through the HTML parser (of a KF8 book the HTML flow
+     only). A hybrid file yields its version 6 book; extractKf8 emits the KF8 copy as an
+     embedded document too. An encrypted book yields its metadata and images, sets
+     tika:encrypted and records the locked text as a warning. New keys mobi:version,
+     mobi:compression, mobi:encryption, mobi:cde-type, mobi:hybrid. maxTextLength caps the
+     text (16 MB, and 32 times the file size), maxFileSize the bytes read (256 MB).
+     application/vnd.amazon.mobi8-ebook (*.azw3) is new, and with
+     application/vnd.amazon.ebook a sub-type of application/x-mobipocket-ebook: a .azw file
+     is now detected as application/vnd.amazon.ebook, not application/x-mobipocket-ebook,
+     and a .prc or .azw that is not a Mobipocket book yields nothing and a warning
+     (TIKA-5026).
+
+   * Zip-based formats that carry a preview image have it emitted as the THUMBNAIL, so
+     the thumbnail preset serves it: comic book archives (.cbz, new type
+     application/vnd.comicbook+zip, the first page in name order), Krita (.kra,
+     preview.png), OpenRaster (.ora, Thumbnails/thumbnail.png), FreeCAD (.FCStd,
+     thumbnails/Thumbnail.png), Procreate (.procreate, QuickLook/Thumbnail.png) and
+     Sketch (.sketch, previews/preview.png). All six are new types and sub-types of
+     application/zip (TIKA-5032).
+
+   * PSD files emit the JPEG thumbnail Photoshop stores in image resource 0x040C as a
+     THUMBNAIL embedded resource, so the thumbnail preset serves it; one over
+     maxDataLengthBytes is skipped with a warning (TIKA-5033).
+     
+   * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
+     sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
 
    * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
      <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
@@ -103,27 +148,46 @@ Release 4.3.0 - ???
 
    * VLM text recognizers keep superscripts and subscripts: inline <sup>/<sub> in model
      output (x<sup>2</sup>, H<sub>2</sub>O, footnote markers) reach the XHTML as sup/sub
-     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML
-     (TIKA-XXXX).
+     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML.
+
+   * Charset detection recognizes ISO-8859-5 (Cyrillic), ISO-8859-6 (Arabic) and ISO-8859-7
+     (Greek) without a declaration; they were reported as windows-1251/1256/1253, x-EUC-TW
+     or windows-1252, which garbled the text. When candidates decode identically, the
+     report is the charset most frequent on legacy-charset web pages, e.g. windows-1252
+     over ISO-8859-2 for Western text (TIKA-5019).
+
+   * Charset detection treats a byte-order mark as a strong hint, not a declaration: it
+     is honored only when the bytes after it decode in that charset, and a rejected BOM
+     is dropped rather than left in the text as junk characters (TIKA-5019).
+
+   * Charset detection keeps the statistical detector's pick when an HTML or HTTP charset
+     declaration names the same charset, rather than letting text-quality scoring override
+     two agreeing signals; and UTF-8 with sparse corruption (up to one bad sequence per
+     ten valid ones, existing U+FFFD not counted) is read as UTF-8 (TIKA-5019).
 
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>
      becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
      **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
 
+   * The junk detector, which arbitrates between candidate charsets, decodes numeric
+     character references in HTML as browsers do: &#128;-&#159; are the windows-1252
+     characters (&#150; is an en dash, not a C1 control), and &#0;, surrogates and values
+     past U+10FFFF are U+FFFD. One pass, so &#38;#x41; stays &#x41; (TIKA-5044).
+
   OTHER CHANGES
 
    * The junk detector no longer scores text in scripts its model has no usable table
      for (Yi, Mongolian, Canadian syllabics, Cherokee, Adlam and 37 others) as
      junk: it scored -3 to -19 before. TextQualityScore gains getCoverage(), and
-     tika-eval reports languageness for such text as unknown. Text with no letters
-     (whitespace, digits, symbols) now scores -1 instead of +3, below clean prose
-     (TIKA-5027).
+     tika-eval reports languageness for such text as unknown. JunkDetector.knownScripts()
+     no longer lists those scripts. Text with no letters (whitespace, digits, symbols) now
+     scores -1 instead of +3, below clean prose (TIKA-5027).
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
      list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
      and checks tk:parsed-by-full-set, not pdf:ocr-page-count, to confirm OCR ran. A test
-     loads every config in the user skills in tika-app and tika-server (TIKA-XXXX).
+     loads every config in the user skills in tika-app and tika-server.
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
      their next fetch, through a change token on file and ignite stores
