@@ -102,6 +102,20 @@ public class ZipParserTest extends AbstractPkgTest {
     }
 
     @Test
+    public void test3MFIsParsedAsZip() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("test3mf.3mf");
+        Metadata container = metadataList.get(0);
+        assertEquals("application/vnd.ms-package.3dmanufacturing-3dmodel+xml",
+                container.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(container.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        Set<String> names = new HashSet<>();
+        for (Metadata m : metadataList.subList(1, metadataList.size())) {
+            names.add(m.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        }
+        assertTrue(names.contains("3D/3dmodel.model"), names.toString());
+    }
+
+    @Test
     public void testZipEncrypted() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testZipEncrypted.zip");
         assertEquals(2, metadataList.size());

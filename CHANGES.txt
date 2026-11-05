@@ -19,11 +19,11 @@ Release 4.3.0 - ???
      Solr) no longer send Authorization or Cookie headers, or answer a 401 with the
      configured password, after a redirect to another host, port or scheme. That includes
      http to https, so use the https URL in the fetch key. Applies only with
-     maxRedirects > 0 (TIKA-XXXX).
+     maxRedirects > 0.
 
    * tika-server no longer requires a "server" block in its config file; an absent block
      means the server defaults, as "server": {} did. A tika-app config, or the documented
-     Docker example { "text-recognizers": [] }, now works as is (TIKA-XXXX).
+     Docker example { "text-recognizers": [] }, now works as is.
 
    * The tika-server full and tika-grpc Docker images no longer install
      ttf-mscorefonts-installer, which downloaded Microsoft's fonts from SourceForge
@@ -63,6 +63,13 @@ Release 4.3.0 - ???
      thumbnails/Thumbnail.png), Procreate (.procreate, QuickLook/Thumbnail.png) and
      Sketch (.sketch, previews/preview.png). All six are new types and sub-types of
      application/zip (TIKA-5032).
+
+   * PSD files emit the JPEG thumbnail Photoshop stores in image resource 0x040C as a
+     THUMBNAIL embedded resource, so the thumbnail preset serves it; one over
+     maxDataLengthBytes is skipped with a warning (TIKA-5033).
+     
+   * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
+     sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
 
    * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
      <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
@@ -108,27 +115,46 @@ Release 4.3.0 - ???
 
    * VLM text recognizers keep superscripts and subscripts: inline <sup>/<sub> in model
      output (x<sup>2</sup>, H<sub>2</sub>O, footnote markers) reach the XHTML as sup/sub
-     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML
-     (TIKA-XXXX).
+     instead of plain text ("x2"), and the Markdown writer outputs them as inline HTML.
+
+   * Charset detection recognizes ISO-8859-5 (Cyrillic), ISO-8859-6 (Arabic) and ISO-8859-7
+     (Greek) without a declaration; they were reported as windows-1251/1256/1253, x-EUC-TW
+     or windows-1252, which garbled the text. When candidates decode identically, the
+     report is the charset most frequent on legacy-charset web pages, e.g. windows-1252
+     over ISO-8859-2 for Western text (TIKA-5019).
+
+   * Charset detection treats a byte-order mark as a strong hint, not a declaration: it
+     is honored only when the bytes after it decode in that charset, and a rejected BOM
+     is dropped rather than left in the text as junk characters (TIKA-5019).
+
+   * Charset detection keeps the statistical detector's pick when an HTML or HTTP charset
+     declaration names the same charset, rather than letting text-quality scoring override
+     two agreeing signals; and UTF-8 with sparse corruption (up to one bad sequence per
+     ten valid ones, existing U+FFFD not counted) is read as UTF-8 (TIKA-5019).
 
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>
      becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
      **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
 
+   * The junk detector, which arbitrates between candidate charsets, decodes numeric
+     character references in HTML as browsers do: &#128;-&#159; are the windows-1252
+     characters (&#150; is an en dash, not a C1 control), and &#0;, surrogates and values
+     past U+10FFFF are U+FFFD. One pass, so &#38;#x41; stays &#x41; (TIKA-5044).
+
   OTHER CHANGES
 
    * The junk detector no longer scores text in scripts its model has no usable table
      for (Yi, Mongolian, Canadian syllabics, Cherokee, Adlam and 37 others) as
      junk: it scored -3 to -19 before. TextQualityScore gains getCoverage(), and
-     tika-eval reports languageness for such text as unknown. Text with no letters
-     (whitespace, digits, symbols) now scores -1 instead of +3, below clean prose
-     (TIKA-5027).
+     tika-eval reports languageness for such text as unknown. JunkDetector.knownScripts()
+     no longer lists those scripts. Text with no letters (whitespace, digits, symbols) now
+     scores -1 instead of +3, below clean prose (TIKA-5027).
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
      list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
      and checks tk:parsed-by-full-set, not pdf:ocr-page-count, to confirm OCR ran. A test
-     loads every config in the user skills in tika-app and tika-server (TIKA-XXXX).
+     loads every config in the user skills in tika-app and tika-server.
 
    * A runtime fetcher or emitter save or delete reaches running pipes workers at
      their next fetch, through a change token on file and ignite stores
