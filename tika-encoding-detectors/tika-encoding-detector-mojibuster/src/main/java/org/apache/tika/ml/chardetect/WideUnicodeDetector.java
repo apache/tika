@@ -32,16 +32,14 @@ import java.nio.charset.Charset;
  * Inspired by ICU4J's {@code CharsetRecog_UTF_32}.</p>
  *
  * <h3>UTF-16 surrogate validation</h3>
- * <p>UTF-16 positive detection is handled by
- * {@link Utf16SpecialistEncodingDetector}, which uses a trained maxent
- * model over per-column byte-range counts and correctly distinguishes
- * LE from BE for Latin, Cyrillic, Arabic, Hebrew, Indic, Thai, CJK
- * Unified, and Hangul content alike.  This class only performs surrogate-
+ * <p>UTF-16 positive detection is the statistical model's job
+ * ({@link HashedNgramEncodingDetector}).  This class only performs surrogate-
  * invalidity validation: {@link Result#invalidUtf16Be} and
  * {@link Result#invalidUtf16Le} carry whether the probe contains
  * structurally impossible UTF-16 surrogate sequences under each
- * endianness, so callers can suppress UTF-16 labels from statistical
- * models when the bytes cannot be valid UTF-16.</p>
+ * endianness, so callers can suppress the model's UTF-16 labels
+ * when the bytes cannot be valid UTF-16.  A high surrogate in the last
+ * code unit of the probe is a pair cut by the probe boundary, not an error.</p>
  *
  * <p>All methods are stateless and safe to call from multiple threads.</p>
  */
@@ -175,8 +173,7 @@ final class WideUnicodeDetector {
 
     /**
      * Surrogate-validation scan over {@code length} bytes starting at
-     * {@code offset}.  Does not attempt UTF-16 positive detection — that is
-     * the job of {@link Utf16SpecialistEncodingDetector}.  Returns only
+     * {@code offset}.  Does not attempt UTF-16 positive detection.  Returns only
      * surrogate-invalidity flags under each endianness, used by
      * {@code MojibusterEncodingDetector} to suppress UTF-16 labels from
      * the main statistical model on probes that cannot be valid UTF-16.
@@ -227,8 +224,19 @@ final class WideUnicodeDetector {
                 }
             }
         }
-        if (awaitLowBe) invalidBe = true;
-        if (awaitLowLe) invalidLe = true;
+        // A high surrogate ending the sample is checked against the next unit; at the
+        // probe end the pair was cut, which is no evidence either way.
+        int next = offset + sampleLen;
+        if (next + 1 < offset + length) {
+            int even = bytes[next] & 0xFF;
+            int odd = bytes[next + 1] & 0xFF;
+            if (awaitLowBe && !(even >= 0xDC && even <= 0xDF)) {
+                invalidBe = true;
+            }
+            if (awaitLowLe && !(odd >= 0xDC && odd <= 0xDF)) {
+                invalidLe = true;
+            }
+        }
 
         return new Result(null, invalidBe, invalidLe);
     }

@@ -127,7 +127,7 @@
           ./mvnw package -pl tika-ml/tika-ml-chardetect -am -Ptrain -DskipTests \
               -Dmaven.repo.local=.local_m2_repo
           java -jar tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
-              [TrainNaiveBayesBigram|EvalCharsetDetectors|BenchmarkCharsetDetectors|TrainUtf16Specialist] \
+              [EvalCharsetDetectors|BenchmarkCharsetDetectors] \
               [args...]
       -->
       <id>train</id>
@@ -145,7 +145,7 @@
                   <shadedClassifierName>tools</shadedClassifierName>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.apache.tika.ml.chardetect.tools.TrainNaiveBayesBigram</mainClass>
+                      <mainClass>org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors</mainClass>
                     </transformer>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />

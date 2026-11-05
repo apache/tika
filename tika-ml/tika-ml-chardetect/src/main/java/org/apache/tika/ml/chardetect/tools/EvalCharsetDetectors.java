@@ -78,7 +78,7 @@ public class EvalCharsetDetectors {
             "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN"
     );
 
-    private static final String[] COL_NAMES = {"ICU4J", "juniv", "NB"};
+    private static final String[] COL_NAMES = {"ICU4J", "juniv", "Moji"};
     private static final int NUM_DETECTORS = COL_NAMES.length;
     // Primary detector used for the length-sweep summary and confusion matrix.
     private static final int IDX_NB  = 2;
@@ -93,14 +93,12 @@ public class EvalCharsetDetectors {
      * introduced.  Skipped in per-row reporting to avoid misleading 0% numbers.
      */
     private static final Set<String> DEFAULT_EXCLUDE = Set.of(
-            "IBM437",          // superset IBM850 is the trained label; IBM437 is a confusable alias
             "x-ISO-2022-CN-CNS" // structural-only (ISO-2022 escape gates); no ML model label
     );
 
     public static void main(String[] args) throws Exception {
         Path modelPath = null;
         Path moeModelPath = null;
-        Path nbModelPath = null;
         Path dataDir   = null;
         int[] probeLengths = {8, 16, 32, 64, 128, 256, FULL_LENGTH};
         boolean showConfusion = false;
@@ -114,9 +112,6 @@ public class EvalCharsetDetectors {
                     break;
                 case "--moe-model":
                     moeModelPath = Paths.get(args[++i]);
-                    break;
-                case "--nb-model":
-                    nbModelPath = Paths.get(args[++i]);
                     break;
                 case "--data":
                     dataDir = Paths.get(args[++i]);
@@ -145,12 +140,8 @@ public class EvalCharsetDetectors {
             System.exit(1);
         }
 
-        // NB pipeline: BOM + UTF-32 + UTF-16 structural prefix + UTF-8
-        // gate + NB bigram classifier.  This is the ship candidate;
-        // compared here against ICU4J and juniversalchardet.
-        EncodingDetector nbDetector = nbModelPath != null
-                ? new org.apache.tika.ml.chardetect.MojibusterEncodingDetector(nbModelPath)
-                : new NoopDetector();
+        // The shipped pipeline with its bundled model, against ICU4J and juniversalchardet.
+        EncodingDetector nbDetector = new org.apache.tika.ml.chardetect.MojibusterEncodingDetector();
 
         EncodingDetector[] detectors = {
             new Icu4jEncodingDetector(),
@@ -523,20 +514,4 @@ public class EvalCharsetDetectors {
         }
         return out;
     }
-
-    /**
-     * Placeholder detector for the MoE column when {@code --moe-model} is
-     * not supplied — always returns empty so the column shows 0% and the
-     * eval still runs for the other detectors.
-     */
-    private static final class NoopDetector implements EncodingDetector {
-        @Override
-        public List<org.apache.tika.detect.EncodingResult> detect(
-                org.apache.tika.io.TikaInputStream tis,
-                org.apache.tika.metadata.Metadata metadata,
-                org.apache.tika.parser.ParseContext context) {
-            return java.util.Collections.emptyList();
-        }
-    }
-
 }
