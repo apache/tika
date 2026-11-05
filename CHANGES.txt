@@ -86,9 +86,8 @@ Release 4.3.0 - ???
      application/x-ms-asx; they were application/octet-stream or text/plain. A PDF or
      XHTML document with such a fragment in front keeps its type (TIKA-5029).
 
-   * SubRip subtitles with CRLF line endings are detected by content; a typo in the rule
-     left only the filename to match. A new test fails the build on tika-mimetypes.xml
-     rules that load but can never match as written (TIKA-5029).
+   * A new test fails the build on tika-mimetypes.xml rules that load but can never
+     match as written (TIKA-5029).
 
    * Elasto Mania levels, binary OpenPGP keys, StuffIt (SIT!) archives, MPEG transport
      streams (video/mp2t, now also *.m2ts and *.m2t), Symbian 9 installers, FLC and FLI
@@ -124,6 +123,17 @@ Release 4.3.0 - ???
      git packfiles, ACPI tables, TZif time zone files (application/tzif), Firefox mozLz4
      files and JPEG XR images (image/jxr) are detected by content; they were
      application/octet-stream (TIKA-5029).
+
+   * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
+     sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
+
+   * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
+     <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
+     cleaned of markup; WebVTT NOTE blocks become <div class="note"> and a Language
+     header sets dc:language. Both were parsed as plain text before, timings and
+     markup included. Magic fixes: SubRip with CRLF line endings (typo in the rule);
+     WebVTT with a title or tab after "WEBVTT", with a UTF-8 BOM and a title, or in
+     UTF-16 (TIKA-5028).
 
    * Detect Python scripts with /usr/bin/env python shebangs as text/x-python
      instead of application/x-sh (TIKA-4408).
@@ -169,7 +179,19 @@ Release 4.3.0 - ???
      becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
      **, * and ~~, which it wrote as literal asterisks for <b>Note: </b> (TIKA-5018).
 
+   * The junk detector, which arbitrates between candidate charsets, decodes numeric
+     character references in HTML as browsers do: &#128;-&#159; are the windows-1252
+     characters (&#150; is an en dash, not a C1 control), and &#0;, surrogates and values
+     past U+10FFFF are U+FFFD. One pass, so &#38;#x41; stays &#x41; (TIKA-5044).
+
   OTHER CHANGES
+
+   * The junk detector no longer scores text in scripts its model has no usable table
+     for (Yi, Mongolian, Canadian syllabics, Cherokee, Adlam and 37 others) as
+     junk: it scored -3 to -19 before. TextQualityScore gains getCoverage(), and
+     tika-eval reports languageness for such text as unknown. JunkDetector.knownScripts()
+     no longer lists those scripts. Text with no letters (whitespace, digits, symbols) now
+     scores -1 instead of +3, below clean prose (TIKA-5027).
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
      list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),

@@ -94,7 +94,7 @@ public class JunkDetectorRoundTripTest {
         saveMinimalModel(tables, modelFile);
 
         // Verify the file roundtrips through the loader.
-        JunkDetector detector = JunkDetector.loadFromPath(modelFile);
+        JunkDetector detector = JunkDetector.loadFromPath(modelFile, 0);
         assertEquals(JunkDetector.VERSION, detector.getModelVersion(), "Loaded model should match current VERSION");
 
         TextQualityScore score = detector.score("ABAB");
@@ -131,7 +131,7 @@ public class JunkDetectorRoundTripTest {
 
         Path modelFile = tmp.resolve("junk-test-allseen.bin");
         saveMinimalModel(tables, modelFile);
-        JunkDetector detector = JunkDetector.loadFromPath(modelFile);
+        JunkDetector detector = JunkDetector.loadFromPath(modelFile, 0);
 
         TextQualityScore score = detector.score("ABAB");
         assertEquals(expectedRunZ(tables, "ABAB", -5.0f, 1.0f), score.getZScore(), 0.05f,
@@ -221,7 +221,7 @@ public class JunkDetectorRoundTripTest {
                 combiner, scriptBuckets, scriptTransTable, scriptTransCal, modelPath);
 
         // --- 6. Load via JunkDetector and score ---
-        JunkDetector detector = JunkDetector.loadFromPath(modelPath);
+        JunkDetector detector = JunkDetector.loadFromPath(modelPath, 0);
         assertEquals(JunkDetector.VERSION, detector.getModelVersion(),
                 "Loaded model should match current VERSION");
         assertTrue(detector.knownScripts().contains("LATIN"),

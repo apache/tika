@@ -1,0 +1,4 @@
+model_sha256	509b4a2d0b5b6eee26f01d94d2373081dc628e31e27ea90e5fd280e2fdc613b2
+source_corpus	junk-augmented-symbolboost (MADLAD-400 + Wikipedia + symbol-boost augmentation; lost, language list not recorded)
+git_commit	8d9900e211 (last commit to change the model, TIKA-4745)
+note	trained before provenance was recorded; retrain with train-junk-model.sh
