@@ -23,11 +23,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
@@ -178,5 +188,53 @@ public class TestGDALParser extends TikaTest {
         String path = "/data/survey 2024/tile.tif --config GDAL_HTTP_PROXY attacker:8080";
         assertArrayEquals(new String[]{"gdalinfo", path},
                 GDALParser.buildCommandLine(new GDALParser().getCommand(), path));
+    }
+
+    @Test
+    public void testDocumentCannotPointGdalinfoAtAUrl() throws Exception {
+        assumeTrue(canRun());
+        try (ServerSocket listener = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+            AtomicInteger connections = new AtomicInteger();
+            Thread acceptor = new Thread(() -> {
+                while (true) {
+                    try (Socket s = listener.accept()) {
+                        connections.incrementAndGet();
+                    } catch (IOException e) {
+                        return;
+                    }
+                }
+            });
+            acceptor.setDaemon(true);
+            acceptor.start();
+
+            String url = "/vsicurl/http://127.0.0.1:" + listener.getLocalPort() + "/from-document";
+            // a FITS header is what routes the file to GDALParser
+            String fitsHeader = String.format(Locale.ROOT, "%-80s%-80s%n",
+                    "SIMPLE  =                    T", "END");
+            String[] documents = {
+                    fitsHeader + "<VRTDataset rasterXSize=\"1\" rasterYSize=\"1\">"
+                            + "<VRTRasterBand dataType=\"Byte\" band=\"1\"><SimpleSource>"
+                            + "<SourceFilename relativeToVRT=\"0\">" + url + "</SourceFilename>"
+                            + "<SourceBand>1</SourceBand></SimpleSource></VRTRasterBand>"
+                            + "</VRTDataset>\n",
+                    fitsHeader + "<GDALTileIndexDataset><IndexDataset>" + url
+                            + "</IndexDataset></GDALTileIndexDataset>\n"};
+            for (String document : documents) {
+                try (TikaInputStream tis = TikaInputStream.get(
+                        document.getBytes(StandardCharsets.US_ASCII))) {
+                    new GDALParser().parse(tis, new BodyContentHandler(), new Metadata(),
+                            new ParseContext());
+                }
+            }
+            assertEquals(0, connections.get());
+        }
+    }
+
+    @Test
+    public void testOperatorGdalSkipIsKept() {
+        Map<String, String> env = new HashMap<>(Map.of("GDAL_SKIP", "JPEG"));
+        GDALParser.restrictEnvironment(env);
+        assertEquals("JPEG VRT GTI", env.get("GDAL_SKIP"));
+        assertEquals("", env.get("CPL_VSIL_CURL_ALLOWED_FILENAME"));
     }
 }
