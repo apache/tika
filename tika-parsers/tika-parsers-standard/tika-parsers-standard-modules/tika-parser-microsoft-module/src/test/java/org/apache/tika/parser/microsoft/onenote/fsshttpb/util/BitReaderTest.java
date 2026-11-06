@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -29,9 +30,8 @@ import org.junit.jupiter.api.Test;
 public class BitReaderTest {
 
     /**
-     * The shift-based reads must return exactly what the original implementation did, which
-     * stepped moveNext()/getCurrent() one bit at a time. That bit-at-a-time walk is still
-     * public, so a second reader over the same bytes serves as the reference.
+     * Every read must match a reference reader stepping moveNext()/getCurrent() one bit at a
+     * time over the same bytes.
      */
     @Test
     public void testReadsMatchBitByBitReference() throws IOException {
@@ -64,6 +64,37 @@ public class BitReaderTest {
             }
             assertThrows(IOException.class, () -> reader.readUInt32(1));
         }
+    }
+
+    /**
+     * The GUID cache slot depends on high ^ low, so XORing both 8-byte halves of a GUID with the
+     * same mask gives a different GUID in the same slot. Reads alternating between the two must
+     * each return their own MD5-derived UUID; a repeat read of the resident one is a cache hit.
+     */
+    @Test
+    public void testGuidCacheCollision() throws IOException {
+        byte[] first = new byte[16];
+        new Random(20261106L).nextBytes(first);
+        byte[] second = first.clone();
+        second[0] ^= (byte) 0x5A;
+        second[8] ^= (byte) 0x5A;
+        UUID firstUuid = UUID.nameUUIDFromBytes(first);
+        UUID secondUuid = UUID.nameUUIDFromBytes(second);
+
+        byte[] data = new byte[16 * 5];
+        for (int i = 0; i < 5; i++) {
+            System.arraycopy(i % 2 == 0 ? first : second, 0, data, i * 16, 16);
+        }
+        BitReader reader = new BitReader(data, 0);
+        assertEquals(firstUuid, reader.readGuid());
+        assertEquals(secondUuid, reader.readGuid());
+        assertEquals(firstUuid, reader.readGuid());
+        assertEquals(secondUuid, reader.readGuid());
+
+        BitReader repeat = new BitReader(data, 64);
+        UUID resident = repeat.readGuid();
+        assertEquals(firstUuid, resident);
+        assertSame(resident, new BitReader(data, 64).readGuid());
     }
 
     @Test

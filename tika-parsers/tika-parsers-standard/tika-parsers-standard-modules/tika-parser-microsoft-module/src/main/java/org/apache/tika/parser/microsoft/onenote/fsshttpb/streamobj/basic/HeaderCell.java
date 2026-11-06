@@ -48,7 +48,7 @@ public class HeaderCell {
                 ObjectGroupObjectData objectData =
                         objectElement.objectGroupData.objectGroupObjectDataList.get(i);
                 instance.objectData = new ObjectSpaceObjectPropSet();
-                instance.objectData.doDeserializeFromByteArray(objectData.data.content, 0);
+                instance.objectData.doDeserializeFromByteArray(objectData.data.getContent(), 0);
                 break;
             }
         }

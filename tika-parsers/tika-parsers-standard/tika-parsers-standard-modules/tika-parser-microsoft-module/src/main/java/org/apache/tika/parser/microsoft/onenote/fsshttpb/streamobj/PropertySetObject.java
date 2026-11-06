@@ -38,6 +38,6 @@ public class PropertySetObject {
                              ObjectGroupObjectData objectData) throws IOException {
         this.objectDeclaration = objectDeclaration;
         this.objectSpaceObjectPropSet = new ObjectSpaceObjectPropSet();
-        this.objectSpaceObjectPropSet.doDeserializeFromByteArray(objectData.data.content, 0);
+        this.objectSpaceObjectPropSet.doDeserializeFromByteArray(objectData.data.getContent(), 0);
     }
 }

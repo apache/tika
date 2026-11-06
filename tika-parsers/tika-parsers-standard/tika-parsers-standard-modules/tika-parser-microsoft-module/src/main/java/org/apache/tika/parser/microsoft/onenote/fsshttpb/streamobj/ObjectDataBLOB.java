@@ -40,17 +40,14 @@ public class ObjectDataBLOB extends StreamObject {
      * @return a copy of the opaque binary data, or null if not present.
      */
     public byte[] getData() {
-        if (this.data == null || this.data.content == null) {
-            return null;
-        }
-        return this.data.content.clone();
+        return this.data == null ? null : this.data.copyContent();
     }
 
     /**
-     * @return whether there is non-empty binary data, without copying it.
+     * @return the length of the binary data, 0 if not present
      */
-    public boolean hasData() {
-        return this.data != null && this.data.content != null && this.data.content.length > 0;
+    public int getDataLength() {
+        return this.data == null ? 0 : this.data.getContentLength();
     }
 
     @Override

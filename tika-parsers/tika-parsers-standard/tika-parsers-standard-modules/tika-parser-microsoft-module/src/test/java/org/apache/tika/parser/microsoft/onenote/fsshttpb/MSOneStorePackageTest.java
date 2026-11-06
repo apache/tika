@@ -2677,7 +2677,7 @@ public class MSOneStorePackageTest {
 
     private static FileDataObject fileData(String value) {
         ObjectDataBLOB blob = new ObjectDataBLOB();
-        blob.data.content = value.getBytes(StandardCharsets.UTF_8);
+        blob.data.setContent(value.getBytes(StandardCharsets.UTF_8));
         ObjectDataBLOBDataElementData blobData = new ObjectDataBLOBDataElementData();
         blobData.objectDataBLOB = blob;
         DataElement element = new DataElement();
@@ -2744,7 +2744,7 @@ public class MSOneStorePackageTest {
 
     private static ObjectGroupObjectData emptyObjectData() {
         ObjectGroupObjectData data = new ObjectGroupObjectData();
-        data.data.content = new byte[]{0, 0, 0, (byte) 0x80, 0, 0, 0, 0};
+        data.data.setContent(new byte[]{0, 0, 0, (byte) 0x80, 0, 0, 0, 0});
         return data;
     }
 

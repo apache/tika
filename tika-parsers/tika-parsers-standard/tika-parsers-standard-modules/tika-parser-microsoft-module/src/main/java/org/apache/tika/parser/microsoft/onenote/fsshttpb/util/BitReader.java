@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import java.io.IOException;
-import java.util.BitSet;
 import java.util.UUID;
 
 /**
@@ -65,18 +64,6 @@ public class BitReader {
         this.startPosition = this.offset;
         this.length = (long) array.length * 8;
         this.byteArray = array;
-    }
-
-    private static String toBinaryString(BitSet bs, int nbits) {
-        final StringBuilder buffer = new StringBuilder(bs.size());
-        for (int i = nbits - 1; i >= 0; --i) {
-            if (i < bs.size()) {
-                buffer.append(bs.get(i) ? "1" : "0");
-            } else {
-                buffer.append("0");
-            }
-        }
-        return buffer.toString();
     }
 
     public boolean getCurrent() {
@@ -198,12 +185,8 @@ public class BitReader {
      * @return Returns the constructed byte array.
      */
     private byte[] getBytes(int needReadlength, int size) throws IOException {
-        // Every GUID, ExGuid and compact integer in a OneNote file is read through here, so
-        // whole output bytes are assembled with shifts (or a plain array copy when
-        // byte-aligned) instead of stepping moveNext()/getCurrent() through a BitSet. Bit i of
-        // the result is the i-th bit after the current offset, least significant bit first,
-        // exactly as before. The up-front bounds check means every source byte touched below
-        // holds at least one requested bit.
+        // Bit i of the result is bit i after the current offset, least significant bit first.
+        // The bounds check below guarantees every source byte read holds a requested bit.
         long start = this.offset + 1;
         if (needReadlength > this.length - start) {
             this.offset = this.length;

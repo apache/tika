@@ -123,7 +123,7 @@ public class RevisionStoreObjectGroup {
                 if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
                     EncryptionObject encrypObject = new EncryptionObject();
                     encrypObject.objectDeclaration = objectDeclaration;
-                    encrypObject.objectData = objectData.data.content;
+                    encrypObject.objectData = objectData.data.getContent();
                     objectGroup.encryptionObjects.add(encrypObject);
                 }
             }

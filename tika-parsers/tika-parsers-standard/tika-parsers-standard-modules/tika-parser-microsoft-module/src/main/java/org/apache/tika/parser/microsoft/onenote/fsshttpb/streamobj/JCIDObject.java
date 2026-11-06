@@ -38,6 +38,6 @@ public class JCIDObject {
                       ObjectGroupObjectData objectData) throws IOException {
         this.objectDeclaration = objectDeclaration;
         this.jcid = new JCID();
-        this.jcid.doDeserializeFromByteArray(objectData.data.content, 0);
+        this.jcid.doDeserializeFromByteArray(objectData.data.getContent(), 0);
     }
 }
