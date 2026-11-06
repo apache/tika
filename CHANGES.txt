@@ -76,8 +76,9 @@ Release 4.3.0 - ???
      instead of showing empty boxes or nothing (TIKA-5005).
      
    * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
-     for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
-     module it needs (TIKA-5006).
+     for EKS IAM roles for service accounts (IRSA), and "default" for the AWS SDK default
+     chain, which covers ECS task roles and EKS Pod Identity; the plugin now bundles the
+     AWS STS module these need (TIKA-5006).
 
    * tika-grpc applies parse-context.timeout-limits and exception-reporting in the server
      process too, so its backstop for a hung worker no longer falls back to the built-in
