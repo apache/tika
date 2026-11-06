@@ -112,6 +112,12 @@ amount of evidence: two decodes that differ in one character can still have a la
 structural charset when the margin is below the model's `getDeferThreshold()` (chosen per model
 by the trainer).
 
+Whatever decides, an ISO-8859 pick becomes its windows-125x sibling (ISO-8859-2 -> windows-1250,
+ISO-8859-1 or -15 -> windows-1252, and so on) when the two decodes differ only at 0x80-0x9F bytes
+that the windows charset prints: those bytes are windows punctuation, never ISO-8859 text.  A
+0x80-0x9F byte after another high byte is not counted, since it is more likely a UTF-8
+continuation byte.
+
 == tika-eval fields
 
 [cols="1,3"]

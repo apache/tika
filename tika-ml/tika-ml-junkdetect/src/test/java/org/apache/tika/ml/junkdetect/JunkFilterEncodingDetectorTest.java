@@ -17,6 +17,7 @@
 package org.apache.tika.ml.junkdetect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.Charset;
@@ -346,6 +347,61 @@ public class JunkFilterEncodingDetectorTest {
                 new EncodingResult(win1252, 0.6f, "windows-1252", EncodingResult.ResultType.STATISTICAL));
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals(utf8, new JunkFilterEncodingDetector(MODEL).detect(tis, new Metadata(), pc).get(0).getCharset());
+        }
+    }
+
+    private static final Charset ISO_8859_2 = Charset.forName("ISO-8859-2");
+    private static final Charset WIN_1250 = Charset.forName("windows-1250");
+
+    /** Polish whose letters (ł ę ó ż) read the same in ISO-8859-2 and windows-1250; only the ellipsis differs. */
+    private static byte[] polishWithEllipsis() {
+        return "<p>Z\u0142oty \u017c\u00f3\u0142w pe\u0142z\u0142 bardzo wolno\u2026 a\u017c do rzeki.</p>".getBytes(WIN_1250);
+    }
+
+    @Test
+    public void c1PunctuationUpgradesIsoToWindowsSibling() {
+        assertEquals(WIN_1250, JunkFilterEncodingDetector.windowsSibling(ISO_8859_2, polishWithEllipsis()));
+        assertEquals(Charset.forName("windows-1252"), JunkFilterEncodingDetector.windowsSibling(
+                Charset.forName("ISO-8859-15"), "Il a dit \u201coui\u201d.".getBytes(Charset.forName("windows-1252"))));
+    }
+
+    /** A letter that differs between the siblings means the text decides, so a stray C1 byte does not. */
+    @Test
+    public void c1ByteDoesNotOverrideDifferingLetters() {
+        byte[] bytes = "Zielona \u0142\u0105ka \u015bwieci\u2026".getBytes(ISO_8859_2);
+        bytes[bytes.length - 1] = (byte) 0x85;
+        assertNull(JunkFilterEncodingDetector.windowsSibling(ISO_8859_2, bytes));
+    }
+
+    /** UTF-8 \u00df (C3 9F) read as Latin is mojibake; its 0x9F is not windows-1252 evidence. */
+    @Test
+    public void utf8ContinuationByteIsNotC1Evidence() {
+        assertNull(JunkFilterEncodingDetector.windowsSibling(Charset.forName("ISO-8859-15"),
+                "Schlie\u00dfen".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    /** 0x8D is undefined in windows-1253, so the sibling would not read better. */
+    @Test
+    public void c1ByteUndefinedInSiblingIsNotEvidence() {
+        assertNull(JunkFilterEncodingDetector.windowsSibling(Charset.forName("ISO-8859-7"),
+                new byte[] {'a', ' ', (byte) 0x8D, ' ', 'b'}));
+    }
+
+    @Test
+    public void onlyIsoPicksHaveASibling() {
+        assertNull(JunkFilterEncodingDetector.windowsSibling(WIN_1250, polishWithEllipsis()));
+        assertNull(JunkFilterEncodingDetector.windowsSibling(ISO_8859_2, "plain ascii".getBytes(StandardCharsets.US_ASCII)));
+    }
+
+    /** A declared ISO-8859-2 page whose only high-byte difference is a windows-1250 ellipsis is windows-1250. */
+    @Test
+    public void declaredIsoWithWindowsEllipsisDetectsAsWindows() throws Exception {
+        ParseContext pc = contextWith(
+                new EncodingResult(ISO_8859_2, 1.0f, "ISO-8859-2", EncodingResult.ResultType.DECLARATIVE),
+                new EncodingResult(ISO_8859_2, 0.9f, "ISO-8859-2", EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(WIN_1250, 0.8f, "windows-1250", EncodingResult.ResultType.STATISTICAL));
+        try (TikaInputStream tis = TikaInputStream.get(polishWithEllipsis())) {
+            assertEquals(WIN_1250, new JunkFilterEncodingDetector(MODEL).detect(tis, new Metadata(), pc).get(0).getCharset());
         }
     }
 }
