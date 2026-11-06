@@ -103,6 +103,9 @@ Release 4.3.0 - ???
      USDZ packages (model/vnd.usdz+zip). They are still unpacked as zip archives, and keep their
      detected type in the output (TIKA-5029).
 
+   * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
+     moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
+     
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary
      OpenPGP signatures (application/pgp-signature) are detected by content; they were
@@ -226,6 +229,11 @@ Release 4.3.0 - ???
      when there is no text track; otherwise it reads every block header, seeking past
      other tracks' blocks in a file and reading through them in a stream. No container
      metadata yet. Off with extractSubtitles on matroska-parser (TIKA-5030).
+
+   * MP4Parser extracts CEA-608 closed captions (CC1-CC4) as embedded text/vtt
+     documents: from QuickTime c608 tracks by default (off with extractClosedCaptions),
+     and from H.264/HEVC SEI with videoCaptionScan PROBE or FULL. Caption reads have
+     their own per-file limits (TIKA-5039).
 
    * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
      cover as the THUMBNAIL embedded document, the other images, and the text, stored,
