@@ -41,6 +41,10 @@ Release 4.3.0 - ???
      the model part inside the package. The old name is an alias, so it still resolves as
      input, but detection output and metadata now carry model/3mf (TIKA-5049).
 
+   * tika-app -T (--text-main) and the GUI's "Main content" view use Readability instead of
+     boilerpipe, and trim HTML pages only: other formats come out as full text, as with -t.
+     BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
+
   SERVER, PIPES AND OPERATIONS
 
    * tika-server sets any field of the config's "server" block from the command line
@@ -95,6 +99,13 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * HTML main-content extraction: tika-readability is a jsoup-only Java port of Mozilla
+     Readability, and "readability-jsoup-filter" in the parse context runs it in JSoupParser
+     (off by default; HTML documents only, never message bodies or other HTML inside a
+     document, so .mht saved pages are not trimmed; tk:readability:* metadata). "jsoup-filters"
+     runs a list of jsoup filters, including your own JsoupFilter implementations, in order
+     (TIKA-5054).
+     
    * Container formats that were detected only as generic OLE2, OPC or zip are now detected by
      their streams, package relationships or entries: Autodesk Revit projects and families,
      3ds Max scenes, Ichitaro documents, Windows Thumbs.db caches and newer SolidWorks files

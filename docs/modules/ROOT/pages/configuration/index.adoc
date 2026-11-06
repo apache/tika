@@ -421,6 +421,8 @@ Other configuration:
 
 * xref:configuration/metadata-filters.adoc[Metadata Filters] — trim, rename and restrict the
   metadata that leaves the parse
+* xref:configuration/jsoup-filters.adoc[jsoup Filters] — main-content extraction (Readability)
+  and other rewrites of HTML pages before output
 * xref:configuration/detectors.adoc[Detectors] — content (MIME) detection, including the opt-in
   PKCS7/CMS detector
 * xref:configuration/digesters.adoc[Digesters] — cryptographic hashes of documents

@@ -7,6 +7,12 @@ The Apache Software Foundation (http://www.apache.org/).
 Copyright 1993-2010 University Corporation for Atmospheric Research/Unidata
 This software contains code derived from UCAR/Unidata's NetCDF library.
 
+tika-readability is a Java port of Mozilla's Readability.js (https://github.com/mozilla/readability),
+licensed under the Apache License 2.0:
+  Readability
+  Copyright (c) 2010 Arc90 Inc
+  Copyright (c) 2010-2026 Mozilla and Contributors
+
 Tika-parsers component uses CDDL/LGPL dual-licensed dependency: jhighlight (https://github.com/codelibs/jhighlight)
 
 IPTC Photo Metadata descriptions Copyright 2010 International Press Telecommunications Council.

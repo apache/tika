@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
+  <artifactId>tika-readability</artifactId>
+  <name>Apache Tika readability</name>
+  <description>
+    Java port of Mozilla's Readability.js main-content extraction over a jsoup DOM.
+    Depends only on jsoup.
+  </description>
+
+  <properties>
+    <!-- upstream commit this port tracks; the conformance suite is fetched at this commit -->
+    <readability.upstream.sha>ab4027a8b37669745016869a37a504727992b2ba</readability.upstream.sha>
+    <readability.upstream.sha512>03d131a715ce83def1d3142b5c9946da0a92f99f982036caf03858e26b131b9d73526b29e653a0c39be9693c4735eaf522230c8990f68d409d53e56e0ebc07eb</readability.upstream.sha512>
+    <readability.skipUpstreamTests>false</readability.skipUpstreamTests>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <!-- Mozilla's test pages are third-party web snapshots: fetched (and cached in the
+             local repo) at test time, never committed or shipped. -->
+        <groupId>com.googlecode.maven-download-plugin</groupId>
+        <artifactId>download-maven-plugin</artifactId>
+        <version>1.13.0</version>
+        <executions>
+          <execution>
+            <id>fetch-readability-test-pages</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>wget</goal>
+            </goals>
+            <configuration>
+              <url>https://codeload.github.com/mozilla/readability/tar.gz/${readability.upstream.sha}</url>
+              <outputFileName>readability-${readability.upstream.sha}.tar.gz</outputFileName>
+              <outputDirectory>${project.build.directory}/readability-upstream</outputDirectory>
+              <unpack>true</unpack>
+              <sha512>${readability.upstream.sha512}</sha512>
+              <skip>${readability.skipUpstreamTests}</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <readability.testPages>${project.build.directory}/readability-upstream/readability-${readability.upstream.sha}/test/test-pages</readability.testPages>
+            <readability.skipUpstreamTests>${readability.skipUpstreamTests}</readability.skipUpstreamTests>
+            <readability.report>${project.build.directory}/readability-conformance.txt</readability.report>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${puppycrawl.version}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>validate</phase>
+            <configuration>
+              <configLocation>checkstyle.xml</configLocation>
+              <inputEncoding>UTF-8</inputEncoding>
+              <consoleOutput>false</consoleOutput>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
+              <violationSeverity>error</violationSeverity>
+              <failOnViolation>true</failOnViolation>
+            </configuration>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <inputExcludes>
+            <inputExclude>src/test/resources/**</inputExclude>
+          </inputExcludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.readability</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

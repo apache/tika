@@ -138,7 +138,9 @@ xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting].
 |Output HTML content.
 
 |`-T`, `--text-main`
-|Output plain text, main content only, via the boilerpipe handler.
+|Output plain text. For HTML pages, main content only, via
+xref:configuration/jsoup-filters.adoc[Readability]; other formats get their full text, as with `-t`.
+(Before 4.3.0 this used boilerpipe.)
 
 |`-A`, `--text-all`
 |Output all text content.

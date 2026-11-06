@@ -17,9 +17,13 @@
 package org.apache.tika.serialization;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,18 +64,17 @@ public class ParseContextUtils {
     private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
     /**
-     * Mapping of array config keys to their context keys and composite wrapper factories.
-     * Key: config name (e.g., "metadata-filters")
-     * Value: (contextKey, componentInterface)
+     * Array configs whose composite is not itself a registered component. Any other array
+     * entry resolves through a registered component with a {@code (List<T>)} constructor;
+     * see {@link #listComposite(String)}.
      */
     private static final Map<String, ArrayConfigInfo> ARRAY_CONFIGS = Map.of(
-            "metadata-filters", new ArrayConfigInfo(MetadataFilter.class, MetadataFilter.class)
+            "metadata-filters", new ArrayConfigInfo(MetadataFilter.class, MetadataFilter.class,
+                    components -> new CompositeMetadataFilter(castList(components)))
     );
 
-    /**
-     * Holds information about how to process array configs.
-     */
-    private record ArrayConfigInfo(Class<?> contextKey, Class<?> componentInterface) {}
+    private record ArrayConfigInfo(Class<?> contextKey, Class<?> componentInterface,
+                                   Function<List<Object>, Object> factory) {}
 
     /**
      * Resolves all JSON configs from ParseContext and adds them to the resolved cache.
@@ -105,11 +108,16 @@ public class ParseContextUtils {
         // First, process known array configs (e.g., "metadata-filters")
         // These don't depend on the parse-context registry
         for (String friendlyName : new ArrayList<>(jsonConfigs.keySet())) {
-            if (ARRAY_CONFIGS.containsKey(friendlyName)) {
-                JsonConfig jsonConfig = jsonConfigs.get(friendlyName);
-                if (jsonConfig != null) {
-                    resolveArrayConfig(friendlyName, jsonConfig, context, classLoader);
-                }
+            JsonConfig jsonConfig = jsonConfigs.get(friendlyName);
+            if (jsonConfig == null) {
+                continue;
+            }
+            ArrayConfigInfo configInfo = ARRAY_CONFIGS.get(friendlyName);
+            if (configInfo == null && jsonConfig.json().stripLeading().startsWith("[")) {
+                configInfo = listComposite(friendlyName);
+            }
+            if (configInfo != null) {
+                resolveArrayConfig(friendlyName, jsonConfig, context, classLoader, configInfo);
             }
         }
 
@@ -199,13 +207,9 @@ public class ParseContextUtils {
      */
     @SuppressWarnings("unchecked")
     private static boolean resolveArrayConfig(String configName, JsonConfig jsonConfig,
-                                              ParseContext context, ClassLoader classLoader)
+                                              ParseContext context, ClassLoader classLoader,
+                                              ArrayConfigInfo configInfo)
             throws TikaConfigException {
-        ArrayConfigInfo configInfo = ARRAY_CONFIGS.get(configName);
-        if (configInfo == null) {
-            return false;
-        }
-
         try {
             JsonNode arrayNode = MAPPER.readTree(jsonConfig.json());
             if (!arrayNode.isArray()) {
@@ -241,15 +245,13 @@ public class ParseContextUtils {
             }
 
             // Create the composite and add to ParseContext
-            if (!components.isEmpty()) {
-                Object composite = createComposite(configName, components, configInfo);
-                if (composite != null) {
-                    context.setResolvedConfig(configName, composite);
-                    context.set((Class) configInfo.contextKey(), composite);
-                    LOG.debug("Resolved '{}' -> {} with {} components",
-                            configName, composite.getClass().getSimpleName(), components.size());
-                    return true;
-                }
+            if (!components.isEmpty() || !ARRAY_CONFIGS.containsKey(configName)) {
+                Object composite = configInfo.factory().apply(components);
+                context.setResolvedConfig(configName, composite);
+                context.set((Class) configInfo.contextKey(), composite);
+                LOG.debug("Resolved '{}' -> {} with {} components",
+                        configName, composite.getClass().getSimpleName(), components.size());
+                return true;
             }
         } catch (IOException e) {
             throw new TikaConfigException("Failed to parse array config '" +
@@ -260,24 +262,39 @@ public class ParseContextUtils {
     }
 
     /**
-     * Creates a composite component from a list of individual components.
+     * A registered component with a public {@code (List<T>)} constructor is a composite: its
+     * name takes a JSON array of {@code T} components, e.g. {@code "jsoup-filters": [...]}.
      *
-     * @param configName the config name (for error messages)
-     * @param components the list of components
-     * @param configInfo the array config info
-     * @return the composite component, or null if creation failed
+     * @return null if {@code friendlyName} is not such a component
      */
-    @SuppressWarnings("unchecked")
-    private static Object createComposite(String configName, List<Object> components,
-                                          ArrayConfigInfo configInfo) {
-        // Handle known composite types
-        if (configInfo.componentInterface() == MetadataFilter.class) {
-            List<MetadataFilter> filters = (List<MetadataFilter>) (List<?>) components;
-            return new CompositeMetadataFilter(filters);
+    private static ArrayConfigInfo listComposite(String friendlyName) {
+        var optionalInfo = ComponentNameResolver.getComponentInfo(friendlyName);
+        if (optionalInfo.isEmpty()) {
+            return null;
         }
-
-        // Add more composite types as needed
-        LOG.warn("No composite factory for '{}'", configName);
+        ComponentInfo info = optionalInfo.get();
+        for (Constructor<?> c : info.componentClass().getConstructors()) {
+            Type[] params = c.getGenericParameterTypes();
+            if (params.length == 1 && params[0] instanceof ParameterizedType pt
+                    && pt.getRawType() == List.class
+                    && pt.getActualTypeArguments()[0] instanceof Class<?> elementType) {
+                return new ArrayConfigInfo(ComponentNameResolver.determineContextKey(info),
+                        elementType, components -> newComposite(c, components));
+            }
+        }
         return null;
+    }
+
+    private static Object newComposite(Constructor<?> c, List<Object> components) {
+        try {
+            return c.newInstance(components);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Cannot construct " + c.getDeclaringClass().getName(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> List<T> castList(List<Object> components) {
+        return (List<T>) (List<?>) components;
     }
 }
