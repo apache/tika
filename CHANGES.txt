@@ -89,6 +89,9 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
+     moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
+     
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary
      OpenPGP signatures (application/pgp-signature) are detected by content; they were
