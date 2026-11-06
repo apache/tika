@@ -835,7 +835,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     /**
      * TeX goes out raw: the renderer's escaping ({@code \\mathcal}, {@code u\\_0}) breaks
      * math-aware readers. In a table cell the renderer still escapes {@code |}, which GFM
-     * unescapes on read.
+     * unescapes on read. The span's text is document content: a {@code <} gets a space after
+     * it, which TeX ignores, so it cannot open an HTML tag, comment or autolink.
      */
     private void appendMath(String tex) {
         if (tex.isEmpty()) {
@@ -843,8 +844,24 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         }
         ensureInlineContainer();
         HtmlInline raw = new HtmlInline();
-        raw.setLiteral(collapseLineBreaks(tex));
+        raw.setLiteral(spaceAfterLessThan(collapseLineBreaks(tex)));
         stack.peek().appendChild(raw);
+    }
+
+    // a trailing "<" gets one too: the text after the span would follow it directly
+    private static String spaceAfterLessThan(String s) {
+        if (s.indexOf('<') < 0) {
+            return s;
+        }
+        StringBuilder sb = new StringBuilder(s.length() + 8);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            sb.append(c);
+            if (c == '<' && (i + 1 == s.length() || !Character.isWhitespace(s.charAt(i + 1)))) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
     }
 
     /**
