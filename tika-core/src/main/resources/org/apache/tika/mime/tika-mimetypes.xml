@@ -2874,7 +2874,9 @@
   </mime-type>
   <mime-type type="application/vnd.rapid"/>
   <mime-type type="application/vnd.recordare.musicxml">
+    <_comment>Compressed MusicXML</_comment>
     <glob pattern="*.mxl"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
   <mime-type type="application/vnd.recordare.musicxml+xml">
     <glob pattern="*.musicxml"/>
@@ -3913,6 +3915,13 @@
     <sub-class-of type="application/xml"/>
   </mime-type>
 
+  <mime-type type="application/x-powerbi">
+    <_comment>Microsoft Power BI report or template</_comment>
+    <glob pattern="*.pbix"/>
+    <glob pattern="*.pbit"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-cdf">
     <_comment>CD Audio</_comment>
     <magic priority="50">
@@ -3953,6 +3962,19 @@
         <match value="\x07" offset="4" type="string"/>
       </match>
     </magic>
+  </mime-type>
+
+  <mime-type type="application/x-anki-package">
+    <_comment>Anki flashcard package</_comment>
+    <glob pattern="*.apkg"/>
+    <glob pattern="*.colpkg"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
+  <mime-type type="application/x-appinventor-project">
+    <_comment>MIT App Inventor project</_comment>
+    <glob pattern="*.aia"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-brotli">
@@ -4338,6 +4360,12 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-fritzing-bundle">
+    <_comment>Fritzing sketch bundle</_comment>
+    <glob pattern="*.fzz"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-futuresplash">
     <_comment>Macromedia FutureSplash File</_comment>
     <glob pattern="*.spl"/>
@@ -4554,6 +4582,12 @@
     </magic>
     <glob pattern="*.latex"/>
     <sub-class-of type="application/x-tex"/>
+  </mime-type>
+
+  <mime-type type="application/x-lego-lxf">
+    <_comment>LEGO Digital Designer model</_comment>
+    <glob pattern="*.lxf"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-lha">
@@ -5000,6 +5034,12 @@
     <glob pattern="*.wri"/>
   </mime-type>
 
+  <mime-type type="application/x-musescore">
+    <_comment>MuseScore score</_comment>
+    <glob pattern="*.mscz"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-mysql-db">
   </mime-type>
   <mime-type type="application/x-mysql-table-definition">
@@ -5339,6 +5379,13 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-scratch-project">
+    <_comment>Scratch project</_comment>
+    <glob pattern="*.sb2"/>
+    <glob pattern="*.sb3"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-sh">
     <_comment>UNIX/LINUX Shell Script</_comment>
     <magic priority="50">
@@ -5357,6 +5404,12 @@
     <tika:link>https://developer.sketch.com/file-format/</tika:link>
     <sub-class-of type="application/zip"/>
     <glob pattern="*.sketch"/>
+  </mime-type>
+
+  <mime-type type="application/x-smarttech-notebook">
+    <_comment>SMART Notebook lesson</_comment>
+    <glob pattern="*.notebook"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-shar">
@@ -5749,6 +5802,11 @@
     <_comment>Virtual Disk Format</_comment>
     <tika:link>http://en.wikipedia.org/wiki/VMDK</tika:link>
     <glob pattern="*.vmdk"/>
+  </mime-type>
+
+  <mime-type type="application/x-vnd.corel.draw.document+zip">
+    <_comment>CorelDRAW drawing (zip container)</_comment>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-wais-source">
@@ -7887,6 +7945,13 @@
   </mime-type>
   <mime-type type="model/vnd.parasolid.transmit.binary"/>
   <mime-type type="model/vnd.parasolid.transmit.text"/>
+
+  <mime-type type="model/vnd.usdz+zip">
+    <_comment>Universal Scene Description zip package</_comment>
+    <tika:link>https://www.iana.org/assignments/media-types/model/vnd.usdz+zip</tika:link>
+    <glob pattern="*.usdz"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
   <mime-type type="model/vnd.vtu">
     <glob pattern="*.vtu"/>
   </mime-type>

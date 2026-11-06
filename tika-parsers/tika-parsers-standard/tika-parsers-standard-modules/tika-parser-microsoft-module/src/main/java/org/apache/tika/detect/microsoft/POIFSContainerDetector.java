@@ -203,7 +203,11 @@ public class POIFSContainerDetector implements Detector {
 
     private static final String VIDEO_POST_QUEUE = "VideoPostQueue".toUpperCase(Locale.ROOT);
 
-    private static final String JSRV = "JSRV_".toUpperCase(Locale.ROOT);
+    private static final String JSRV_SUMMARY =
+            "\u0004JSRV_SummaryInformation".toUpperCase(Locale.ROOT);
+
+    private static final String JSRV_SEGMENT =
+            "\u0004JSRV_SegmentInformation".toUpperCase(Locale.ROOT);
 
     private static final String CATALOG = "Catalog".toUpperCase(Locale.ROOT);
 
@@ -341,7 +345,7 @@ public class POIFSContainerDetector implements Detector {
             return MAX_3DS;
         } else if (isThumbsDb(ucNames)) {
             return THUMBS_DB;
-        } else if (anyContains(ucNames, JSRV)) {
+        } else if (ucNames.contains(JSRV_SUMMARY) || ucNames.contains(JSRV_SEGMENT)) {
             return ICHITARO;
         } else if (ucNames.contains(STAR_CALC_DOCUMENT)) {
             // Star Office Calc
@@ -455,15 +459,6 @@ public class POIFSContainerDetector implements Detector {
             }
         }
         return true;
-    }
-
-    private static boolean anyContains(Set<String> ucNames, String part) {
-        for (String name : ucNames) {
-            if (name.contains(part)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static MediaType checkEncrypted(Set<String> ucNames, DirectoryEntry root) {

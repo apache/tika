@@ -94,7 +94,7 @@ public class ContainerFormatDetectionTest {
                 ole2("ClassData", "ClassDirectory3", "Config", "DllDirectory", "Scene",
                         "VideoPostQueue"));
         assertEquals("application/x-ichitaro",
-                ole2("\u0005JSRV_SummaryInformation", "DocumentText", "DocumentEditStyles"));
+                ole2("\u0004JSRV_SegmentInformation", "\u0004JSRV_SummaryInformation", "DocumentText"));
         assertEquals("application/x-ms-thumbs-db", ole2("Catalog", "1", "01", "11"));
         assertEquals("application/sldworks",
                 ole2("ISolidWorksInformation", "Header2", "Preview", "Contents/"));
@@ -106,6 +106,7 @@ public class ContainerFormatDetectionTest {
         assertEquals("application/x-tika-msoffice", ole2("Catalog"));
         assertEquals("application/x-tika-msoffice", ole2("BasicFileInfo", "Contents"));
         assertEquals("application/x-tika-msoffice", ole2("Scene", "ClassDirectory3"));
+        assertEquals("application/x-tika-msoffice", ole2("MyJSRV_Notes", "Data"));
     }
 
     @Test

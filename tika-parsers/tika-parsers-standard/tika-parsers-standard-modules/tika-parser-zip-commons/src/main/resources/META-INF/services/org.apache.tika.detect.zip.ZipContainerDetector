@@ -23,3 +23,4 @@ org.apache.tika.detect.zip.FrictionlessPackageDetector
 
 org.apache.tika.detect.zip.GeoGebraDetector
 org.apache.tika.detect.zip.XPIDetector
+org.apache.tika.detect.zip.AppPackageDetector
