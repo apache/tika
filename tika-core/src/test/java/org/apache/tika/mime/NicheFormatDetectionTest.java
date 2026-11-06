@@ -281,6 +281,50 @@ public class NicheFormatDetectionTest {
     }
 
     @Test
+    public void testScienceFormats() throws Exception {
+        assertDetected(MediaType.application("x-nexrad-level3"),
+                "SDUS63 KSGF 280002\r\r\nDODSGF\r\r\n\u0000®L­");
+        assertDetected(MediaType.OCTET_STREAM, "SDUS63 KSGF 280002\r\nDODSGF\r\n");
+        assertDetected(MediaType.application("x-bigbed"), "ëò\u0089\u0087\u0004\u0000\b\u0000");
+        assertDetected(MediaType.application("x-bigwig"), "&ü\u008f\u0088\u0004\u0000\n\u0000");
+        assertDetected(MediaType.OCTET_STREAM, "&ü\u008f\u0088\t\u0000\n\u0000");
+        assertDetected(MediaType.application("x-ucsc-2bit"), "C'A\u001a\u0000\u0000\u0000\u0000î");
+        assertDetected(MediaType.application("x-ucsc-2bit"), "C'A\u001a\u0001\u0000\u0000\u0000s");
+        assertDetected(MediaType.application("x-bam"), "BAM\u0001j\u0006\u0000\u0000@HD\tVN:1.0");
+        assertDetected(MediaType.application("x-bam-index"), "BAI\u0001\u0016\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-osm-pbf"), "\u0000\u0000\u0000\u000e\n\tOSMHeader\u0018");
+        assertDetected(MediaType.application("x-ligo-frame"), "IGWD\u0000\b\u0001\u0002");
+    }
+
+    @Test
+    public void testDiskAndFirmwareImages() throws Exception {
+        assertDetected(MediaType.application("x-qemu-disk"), "QFIû\u0000\u0000\u0000\u0003");
+        assertDetected(MediaType.OCTET_STREAM, "QFIû\u0000\u0000\u0000\u0007");
+        assertDetected(MediaType.application("x-imagedisk"), "IMD 1.18: 12/07/2013  8:49:58\r\n\u001a");
+        assertDetected(MediaType.application("x-mame-chd"), "MComprHD\u0000\u0000\u0000|\u0000\u0000\u0000\u0005");
+        assertDetected(MediaType.application("x-device-tree-blob"),
+                "Ð\rþí\u0000µCè\u0000\u0000\u00008\u0000µ?ü\u0000\u0000\u0000(\u0000\u0000\u0000\u0011");
+        assertDetected(MediaType.OCTET_STREAM,
+                "Ð\rþí\u0000µCè\u0000\u0000\u00008\u0000µ?ü\u0000\u0000\u0000(\u0000\u0000\u0000\u0002");
+        StringBuilder uimage = new StringBuilder("'\u0005\u0019V");
+        uimage.append("\u0000".repeat(24)).append("\u0005\u0002\u0002\u0003DD-WRT");
+        assertDetected(MediaType.application("x-uboot-image"), uimage.toString());
+        assertDetected(MediaType.application("x-ubi-image"), "UBI#\u0001\u0000\u0000\u0000");
+        assertDetected(MediaType.application("x-amiga-executable"),
+                "\u0000\u0000\u0003ó\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0002\u0000\u0000\u0000\u0000");
+    }
+
+    @Test
+    public void testMediaFormats() throws Exception {
+        assertDetected(MediaType.image("vnd.ms-dds"), "DDS |\u0000\u0000\u0000\u0007\u0010\n\u0000");
+        assertDetected(MediaType.audio("x-ym"), "YM6!LeOnArD!\u0000\u0000\u001b§");
+        assertDetected(MediaType.audio("x-ym"), "YM3!\u0000\u0000\u0001@");
+        assertDetected(MediaType.application("x-vst-preset"), "CcnK\u0000\u0000\u0000dFxCk\u0000\u0000\u0000\u0001");
+        assertDetected(MediaType.OCTET_STREAM, "CcnK\u0000\u0000\u0000dABCD");
+        assertDetected(MediaType.application("x-jw-cad"), "jw_cad(c)data....");
+    }
+
+    @Test
     public void testEstablishedNamesAreAliases() throws Exception {
         String[][] pairs = {
                 {"application/x-palmdoc", "application/x-aportisdoc"},
@@ -289,7 +333,8 @@ public class NicheFormatDetectionTest {
                 {"application/x-ms-dmp", "application/x-windows-kernel-dump"},
                 {"application/x-lz4+json", "application/x-mozlz4"},
                 {"application/x-git", "application/x-git-pack"},
-                {"application/x-clamav", "application/x-clamav-database"}};
+                {"application/x-clamav", "application/x-clamav-database"},
+                {"image/x-dds", "image/vnd.ms-dds"}};
         for (String[] pair : pairs) {
             assertEquals(MediaType.parse(pair[1]), MIME_TYPES.forName(pair[0]).getType(), pair[0]);
         }

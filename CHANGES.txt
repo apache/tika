@@ -137,6 +137,13 @@ Release 4.3.0 - ???
      control files and PhysioNet WFDB annotations are detected by content; they were
      application/octet-stream in a recent Common Crawl sample (TIKA-5029).
 
+   * NEXRAD Level III radar products, UCSC bigBed, bigWig and 2bit files, uncompressed BAM
+     and BAM indexes, OpenStreetMap PBF, LIGO/Virgo frame files, QEMU qcow disks, ImageDisk
+     floppy images, MAME CHD, devicetree blobs and FIT images, U-Boot legacy images, UBI
+     images, AmigaOS executables, DirectDraw Surface images (image/vnd.ms-dds), YM chiptunes,
+     VST presets and older Jw_cad drawings are detected by content; they were
+     application/octet-stream in a recent Common Crawl sample (TIKA-5029).
+
    * HP printer jobs are detected by content: PJL jobs by the language they enter (PCL,
      PCL XL or PostScript), and raw PCL5 and PCL XL streams. So are IBM MO:DCA (AFP)
      documents, Windows minidumps and kernel dumps, StarView metafiles, Lotus 1-2-3 files
