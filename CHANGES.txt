@@ -81,6 +81,13 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Container formats that were detected only as generic OLE2, OPC or zip are now detected by
+     their streams, package relationships or entries: Autodesk Revit projects and families,
+     3ds Max scenes, Ichitaro documents, Windows Thumbs.db caches and newer SolidWorks files
+     (OLE2); NuGet packages, FictionBook 3 e-books and Windows Hardware Lab Kit packages (OPC);
+     and Mozilla add-ons with an install.rdf or a Mozilla signature, which are now unpacked
+     as zip archives (TIKA-5029).
+
    * Blender files (.blend, .blender, application/x-blender, new) yield the preview Blender stores
      as the THUMBNAIL embedded document, for every file format version including the one
      of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read

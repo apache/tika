@@ -167,6 +167,14 @@ public class POIFSContainerDetector implements Detector {
     public static final MediaType ESRI_LAYER = application("x-esri-layer");
 
     public static final MediaType DGN_8 = image("vnd.dgn;version=8");
+
+    public static final MediaType REVIT = application("x-autodesk-revit");
+
+    public static final MediaType MAX_3DS = application("x-3ds-max");
+
+    public static final MediaType ICHITARO = application("x-ichitaro");
+
+    public static final MediaType THUMBS_DB = application("x-ms-thumbs-db");
     /**
      * Serial version UID
      */
@@ -182,6 +190,22 @@ public class POIFSContainerDetector implements Detector {
     private static final String SW_DOC_CONTENT_MGR = "SwDocContentMgr".toUpperCase(Locale.ROOT);
 
     private static final String SW_DOC_MGR_TEMP_STORAGE = "SwDocMgrTempStorage".toUpperCase(Locale.ROOT);
+
+    private static final String SW_INFORMATION = "ISolidWorksInformation".toUpperCase(Locale.ROOT);
+
+    private static final String BASIC_FILE_INFO = "BasicFileInfo".toUpperCase(Locale.ROOT);
+
+    private static final String PARTITIONS = "Partitions".toUpperCase(Locale.ROOT);
+
+    private static final String CLASS_DIRECTORY_3 = "ClassDirectory3".toUpperCase(Locale.ROOT);
+
+    private static final String SCENE = "Scene".toUpperCase(Locale.ROOT);
+
+    private static final String VIDEO_POST_QUEUE = "VideoPostQueue".toUpperCase(Locale.ROOT);
+
+    private static final String JSRV = "JSRV_".toUpperCase(Locale.ROOT);
+
+    private static final String CATALOG = "Catalog".toUpperCase(Locale.ROOT);
 
     private static final String STAR_CALC_DOCUMENT = "StarCalcDocument".toUpperCase(Locale.ROOT);
 
@@ -306,8 +330,19 @@ public class POIFSContainerDetector implements Detector {
                 return XLS;
             }
         }
-        if (ucNames.contains(SW_DOC_CONTENT_MGR) && ucNames.contains(SW_DOC_MGR_TEMP_STORAGE)) {
+        if ((ucNames.contains(SW_DOC_CONTENT_MGR) && ucNames.contains(SW_DOC_MGR_TEMP_STORAGE))
+                || ucNames.contains(SW_INFORMATION)) {
             return SLDWORKS;
+        } else if (ucNames.contains(BASIC_FILE_INFO) && ucNames.contains(PARTITIONS)) {
+            // these also hold Contents, so they must come before the CONTENTS checks
+            return REVIT;
+        } else if (ucNames.contains(CLASS_DIRECTORY_3) && ucNames.contains(SCENE)
+                && ucNames.contains(VIDEO_POST_QUEUE)) {
+            return MAX_3DS;
+        } else if (isThumbsDb(ucNames)) {
+            return THUMBS_DB;
+        } else if (anyContains(ucNames, JSRV)) {
+            return ICHITARO;
         } else if (ucNames.contains(STAR_CALC_DOCUMENT)) {
             // Star Office Calc
             return SDC;
@@ -407,6 +442,28 @@ public class POIFSContainerDetector implements Detector {
 
         // Couldn't detect a more specific type
         return OLE;
+    }
+
+    // Catalog plus thumbnail streams named by reversed decimal ids
+    private static boolean isThumbsDb(Set<String> ucNames) {
+        if (!ucNames.contains(CATALOG) || ucNames.size() < 2) {
+            return false;
+        }
+        for (String name : ucNames) {
+            if (!name.equals(CATALOG) && !name.chars().allMatch(c -> c >= '0' && c <= '9')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean anyContains(Set<String> ucNames, String part) {
+        for (String name : ucNames) {
+            if (name.contains(part)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static MediaType checkEncrypted(Set<String> ucNames, DirectoryEntry root) {
