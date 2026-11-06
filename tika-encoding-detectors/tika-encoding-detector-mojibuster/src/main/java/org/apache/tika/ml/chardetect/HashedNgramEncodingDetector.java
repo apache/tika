@@ -37,7 +37,9 @@ import org.apache.tika.detect.EncodingResult;
  * {@code 1 - gap / MARGIN_LOGITS}; anything further away is not emitted.</p>
  *
  * <p>The {@code binary} class is not a charset.  When it is the top class no
- * candidate is emitted; otherwise it is skipped.</p>
+ * candidate is emitted; otherwise it is skipped.  A probe that is
+ * {@linkplain #isTextLikeUtf8 text-like UTF-8} is never binary: the class is
+ * dropped and the remaining classes rank as if it had never won.</p>
  */
 public final class HashedNgramEncodingDetector {
 
@@ -57,6 +59,8 @@ public final class HashedNgramEncodingDetector {
     private final String[] labels;
     /** Model class index to {@link #charsets} index, or -1 for {@code binary}. */
     private final int[] classToCharset;
+    /** Index of the {@code binary} class, or -1. */
+    private final int binaryClass;
     private final ThreadLocal<Scratch> scratch;
 
     private static final class Scratch {
@@ -82,10 +86,12 @@ public final class HashedNgramEncodingDetector {
         Map<String, Integer> byName = new LinkedHashMap<>();
         List<Charset> cs = new ArrayList<>();
         int binary = 0;
+        int binaryIdx = -1;
         for (int c = 0; c < labels.length; c++) {
             if (BINARY_LABEL.equals(labels[c])) {
                 classToCharset[c] = -1;
                 binary++;
+                binaryIdx = c;
                 continue;
             }
             Charset charset;
@@ -105,6 +111,7 @@ public final class HashedNgramEncodingDetector {
         if (binary > 1) {
             throw new IOException("model has more than one binary class");
         }
+        binaryClass = binaryIdx;
         charsets = cs.toArray(new Charset[0]);
         int nClasses = labels.length;
         int nCharsets = charsets.length;
@@ -127,7 +134,8 @@ public final class HashedNgramEncodingDetector {
 
     /**
      * Ranked candidates for {@code probe}; empty when the model abstains (no
-     * non-text byte) or its top class is {@code binary}.
+     * non-text byte) or its top class is {@code binary} and the probe is not
+     * {@linkplain #isTextLikeUtf8 text-like UTF-8}.
      */
     public List<EncodingResult> detect(byte[] probe) {
         if (probe == null || probe.length == 0) {
@@ -138,14 +146,15 @@ public final class HashedNgramEncodingDetector {
         if (!model.logits(probe, 0, probe.length, logits)) {
             return Collections.emptyList();
         }
-        int top = 0;
-        for (int c = 1; c < logits.length; c++) {
-            if (logits[c] > logits[top]) {
-                top = c;
+        int top = argmax(logits, -1);
+        if (top == binaryClass) {
+            if (!isTextLikeUtf8(probe)) {
+                return Collections.emptyList();
             }
-        }
-        if (classToCharset[top] < 0) {
-            return Collections.emptyList();
+            top = argmax(logits, binaryClass);
+            if (top < 0) {
+                return Collections.emptyList();
+            }
         }
         // Merged labels (e.g. IBM420-ltr / -rtl) score, and are labelled, as their best member.
         float[] best = s.best;
@@ -180,6 +189,71 @@ public final class HashedNgramEncodingDetector {
                     EncodingResult.ResultType.STATISTICAL));
         }
         return out;
+    }
+
+    private static int argmax(float[] logits, int skip) {
+        int top = -1;
+        for (int c = 0; c < logits.length; c++) {
+            if (c != skip && (top < 0 || logits[c] > logits[top])) {
+                top = c;
+            }
+        }
+        return top;
+    }
+
+    /**
+     * Strict UTF-8 (no overlongs, surrogates or code points above U+10FFFF), where the last
+     * sequence may be cut short provided its bytes so far are a valid prefix, with no NUL and
+     * no C0 control other than TAB, LF, FF, CR and ESC.
+     */
+    static boolean isTextLikeUtf8(byte[] probe) {
+        int n = probe.length;
+        int i = 0;
+        while (i < n) {
+            int b = probe[i] & 0xFF;
+            if (b < 0x80) {
+                if (b < 0x20 && b != '\t' && b != '\n' && b != '\f' && b != '\r' && b != 0x1B) {
+                    return false;
+                }
+                i++;
+                continue;
+            }
+            int len;
+            int lo = 0x80;
+            int hi = 0xBF;
+            if (b >= 0xC2 && b <= 0xDF) {
+                len = 2;
+            } else if (b >= 0xE0 && b <= 0xEF) {
+                len = 3;
+                if (b == 0xE0) {
+                    lo = 0xA0;
+                } else if (b == 0xED) {
+                    hi = 0x9F;
+                }
+            } else if (b >= 0xF0 && b <= 0xF4) {
+                len = 4;
+                if (b == 0xF0) {
+                    lo = 0x90;
+                } else if (b == 0xF4) {
+                    hi = 0x8F;
+                }
+            } else {
+                return false;
+            }
+            for (int k = 1; k < len; k++) {
+                if (i + k >= n) {
+                    return true;
+                }
+                int c = probe[i + k] & 0xFF;
+                if (c < lo || c > hi) {
+                    return false;
+                }
+                lo = 0x80;
+                hi = 0xBF;
+            }
+            i += len;
+        }
+        return true;
     }
 
     /** Training labels that are not Java charset names. */
