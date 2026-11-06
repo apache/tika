@@ -47,7 +47,7 @@ optional; anything you omit uses its defaults.
     "exception-reporting": { /* how much exception detail is reported */ },
     "unpack-config": { /* embedded-byte extraction */ },
     "pages": { /* rendering, OCR policy and page images for every parser that renders; see below */ }
-    /* other SelfConfiguring components by component name */
+    /* parsers that read a block of their own, by component name; see below */
   },
   "server": { /* tika-server options: allowPipes, allowPerRequestConfig, cors, tlsConfig, ... */ },
   "grpc": { /* tika-grpc options */ },
@@ -83,7 +83,8 @@ produces no error and no effect:
 * the `metadata-list` body — only `maxStringLength`, `maxNestingDepth`, `maxNumberLength` and
   `typedValues` are read;
 * the body of a self-configuring component under `parse-context` — it is handed to the component
-  untouched;
+  untouched (a block for a component that does not read one has no effect and is logged as a
+  warning; see <<parse-context-components>>);
 * `_mime-include` / `_mime-exclude` when the value is neither a JSON array nor a string — a bare
   string is read as a one-element list, but any other shape yields an empty filter rather than a
   failure;
@@ -93,6 +94,19 @@ produces no error and no effect:
   both fatal.)
 
 If a setting appears to do nothing, check its spelling against one of those four first.
+
+[#parse-context-components]
+=== Parsers that read a `parse-context` block
+
+Every parser is self-configuring, but only these read a block of their own under `parse-context`,
+whether from the config file, a preset, a tika-server `/config` request, a gRPC
+`parse_context_json` or a pipes `FetchEmitTuple`: `pdf-parser`, `tesseract-ocr-parser`,
+`tess4j-parser`, `claude-vlm-parser`, `gemini-vlm-parser`, `openai-vlm-parser`, `emf-parser`,
+`wmf-parser`, `executable-parser`, `jpeg-parser`, `tiff-parser`, `raw-tiff-parser`,
+`heif-parser`, `bpg-parser`, `cr3-parser` and `web-p-parser`. A block for any other parser,
+detector, renderer or translator has no effect: Tika logs a warning naming the component, once
+per component per process, and Tika 5.0 will refuse it. Configure those components in their own
+section (`parsers`, `detectors`, ...) instead.
 
 [#typed-values]
 === Typed values in metadata JSON (`typedValues`)

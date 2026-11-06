@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -45,6 +47,9 @@ import org.apache.tika.serialization.ComponentNameResolver;
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextDeserializer.class);
+
+    // bounded by the component registry: unregistered names never get here
+    private static final Set<String> WARNED_UNREAD = ConcurrentHashMap.newKeySet();
 
     /**
      * When true, refuses context-key types blocked from untrusted wire input
@@ -114,12 +119,26 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
         while (fieldNames.hasNext()) {
             String name = fieldNames.next();
             JsonNode value = contextNode.get(name);
+            warnIfUnread(name);
             checkForDuplicateContextKey(name, seenContextKeys);
             // Store as a lazy JSON config (plain mapper: the main one may be binary/Smile).
             parseContext.setJsonConfig(name, plainMapper().writeValueAsString(value), !restricted);
         }
 
         return parseContext;
+    }
+
+    /**
+     * Warns, once per component, about a block for a self-configuring component that never
+     * reads one: it is accepted and has no effect. To be refused in 5.0.
+     */
+    private static void warnIfUnread(String name) {
+        Optional<ComponentInfo> infoOpt = ComponentNameResolver.getComponentInfo(name);
+        if (infoOpt.isPresent() && !ComponentNameResolver.readsParseContextConfig(infoOpt.get())
+                && WARNED_UNREAD.add(name)) {
+            LOG.warn(ComponentNameResolver.notRequestConfigurableMessage(name,
+                    infoOpt.get().componentClass()));
+        }
     }
 
     /**

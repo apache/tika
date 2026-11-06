@@ -46,6 +46,13 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * A parse-context block (config file, preset, tika-server /config, gRPC
+     parse_context_json, pipes FetchEmitTuple) for a parser, detector, renderer or
+     translator that never reads one is logged as a warning instead of being silently
+     ignored; Tika 5.0 will refuse it. Parsers that read a block carry the new
+     @RequestConfigurable annotation, which a custom parser that reads its own block
+     should add (TIKA-5059).
+
 
    * tika-server sets any field of the config's "server" block from the command line
      (--serverSetting <field>=<value>, repeatable) and the environment (TIKA_SERVER_SETTING_<FIELD>,

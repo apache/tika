@@ -21,6 +21,7 @@ import java.io.IOException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.config.loader.JsonMergeUtils;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
@@ -95,6 +96,7 @@ public class ConfigDeserializer {
             return defaultConfig;
         }
 
+        assertDeclaredReader(configKey);
         if (!jsonConfig.trusted()) {
             OperatorOnlyGuard.check(MAPPER, configKey, jsonConfig.json(), configClass);
         }
@@ -109,6 +111,16 @@ public class ConfigDeserializer {
         context.setResolvedConfig(configKey, configClass, config);
 
         return config;
+    }
+
+    // an undeclared reader gets a false "has no effect" warning; fails tests run with -ea
+    private static void assertDeclaredReader(String configKey) {
+        ComponentNameResolver.getComponentInfo(configKey).ifPresent(info -> {
+            assert ComponentNameResolver.readsParseContextConfig(info)
+                    : info.componentClass().getName() + " reads its '" + configKey
+                    + "' parse-context block but is not annotated @"
+                    + RequestConfigurable.class.getSimpleName();
+        });
     }
 
     /**
