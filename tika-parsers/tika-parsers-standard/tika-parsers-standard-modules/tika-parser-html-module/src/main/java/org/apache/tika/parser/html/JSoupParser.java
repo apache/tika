@@ -213,6 +213,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
             tis.removeCloseShield();
         }
         document.quirksMode(Document.QuirksMode.quirks);
+        document = applyFilter(document, metadata, context);
         ContentHandler xhtml = new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata, context, extractScripts));
         xhtml.startDocument();
@@ -225,6 +226,10 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         }
     }
 
+    /**
+     * Parses HTML embedded in another format (a message body, an e-book). No
+     * {@link JsoupFilter} runs here: those are for HTML documents.
+     */
     public void parseString(String html, ContentHandler handler, Metadata metadata, ParseContext context) throws SAXException {
         // Get the HTML mapper from the parse context
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
@@ -242,6 +247,11 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         } finally {
             xhtml.endDocument();
         }
+    }
+
+    private static Document applyFilter(Document document, Metadata metadata, ParseContext context) {
+        JsoupFilter filter = context.get(JsoupFilter.class);
+        return filter == null ? document : filter.filter(document, metadata, context);
     }
 
     private class TikaNodeFilter implements NodeFilter {

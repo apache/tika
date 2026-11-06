@@ -43,6 +43,7 @@
     <module>tika-serialization</module>
     <!-- checks that keep images with no text from a text recognizer (JDK only) -->
     <module>tika-image-processing</module>
+    <module>tika-readability</module>
     <module>tika-plugins-core</module>
     <module>tika-detectors</module>
     <module>tika-ml</module>
