@@ -132,6 +132,11 @@ Release 4.3.0 - ???
      longer costs time and memory exponential in its nesting depth. A file node list
      referenced twice fails the structured parse (the legacy text dump still runs), and the
      tree walk stops with a warning after a visit budget sized from the file (TIKA-5057).
+
+   * OneNote legacy text dump (the fallback when structured parsing fails): a string that
+     crosses a 1 MB read boundary is written once instead of once per boundary, the last
+     byte of each read is no longer dropped, and spaces count toward the letter ratio that
+     decides whether a string is kept (TIKA-5057).
      
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary
