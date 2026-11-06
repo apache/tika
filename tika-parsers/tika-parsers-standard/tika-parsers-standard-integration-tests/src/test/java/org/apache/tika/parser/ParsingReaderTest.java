@@ -56,7 +56,7 @@ public class ParsingReaderTest extends TikaTest {
 
     @Test
     public void testXML() throws Exception {
-        String data = "<p>test <span>content</span></p>";
+        String data = "<doc>test <span>content</span></doc>";
         InputStream stream = new ByteArrayInputStream(data.getBytes(UTF_8));
         Reader reader = new ParsingReader(stream, "test.xml");
         assertEquals(' ', (char) reader.read());
