@@ -107,6 +107,8 @@
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/BPGParser.html[BPGParser]
 ** `image/bpg`
 ** `image/x-bpg`
+* `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/Cr3Parser.html[Cr3Parser]
+** `image/x-canon-cr3`
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/HeifParser.html[HeifParser]
 ** `image/avif`
 ** `image/heic`

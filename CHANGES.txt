@@ -81,6 +81,12 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Canon CR3 raws have a parser of their own, Cr3Parser in the image module, instead
+     of going through the MP4 parser: their Exif data (IFD0, Exif IFD, Canon maker note,
+     GPS) is extracted, the JPEG preview (PRVW, 1620x1080 on current bodies) is the
+     THUMBNAIL and the 160x120 THMB thumbnail is INLINE, so the thumbnail preset serves
+     a preview (TIKA-5042).
+
    * Blender files (.blend, .blender, application/x-blender, new) yield the preview Blender stores
      as the THUMBNAIL embedded document, for every file format version including the one
      of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read
