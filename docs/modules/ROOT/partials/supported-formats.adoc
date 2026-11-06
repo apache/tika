@@ -383,6 +383,8 @@
 ** `application/x-prt`
 * `org.apache.tika.parser.sas.` link:{tika-javadoc-url}/org/apache/tika/parser/sas/SAS7BDATParser.html[SAS7BDATParser]
 ** `application/x-sas-data`
+* `org.apache.tika.parser.sketchup.` link:{tika-javadoc-url}/org/apache/tika/parser/sketchup/SketchUpParser.html[SketchUpParser]
+** `application/vnd.sketchup.skp`
 * `org.apache.tika.parser.subtitle.` link:{tika-javadoc-url}/org/apache/tika/parser/subtitle/SubtitleParser.html[SubtitleParser]
 ** `application/x-subrip`
 ** `text/vtt`

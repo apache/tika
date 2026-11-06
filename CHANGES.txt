@@ -91,10 +91,13 @@ Release 4.3.0 - ???
      as the THUMBNAIL embedded document, for every file format version including the one
      of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read
      the same way; zstd needs zstd-jni on the classpath (TIKA-5036).
-     
+
    * RAR5 archives are parsed: RarParser no longer refuses them, junrar has read RAR5
      since 8.0.0 (TIKA-5043).
 
+   * SketchUp models (application/vnd.sketchup.skp, new, detected by their header) yield
+     the preview SketchUp stores as the THUMBNAIL embedded document, from SketchUp 3 to
+     2026 (TIKA-5036).
 
    * Jupyter notebooks (.ipynb, new type application/x-ipynb+json) are parsed: cell
      sources and plain-text outputs as text, kernel, language and format version as
