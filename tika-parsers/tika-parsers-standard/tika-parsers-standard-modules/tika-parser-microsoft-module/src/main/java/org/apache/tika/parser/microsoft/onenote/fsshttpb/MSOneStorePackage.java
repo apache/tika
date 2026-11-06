@@ -80,7 +80,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderCell;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -563,15 +562,6 @@ public class MSOneStorePackage {
             }
         }
         return objectsById;
-    }
-
-    private void walkObject(RevisionStoreObject object,
-                             Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                             AuthorRole authorRole, OneNoteTreeWalkerOptions options,
-                             Metadata metadata, XHTMLContentHandler xhtml, int depth)
-            throws SAXException, TikaException, IOException {
-        walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml,
-                depth, null);
     }
 
     private void walkObject(RevisionStoreObject object,
@@ -1258,7 +1248,7 @@ public class MSOneStorePackage {
             PropertyID propertyID = propertySet.rgPrids[i];
             PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
             OneNotePropertyEnum oneNotePropertyEnum =
-                    OneNotePropertyEnum.of(Unsigned.uint(propertyID.value).longValue());
+                    OneNotePropertyEnum.of(Integer.toUnsignedLong(propertyID.value));
             if (propertyType == PropertyType.ObjectID) {
                 ExGuid childReference = nextReference(referencedObjects, referenceCursor);
                 if (childReference == null) {
@@ -1546,7 +1536,7 @@ public class MSOneStorePackage {
         for (int i = 0; i < count && !guids.isFull() && !sectionGuidCollected(); i++) {
             PropertyID propertyID = propertySet.rgPrids[i];
             IProperty property = propertySet.rgData.get(i);
-            long propertyIdValue = Unsigned.uint(propertyID.value).longValue();
+            long propertyIdValue = Integer.toUnsignedLong(propertyID.value);
             PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
             if (propertyIdValue == FILE_IDENTITY_GUID_PROPERTY_ID
                     && property instanceof PrtFourBytesOfLengthFollowedByData) {

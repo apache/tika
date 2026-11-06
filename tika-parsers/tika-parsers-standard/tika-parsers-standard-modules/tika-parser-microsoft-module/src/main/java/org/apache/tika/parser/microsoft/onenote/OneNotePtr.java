@@ -162,18 +162,6 @@ class OneNotePtr {
         return guid;
     }
 
-    private byte[] deserializedReservedHeader() throws IOException {
-        if (dif.position() != offset) {
-            dif.position(offset);
-        }
-        ByteBuffer data = ByteBuffer.allocate(728);
-
-        dif.read(data);
-
-        offset = dif.position();
-        return data.array();
-    }
-
     private FileChunkReference deserializeFileChunkReference64() throws IOException {
         long stp = deserializeLittleEndianInt();
         long cb = deserializeLittleEndianInt();

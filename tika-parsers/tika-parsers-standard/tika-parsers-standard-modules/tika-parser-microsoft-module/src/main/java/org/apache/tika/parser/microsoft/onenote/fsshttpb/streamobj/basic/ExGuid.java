@@ -17,13 +17,11 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class ExGuid extends BasicObject {
@@ -82,38 +80,6 @@ public class ExGuid extends BasicObject {
      */
     public ExGuid() {
         this.guid = GuidUtil.emptyGuid();
-    }
-
-    /**
-     * This method is used to convert the element of ExGuid basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of ExGuid.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        BitWriter bitWriter = new BitWriter(21);
-
-        if (this.guid.equals(GuidUtil.emptyGuid())) {
-            bitWriter.appendUInit32(0, 8);
-        } else if (this.value >= 0x00 && this.value <= 0x1F) {
-            bitWriter.appendUInit32(ExtendedGUID5BitUintType, 3);
-            bitWriter.appendUInit32(this.value, 5);
-            bitWriter.appendGUID(this.guid);
-        } else if (this.value >= 0x20 && this.value <= 0x3FF) {
-            bitWriter.appendUInit32(ExtendedGUID10BitUintType, 6);
-            bitWriter.appendUInit32(this.value, 10);
-            bitWriter.appendGUID(this.guid);
-        } else if (this.value >= 0x400 && this.value <= 0x1FFFF) {
-            bitWriter.appendUInit32(ExtendedGUID17BitUintType, 7);
-            bitWriter.appendUInit32(this.value, 17);
-            bitWriter.appendGUID(this.guid);
-        } else if (this.value >= 0x20000) {
-            bitWriter.appendUInit32(ExtendedGUID32BitUintType, 8);
-            bitWriter.appendUInit32(this.value, 32);
-            bitWriter.appendGUID(this.guid);
-        }
-
-        return bitWriter.getByteList();
     }
 
     /**

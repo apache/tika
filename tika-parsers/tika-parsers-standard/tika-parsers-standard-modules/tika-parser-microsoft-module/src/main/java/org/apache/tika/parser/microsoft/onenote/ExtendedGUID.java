@@ -16,12 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
 public class ExtendedGUID implements Comparable<ExtendedGUID> {
     GUID guid;
@@ -90,18 +87,5 @@ public class ExtendedGUID implements Comparable<ExtendedGUID> {
     public ExtendedGUID setN(long n) {
         this.n = n;
         return this;
-    }
-
-    /**
-     * This method is used to convert the element of ExtendedGUID object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of ExtendedGUID
-     */
-    public List<Byte> SerializeToByteList() {
-        List<Byte> byteList = new ArrayList<>(guid.toByteArray());
-        for (byte b : BitConverter.getBytes(n)) {
-            byteList.add(b);
-        }
-        return byteList;
     }
 }

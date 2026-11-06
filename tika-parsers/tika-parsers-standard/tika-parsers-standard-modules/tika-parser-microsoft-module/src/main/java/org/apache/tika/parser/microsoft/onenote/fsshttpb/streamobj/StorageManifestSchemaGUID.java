@@ -16,13 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 /**
  * Specifies a storage manifest schema GUID
@@ -59,18 +56,5 @@ public class StorageManifestSchemaGUID extends StreamObject {
         }
 
         currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return A constant value 16
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(
-                ByteUtil.toListOfByte(this.guid.toString().getBytes(StandardCharsets.UTF_8)));
-        return 16;
     }
 }

@@ -47,28 +47,6 @@ public class PropertySet implements IProperty {
     public List<IProperty> rgData;
 
     /**
-     * This method is used to convert the element of PropertySet into a byte List.
-     *
-     * @return Return the byte list which store the byte information of PropertySet.
-     */
-    public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> byteList = new ArrayList<>();
-        for (byte b : BitConverter.getBytes(this.cProperties)) {
-            byteList.add(b);
-        }
-
-        for (PropertyID propertyId : this.rgPrids) {
-            byteList.addAll(propertyId.serializeToByteList());
-        }
-
-        for (IProperty property : this.rgData) {
-            byteList.addAll(property.serializeToByteList());
-        }
-
-        return byteList;
-    }
-
-    /**
      * This method is used to deserialize the PropertySet from the specified byte array and start index.
      *
      * @param byteArray  Specify the byte array.

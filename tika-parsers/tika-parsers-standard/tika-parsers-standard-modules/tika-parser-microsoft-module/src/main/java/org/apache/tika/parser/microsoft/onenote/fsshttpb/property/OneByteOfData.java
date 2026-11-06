@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class is used to represent the property contains 1 byte of data in the PropertySet.rgData stream field.
@@ -35,14 +33,5 @@ public class OneByteOfData implements IProperty {
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.data = byteArray[startIndex];
         return 1;
-    }
-
-    /**
-     * This method is used to convert the element of OneByteOfData into a byte List.
-     *
-     * @return Return the byte list which store the byte information of OneByteOfData.
-     */
-    public List<Byte> serializeToByteList() {
-        return new ArrayList<>(this.data);
     }
 }

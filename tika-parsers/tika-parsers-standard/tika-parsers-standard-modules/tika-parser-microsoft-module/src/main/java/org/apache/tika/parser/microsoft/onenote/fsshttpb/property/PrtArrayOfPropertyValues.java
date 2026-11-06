@@ -17,8 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySet;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
@@ -66,22 +64,5 @@ public class PrtArrayOfPropertyValues implements IProperty {
         }
 
         return index - startIndex;
-    }
-
-    /**
-     * This method is used to convert the element of the prtArrayOfPropertyValues into a byte List.
-     *
-     * @return Return the byte list which store the byte information of the prtArrayOfPropertyValues.
-     */
-    public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> byteList = new ArrayList<>();
-        for (byte b : BitConverter.getBytes(this.cProperties)) {
-            byteList.add(b);
-        }
-        byteList.addAll(this.propertyID.serializeToByteList());
-        for (PropertySet ps : this.data) {
-            byteList.addAll(ps.serializeToByteList());
-        }
-        return byteList;
     }
 }

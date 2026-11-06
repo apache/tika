@@ -17,15 +17,13 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.IFSSHTTPBSerializable;
 
 /**
  * Base class of data element
  */
-public abstract class DataElementData implements IFSSHTTPBSerializable {
+public abstract class DataElementData {
     /**
      * De-serialize data element data from byte array.
      *
@@ -35,11 +33,4 @@ public abstract class DataElementData implements IFSSHTTPBSerializable {
      */
     public abstract int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException;
-
-    /**
-     * Serialize item to byte list.
-     *
-     * @return The byte list.
-     */
-    public abstract List<Byte> serializeToByteList() throws TikaException, IOException;
 }

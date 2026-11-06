@@ -17,10 +17,8 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 
 /**
  * This class is used to represent a JCID
@@ -33,24 +31,6 @@ public class JCID {
     public int isFileData;
     public int isReadOnly;
     public int reserved;
-
-    /**
-     * This method is used to convert the element of JCID object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of JCID
-     */
-    public List<Byte> serializeToByteList() throws IOException {
-        BitWriter bitWriter = new BitWriter(4);
-        bitWriter.appendInit32(this.index, 16);
-        bitWriter.appendInit32(this.isBinary, 1);
-        bitWriter.appendInit32(this.isPropertySet, 1);
-        bitWriter.appendInit32(this.isGraphNode, 1);
-        bitWriter.appendInit32(this.isFileData, 1);
-        bitWriter.appendInit32(this.isReadOnly, 1);
-        bitWriter.appendInit32(this.reserved, 11);
-
-        return bitWriter.getByteList();
-    }
 
     /**
      * This method is used to deserialize the JCID object from the specified byte array and start index.

@@ -18,8 +18,6 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import java.io.IOException;
 
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.UByte;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned;
 
 /**
  * Implement a converter which converts to/from little-endian byte arrays
@@ -92,30 +90,6 @@ public class LittleEndianBitConverter {
     }
 
     /**
-     * Returns the specified 64-bit unsigned integer value as an array of bytes.
-     *
-     * @param value Specify the number to convert.
-     * @return Returns an array of bytes with length 8.
-     */
-    public static byte[] getBytes(long value) {
-        byte[] buffer = new byte[8];
-        convertToBytes(value, buffer);
-        return buffer;
-    }
-
-    /**
-     * Returns the specified 32-bit unsigned integer value as an array of bytes.
-     *
-     * @param value Specify the number to convert.
-     * @return Returns an array of bytes with length 4.
-     */
-    public static byte[] getBytes(int value) {
-        byte[] buffer = new byte[4];
-        convertToBytes(value, buffer);
-        return buffer;
-    }
-
-    /**
      * Returns a value built from the specified number of bytes from the given buffer,
      * starting at index.
      *
@@ -129,26 +103,12 @@ public class LittleEndianBitConverter {
         long ret = 0;
         int bitCount = 0;
         for (int i = 0; i < bytesToConvert; i++) {
-            UByte ubyte = Unsigned.ubyte(buffer[startIndex + i]);
-            ret |= ubyte.longValue() << bitCount;
+            ret |= Byte.toUnsignedLong(buffer[startIndex + i]) << bitCount;
 
             bitCount += 8;
         }
 
         return ret;
-    }
-
-    /**
-     * This method is used to convert the specified value to the buffer.
-     *
-     * @param value  Specify the value to convert.
-     * @param buffer Specify the buffer which copies the bytes into.
-     */
-    private static void convertToBytes(long value, byte[] buffer) {
-        for (int i = 0; i < buffer.length; i++) {
-            buffer[i] = (byte) (value & 0xff);
-            value = value >> 8;
-        }
     }
 
     /**

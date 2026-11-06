@@ -22,16 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfPropertyValues;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySet;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamHeader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfContextIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOSIDs;
@@ -148,30 +145,19 @@ public class PropertyDeserializationBoundsTest {
         return bytes;
     }
 
-    private static byte[] propertyId(int type) throws IOException {
-        PropertyID propertyID = new PropertyID();
-        propertyID.id = 1;
-        propertyID.type = type;
-        return toArray(propertyID.serializeToByteList());
+    // PropertyID: id (26 bits), type (5 bits), boolValue (1 bit), little-endian
+    private static byte[] propertyId(int type) {
+        return int32(1 | type << 26);
     }
 
-    private static byte[] streamHeader(int count) throws IOException {
-        ObjectSpaceObjectStreamHeader header = new ObjectSpaceObjectStreamHeader();
-        header.count = count;
-        return toArray(header.serializeToByteList());
+    // ObjectSpaceObjectStreamHeader: count is the low 24 bits; the flag bits stay zero
+    private static byte[] streamHeader(int count) {
+        return int32(count);
     }
 
     private static byte[] int32(int value) {
         return new byte[]{(byte) value, (byte) (value >> 8), (byte) (value >> 16),
                 (byte) (value >> 24)};
-    }
-
-    private static byte[] toArray(List<Byte> bytes) {
-        byte[] result = new byte[bytes.size()];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = bytes.get(i);
-        }
-        return result;
     }
 
     private static byte[] concat(byte[]... parts) {

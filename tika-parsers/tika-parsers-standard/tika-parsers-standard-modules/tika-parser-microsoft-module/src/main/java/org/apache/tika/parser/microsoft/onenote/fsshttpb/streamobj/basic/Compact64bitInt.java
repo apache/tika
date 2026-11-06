@@ -17,10 +17,8 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 
 /**
  * A 9-byte encoding of values in the range 0x0002000000000000 through 0xFFFFFFFFFFFFFFFF
@@ -87,45 +85,6 @@ public class Compact64bitInt extends BasicObject {
      */
     public Compact64bitInt() {
         this.decodedValue = 0;
-    }
-
-    /**
-     * This method is used to convert the element of Compact64bitInt basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of Compact64bitInt.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        BitWriter bitWriter = new BitWriter(9);
-
-        if (this.decodedValue == 0) {
-            bitWriter.appendUInt64(0, 8);
-        } else if (this.decodedValue >= 0x01 && this.decodedValue <= 0x7F) {
-            bitWriter.appendUInt64(CompactUint7bitType, 1);
-            bitWriter.appendUInt64(this.decodedValue, 7);
-        } else if (this.decodedValue >= 0x0080 && this.decodedValue <= 0x3FFF) {
-            bitWriter.appendUInt64(CompactUint14bitType, 2);
-            bitWriter.appendUInt64(this.decodedValue, 14);
-        } else if (this.decodedValue >= 0x004000 && this.decodedValue <= 0x1FFFFF) {
-            bitWriter.appendUInt64(CompactUint21bitType, 3);
-            bitWriter.appendUInt64(this.decodedValue, 21);
-        } else if (this.decodedValue >= 0x0200000 && this.decodedValue <= 0xFFFFFFF) {
-            bitWriter.appendUInt64(CompactUint28bitType, 4);
-            bitWriter.appendUInt64(this.decodedValue, 28);
-        } else if (this.decodedValue >= 0x010000000 && this.decodedValue <= 0x7FFFFFFFFL) {
-            bitWriter.appendUInt64(CompactUint35bitType, 5);
-            bitWriter.appendUInt64(this.decodedValue, 35);
-        } else if (this.decodedValue >= 0x00800000000L && this.decodedValue <= 0x3FFFFFFFFFFL) {
-            bitWriter.appendUInt64(CompactUint42bitType, 6);
-            bitWriter.appendUInt64(this.decodedValue, 42);
-        } else if (this.decodedValue >= 0x0040000000000L && this.decodedValue <= 0x1FFFFFFFFFFFFL) {
-            bitWriter.appendUInt64(CompactUint49bitType, 7);
-            bitWriter.appendUInt64(this.decodedValue, 49);
-        } else if (this.decodedValue >= 0x0002000000000000L) {
-            bitWriter.appendUInt64(CompactUint64bitType, 8);
-            bitWriter.appendUInt64(this.decodedValue, 64);
-        }
-        return bitWriter.getByteList();
     }
 
     /**

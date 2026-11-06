@@ -17,11 +17,9 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class SerialNumber extends BasicObject {
@@ -54,27 +52,6 @@ public class SerialNumber extends BasicObject {
      * Initializes a new instance of the SerialNumber class, this is default contractor
      */
     public SerialNumber() {
-    }
-
-    /**
-     * This method is used to convert the element of SerialNumber basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of SerialNumber.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        BitWriter bitWriter = null;
-        if (this.guid.equals(GuidUtil.emptyGuid())) {
-            bitWriter = new BitWriter(1);
-            bitWriter.appendUInit32(0, 8);
-        } else {
-            bitWriter = new BitWriter(25);
-            bitWriter.appendUInit32(128, 8);
-            bitWriter.appendGUID(this.guid);
-            bitWriter.appendUInt64(this.value, 64);
-        }
-
-        return bitWriter.getByteList();
     }
 
     /**

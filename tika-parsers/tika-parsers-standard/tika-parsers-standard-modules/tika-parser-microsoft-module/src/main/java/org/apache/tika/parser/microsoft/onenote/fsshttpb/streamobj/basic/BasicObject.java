@@ -18,16 +18,14 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.IFSSHTTPBSerializable;
 
 /**
  * Base object for FSSHTTPB.
  */
-public abstract class BasicObject implements IFSSHTTPBSerializable {
+public abstract class BasicObject {
     /**
      * Used to parse byte array to special object.
      *
@@ -60,13 +58,6 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
             throws TikaException, IOException {
         return this.doDeserializeFromByteArray(byteArray, startIndex);
     }
-
-    /**
-     * Used to serialize item to byte list.
-     *
-     * @return The byte list.
-     */
-    public abstract List<Byte> serializeToByteList() throws IOException;
 
     /**
      * Used to return the length of this element.

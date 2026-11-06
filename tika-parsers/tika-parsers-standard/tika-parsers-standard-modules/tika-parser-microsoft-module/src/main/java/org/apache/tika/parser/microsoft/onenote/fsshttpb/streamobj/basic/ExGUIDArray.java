@@ -74,23 +74,6 @@ public class ExGUIDArray extends BasicObject {
     }
 
     /**
-     * This method is used to convert the element of ExGUIDArray basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of ExGUIDArray.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        this.count.setDecodedValue(this.content.size());
-
-        List<Byte> result = new ArrayList<>(this.count.serializeToByteList());
-        for (ExGuid extendGuid : this.content) {
-            result.addAll(extendGuid.serializeToByteList());
-        }
-
-        return result;
-    }
-
-    /**
      * This method is used to deserialize the ExGUIDArray basic object from the specified byte array and start index.
      *
      * @param byteArray  Specify the byte array.

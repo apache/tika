@@ -17,19 +17,12 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 import java.io.IOException;
-import java.util.List;
 
 
 /**
  * The interface of the property in OneNote file.
  */
 public interface IProperty {
-    /**
-     * This method is used to convert the element of property into a byte List.
-     *
-     * @return Return the byte list which store the byte information of property.
-     */
-    List<Byte> serializeToByteList() throws IOException;
 
     /**
      * This method is used to deserialize the property from the specified byte array and start index.

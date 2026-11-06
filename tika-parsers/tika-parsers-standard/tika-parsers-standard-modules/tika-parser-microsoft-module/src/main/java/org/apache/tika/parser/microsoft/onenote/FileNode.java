@@ -16,13 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.io.IOException;
 import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
 
 /**
  * A FileNode structure is the basic unit for holding and referencing data in the file.
@@ -225,46 +223,6 @@ class FileNode {
     public FileNode setSubType(FileNodeUnion subType) {
         this.subType = subType;
         return this;
-    }
-
-    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaException {
-        boolean shouldPrintHeader = FndStructureConstants.nameOf(id).contains("ObjectDec");
-        if (gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
-            LOG.debug("{}[beg {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
-        }
-        propertySet.print(document, pointer, indentLevel + 1);
-        if (!childFileNodeList.children.isEmpty()) {
-            if (shouldPrintHeader) {
-                LOG.debug("{}children", IndentUtil.getIndent(indentLevel + 1));
-            }
-            for (FileNode child : childFileNodeList.children) {
-                child.print(document, pointer, indentLevel + 1);
-            }
-        }
-        if (id == FndStructureConstants.RevisionRoleDeclarationFND ||
-                id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
-            LOG.debug("{}[Revision Role {}]", IndentUtil.getIndent(indentLevel + 1),
-                    subType.revisionRoleDeclaration.revisionRole);
-
-        }
-        if (id == FndStructureConstants.RevisionManifestStart4FND ||
-                id == FndStructureConstants.RevisionManifestStart6FND ||
-                id == FndStructureConstants.RevisionManifestStart7FND) {
-            LOG.debug("{}[revisionRole {}]", IndentUtil.getIndent(indentLevel + 1),
-                    subType.revisionManifest.revisionRole);
-
-        }
-        if ((!gctxid.equals(ExtendedGUID.nil()) ||
-                id == FndStructureConstants.RevisionManifestStart7FND) && shouldPrintHeader) {
-            LOG.debug("{}[gctxid {}]", IndentUtil.getIndent(indentLevel + 1), gctxid);
-        }
-        if (!gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
-            LOG.debug("{}[end {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
-
-        }
     }
 
     /**
