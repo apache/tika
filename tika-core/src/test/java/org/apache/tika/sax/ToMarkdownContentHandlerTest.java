@@ -27,6 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Random;
 
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
@@ -1573,6 +1575,27 @@ public class ToMarkdownContentHandlerTest {
         String result = handler.toString();
         assertTrue(result.contains("a\\]b"), result);
         assertFalse(result.contains("](https://evil.example) x)"), result);
+    }
+
+    @Test
+    public void testMathSpanCannotOpenRawHtml() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        // a tagged PDF's custom "Math" structure element is written as this span
+        startElement(handler, "span", "class", "math");
+        chars(handler, "$a<b$ <img src=x onerror=alert(1)><!-- c --> <");
+        endElement(handler, "span");
+        chars(handler, "img src=y onerror=alert(2)//>");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String md = handler.toString();
+        String html = HtmlRenderer.builder().build().render(Parser.builder().build().parse(md));
+        assertFalse(html.contains("<img"), html);
+        assertFalse(html.contains("<!--"), html);
+        // TeX ignores the space
+        assertContains("$a< b$", md);
     }
 
     @Test
