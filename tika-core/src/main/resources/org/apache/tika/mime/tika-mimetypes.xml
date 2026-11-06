@@ -3055,7 +3055,9 @@
   </mime-type>
   <mime-type type="application/vnd.rapid"/>
   <mime-type type="application/vnd.recordare.musicxml">
+    <_comment>Compressed MusicXML</_comment>
     <glob pattern="*.mxl"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
   <mime-type type="application/vnd.recordare.musicxml+xml">
     <glob pattern="*.musicxml"/>
@@ -3618,6 +3620,12 @@
   <mime-type type="application/wspolicy+xml">
     <glob pattern="*.wspolicy"/>
   </mime-type>
+
+  <mime-type type="application/x-3ds-max">
+    <_comment>Autodesk 3ds Max scene</_comment>
+    <glob pattern="*.max"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
   
   <mime-type type="image/x-svm">
     <_comment>StarView Metafile</_comment>
@@ -3862,6 +3870,15 @@
   </mime-type>
   <mime-type type="application/x-authorware-seg">
     <glob pattern="*.aas"/>
+  </mime-type>
+
+  <mime-type type="application/x-autodesk-revit">
+    <_comment>Autodesk Revit project or family</_comment>
+    <glob pattern="*.rvt"/>
+    <glob pattern="*.rfa"/>
+    <glob pattern="*.rte"/>
+    <glob pattern="*.rft"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
   <mime-type type="application/x-bcpio">
@@ -4143,6 +4160,13 @@
     <sub-class-of type="application/xml"/>
   </mime-type>
 
+  <mime-type type="application/x-powerbi">
+    <_comment>Microsoft Power BI report or template</_comment>
+    <glob pattern="*.pbix"/>
+    <glob pattern="*.pbit"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-casio-fxi">
     <_comment>Casio calculator data (Yellow Computing FX-Interface)</_comment>
     <magic priority="50">
@@ -4281,6 +4305,19 @@
       <!-- HUNK_HEADER, no resident libraries, then a nonzero hunk table size -->
       <match value="(?s)\\x00\\x00\\x03\\xf3\\x00{7}[\\x01-\\xff]" type="regex" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="application/x-anki-package">
+    <_comment>Anki flashcard package</_comment>
+    <glob pattern="*.apkg"/>
+    <glob pattern="*.colpkg"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
+  <mime-type type="application/x-appinventor-project">
+    <_comment>MIT App Inventor project</_comment>
+    <glob pattern="*.aia"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-brotli">
@@ -4747,6 +4784,12 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-fritzing-bundle">
+    <_comment>Fritzing sketch bundle</_comment>
+    <glob pattern="*.fzz"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-futuresplash">
     <_comment>Macromedia FutureSplash File</_comment>
     <glob pattern="*.spl"/>
@@ -4871,6 +4914,14 @@
     </magic>
     <glob pattern="*.ibooks"/>
   </mime-type>
+
+  <mime-type type="application/x-ichitaro">
+    <_comment>JustSystems Ichitaro document</_comment>
+    <glob pattern="*.jtd"/>
+    <glob pattern="*.jtt"/>
+    <glob pattern="*.jtdc"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
   <mime-type type="application/x-idl-save-file">
     <_comment>NV5 Geospatial Interactive Data Language Save File</_comment>
     <tika:link>https://www.l3harrisgeospatial.com/docs/idl_savefile.html</tika:link>
@@ -4991,6 +5042,12 @@
     </magic>
     <glob pattern="*.latex"/>
     <sub-class-of type="application/x-tex"/>
+  </mime-type>
+
+  <mime-type type="application/x-lego-lxf">
+    <_comment>LEGO Digital Designer model</_comment>
+    <glob pattern="*.lxf"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-lha">
@@ -5301,6 +5358,13 @@
       <match value="0x535A444488F0273341" offset="0"/>
     </magic>
   </mime-type>
+
+  <mime-type type="application/x-ms-hlk-package">
+    <_comment>Windows Hardware Lab Kit / Certification Kit package</_comment>
+    <glob pattern="*.hlkx"/>
+    <glob pattern="*.hckx"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
   <mime-type type="application/x-ms-owner">
     <_comment>Temporary files created by MSOffice applications</_comment>
     <_comment>PRONOM fmt-473</_comment>
@@ -5310,6 +5374,11 @@
     <magic priority="80">
       <match value="(?s)^([\\x05-\\x0F])[\\x00\\x20-\\x7E]{10}.{43}\\1\x00" type="regex" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="application/x-ms-thumbs-db">
+    <_comment>Windows thumbnail cache (Thumbs.db)</_comment>
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
   <mime-type type="application/x-ms-nls">
     <_comment>Microsoft National Language Support</_comment>
@@ -5477,6 +5546,12 @@
     <glob pattern="*.wri"/>
   </mime-type>
 
+  <mime-type type="application/x-musescore">
+    <_comment>MuseScore score</_comment>
+    <glob pattern="*.mscz"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-mysql-db">
   </mime-type>
   <mime-type type="application/x-mysql-table-definition">
@@ -5566,6 +5641,12 @@
       <match value="0x4EF546E96CE5" type="string" offset="0"/>
     </magic>
     <glob pattern="*.shk"/>
+  </mime-type>
+  <mime-type type="application/x-nupkg">
+    <_comment>NuGet package</_comment>
+    <glob pattern="*.nupkg"/>
+    <glob pattern="*.snupkg"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
   <mime-type type="application/x-nwc">
     <_comment>NoteWorthy Composer song</_comment>
@@ -5919,6 +6000,13 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-scratch-project">
+    <_comment>Scratch project</_comment>
+    <glob pattern="*.sb2"/>
+    <glob pattern="*.sb3"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-sh">
     <_comment>UNIX/LINUX Shell Script</_comment>
     <magic priority="50">
@@ -5937,6 +6025,12 @@
     <tika:link>https://developer.sketch.com/file-format/</tika:link>
     <sub-class-of type="application/zip"/>
     <glob pattern="*.sketch"/>
+  </mime-type>
+
+  <mime-type type="application/x-smarttech-notebook">
+    <_comment>SMART Notebook lesson</_comment>
+    <glob pattern="*.notebook"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-shar">
@@ -6422,6 +6516,11 @@
     <glob pattern="*.vmdk"/>
   </mime-type>
 
+  <mime-type type="application/x-vnd.corel.draw.document+zip">
+    <_comment>CorelDRAW drawing (zip container)</_comment>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+
   <mime-type type="application/x-wais-source">
     <glob pattern="*.src"/>
   </mime-type>
@@ -6532,7 +6631,9 @@
     <glob pattern="*.fig"/>
   </mime-type>
   <mime-type type="application/x-xpinstall">
+    <_comment>Mozilla add-on</_comment>
     <glob pattern="*.xpi"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/x-xmind">
@@ -8726,6 +8827,13 @@
   </mime-type>
   <mime-type type="model/vnd.parasolid.transmit.binary"/>
   <mime-type type="model/vnd.parasolid.transmit.text"/>
+
+  <mime-type type="model/vnd.usdz+zip">
+    <_comment>Universal Scene Description zip package</_comment>
+    <tika:link>https://www.iana.org/assignments/media-types/model/vnd.usdz+zip</tika:link>
+    <glob pattern="*.usdz"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
   <mime-type type="model/vnd.vtu">
     <glob pattern="*.vtu"/>
   </mime-type>
@@ -10229,6 +10337,12 @@
       <sub-class-of type="application/xml"/>
       <root-XML namespaceURI="http://www.gribuser.ru/xml/fictionbook/2.0" localName="FictionBook"/>
       <glob pattern="*.fb2"/>
+  </mime-type>
+
+  <mime-type type="application/x-fictionbook3">
+    <_comment>FictionBook 3 e-book</_comment>
+    <glob pattern="*.fb3"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
     <mime-type type="text/x-asciidoc">
