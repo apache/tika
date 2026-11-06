@@ -160,6 +160,13 @@ Release 4.3.0 - ???
      packets (as written for RFC 9580 v6 keys), v1 DER certificate revocation lists (no
      version field), gettext catalogs with minor revision 1 and VCDIFF deltas in
      open-vcdiff's SDCH format; they were application/octet-stream (TIKA-5029).
+   * Blender files (.blend, .blender, application/x-blender, new) yield the preview Blender stores
+     as the THUMBNAIL embedded document, for every file format version including the one
+     of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read
+     the same way; zstd needs zstd-jni on the classpath (TIKA-5036).
+     
+   * RAR5 archives are parsed: RarParser no longer refuses them, junrar has read RAR5
+     since 8.0.0 (TIKA-5043).
 
    * Jupyter notebooks (.ipynb, new type application/x-ipynb+json) are parsed: cell
      sources and plain-text outputs as text, kernel, language and format version as
