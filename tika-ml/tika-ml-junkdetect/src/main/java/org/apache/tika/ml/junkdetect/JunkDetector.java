@@ -56,6 +56,16 @@ public final class JunkDetector implements TextQualityDetector {
 
     private final HashedJunkModel model;
 
+    /**
+     * Loads the bundled model. {@link java.util.ServiceLoader} needs this constructor on the
+     * class path; {@link #provider()} serves only the module path.
+     *
+     * @throws UncheckedIOException if the bundled model cannot be loaded
+     */
+    public JunkDetector() {
+        this(provider().model);
+    }
+
     public JunkDetector(HashedJunkModel model) {
         if (model == null) {
             throw new IllegalArgumentException("model");

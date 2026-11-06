@@ -134,9 +134,16 @@ Release 4.3.0 - ???
      tree walk stops with a warning after a visit budget sized from the file (TIKA-5057).
 
    * OneNote legacy text dump (the fallback when structured parsing fails): a string that
-     crosses a 1 MB read boundary is written once instead of once per boundary, the last
-     byte of each read is no longer dropped, and spaces count toward the letter ratio that
-     decides whether a string is kept (TIKA-5057).
+     crosses a 1 MB read boundary is written once instead of once per boundary, and the last
+     byte of each read is no longer dropped. Strings are kept or dropped by the text-quality
+     detector (tika-ml-junkdetect) when it is on the class path, as it is in tika-app and
+     tika-server: all-caps lines, captions such as "Table 3-5" and digit-heavy lines now
+     survive, and image bytes that happened to be letter-heavy no longer do. Without the
+     detector, a string needs a lower-case word and mostly letters (TIKA-5057).
+
+   * tika-ml-junkdetect: JunkDetector has a public no-arg constructor, so
+     ServiceLoader.load(TextQualityDetector.class) finds it on the class path; the
+     registration only worked on the module path before (TIKA-5057).
 
    * OneNote parsing rejects more malformed structures up front instead of reading past
      them: dependency-override counts larger than their node, negative file-data lengths,

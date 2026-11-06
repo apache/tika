@@ -28,7 +28,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.ml.junkdetect.JunkDetector;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.quality.TextQualityDetector;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -59,15 +61,70 @@ public class OneNoteLegacyDumpStringsTest {
     }
 
     @Test
-    public void testSpacesCountTowardTheAlphaRatio(@TempDir Path tmp) throws Exception {
-        // 4 letters, 2 spaces, 2 digits: passes only if spaces count (6/8 > 0.6)
-        String spaced = "ab 12 cd";
-        String out = dump(tmp, concat(new byte[]{1},
-                spaced.getBytes(StandardCharsets.US_ASCII), new byte[]{1}), 1000);
-        assertEquals(spaced + "\n", out);
+    public void testHeuristicKeepsShortCaption(@TempDir Path tmp) throws Exception {
+        // 5 of 8 non-space chars are letters; spaces no longer dilute the ratio
+        assertKept(tmp, "Table 3-5", null);
+    }
+
+    @Test
+    public void testHeuristicDropsLetterHeavyBinary(@TempDir Path tmp) throws Exception {
+        // from image data in a real section: letter-heavy, but no lower-case word
+        assertDropped(tmp, " 2JLXVZZL@2(", null);
+    }
+
+    @Test
+    public void testQualityDetectorKeepsTextTheHeuristicLoses(@TempDir Path tmp)
+            throws Exception {
+        TextQualityDetector detector = JunkDetector.loadFromClasspath();
+        assertKept(tmp, "FIX THIS MATH", detector);
+        assertKept(tmp, "Bothell, WA 98052", detector);
+        assertDropped(tmp, "FIX THIS MATH", null);
+    }
+
+    @Test
+    public void testQualityDetectorDropsBinary(@TempDir Path tmp) throws Exception {
+        TextQualityDetector detector = JunkDetector.loadFromClasspath();
+        assertDropped(tmp, " 2JLXVZZL@2(", detector);
+        assertDropped(tmp, " ,6BDHFB@BDDD4(", detector);
+    }
+
+    @Test
+    public void testQualityDetectorIsFoundOnTheClassPath(@TempDir Path tmp) throws Exception {
+        // the public constructor uses it; all-caps text survives only with a detector
+        Path file = tmp.resolve("caps");
+        Files.write(file, concat(new byte[]{1},
+                "FIX THIS MATH".getBytes(StandardCharsets.US_ASCII), new byte[]{1}));
+        StringWriter writer = new StringWriter();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(writer),
+                new Metadata(), new ParseContext());
+        xhtml.startDocument();
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            new OneNoteLegacyDumpStrings(dif, xhtml).dump();
+        }
+        xhtml.endDocument();
+        assertEquals("FIX THIS MATH", writer.toString().strip());
+    }
+
+    private static void assertKept(Path tmp, String text, TextQualityDetector detector)
+            throws Exception {
+        assertEquals(text + "\n", dump(tmp, padded(text), 1000, detector));
+    }
+
+    private static void assertDropped(Path tmp, String text, TextQualityDetector detector)
+            throws Exception {
+        assertEquals("\n", dump(tmp, padded(text), 1000, detector));
+    }
+
+    private static byte[] padded(String text) {
+        return concat(new byte[]{1}, text.getBytes(StandardCharsets.US_ASCII), new byte[]{1});
     }
 
     private static String dump(Path tmp, byte[] bytes, int bufferSize) throws Exception {
+        return dump(tmp, bytes, bufferSize, null);
+    }
+
+    private static String dump(Path tmp, byte[] bytes, int bufferSize,
+                               TextQualityDetector detector) throws Exception {
         Path file = tmp.resolve("legacy");
         Files.write(file, bytes);
         StringWriter writer = new StringWriter();
@@ -75,7 +132,7 @@ public class OneNoteLegacyDumpStringsTest {
                 new Metadata(), new ParseContext());
         xhtml.startDocument();
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
-            new OneNoteLegacyDumpStrings(dif, xhtml, bufferSize).dump();
+            new OneNoteLegacyDumpStrings(dif, xhtml, bufferSize, detector).dump();
         }
         xhtml.endDocument();
         return writer.toString().strip() + "\n";
