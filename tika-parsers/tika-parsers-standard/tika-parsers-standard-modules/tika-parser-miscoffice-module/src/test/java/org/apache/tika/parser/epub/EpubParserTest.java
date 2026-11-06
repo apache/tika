@@ -21,10 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -183,6 +189,116 @@ public class EpubParserTest extends TikaTest {
         assertEquals(2, m.getValues(TikaCoreProperties.RIGHTS).length);
         assertTrue(m.get(TikaCoreProperties.RIGHTS).startsWith("The source text and artwork"));
         assertEquals("test rights", m.getValues(TikaCoreProperties.RIGHTS)[1]);
+    }
+
+    /**
+     * Manifest hrefs are URI references relative to the OPF: a '+' is a '+', percent
+     * escapes are decoded, '../' and fragments are resolved.
+     */
+    @Test
+    public void testHrefsAreResolvedAsUris() throws Exception {
+        String[][] items = {
+                {"a", "Text/plain.xhtml", "OEBPS/Text/plain.xhtml", "PLAINCHAPTER"},
+                {"b", "Text/c++.xhtml", "OEBPS/Text/c++.xhtml", "PLUSCHAPTER"},
+                {"c", "Text/My%20Chapter.xhtml", "OEBPS/Text/My Chapter.xhtml", "SPACECHAPTER"},
+                {"d", "../Shared/up.xhtml", "Shared/up.xhtml", "UPCHAPTER"},
+                {"e", "Text/frag.xhtml#start", "OEBPS/Text/frag.xhtml", "FRAGMENTCHAPTER"}};
+        List<Metadata> list;
+        try (TikaInputStream tis = TikaInputStream.get(epub(items, null))) {
+            list = getRecursiveMetadata(tis, true);
+        }
+        String content = list.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        for (String[] item : items) {
+            assertContains(item[3], content);
+        }
+        Metadata cover = list.get(1);
+        assertEquals("OEBPS/Images/cover art.png", cover.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                cover.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * encryption.xml names its items by URI too: an item named with an escape is still known
+     * as encrypted, so its bytes are neither parsed as a chapter nor emitted.
+     */
+    @Test
+    public void testEscapedEncryptedItems() throws Exception {
+        String[][] items = {{"a", "Text/My%20Chapter.xhtml", "OEBPS/Text/My Chapter.xhtml",
+                "SPACECHAPTER"}};
+        List<Metadata> list;
+        try (TikaInputStream tis = TikaInputStream.get(epub(items,
+                "OEBPS/Text/My%20Chapter.xhtml"))) {
+            list = getRecursiveMetadata(tis, true);
+        }
+        assertContains("EncryptedDocumentException",
+                list.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertNotContained("SPACECHAPTER",
+                String.valueOf(list.get(0).get(TikaCoreProperties.TIKA_CONTENT)));
+
+        try (TikaInputStream tis = TikaInputStream.get(epub(items,
+                "OEBPS/Images/cover%20art.png"))) {
+            list = getRecursiveMetadata(tis, true);
+        }
+        assertContains("SPACECHAPTER", list.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(1, list.size(), "the encrypted cover is not emitted");
+    }
+
+    /**
+     * An EPUB with its OPF in OEBPS/, one spine item per {id, href, entry name, text}, a
+     * cover image whose href holds an escaped space, and, if given, an encrypted URI.
+     */
+    private static byte[] epub(String[][] items, String encryptedUri) throws IOException {
+        StringBuilder manifest = new StringBuilder();
+        StringBuilder spine = new StringBuilder();
+        for (String[] item : items) {
+            manifest.append("<item id=\"").append(item[0]).append("\" href=\"").append(item[1])
+                    .append("\" media-type=\"application/xhtml+xml\"/>");
+            spine.append("<itemref idref=\"").append(item[0]).append("\"/>");
+        }
+        manifest.append("<item id=\"cover\" href=\"Images/cover%20art.png\" "
+                + "media-type=\"image/png\" properties=\"cover-image\"/>");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(bytes)) {
+            byte[] mimetype = "application/epub+zip".getBytes(StandardCharsets.US_ASCII);
+            ZipEntry first = new ZipEntry("mimetype");
+            first.setMethod(ZipEntry.STORED);
+            first.setSize(mimetype.length);
+            CRC32 crc = new CRC32();
+            crc.update(mimetype);
+            first.setCrc(crc.getValue());
+            zip.putNextEntry(first);
+            zip.write(mimetype);
+            put(zip, "META-INF/container.xml", "<?xml version=\"1.0\"?><container version=\"1.0\" "
+                    + "xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\"><rootfiles>"
+                    + "<rootfile full-path=\"OEBPS/content.opf\" "
+                    + "media-type=\"application/oebps-package+xml\"/></rootfiles></container>");
+            if (encryptedUri != null) {
+                put(zip, "META-INF/encryption.xml", "<?xml version=\"1.0\"?><encryption "
+                        + "xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\" "
+                        + "xmlns:enc=\"http://www.w3.org/2001/04/xmlenc#\"><enc:EncryptedData>"
+                        + "<enc:CipherData><enc:CipherReference URI=\"" + encryptedUri + "\"/>"
+                        + "</enc:CipherData></enc:EncryptedData></encryption>");
+            }
+            put(zip, "OEBPS/content.opf", "<?xml version=\"1.0\"?><package "
+                    + "xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" "
+                    + "unique-identifier=\"id\"><metadata "
+                    + "xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:identifier id=\"id\">x"
+                    + "</dc:identifier><dc:title>T</dc:title></metadata><manifest>" + manifest
+                    + "</manifest><spine>" + spine + "</spine></package>");
+            for (String[] item : items) {
+                put(zip, item[2], "<?xml version=\"1.0\"?><html "
+                        + "xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>t</title></head>"
+                        + "<body><p>" + item[3] + "</p></body></html>");
+            }
+            zip.putNextEntry(new ZipEntry("OEBPS/Images/cover art.png"));
+            zip.write(new byte[]{(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'});
+        }
+        return bytes.toByteArray();
+    }
+
+    private static void put(ZipOutputStream zip, String name, String content) throws IOException {
+        zip.putNextEntry(new ZipEntry(name));
+        zip.write(content.getBytes(StandardCharsets.UTF_8));
     }
 
     private Set<String> set(Metadata m, Property property) {

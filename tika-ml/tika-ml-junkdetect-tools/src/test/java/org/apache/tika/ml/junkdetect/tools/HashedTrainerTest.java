@@ -207,7 +207,13 @@ public class HashedTrainerTest {
         ChainProbe chain = new ChainProbe();
         assertTrue(chain.describe().contains("HtmlEncodingDetector"), chain.describe());
         assertTrue(chain.describe().contains("MojibusterEncodingDetector"), chain.describe());
-        List<HashedFeatures.Vec> pairs = PairSources.goldChainPairs(gold, chain, 16, 3, 6000);
+        // the chain may get every fixture page right; a lying meta guarantees a wrong candidate
+        Files.write(dir.resolve("gold/docs/liar.html"), HashedTrainingFixture.page(HashedTrainingFixture.RU,
+                new Random(5052), "windows-1252").getBytes(Charset.forName("windows-1251")));
+        Path liar = dir.resolve("gold/liar.tsv");
+        Files.write(liar, List.of("path\tsplit\tlabel\thalf\ttext_quality",
+                "docs/liar.html\ttrain\twindows-1251\teven\tclean"));
+        List<HashedFeatures.Vec> pairs = PairSources.goldChainPairs(GoldPage.read(liar), chain, 16, 3, 6000);
         assertTrue(!pairs.isEmpty(), "no chain pairs");
         for (HashedFeatures.Vec v : pairs) {
             double l1 = 0;

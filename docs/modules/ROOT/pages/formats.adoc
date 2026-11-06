@@ -122,7 +122,8 @@ supports the XML-based FictionBook (`.fb2`) publishing format.
 Comic book archives (`.cbz`) are read by the zip parser, which emits the
 first page in name order as the cover thumbnail. The zip parser also emits the
 stored preview of Krita (`.kra`), OpenRaster (`.ora`), FreeCAD (`.FCStd`),
-Procreate (`.procreate`) and Sketch (`.sketch`) files as their thumbnail.
+Procreate (`.procreate`) and Sketch (`.sketch`) files as their thumbnail, and of 3MF
+(`.3mf`) packages the image their thumbnail relationship names.
 
 link:{api}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser] reads Mobipocket
 books and their Kindle descendants (`.mobi`, `.prc`, `.azw`, and the KF8 generation
@@ -234,6 +235,9 @@ link:{api}/org/apache/tika/parser/image/TiffParser.html[TiffParser], which use
 the metadata-extractor library for Exif, IPTC and XMP; and from
 link:{api}/org/apache/tika/parser/image/RawTiffParser.html[RawTiffParser] for
 camera RAW files built on TIFF.
+link:{api}/org/apache/tika/parser/image/Cr3Parser.html[Cr3Parser] reads Canon CR3
+raw files, which are built on the ISO base media file format: their Exif data and
+their stored JPEG previews.
 link:{api}/org/apache/tika/parser/image/HeifParser.html[HeifParser] (HEIF/HEIC,
 AVIF),
 link:{api}/org/apache/tika/parser/image/JXLParser.html[JXLParser] (JPEG XL),
@@ -352,6 +356,18 @@ link:{api}/org/apache/tika/parser/dgn/DGN8Parser.html[DGN8Parser] from
 MicroStation DGN v8 files, and
 link:{api}/org/apache/tika/parser/prt/PRTParser.html[PRTParser] from Cadkey
 PRT files.
+
+link:{api}/org/apache/tika/parser/blender/BlenderParser.html[BlenderParser] emits the
+preview Blender stores in a `.blend` file as the THUMBNAIL embedded document. Files
+compressed with gzip are read as they are; files compressed with zstd, as Blender 3.0 and
+later save them with "Compress" on, need zstd-jni on the classpath, as the compressor
+formats do.
+
+link:{api}/org/apache/tika/parser/sketchup/SketchUpParser.html[SketchUpParser] emits the
+preview SketchUp stores in a `.skp` file as the THUMBNAIL embedded document: the PNG in
+the file's preview record up to SketchUp 2020, the model thumbnail in its zip from 2021.
+SketchUp files are detected by their header; the `.skp` extension alone still means an
+SSEYO Koan file.
 
 == Font formats
 

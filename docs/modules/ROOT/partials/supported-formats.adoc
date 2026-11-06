@@ -36,6 +36,8 @@
 * `org.apache.tika.parser.audio.` link:{tika-javadoc-url}/org/apache/tika/parser/audio/MidiParser.html[MidiParser]
 ** `application/x-midi`
 ** `audio/midi`
+* `org.apache.tika.parser.blender.` link:{tika-javadoc-url}/org/apache/tika/parser/blender/BlenderParser.html[BlenderParser]
+** `application/x-blender`
 * `org.apache.tika.parser.code.` link:{tika-javadoc-url}/org/apache/tika/parser/code/SourceCodeParser.html[SourceCodeParser]
 ** `text/x-c++src`
 ** `text/x-groovy`
@@ -105,6 +107,8 @@
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/BPGParser.html[BPGParser]
 ** `image/bpg`
 ** `image/x-bpg`
+* `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/Cr3Parser.html[Cr3Parser]
+** `image/x-canon-cr3`
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/HeifParser.html[HeifParser]
 ** `image/avif`
 ** `image/heic`
@@ -379,6 +383,8 @@
 ** `application/x-prt`
 * `org.apache.tika.parser.sas.` link:{tika-javadoc-url}/org/apache/tika/parser/sas/SAS7BDATParser.html[SAS7BDATParser]
 ** `application/x-sas-data`
+* `org.apache.tika.parser.sketchup.` link:{tika-javadoc-url}/org/apache/tika/parser/sketchup/SketchUpParser.html[SketchUpParser]
+** `application/vnd.sketchup.skp`
 * `org.apache.tika.parser.subtitle.` link:{tika-javadoc-url}/org/apache/tika/parser/subtitle/SubtitleParser.html[SubtitleParser]
 ** `application/x-subrip`
 ** `text/vtt`

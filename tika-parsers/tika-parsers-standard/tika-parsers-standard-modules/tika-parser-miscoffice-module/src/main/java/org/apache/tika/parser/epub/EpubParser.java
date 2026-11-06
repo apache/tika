@@ -20,8 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,6 +63,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipEntryPaths;
 import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
@@ -201,11 +200,6 @@ public class EpubParser implements Parser {
             return fallbackParseAllHtmlEntries(zipFile, bodyHandler, normalizer, metadata, context,
                     "OPF declared no spine items in (possibly truncated) container");
         }
-        String relativePath = "";
-        if (rootOPF.lastIndexOf("/") > -1) {
-            relativePath = rootOPF.substring(0, rootOPF.lastIndexOf("/") + 1);
-        }
-
         extractMetadata(zipFile, metadata, context);
         Set<String> encryptedItems = checkForDRM(zipFile);
         Set<String> processed = new HashSet<>();
@@ -228,12 +222,12 @@ public class EpubParser implements Parser {
                     shouldParse = true;
                 }
                 if (shouldParse) {
-                    String path = relativePath + hRefMediaPair.href;
+                    String path = ZipEntryPaths.resolve(rootOPF, hRefMediaPair.href);
                     //if content is encrypted, do not parse it, throw an exception now
                     if (encryptedItems.contains(path)) {
                         maybeThrowEncryptedException(encryptedItems);
                     }
-                    zae = zipFile.getEntry(relativePath + hRefMediaPair.href);
+                    zae = path == null ? null : zipFile.getEntry(path);
                     if (zae != null) {
                         try (TikaInputStream tis = entryStream(zipFile, zae)) {
                             content.parse(tis, bodyHandler, metadata, context);
@@ -278,12 +272,12 @@ public class EpubParser implements Parser {
         for (String id : contentOrderScraper.locationMap.keySet()) {
             if (!processed.contains(id)) {
                 HRefMediaPair hRefMediaPair = contentOrderScraper.locationMap.get(id);
-                String fullPath = relativePath + hRefMediaPair.href;
-                if (encryptedItems.contains(fullPath)) {
+                String fullPath = ZipEntryPaths.resolve(rootOPF, hRefMediaPair.href);
+                if (fullPath == null || encryptedItems.contains(fullPath)) {
                     continue;
                 }
                 if (shouldHandleEmbedded(hRefMediaPair.media)) {
-                    handleEmbedded(zipFile, relativePath, hRefMediaPair,
+                    handleEmbedded(zipFile, fullPath, hRefMediaPair,
                             id.equals(contentOrderScraper.getCoverId()),
                             embeddedDocumentExtractor, xhtml, metadata, context);
                 }
@@ -434,17 +428,12 @@ public class EpubParser implements Parser {
         return TikaInputStream.get(() -> zipFile.getInputStream(entry), new TemporaryResources(), null);
     }
 
-    private void handleEmbedded(ZipFile zipFile, String relativePath, HRefMediaPair hRefMediaPair,
+    private void handleEmbedded(ZipFile zipFile, String fullPath, HRefMediaPair hRefMediaPair,
                                 boolean cover,
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                 XHTMLContentHandler xhtml, Metadata parentMetadata,
                                 ParseContext context)
             throws IOException, SAXException, TikaException {
-        if (hRefMediaPair.href == null) {
-            return;
-        }
-        String fullPath = relativePath + hRefMediaPair.href;
-
         ZipArchiveEntry ze = zipFile.getEntry(fullPath);
         if (ze == null || !zipFile.canReadEntryData(ze)) {
             return;
@@ -569,11 +558,6 @@ public class EpubParser implements Parser {
                     String href = XMLReaderUtils.getAttrValue("href", atts);
                     String mime = XMLReaderUtils.getAttrValue("media-type", atts);
                     if (id != null && href != null) {
-                        try {
-                            href = URLDecoder.decode(href, UTF_8.name());
-                        } catch (UnsupportedEncodingException e) {
-                            //swallow
-                        }
                         locationMap.put(id, new HRefMediaPair(href, mime));
                         String properties = XMLReaderUtils.getAttrValue("properties", atts);
                         if (coverImageItem == null && properties != null
@@ -640,7 +624,10 @@ public class EpubParser implements Parser {
         public void startElement(String uri, String localName, String qName, Attributes attributes) {
             if ("CipherReference".equals(localName)) {
                 String encryptedUri = XMLReaderUtils.getAttrValue("URI", attributes);
-                encryptedItems.add(encryptedUri);
+                if (encryptedUri != null) {
+                    String path = ZipEntryPaths.resolve("", encryptedUri);
+                    encryptedItems.add(path != null ? path : encryptedUri);
+                }
             }
         }
         public Set<String> getEncryptedItems() {
