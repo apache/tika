@@ -46,7 +46,11 @@ public class StorageManifestSchemaGUID extends StreamObject {
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        byte[] temp = Arrays.copyOf(byteArray, 16);
+        if (index.get() < 0 || index.get() > byteArray.length - 16) {
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "StorageManifestSchemaGUID", "Not enough bytes for the GUID", null);
+        }
+        byte[] temp = Arrays.copyOfRange(byteArray, index.get(), index.get() + 16);
         this.guid = UUID.nameUUIDFromBytes(temp);
         index.addAndGet(16);
 

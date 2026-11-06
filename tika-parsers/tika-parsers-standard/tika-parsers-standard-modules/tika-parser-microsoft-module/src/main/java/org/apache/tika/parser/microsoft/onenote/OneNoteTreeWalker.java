@@ -440,30 +440,20 @@ class OneNoteTreeWalker {
             FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
         Map<String, Object> structure = new HashMap<>();
-        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-        content.reposition(fileDataStoreObjectReference.ref.fileData);
-        if (fileDataStoreObjectReference.ref.fileData.cb > dif.size()) {
+        FileChunkReference fileData = fileDataStoreObjectReference.ref.fileData;
+        if (fileData.cb > dif.size()) {
             throw new TikaMemoryLimitException(
-                    "File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
-                            " exceeds document size: " + dif.size());
+                    "File data store cb " + fileData.cb + " exceeds document size: " +
+                            dif.size());
         }
-        handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb, gosid);
+        handleEmbedded(fileData.stp, (int) fileData.cb, gosid);
         structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
         return structure;
     }
 
-    private void handleEmbedded(int length, ExtendedGUID gosid)
+    private void handleEmbedded(long stp, int length, ExtendedGUID gosid)
             throws TikaException, IOException, SAXException {
         TikaInputStream tis = null;
-        ByteBuffer buf;
-        try {
-            buf = ByteBuffer.allocate(length);
-            dif.read(buf);
-        } catch (IOException e) {
-            //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
-            return;
-        }
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
@@ -476,6 +466,16 @@ class OneNoteTreeWalker {
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                ByteBuffer buf;
+                try {
+                    buf = ByteBuffer.allocate(length);
+                    dif.position(stp);
+                    dif.read(buf);
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata,
+                            parseContext);
+                    return;
+                }
                 tis = TikaInputStream.get(buf.array());
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);

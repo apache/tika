@@ -137,6 +137,11 @@ Release 4.3.0 - ???
      crosses a 1 MB read boundary is written once instead of once per boundary, the last
      byte of each read is no longer dropped, and spaces count toward the letter ratio that
      decides whether a string is kept (TIKA-5057).
+
+   * OneNote parsing rejects more malformed structures up front instead of reading past
+     them: dependency-override counts larger than their node, negative file-data lengths,
+     unbounded global ID table copies, property sets with 0x8000 or more properties or an
+     undefined property type, and short reads in the FSSHTTPB integer readers (TIKA-5057).
      
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary

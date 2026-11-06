@@ -22,16 +22,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfPropertyValues;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySet;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageManifestSchemaGUID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfContextIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOSIDs;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
 /**
  * File-derived counts and nesting in the fsshttpb property deserializers must be bounded -
@@ -55,6 +61,46 @@ public class PropertyDeserializationBoundsTest {
         assertThrows(IOException.class,
                 () -> new PrtFourBytesOfLengthFollowedByData()
                         .doDeserializeFromByteArray(bytes, 0));
+    }
+
+    @Test
+    public void testPropertySetCountIsUnsignedAndBounded() {
+        // 0xFFFF properties declared, none present: a signed read made this a negative size
+        byte[] bytes = new byte[]{(byte) 0xFF, (byte) 0xFF, 0, 0};
+        IOException e = assertThrows(IOException.class,
+                () -> new PropertySet().doDeserializeFromByteArray(bytes, 0));
+        assertTrue(e.getMessage().contains("exceeds"), e.getMessage());
+    }
+
+    @Test
+    public void testUndefinedPropertyTypeFailsCleanly() {
+        byte[] bytes = concat(new byte[]{1, 0}, propertyId(0x1E));
+        IOException e = assertThrows(IOException.class,
+                () -> new PropertySet().doDeserializeFromByteArray(bytes, 0));
+        assertTrue(e.getMessage().contains("Undefined property type"), e.getMessage());
+    }
+
+    @Test
+    public void testBitConverterRejectsReadsPastTheEnd() throws IOException {
+        byte[] bytes = new byte[]{1, 2, 3, 4, 5, 6};
+        assertEquals(0x06050403, BitConverter.toInt32(bytes, 2));
+        assertThrows(IOException.class, () -> BitConverter.toInt32(bytes, 4));
+        assertThrows(IOException.class, () -> BitConverter.toInt64(bytes, 0));
+        assertThrows(IOException.class, () -> BitConverter.toInt16(bytes, -1));
+    }
+
+    @Test
+    public void testStorageManifestSchemaGuidIsReadAtItsIndex() throws Exception {
+        byte[] bytes = new byte[20];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) i;
+        }
+        StorageManifestSchemaGUID schema = new StorageManifestSchemaGUID();
+        Method deserialize = StorageManifestSchemaGUID.class.getDeclaredMethod(
+                "deserializeItemsFromByteArray", byte[].class, AtomicInteger.class, int.class);
+        deserialize.setAccessible(true);
+        deserialize.invoke(schema, bytes, new AtomicInteger(4), 16);
+        assertEquals(UUID.nameUUIDFromBytes(Arrays.copyOfRange(bytes, 4, 20)), schema.guid);
     }
 
     @Test

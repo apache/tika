@@ -691,6 +691,62 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testDependencyOverrideCountsAreBoundedByTheNode(@TempDir Path tempDir)
+            throws Exception {
+        // a 12-byte node declaring 500 one-byte overrides inside a larger file: the counts
+        // must be checked against the node, not left to read the bytes that follow it
+        Path file = tempDir.resolve("overrides");
+        Files.write(file, ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(500).putInt(0).putInt(0).array());
+        Method deserialize = OneNotePtr.class.getDeclaredMethod(
+                "deserializeObjectInfoDependencyOverrideData");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            ptr.reposition(new FileChunkReference(0, 12));
+            InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                    () -> deserialize.invoke(ptr));
+            assertTrue(e.getCause() instanceof TikaException, e.getCause().toString());
+        }
+    }
+
+    @Test
+    public void testNegativeFileDataStoreLengthIsRejected(@TempDir Path tempDir)
+            throws Exception {
+        // header GUID, cb = -16, unused, reserved, then room for a footer
+        Path file = tempDir.resolve("filedata");
+        Files.write(file, ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN)
+                .put(new byte[16]).putLong(-16).putInt(0).putLong(0).array());
+        Method deserialize = OneNotePtr.class.getDeclaredMethod("deserializeFileDataStoreObject");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                    () -> deserialize.invoke(ptr));
+            assertTrue(e.getCause() instanceof TikaException, e.getCause().toString());
+        }
+    }
+
+    @Test
+    public void testGlobalIdCopyBudgetIsSharedAcrossCopies(@TempDir Path tempDir)
+            throws Exception {
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        Method reserve = OneNotePtr.class.getDeclaredMethod("reserveGlobalIdCopies", int.class);
+        reserve.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            OneNotePtr copy = new OneNotePtr(ptr);
+            for (int i = 0; i < 100; i++) {
+                reserve.invoke(i % 2 == 0 ? ptr : copy, 100_000);
+            }
+            InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                    () -> reserve.invoke(copy, 1));
+            assertTrue(e.getCause() instanceof TikaMemoryLimitException,
+                    e.getCause().toString());
+        }
+    }
+
+    @Test
     public void testFileNodeListNestingIsDepthCapped(@TempDir Path tempDir) throws Exception {
         // 120 lists, each holding one baseType-2 node pointing at the next list - acyclic,
         // so only the depth cap can stop the recursion
