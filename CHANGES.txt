@@ -2,6 +2,10 @@ Release 4.3.0 - ???
 
   BREAKING CHANGES AND DEPRECATIONS
 
+   * tika-pipes-* and two tika-langdetect modules no longer pull in a log4j backend;
+     embedding apps (and their PipesServer forks) must add an slf4j binding, e.g.
+     log4j-slf4j2-impl (TIKA-5058).
+
    * Markdown output writes math as $`...`$ (a code span, which GitHub and GitLab
      render as math) instead of raw $...$, so text in a math span can no longer become
      HTML or links. Readers that only know $...$, such as pandoc, show it as code. Only
