@@ -33,6 +33,11 @@ public class S3EmitterConfigTest {
     }
 
     @Test
+    public void testDefaultIsValid() throws Exception {
+        assertDoesNotThrow(load("default")::validate);
+    }
+
+    @Test
     public void testUnknownProviderIsInvalid() throws Exception {
         S3EmitterConfig config = load("bogus");
         TikaConfigException e = assertThrows(TikaConfigException.class, config::validate);
