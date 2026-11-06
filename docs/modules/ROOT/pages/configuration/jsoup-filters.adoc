@@ -1,0 +1,155 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= jsoup Filters: Main-Content Extraction for HTML
+:toc:
+
+A jsoup filter rewrites the HTML page *after* jsoup parses it and *before* Tika turns it into
+XHTML, text or Markdown. Tika ships one: `readability-jsoup-filter`, a Java port of
+https://github.com/mozilla/readability[Mozilla Readability] (the engine behind Firefox Reader
+View), which keeps the article and drops navigation, sidebars and footers. You can add your own.
+
+Filters run only in the HTML parser (`JSoupParser`), and by default only on the top-level
+document. They never touch PDFs, Office files or other formats, and no filter runs unless you
+configure one.
+
+NOTE: Since 4.3.0. `tika-app -T` (`--text-main`) turns on `readability-jsoup-filter` with its
+defaults.
+
+== Turning on Readability
+
+[source,json]
+----
+{
+  "parse-context": {
+    "readability-jsoup-filter": {}
+  }
+}
+----
+
+A tika-server or pipes request may send the same entry in its `parseContext`. Requests can turn
+the filter on and change its options, except for the two size limits, which only the server's
+config can raise.
+
+== Options
+
+[cols="2,1,4"]
+|===
+|Option |Default |Meaning
+
+|`requireReaderable`
+|`true`
+|Run Readability only when its own "is this an article?" check passes (`isProbablyReaderable`,
+which looks for enough paragraph text). Otherwise the page is emitted unchanged. Set `false` to
+run Readability on every page, including listings and index pages, where it tends to cut too much.
+
+|`maxDepth`
+|`0`
+|Embedded depth to filter at: `0` is the top-level document only, `-1` every depth.
+
+|`charThreshold`
+|`500`
+|Minimum article length, in characters, before Readability retries with looser rules.
+
+|`keepClasses`
+|`false`
+|Keep `class` attributes in the article.
+
+|`maxElements`
+|`20000`
+|Pages with more elements are emitted unchanged. Server config only.
+
+|`maxTextScanned`
+|`50000000`
+|Work budget in characters scanned; deeply nested pages hit it before `maxElements`. Server
+config only.
+|===
+
+When a page is skipped or Readability fails, the whole page is emitted as if no filter were set.
+
+== Metadata
+
+[cols="2,4"]
+|===
+|Key |Value
+
+|`tk:readability:status`
+|`extracted`, `not-readerable`, `no-article`, `limit-exceeded` or `error`
+
+|`tk:readability:readerable`
+|The `isProbablyReaderable` result, recorded whether or not it is required
+
+|`tk:readability:title`, `tk:readability:byline`, `tk:readability:excerpt`,
+`tk:readability:site-name`, `tk:readability:published-time`, `tk:readability:lang`,
+`tk:readability:dir`
+|What Readability found, from the page and its JSON-LD and OpenGraph tags. `dc:title` is not
+changed.
+|===
+
+== Several filters: `jsoup-filters`
+
+To run more than one filter, list them in order; each sees what the previous one produced. An
+element is a name (default settings) or an object keyed by the name.
+
+[source,json]
+----
+{
+  "parse-context": {
+    "jsoup-filters": [
+      "my-cleanup-filter",
+      { "readability-jsoup-filter": { "requireReaderable": false } }
+    ]
+  }
+}
+----
+
+Use either a single filter entry or `jsoup-filters`, not both: two entries that set the jsoup
+filter fail as duplicates.
+
+== Writing a filter
+
+Implement `org.apache.tika.parser.html.JsoupFilter`, register it with `@TikaComponent`, and put the
+jar on the classpath. Configuration comes through bean setters.
+
+[source,java]
+----
+@TikaComponent(name = "my-cleanup-filter", spi = false, contextKey = JsoupFilter.class)
+public class MyCleanupFilter implements JsoupFilter {
+    @Override
+    public Document filter(Document document, Metadata metadata, ParseContext context) {
+        document.select("div.newsletter-signup").remove();
+        return document;
+    }
+}
+----
+
+* Change the `org.jsoup.nodes.Document` in place or return a replacement. Filters change the page;
+  Tika still writes the output.
+* One instance serves concurrent parses: keep it stateless.
+* The API is jsoup's, so a jsoup major-version upgrade can break a filter.
+* Your build needs Tika's annotation processor (`tika-annotation-processor`) so the name is
+  registered.
+
+== Using the library directly
+
+`tika-readability` is a standalone module that depends only on jsoup:
+
+[source,java]
+----
+Article article = new Readability(jsoupDocument).parse();   // null if nothing was found
+String html = article.contentHtml();
+----

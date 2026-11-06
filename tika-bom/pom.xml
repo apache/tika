@@ -266,6 +266,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-readability</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-jdbc-commons</artifactId>
         <version>${revision}</version>
       </dependency>

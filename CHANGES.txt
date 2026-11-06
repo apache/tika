@@ -27,6 +27,10 @@ Release 4.3.0 - ???
      the model part inside the package. The old name is an alias, so it still resolves as
      input, but detection output and metadata now carry model/3mf (TIKA-5049).
 
+   * tika-app -T (--text-main) and the GUI's "Main content" view use Readability instead of
+     boilerpipe, and trim HTML pages only: other formats come out as full text, as with -t.
+     BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
+
   SERVER, PIPES AND OPERATIONS
 
    * tika-server sets any field of the config's "server" block from the command line
@@ -80,6 +84,12 @@ Release 4.3.0 - ???
      mixing values across rows and committing each other's batches (TIKA-5007).
 
   EXTRACTION AND FORMATS
+
+   * HTML main-content extraction: tika-readability is a jsoup-only Java port of Mozilla
+     Readability, and "readability-jsoup-filter" in the parse context runs it in JSoupParser
+     (off by default, top-level documents only, tk:readability:* metadata). "jsoup-filters"
+     runs a list of jsoup filters, including your own JsoupFilter implementations, in order
+     (TIKA-5054).
 
    * EpubParser resolves manifest hrefs as URI references relative to the OPF: a '+' is
      no longer read as a space, and '../' is followed, so such chapters and images are no

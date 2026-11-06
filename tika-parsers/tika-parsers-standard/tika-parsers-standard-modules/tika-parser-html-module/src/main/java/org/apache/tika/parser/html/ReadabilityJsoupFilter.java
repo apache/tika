@@ -26,6 +26,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.ReadabilityMetadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.readability.Article;
@@ -42,7 +43,7 @@ import org.apache.tika.readability.Readerable;
  * hit, or Readability fails, the document is emitted whole.
  * {@link ReadabilityMetadata#STATUS} records which.
  *
- * @since Apache Tika 4.2
+ * @since Apache Tika 4.3
  */
 @TikaComponent(name = "readability-jsoup-filter", spi = false, contextKey = JsoupFilter.class)
 public class ReadabilityJsoupFilter implements JsoupFilter {

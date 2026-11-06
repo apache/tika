@@ -86,6 +86,8 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.html.JsoupFilter;
+import org.apache.tika.parser.html.ReadabilityJsoupFilter;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
@@ -93,7 +95,6 @@ import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -339,13 +340,12 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
     private void handleStream(TikaInputStream tis, Metadata md) throws Exception {
         StringWriter htmlBuffer = new StringWriter();
         StringWriter textBuffer = new StringWriter();
-        StringWriter textMainBuffer = new StringWriter();
         StringWriter xmlBuffer = new StringWriter();
         StringBuilder metadataBuffer = new StringBuilder();
 
         ContentHandler handler =
                 new TeeContentHandler(getHtmlHandler(htmlBuffer, imageParser), getTextContentHandler(textBuffer),
-                        getTextMainContentHandler(textMainBuffer), getXmlContentHandler(xmlBuffer));
+                        getXmlContentHandler(xmlBuffer));
 
         context.set(DocumentSelector.class, new ImageDocumentSelector());
 
@@ -382,7 +382,6 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         setText(metadata, metadataBuffer.toString());
         setText(xml, xmlBuffer.toString());
         setText(text, textBuffer.toString());
-        setText(textMain, textMainBuffer.toString());
         setText(html, htmlBuffer.toString());
 
         boolean isReset = false;
@@ -393,6 +392,12 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
             setText(json, "Error during stream reset.\n" + "There's a limit of " + MAX_MARK + " bytes for this type of processing in the GUI.\n" +
                     "Try the app with command line argument of -J.");
         }
+        String mainText = textBuffer.toString();
+        if (isReset && isHtml(md)) {
+            mainText = mainContent(tis);
+            tis.reset();
+        }
+        setText(textMain, mainText);
         if (isReset) {
             RecursiveParserWrapperHandler recursiveParserWrapperHandler =
                     new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
@@ -617,8 +622,23 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         return new BodyContentHandler(writer);
     }
 
-    private ContentHandler getTextMainContentHandler(Writer writer) {
-        return new BoilerpipeContentHandler(writer);
+    // Readability rewrites the DOM before any handler sees it, so main content is its own parse
+    private String mainContent(TikaInputStream tis) throws Exception {
+        ParseContext mainContext = new ParseContext();
+        mainContext.copyFrom(context);
+        mainContext.set(JsoupFilter.class, new ReadabilityJsoupFilter());
+        StringWriter writer = new StringWriter();
+        parser.parse(tis, getTextContentHandler(writer), Metadata.newInstance(mainContext), mainContext);
+        return writer.toString();
+    }
+
+    private static boolean isHtml(Metadata md) {
+        String type = md.get(HttpHeaders.CONTENT_TYPE);
+        if (type == null) {
+            return false;
+        }
+        String base = MediaType.parse(type).getBaseType().toString();
+        return base.equals("text/html") || base.equals("application/xhtml+xml");
     }
 
     private ContentHandler getXmlContentHandler(Writer writer) throws TransformerConfigurationException, TikaException {

@@ -68,6 +68,7 @@
 ** xref:configuration/inference.adoc[Inference: Engines and Bindings]
 ** xref:configuration/inference-recipes.adoc[OCR and Inference Recipes]
 ** xref:configuration/metadata-filters.adoc[Metadata Filters]
+** xref:configuration/jsoup-filters.adoc[jsoup Filters (Readability)]
 ** xref:configuration/detectors.adoc[Detectors]
 ** xref:configuration/digesters.adoc[Digesters]
 ** xref:configuration/encoding-detectors.adoc[Encoding Detectors]

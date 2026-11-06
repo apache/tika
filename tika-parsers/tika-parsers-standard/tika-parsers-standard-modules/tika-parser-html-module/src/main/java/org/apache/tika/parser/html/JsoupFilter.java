@@ -33,7 +33,7 @@ import org.apache.tika.parser.ParseContext;
  * through bean setters. One instance serves concurrent parses, so keep it stateless.
  * The API is jsoup's, so a jsoup major-version change can break implementations.
  *
- * @since Apache Tika 4.2
+ * @since Apache Tika 4.3
  */
 public interface JsoupFilter extends Serializable {
 

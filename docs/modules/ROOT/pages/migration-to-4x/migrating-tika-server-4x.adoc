@@ -78,7 +78,8 @@ curl -X POST http://localhost:9998/tika/config/json \
 
 The Boilerpipe content extraction endpoints have been removed. These endpoints used `BoilerpipeContentHandler` which is not compatible with pipes-based parsing.
 
-**Migration:** Use `/tika/text` for plain text extraction.
+**Migration:** Use `/tika/text` for plain text extraction. Since 4.3.0, add `"readability-jsoup-filter": {}` to the request's parse context for main
+content of HTML pages; see xref:configuration/jsoup-filters.adoc[jsoup Filters].
 
 ==== `/tika/form`, `/tika/form/*`
 

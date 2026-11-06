@@ -28,7 +28,7 @@ import org.apache.tika.parser.ParseContext;
  * Runs {@link JsoupFilter}s in order, each on the previous one's result. Configured as
  * {@code "parse-context": {"jsoup-filters": ["my-filter", {"readability-jsoup-filter": {...}}]}}.
  *
- * @since Apache Tika 4.2
+ * @since Apache Tika 4.3
  */
 @TikaComponent(name = "jsoup-filters", spi = false, contextKey = JsoupFilter.class)
 public class CompositeJsoupFilter implements JsoupFilter {

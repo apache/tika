@@ -207,7 +207,7 @@ java -jar tika-app.jar --xmp testPDF.pdf
 
 *Expected:* Valid XMP metadata in RDF/XML format.
 
-=== Test 17: Boilerpipe Main Content
+=== Test 17: Readability Main Content
 
 [source,bash]
 ----

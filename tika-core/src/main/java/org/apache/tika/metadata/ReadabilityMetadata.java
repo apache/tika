@@ -14,19 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.html;
-
-import org.apache.tika.metadata.Property;
+package org.apache.tika.metadata;
 
 /**
- * Keys written by {@link ReadabilityJsoupFilter}. Values are Readability's own strings;
+ * Keys written by {@code org.apache.tika.parser.html.ReadabilityJsoupFilter}. Values are
+ * Readability's own strings;
  * {@link #PUBLISHED_TIME} is not parsed.
  *
- * @since Apache Tika 4.2
+ * @since Apache Tika 4.3
  */
 public interface ReadabilityMetadata {
 
-    String PREFIX = "readability:";
+    String PREFIX = TikaCoreProperties.TIKA_META_PREFIX + "readability:";
 
     String STATUS_EXTRACTED = "extracted";
     /** {@code isProbablyReaderable} said no and it is required; the whole document was emitted. */
@@ -38,15 +37,15 @@ public interface ReadabilityMetadata {
     /** Readability failed; the whole document was emitted. */
     String STATUS_ERROR = "error";
 
-    Property STATUS = Property.internalClosedChoice(PREFIX + "status",
+    Property STATUS = Property.reservedInternalClosedChoice(PREFIX + "status",
             STATUS_EXTRACTED, STATUS_NOT_READERABLE, STATUS_NO_ARTICLE, STATUS_LIMIT, STATUS_ERROR);
     /** Result of Readability's {@code isProbablyReaderable} pre-check, recorded whether or not it is required. */
-    Property READERABLE = Property.internalBoolean(PREFIX + "readerable");
-    Property TITLE = Property.internalText(PREFIX + "title");
-    Property BYLINE = Property.internalText(PREFIX + "byline");
-    Property EXCERPT = Property.internalText(PREFIX + "excerpt");
-    Property SITE_NAME = Property.internalText(PREFIX + "site-name");
-    Property PUBLISHED_TIME = Property.internalText(PREFIX + "published-time");
-    Property LANG = Property.internalText(PREFIX + "lang");
-    Property DIR = Property.internalText(PREFIX + "dir");
+    Property READERABLE = Property.reservedInternalBoolean(PREFIX + "readerable");
+    Property TITLE = Property.reservedInternalText(PREFIX + "title");
+    Property BYLINE = Property.reservedInternalText(PREFIX + "byline");
+    Property EXCERPT = Property.reservedInternalText(PREFIX + "excerpt");
+    Property SITE_NAME = Property.reservedInternalText(PREFIX + "site-name");
+    Property PUBLISHED_TIME = Property.reservedInternalText(PREFIX + "published-time");
+    Property LANG = Property.reservedInternalText(PREFIX + "lang");
+    Property DIR = Property.reservedInternalText(PREFIX + "dir");
 }
