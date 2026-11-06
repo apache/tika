@@ -68,7 +68,7 @@ into XHTML, so a table is a `<table>` in every output format and a pipe table in
 HTML table if it has merged cells). Body
 cells come back as `<th>` and are passed through as such. Math comes back as LaTeX; Tika keeps it
 verbatim, delimiters included, in `<span class="math inline">` or `<span class="math display">`,
-and writes it unescaped in markdown. The load-time health check reads the
+and writes it in markdown as ``$`...`$``, verbatim inside a code span. The load-time health check reads the
 public `/v1/models`, so a wrong key passes startup and surfaces on the first request as the
 document's parse exception (HTTP 401 in the message).
 

@@ -2,6 +2,12 @@ Release 4.3.0 - ???
 
   BREAKING CHANGES AND DEPRECATIONS
 
+   * Markdown output writes math as $`...`$ (a code span, which GitHub and GitLab
+     render as math) instead of raw $...$, so text in a math span can no longer become
+     HTML or links. Readers that only know $...$, such as pandoc, show it as code. Only
+     spans with class "math inline" or "math display" count as math; a PDF structure
+     type or Word style named "Math" is escaped like other text (TIKA-5056).
+
    * tika-ml-junkdetect has a new model and API. JunkDetector wraps a HashedJunkModel
      (junkdetect.bin, format JUNKHNG1; the old model format is not read). knownScripts(),
      scoreWithFeatureComponents() and the per-feature compute* methods are gone; use
