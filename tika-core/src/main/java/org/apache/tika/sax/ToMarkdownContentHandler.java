@@ -833,18 +833,42 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     }
 
     /**
-     * TeX goes out raw: the renderer's escaping ({@code \\mathcal}, {@code u\\_0}) breaks
-     * math-aware readers. In a table cell the renderer still escapes {@code |}, which GFM
-     * unescapes on read.
+     * TeX goes out as {@code $`...`$}, which GitHub and GitLab render as math: a code span keeps
+     * it verbatim ({@code \\mathcal}, {@code u_0}) yet cannot become HTML, a link or syntax of
+     * any other markdown dialect, whatever the document put in it. Text without TeX delimiters
+     * is escaped like any other text.
      */
     private void appendMath(String tex) {
-        if (tex.isEmpty()) {
+        String math = collapseLineBreaks(tex).strip();
+        if (math.isEmpty()) {
             return;
         }
         ensureInlineContainer();
-        HtmlInline raw = new HtmlInline();
-        raw.setLiteral(collapseLineBreaks(tex));
-        stack.peek().appendChild(raw);
+        String inner = stripTexDelimiters(math);
+        if (inner == null || inner.isBlank()) {
+            stack.peek().appendChild(new Text(math));
+            return;
+        }
+        Code code = new Code();
+        code.setLiteral(inner.strip());
+        stack.peek().appendChild(new Text("$"));
+        stack.peek().appendChild(code);
+        stack.peek().appendChild(new Text("$"));
+    }
+
+    /** The TeX inside {@code $$...$$}, {@code $...$}, {@code \\(...\\)} or {@code \\[...\\]}, else null. */
+    private static String stripTexDelimiters(String s) {
+        if (s.length() >= 4 && s.startsWith("$$") && s.endsWith("$$")) {
+            return s.substring(2, s.length() - 2);
+        }
+        if (s.length() >= 2 && s.startsWith("$") && s.endsWith("$")) {
+            return s.substring(1, s.length() - 1);
+        }
+        if (s.length() >= 4 && (s.startsWith("\\(") && s.endsWith("\\)")
+                || s.startsWith("\\[") && s.endsWith("\\]"))) {
+            return s.substring(2, s.length() - 2);
+        }
+        return null;
     }
 
     /**
@@ -879,16 +903,25 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         return raw;
     }
 
+    /**
+     * Tika writes {@code math inline} or {@code math display}. Parsers that turn a document's
+     * style or structure names into a class (PDF custom types, Word styles) yield one token,
+     * so they cannot produce both.
+     */
     private static boolean isMathClass(String cls) {
         if (cls == null) {
             return false;
         }
+        boolean math = false;
+        boolean mode = false;
         for (String token : cls.trim().split("\\s+")) {
             if (token.equals("math")) {
-                return true;
+                math = true;
+            } else if (token.equals("inline") || token.equals("display")) {
+                mode = true;
             }
         }
-        return false;
+        return math && mode;
     }
 
     private static HtmlInline newBrInline() {
