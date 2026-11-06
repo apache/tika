@@ -151,13 +151,7 @@ public class MP4Parser implements Parser, Initializable {
         this.extractSubtitles = extractSubtitles;
     }
 
-    /**
-     * Whether CEA-608 closed captions (CC1-CC4) are extracted as embedded {@code text/vtt}
-     * documents ({@code track-<id>-cc1.vtt} ...), from QuickTime {@code c608} tracks and, per
-     * {@link #getVideoCaptionScan()}, from H.264 and HEVC video. Default true; applies only
-     * while {@link #isExtractSubtitles()} is true, and to the same inputs. Set in
-     * tika-config.json; not read from a per-request config.
-     */
+    /** CEA-608 captions as embedded {@code text/vtt}; default true, needs extractSubtitles. */
     public boolean isExtractClosedCaptions() {
         return extractClosedCaptions;
     }
@@ -166,12 +160,7 @@ public class MP4Parser implements Parser, Initializable {
         this.extractClosedCaptions = extractClosedCaptions;
     }
 
-    /**
-     * How video is read for captions in its SEI messages; default {@link VideoCaptionScan#NONE},
-     * as it reads a few bytes of each probed frame of every H.264 and HEVC file. Anything else
-     * needs {@link #isExtractSubtitles()} and {@link #isExtractClosedCaptions()}, or loading the
-     * config fails. Set in tika-config.json; not read from a per-request config.
-     */
+    /** H.264/HEVC SEI caption scan; default NONE, as any other costs reads on every such file. */
     public VideoCaptionScan getVideoCaptionScan() {
         return videoCaptionScan;
     }

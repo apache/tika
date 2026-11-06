@@ -285,7 +285,10 @@ frame's first slice are read; no video is decoded. CEA-708 captions are not deco
 a file with both a `c608` track and SEI captions yields both. These settings, too, are
 read from tika-config.json only, and captions are MP4/QuickTime only. Caption reads stop
 at one million frames walked, 128 MB read or two million caption byte pairs per file;
-the cues they yield also count toward the track and character limits below.
+the cues they yield also count toward the track and character limits below. A `PROBE`
+reread counts its frames again, so captions first found late in a very long video
+(roughly half a million frames in) may be cut short; it collects its pairs anew while
+the probe's are still held, so up to four million pairs may be in memory.
 link:{api}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser] does the
 same for Matroska and WebM: SubRip, ASS/SSA and WebVTT text tracks (also when
 zlib-compressed or header-stripped), with the track's `Name` as `dc:title`. It reads in

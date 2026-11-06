@@ -21,8 +21,8 @@ public enum VideoCaptionScan {
     /** Not read. */
     NONE,
     /**
-     * The first 300 frames, then 8 frames every 5 seconds; every frame once a caption
-     * character turns up. A caption run between two probes is missed.
+     * A head of frames, then a few frames at intervals; every frame once a caption character
+     * turns up. A caption run between two probes is missed.
      */
     PROBE,
     /** Every frame. */

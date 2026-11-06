@@ -64,10 +64,10 @@ final class Cea608Decoder {
     private final String prefix;
     private final String language;
     private final Channel[] channels = new Channel[4];
-    // per field: data channel of the last control code, last control pair, XDS in progress
+    // per field: data channel of the last control code, last control pair
     private final int[] current = new int[2];
     private final int[] lastControl = {-1, -1};
-    private final boolean[] xds = new boolean[2];
+    private final Filter filter = new Filter();
     private long lastMillis;
 
     /**
@@ -80,11 +80,6 @@ final class Cea608Decoder {
         this.language = language;
     }
 
-    /** Padding on a field: a control code after it is not a repeat. */
-    void padding(int field) {
-        lastControl[field] = -1;
-    }
-
     /**
      * One byte pair as carried in {@code cc_data}, parity bits included.
      *
@@ -95,19 +90,18 @@ final class Cea608Decoder {
         if (owner.isSpent()) {
             return;
         }
-        if (!oddParity(b1) && (b1 & 0x7F) >= 0x10 && (b1 & 0x7F) <= 0x1F) {
-            // a control code with a damaged first byte: its second byte is not a character
+        int code = filter.filter(field, b1, b2);
+        if (code == Filter.DAMAGED) {
             return;
         }
-        int c1 = oddParity(b1) ? b1 & 0x7F : 0;
-        int c2 = oddParity(b2) ? b2 & 0x7F : 0;
-        if (c1 == 0 && c2 == 0) {
-            padding(field);
+        if (code <= 0) {
+            // padding or XDS: a control code after it is not a repeat
+            lastControl[field] = -1;
             return;
         }
-        if (c1 >= 0x10 && c1 <= 0x1F) {
-            xds[field] = false;
-            int code = (c1 << 8) | c2;
+        int c1 = code >> 8;
+        int c2 = code & 0xFF;
+        if (isControl(c1)) {
             // control codes are sent twice; the repeat is dropped
             if (lastControl[field] == code) {
                 lastControl[field] = -1;
@@ -119,14 +113,6 @@ final class Cea608Decoder {
             return;
         }
         lastControl[field] = -1;
-        if (field == 1 && c1 > 0 && c1 < 0x10) {
-            // XDS on field 2 runs from a 0x01-0x0E start to the 0x0F end (plus checksum)
-            xds[field] = c1 != 0x0F;
-            return;
-        }
-        if (xds[field] || (c1 < 0x20 && c1 != 0)) {
-            return;
-        }
         Channel ch = channel(field, current[field]);
         if (c1 >= 0x20) {
             ch.put(BASIC[c1], millis);
@@ -177,6 +163,60 @@ final class Cea608Decoder {
 
     static boolean oddParity(int b) {
         return (Integer.bitCount(b & 0xFF) & 1) == 1;
+    }
+
+    private static boolean isControl(int c1) {
+        return c1 >= 0x10 && c1 <= 0x1F;
+    }
+
+    /** Parity checks and field-2 XDS state: what of each pair reaches a caption channel. */
+    static final class Filter {
+        static final int DAMAGED = -2;
+        static final int NOT_CAPTION = -1;
+        private final boolean[] xds = new boolean[2];
+
+        /**
+         * The pair's 7-bit bytes as {@code c1 << 8 | c2} (0 for padding), {@link #DAMAGED} for
+         * a control code with a bad first byte, or {@link #NOT_CAPTION} for XDS and other data.
+         */
+        int filter(int field, int b1, int b2) {
+            if (!oddParity(b1) && isControl(b1 & 0x7F)) {
+                return DAMAGED;
+            }
+            int c1 = oddParity(b1) ? b1 & 0x7F : 0;
+            int c2 = oddParity(b2) ? b2 & 0x7F : 0;
+            if (c1 == 0 && c2 == 0) {
+                return 0;
+            }
+            if (isControl(c1)) {
+                xds[field] = false;
+                return (c1 << 8) | c2;
+            }
+            if (field == 1 && c1 > 0 && c1 < 0x10) {
+                // XDS on field 2 runs from a 0x01-0x0E start to the 0x0F end (plus checksum)
+                xds[field] = c1 != 0x0F;
+                return NOT_CAPTION;
+            }
+            if (xds[field] || (c1 < 0x20 && c1 != 0)) {
+                return NOT_CAPTION;
+            }
+            return (c1 << 8) | c2;
+        }
+
+        /** Whether a {@link #filter}ed pair shows a character: basic, special or extended. */
+        static boolean isCharacter(int code) {
+            if (code <= 0) {
+                return false;
+            }
+            int c1 = code >> 8;
+            int c2 = code & 0xFF;
+            if (!isControl(c1)) {
+                return c1 >= 0x20 || c2 >= 0x20;
+            }
+            int c = c1 & 0xF7;
+            return (c == 0x11 && c2 >= 0x30 && c2 <= 0x3F)
+                    || ((c == 0x12 || c == 0x13) && c2 >= 0x20 && c2 <= 0x3F);
+        }
     }
 
     private static final class Channel {

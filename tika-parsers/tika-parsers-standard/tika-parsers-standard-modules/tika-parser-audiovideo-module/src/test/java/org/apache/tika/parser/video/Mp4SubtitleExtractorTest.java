@@ -1197,6 +1197,20 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     @Test
+    public void testBadParityDoesNotTriggerAFullRead() throws Exception {
+        // "AB" with even parity at frame 10 is dropped by the decoder, so the probe ignores it
+        // too: the run at 700 stays between windows
+        byte[][] samples = new byte[1000][];
+        for (int k = 0; k < samples.length; k++) {
+            samples[k] = k >= 700 && k < 700 + HELLO.length ? avcSample(HELLO[k - 700])
+                    : k == 10 ? cat(nal(seiNal(new byte[]{0x40 | 1, (byte) 0xFF, (byte) 0xFC,
+                            'A', 'B'})), nal(SLICE))
+                    : nal(SLICE);
+        }
+        assertEquals(0, extract(videoMp4("avc1", avcC(), samples, null, 33), PROBE).size());
+    }
+
+    @Test
     public void testAMusicNoteIsACaptionCharacter() throws Exception {
         // RCL, PAC, then only a note (0x11 0x37) at frame 200: found in the head, so frame 700
         // is read too
