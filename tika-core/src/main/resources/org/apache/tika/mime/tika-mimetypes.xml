@@ -3119,6 +3119,15 @@
     <glob pattern="*.twd"/>
     <glob pattern="*.twds"/>
   </mime-type>
+  <mime-type type="application/vnd.sketchup.skp">
+    <acronym>SKP</acronym>
+    <_comment>SketchUp model</_comment>
+    <tika:link>https://www.sketchup.com/</tika:link>
+    <magic priority="50">
+      <match value="\xff\xfe\xff\x0eS\x00k\x00e\x00t\x00c\x00h\x00U\x00p\x00 \x00M\x00o\x00d\x00e\x00l\x00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/vnd.smaf">
     <glob pattern="*.mmf"/>
   </mime-type>
@@ -4088,7 +4097,9 @@
     <glob pattern="*.torrent"/>
   </mime-type>
   <mime-type type="application/x-blender">
+    <acronym>Blend</acronym>
     <_comment>Blender scene</_comment>
+    <tika:link>https://www.blender.org/</tika:link>
     <magic priority="50">
       <!-- then pointer size (_ 32-bit, - 64-bit), endianness, version -->
       <match value="BLENDER" type="string" offset="0">
@@ -4098,16 +4109,6 @@
       <match value="BLENDER" type="string" offset="0">
         <match value="BLENDER[0-9]{2}[_-][0-9]{2}[vV][0-9]{4}" type="regex" offset="0"/>
       </match>
-    </magic>
-    <glob pattern="*.blend"/>
-  </mime-type>
-
-  <mime-type type="application/x-blender">
-    <acronym>Blend</acronym>
-    <_comment>Blender scene</_comment>
-    <tika:link>https://www.blender.org/</tika:link>
-    <magic priority="50">
-      <match value="BLENDER" type="string" offset="0"/>
     </magic>
     <glob pattern="*.blend"/>
     <glob pattern="*.blender"/>
