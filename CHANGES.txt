@@ -22,6 +22,14 @@ Release 4.3.0 - ???
      the forks never saw such a fetcher, so every fetch through it failed. Use file or
      ignite (TIKA-5001).
 
+   * A mime-types XML file that defines the same type twice, directly or through an
+     alias, fails to load with "Duplicate definition of ..."; the second definition's
+     magic and globs were silently added to the first, so tightening a rule in one copy
+     had no effect. A custom-mimetypes.xml that repeats a type within itself now stops
+     Tika from loading its types; merge the repeated blocks into one. A custom file may
+     still add globs or magic to a type defined in tika-mimetypes.xml. The eleven
+     duplicates in tika-mimetypes.xml are merged; detection is unchanged (TIKA-5029).
+
    * 3MF packages are detected as model/3mf, their IANA type, instead of
      application/vnd.ms-package.3dmanufacturing-3dmodel+xml, which is the content type of
      the model part inside the package. The old name is an alias, so it still resolves as
@@ -83,15 +91,101 @@ Release 4.3.0 - ???
 
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
+     
+   * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
+     (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary
+     OpenPGP signatures (application/pgp-signature) are detected by content; they were
+     application/octet-stream. Together they are about a sixth of the Common Crawl files
+     Tika could not identify. MXF and Java serialization streams are detected by content
+     too (they had globs only), EOT fonts of version 0x00010000 and 0x00020001 are
+     detected (only 0x00020002 was), and torrent files whose first key is not "announce"
+     are detected (TIKA-5029).
+
+   * US FEC electronic filings (application/x-fec, a kind of text/plain, so their text is
+     extracted), gettext message catalogs, Garmin MapSource databases, Blizzard MPQ
+     archives and Warcraft III maps and replays, VCDIFF and Xdelta patches and Paint Shop
+     Pro images are detected by content; they were application/octet-stream. SID tunes
+     in RSID format are detected, and PSID needs a valid version after the magic
+     (TIKA-5029).
+
+   * HTML that opens with a fragment instead of <html> (a <meta>, <script>, <p>, <br>,
+     <table> or similar tag, as in pages that start with PHP warnings) is detected as
+     text/html, and Windows Media playlists without an XML declaration are detected as
+     application/x-ms-asx; they were application/octet-stream or text/plain. A PDF or
+     XHTML document with such a fragment in front keeps its type (TIKA-5029).
+
+   * A new test fails the build on tika-mimetypes.xml rules that load but can never
+     match as written (TIKA-5029).
+
+   * Elasto Mania levels, binary OpenPGP keys, StuffIt (SIT!) archives, MPEG transport
+     streams (video/mp2t, now also *.m2ts and *.m2t), Symbian 9 installers, FLC and FLI
+     animations, Microsoft Reader e-books, lrzip archives, Glulx games, Scream Tracker 3
+     modules and Monkey's Audio files are detected by content, and so are MARC records
+     with a blank bibliographic level; they were application/octet-stream (TIKA-5029).
+
+   * NoteWorthy Composer songs, Finale (Enigma binary) scores, ReCycle REX2 loops, i-mode
+     MFi melodies, TrackMania/ManiaPlanet GameBox files, PlayStation 3 packages and themes,
+     Trainz content packages, ZX Spectrum RZX recordings, Quake and Half-Life sprites,
+     NuFX (ShrinkIt) and Amiga LZX archives, MikroTik RouterOS packages and ClamAV
+     signature databases and updates, and Casio FX-Interface files are detected by
+     content; they were application/octet-stream (TIKA-5029).
+
+   * DER certificate revocation lists (application/pkix-crl), DER X.509 certificates
+     signed with any algorithm (only some RSA, DSA and ECDSA ones were matched, so SM2
+     and Ed25519 certificates were missed) and RFC 3161 time-stamp replies are detected
+     by content; they were application/octet-stream (TIKA-5029).
+
+   * glTF binary models, Blender scenes, Autodesk FBX (binary), Jw_cad and FastCAD drawings,
+     Valve Source maps, Unreal Tournament compressed packages, SoundFont 2 banks, zsync
+     control files and PhysioNet WFDB annotations are detected by content; they were
+     application/octet-stream in a recent Common Crawl sample (TIKA-5029).
+
+   * NEXRAD Level III radar products, UCSC bigBed, bigWig and 2bit files, uncompressed BAM
+     and BAM indexes, OpenStreetMap PBF, LIGO/Virgo frame files, QEMU qcow disks, ImageDisk
+     floppy images, MAME CHD, devicetree blobs and FIT images, U-Boot legacy images, UBI
+     images, AmigaOS executables, DirectDraw Surface images (image/vnd.ms-dds), YM chiptunes,
+     VST presets and older Jw_cad drawings are detected by content; they were
+     application/octet-stream in a recent Common Crawl sample (TIKA-5029).
+
+   * HP printer jobs are detected by content: PJL jobs by the language they enter (PCL,
+     PCL XL or PostScript), and raw PCL5 and PCL XL streams. So are IBM MO:DCA (AFP)
+     documents, Windows minidumps and kernel dumps, StarView metafiles, Lotus 1-2-3 files
+     with format version 0x1005, Promethean ActivInspire flipcharts, Casio calculator
+     (g1m family) files, Haihaisoft DRM-X protected files and Navitel maps; they were
+     application/octet-stream (TIKA-5029).
+
+   * gcov coverage data and notes, Python bytecode and pickles, Apache Lucene index files,
+     git packfiles, ACPI tables, TZif time zone files (application/tzif), Firefox mozLz4
+     files and JPEG XR images (image/jxr) are detected by content; they were
+     application/octet-stream (TIKA-5029).
+
+   * More variants are detected by content: OpenPGP keys and signatures in new-format
+     packets (as written for RFC 9580 v6 keys), v1 DER certificate revocation lists (no
+     version field), gettext catalogs with minor revision 1 and VCDIFF deltas in
+     open-vcdiff's SDCH format; they were application/octet-stream (TIKA-5029).
+
+   * EpubParser resolves manifest hrefs as URI references relative to the OPF: a '+' is
+     no longer read as a space, and '../' is followed, so such chapters and images are no
+     longer skipped. encryption.xml URIs are resolved the same way. The new
+     ZipEntryPaths in tika-parser-zip-commons does the resolving (TIKA-5050).
+     
+   * Canon CR3 raws have a parser of their own, Cr3Parser in the image module, instead
+     of going through the MP4 parser: their Exif data (IFD0, Exif IFD, Canon maker note,
+     GPS) is extracted, the JPEG preview (PRVW, 1620x1080 on current bodies) is the
+     THUMBNAIL and the 160x120 THMB thumbnail is INLINE, so the thumbnail preset serves
+     a preview (TIKA-5042).
 
    * Blender files (.blend, .blender, application/x-blender, new) yield the preview Blender stores
      as the THUMBNAIL embedded document, for every file format version including the one
      of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read
      the same way; zstd needs zstd-jni on the classpath (TIKA-5036).
-     
+
    * RAR5 archives are parsed: RarParser no longer refuses them, junrar has read RAR5
      since 8.0.0 (TIKA-5043).
 
+   * SketchUp models (application/vnd.sketchup.skp, new, detected by their header) yield
+     the preview SketchUp stores as the THUMBNAIL embedded document, from SketchUp 3 to
+     2026 (TIKA-5036).
 
    * Jupyter notebooks (.ipynb, new type application/x-ipynb+json) are parsed: cell
      sources and plain-text outputs as text, kernel, language and format version as
@@ -150,6 +244,10 @@ Release 4.3.0 - ???
 
    * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
      sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
+
+   * 3MF packages have the image their package thumbnail relationship names emitted as the
+     THUMBNAIL, usually Metadata/thumbnail.png; a model part's own thumbnail is not taken
+     (TIKA-5032).
 
    * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
      <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
@@ -220,6 +318,11 @@ Release 4.3.0 - ???
      windows-1252. Input the model calls binary gets the low-confidence windows-1252
      fallback, as undetectable input did before. Adds IBM437 as a detected charset
      (TIKA-5052, TIKA-5048).
+
+   * The charset model no longer calls valid UTF-8 binary when it has no NUL and no control
+     character other than tab, line feed, form feed, carriage return and escape (a character
+     cut at the end of the sample is allowed); its next most likely charset is used. Short
+     CJK, Greek and Thai samples were often called binary (TIKA-5052).
 
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>

@@ -383,6 +383,10 @@
   <mime-type type="application/x-tika-unix-dump"/>
 
   <mime-type type="application/java-serialized-object">
+    <magic priority="50">
+      <!-- STREAM_MAGIC, STREAM_VERSION 5, then a TC_* (0x70-0x7E) -->
+      <match value="0xACED000570" mask="0xFFFFFFFFF0" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.ser"/>
   </mime-type>
 
@@ -544,6 +548,14 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-mame-chd">
+    <_comment>MAME compressed hunks of data</_comment>
+    <magic priority="50">
+      <match value="MComprHD" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.chd"/>
+  </mime-type>
+
   <mime-type type="application/x-java-jnilib">
     <_comment>Java Native Library for OSX</_comment>
     <glob pattern="*.jnilib"/>
@@ -594,7 +606,8 @@
       <match value="[0-9]{5,5}" type="regex" offset="0">
         <match value="45" type="string" offset="20">
           <!-- bibliographic -->
-          <match value="[acdnp][acdefgijkmoprt][abcdims]" type="regex" offset="5"/>
+          <!-- leader/07 is often left blank -->
+          <match value="[acdnp][acdefgijkmoprt][abcdims ]" type="regex" offset="5"/>
           <!-- authority-->
           <match value="[acdnosx]z" type="regex" offset="5"/>
           <!-- holdings -->
@@ -678,11 +691,6 @@
   <mime-type type="application/mediaservercontrol+xml">
     <glob pattern="*.mscml"/>
   </mime-type>
-  <mime-type type="application/vnd.mif">
-    <_comment>Adobe MIF File</_comment>
-    <glob pattern="*.mif"/>
-    <sub-class-of type="text/plain"/>
-  </mime-type>
   <mime-type type="application/mikey"/>
   <mime-type type="application/moss-keys"/>
   <mime-type type="application/moss-signature"/>
@@ -748,6 +756,10 @@
   </mime-type>
 
   <mime-type type="application/mxf">
+    <magic priority="50">
+      <!-- SMPTE 377 header partition pack key -->
+      <match value="0x060E2B34020501010D0102010102" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.mxf"/>
   </mime-type>
   <mime-type type="application/nasdata"/>
@@ -899,9 +911,73 @@
     <glob pattern="*.gpg"/>
   </mime-type>
 
-  <mime-type type="application/pgp-keys"/>
+  <mime-type type="application/pgp-keys">
+    <magic priority="50">
+      <!-- binary old-format v4 key packet (RFC 4880 5.5): public (tag 6) or secret (tag 5)
+           key with a 1- or 2-byte length, version, 4-byte time, then RSA/DSA/Elgamal/ECDH/ECDSA/EdDSA -->
+      <match value="0x94" type="string" offset="0">
+        <match value="0x04" type="string" offset="2">
+          <match value="0x01" type="string" offset="7"/>
+          <match value="0x11" mask="0xFE" type="string" offset="7"/>
+          <match value="0x12" mask="0xFE" type="string" offset="7"/>
+          <match value="0x16" type="string" offset="7"/>
+        </match>
+      </match>
+      <match value="0x98" type="string" offset="0">
+        <match value="0x04" type="string" offset="2">
+          <match value="0x01" type="string" offset="7"/>
+          <match value="0x11" mask="0xFE" type="string" offset="7"/>
+          <match value="0x12" mask="0xFE" type="string" offset="7"/>
+          <match value="0x16" type="string" offset="7"/>
+        </match>
+      </match>
+      <match value="0x95" type="string" offset="0">
+        <match value="0x04" type="string" offset="3">
+          <match value="0x01" type="string" offset="8"/>
+          <match value="0x11" mask="0xFE" type="string" offset="8"/>
+          <match value="0x12" mask="0xFE" type="string" offset="8"/>
+          <match value="0x16" type="string" offset="8"/>
+        </match>
+      </match>
+      <match value="0x99" type="string" offset="0">
+        <match value="0x04" type="string" offset="3">
+          <match value="0x01" type="string" offset="8"/>
+          <match value="0x11" mask="0xFE" type="string" offset="8"/>
+          <match value="0x12" mask="0xFE" type="string" offset="8"/>
+          <match value="0x16" type="string" offset="8"/>
+        </match>
+      </match>
+      <!-- new-format secret (0xC5) or public (0xC6) key packet (RFC 9580 4.2, 5.5.2): 1- or 2-byte
+           length, v4 or v6, 4-byte time, then a known public-key algorithm -->
+      <match value="0xC4" mask="0xFC" type="string" offset="0">
+        <match value="(?s)[\\xc5\\xc6](?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06]....[\\x01\\x10-\\x13\\x16\\x19-\\x1c]" type="regex" offset="0"/>
+      </match>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/pgp-signature">
+    <magic priority="50">
+      <!-- binary old-format signature packet (RFC 4880 5.2): tag 2 with a 1- or 2-byte
+           length, then v4 + binary/text sig type + RSA/DSA/ECDSA/EdDSA, or v3 + hashed length 5 -->
+      <match value="0x88" type="string" offset="0">
+        <match value="0x040001" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x040011" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x040013" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x040016" mask="0xFFFEFF" type="string" offset="2"/>
+        <match value="0x030500" mask="0xFFFFFE" type="string" offset="2"/>
+      </match>
+      <match value="0x89" type="string" offset="0">
+        <match value="0x040001" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x040011" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x040013" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x040016" mask="0xFFFEFF" type="string" offset="3"/>
+        <match value="0x030500" mask="0xFFFFFE" type="string" offset="3"/>
+      </match>
+      <!-- new-format signature packet (0xC2): v4 or v6, binary/text sig type, known algorithm -->
+      <match value="0xC2" type="string" offset="0">
+        <match value="(?s)\\xc2(?:[\\x00-\\xbf]|[\\xc0-\\xdf].)[\\x04\\x06][\\x00\\x01][\\x01\\x11\\x13\\x16\\x1b\\x1c]" type="regex" offset="0"/>
+      </match>
+    </magic>
     <glob pattern="*.asc"/>
     <glob pattern="*.sig"/>
   </mime-type>
@@ -965,6 +1041,20 @@
   </mime-type>
   <mime-type type="application/pkix-crl">
     <glob pattern="*.crl"/>
+    <magic priority="50">
+      <!-- DER v2 CertificateList: SEQUENCE { SEQUENCE { INTEGER 1, AlgorithmIdentifier { OID ...
+           any signature algorithm; long-form outer length, short or long inner.
+           A v1 certificate with serial 1 starts the same way; its validity SEQUENCE { Time, Time }
+           (never in a CRL) rules it out -->
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x02\\x01\\x01\\x30[\\x00-\\x7f]\\x06(?!.{0,512}?\\x30(?:\\x1e\\x17\\x0d|\\x20(?:\\x17\\x0d|\\x18\\x0f)|\\x22\\x18\\x0f))" type="regex" offset="0"/>
+      </match>
+      <!-- DER v1 CertificateList, no version: SEQUENCE { SEQUENCE { AlgorithmIdentifier, issuer Name
+           (SEQUENCE { SET ...), then thisUpdate. A certificate's TBS opens with [0] or an INTEGER -->
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..|\\x83...)\\x30[\\x00-\\x7f]\\x06[\\x03-\\x0f].{3,20}?\\x30(?:[\\x00-\\x7f]|\\x81.|\\x82..)\\x31.{0,1024}?(?:\\x17\\x0d[0-9]{12}Z|\\x18\\x0f[0-9]{14}Z)" type="regex" offset="0"/>
+      </match>
+    </magic>
   </mime-type>
   <mime-type type="application/pkix-pkipath">
     <glob pattern="*.pkipath"/>
@@ -979,6 +1069,13 @@
 
   <mime-type type="application/postscript">
     <_comment>PostScript</_comment>
+    <magic priority="60">
+      <!-- PJL job that switches to PostScript; driver headers put the command up to ~2K in -->
+      <match value="\x1b%-12345X" type="stringignorecase" offset="0">
+        <match value="ENTER LANGUAGE=POSTSCRIPT" type="stringignorecase" offset="0:8192"/>
+        <match value="ENTER LANGUAGE = POSTSCRIPT" type="stringignorecase" offset="0:8192"/>
+      </match>
+    </magic>
     <magic priority="50">
       <match value="%!" type="string" offset="0" />
       <match value="\004%!" type="string" offset="0" />
@@ -1186,8 +1283,26 @@
     <glob pattern="*.ssml"/>
   </mime-type>
   <mime-type type="application/timestamp-query"/>
-  <mime-type type="application/timestamp-reply"/>
+  <mime-type type="application/timestamp-reply">
+    <magic priority="50">
+      <!-- RFC 3161 TimeStampResp: SEQUENCE { PKIStatusInfo { INTEGER status, ... },
+           then the token, a CMS signedData ContentInfo -->
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30[\\x03-\\x7f]\\x02\\x01[\\x00-\\x05].{0,160}?\\x06\\x09\\x2a\\x86\\x48\\x86\\xf7\\x0d\\x01\\x07\\x02" type="regex" offset="0"/>
+      </match>
+    </magic>
+    <glob pattern="*.tsr"/>
+  </mime-type>
   <mime-type type="application/tve-trigger"/>
+  <mime-type type="application/tzif">
+    <_comment>Time Zone Information Format (RFC 8536)</_comment>
+    <magic priority="50">
+      <match value="TZif\x00" type="string" offset="0"/>
+      <match value="TZif2" type="string" offset="0"/>
+      <match value="TZif3" type="string" offset="0"/>
+      <match value="TZif4" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/ulpfec"/>
   <mime-type type="application/vemmi"/>
   <mime-type type="application/vividence.scriptfile"/>
@@ -1412,6 +1527,20 @@
   <mime-type type="application/x-vnd.datapackage+zip">
     <_comment>frictionless data package zip package</_comment>
     <sub-class-of type="application/zip"/>
+  </mime-type>
+
+  <mime-type type="application/x-vst-preset">
+    <_comment>VST plug-in preset or bank</_comment>
+    <magic priority="50">
+      <match value="CcnK" type="string" offset="0">
+        <match value="FxCk" type="string" offset="8"/>
+        <match value="FPCh" type="string" offset="8"/>
+        <match value="FxBk" type="string" offset="8"/>
+        <match value="FBCh" type="string" offset="8"/>
+      </match>
+    </magic>
+    <glob pattern="*.fxp"/>
+    <glob pattern="*.fxb"/>
   </mime-type>
   <mime-type type="application/x-ipynb+json">
     <_comment>Jupyter Notebook</_comment>
@@ -1724,10 +1853,36 @@
     <glob pattern="*.jlt"/>
   </mime-type>
   <mime-type type="application/vnd.hp-pcl">
+    <magic priority="55">
+      <!-- PJL job (UEL, then @PJL commands) that switches to PCL; below PCL XL, whose command
+           this prefix also matches -->
+      <match value="\x1b%-12345X" type="stringignorecase" offset="0">
+        <match value="ENTER LANGUAGE=PCL" type="stringignorecase" offset="0:8192"/>
+        <match value="ENTER LANGUAGE = PCL" type="stringignorecase" offset="0:8192"/>
+      </match>
+    </magic>
+    <magic priority="50">
+      <!-- UEL straight into PCL, or a raw PCL5 stream: reset, then a parameterized command -->
+      <match value="\x1b%-12345X\x1bE" type="string" offset="0"/>
+      <match value="\x1bE\x1b" type="string" offset="0">
+        <match value="\x1bE\x1b[&amp;*(%]" type="regex" offset="0"/>
+      </match>
+    </magic>
     <glob pattern="*.pcl"/>
   </mime-type>
   <mime-type type="application/vnd.hp-pclxl">
+    <magic priority="60">
+      <match value="\x1b%-12345X" type="stringignorecase" offset="0">
+        <match value="ENTER LANGUAGE=PCLXL" type="stringignorecase" offset="0:8192"/>
+        <match value="ENTER LANGUAGE = PCLXL" type="stringignorecase" offset="0:8192"/>
+      </match>
+    </magic>
+    <magic priority="50">
+      <!-- stream header, e.g. ") HP-PCL XL;3;0;" -->
+      <match value=") HP-PCL XL;" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.pclxl"/>
+    <glob pattern="*.pxl"/>
   </mime-type>
   <mime-type type="application/vnd.httphone"/>
   <mime-type type="application/vnd.hydrostatix.sof-data">
@@ -1742,6 +1897,12 @@
     <glob pattern="*.mpy"/>
   </mime-type>
   <mime-type type="application/vnd.ibm.modcap">
+    <magic priority="50">
+      <!-- MO:DCA structured field: 5A, 2-byte length, D3 class, A8 = Begin (document, resource group, ...) -->
+      <match value="0x5A" type="string" offset="0">
+        <match value="0xD3A8" type="string" offset="3"/>
+      </match>
+    </magic>
     <glob pattern="*.afp"/>
     <glob pattern="*.listafp"/>
     <glob pattern="*.list3820"/>
@@ -1960,6 +2121,9 @@
     <magic priority="50">
       <match value="0x00001A0003100400" type="string" offset="0">
       </match>
+      <!-- 0x1005: not in PRONOM; seen in .123 attachments to LibreOffice bugs 53713, 54655, 55066
+           and 114000 and OpenOffice bugs 79309 and 122841 -->
+      <match value="0x00001A0005100400" type="string" offset="0"/>
     </magic>
     <glob pattern="*.123"/>
   </mime-type>
@@ -2023,6 +2187,7 @@
     <_comment>FrameMaker Interchange Format</_comment>
     <alias type="application/x-mif"/>
     <alias type="application/x-frame"/>
+    <sub-class-of type="text/plain"/>
     <magic priority="50">
       <match value="&lt;MakerFile" type="string" offset="0" />
       <match value="&lt;MIFFile" type="string" offset="0" />
@@ -2213,6 +2378,13 @@
 
   <mime-type type="application/vnd.ms-fontobject">
     <magic priority="50">
+      <!-- version 0x00010000, 0x00020001 or 0x00020002, then the "LP" magic -->
+      <match value="\x00\x00\x01\x00" type="string" offset="8">
+        <match value="\x4C\x50" type="string" offset="34"/>
+      </match>
+      <match value="\x01\x00\x02\x00" type="string" offset="8">
+        <match value="\x4C\x50" type="string" offset="34"/>
+      </match>
       <match value="\x02\x00\x02\x00" type="string" offset="8">
         <match value="\x4C\x50" type="string" offset="34"/>
       </match>
@@ -2824,6 +2996,15 @@
     <glob pattern="*.pqa"/>
     <glob pattern="*.oprc"/>
   </mime-type>
+  <mime-type type="application/x-aportisdoc">
+    <_comment>PalmDOC (AportisDoc) e-book</_comment>
+    <alias type="application/x-palmdoc"/>
+    <sub-class-of type="application/vnd.palm"/>
+    <magic priority="60">
+      <!-- Palm database type + creator -->
+      <match value="TEXtREAd" type="string" offset="60"/>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/vnd.paos.xml"/>
   <mime-type type="application/vnd.pg.format">
@@ -2938,6 +3119,15 @@
     <glob pattern="*.twd"/>
     <glob pattern="*.twds"/>
   </mime-type>
+  <mime-type type="application/vnd.sketchup.skp">
+    <acronym>SKP</acronym>
+    <_comment>SketchUp model</_comment>
+    <tika:link>https://www.sketchup.com/</tika:link>
+    <magic priority="50">
+      <match value="\xff\xfe\xff\x0eS\x00k\x00e\x00t\x00c\x00h\x00U\x00p\x00 \x00M\x00o\x00d\x00e\x00l\x00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/vnd.smaf">
     <glob pattern="*.mmf"/>
   </mime-type>
@@ -3021,10 +3211,6 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
   
-  <mime-type type="application/vnd.sun.xml.writer">
-    <sub-class-of type="application/zip"/>
-    <glob pattern="*.sxw"/>
-  </mime-type>
   <!-- can't currently find any diff in contents btwn writer
     and template. Must rely on extension -->
   <mime-type type="application/vnd.sun.xml.writer.template">
@@ -3049,20 +3235,11 @@
   </mime-type>
 
   <mime-type type="application/vnd.street-stream"/>
-  <mime-type type="application/vnd.sun.xml.calc">
-    <glob pattern="*.sxc"/>
-  </mime-type>
   <mime-type type="application/vnd.sun.xml.calc.template">
     <glob pattern="*.stc"/>
   </mime-type>
-  <mime-type type="application/vnd.sun.xml.draw">
-    <glob pattern="*.sxd"/>
-  </mime-type>
   <mime-type type="application/vnd.sun.xml.draw.template">
     <glob pattern="*.std"/>
-  </mime-type>
-  <mime-type type="application/vnd.sun.xml.impress">
-    <glob pattern="*.sxi"/>
   </mime-type>
   <mime-type type="application/vnd.sun.xml.impress.template">
     <glob pattern="*.sti"/>
@@ -3074,6 +3251,7 @@
   <mime-type type="application/vnd.sun.xml.writer">
     <alias type="application/x-vnd.sun.xml.writer"/>
     <_comment>OpenOffice v1.0: Writer Document</_comment>
+    <sub-class-of type="application/zip"/>
     <magic>
       <match type="string" offset="0" value="PK">
         <match type="string" offset="30"
@@ -3085,9 +3263,6 @@
 
   <mime-type type="application/vnd.sun.xml.writer.global">
     <glob pattern="*.sxg"/>
-  </mime-type>
-  <mime-type type="application/vnd.sun.xml.writer.template">
-    <glob pattern="*.stw"/>
   </mime-type>
   <mime-type type="application/vnd.sun.wadl+xml"/>
   <mime-type type="application/vnd.sus-calendar">
@@ -3102,6 +3277,8 @@
   <mime-type type="application/vnd.symbian.install">
     <magic priority="50">
       <match value="0x10000419" type="little32" offset="8" />
+      <!-- SIS 9.x (sisx): UID1 -->
+      <match value="0x10201A7A" type="little32" offset="0" />
     </magic>
     <glob pattern="*.sis"/>
     <glob pattern="*.sisx"/>
@@ -3442,6 +3619,13 @@
     <glob pattern="*.wspolicy"/>
   </mime-type>
   
+  <mime-type type="image/x-svm">
+    <_comment>StarView Metafile</_comment>
+    <magic priority="50">
+      <match value="VCLMTF" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.svm"/>
+  </mime-type>
   <mime-type type="image/x-tga">
      <alias type="image/x-targa"/>
      <_comment>Targa image data</_comment>
@@ -3523,6 +3707,17 @@
   <mime-type type="application/x-ace-compressed">
     <glob pattern="*.ace"/>
   </mime-type>
+  <mime-type type="application/x-intel-aml">
+    <_comment>ACPI table (DSDT, SSDT, FACP, APIC, ...)</_comment>
+    <alias type="application/x-acpi-table"/>
+    <magic priority="50">
+      <!-- signature, 4-byte length, revision, checksum, then a printable 6-byte OEM ID -->
+      <match value="0x00" mask="0xF8" type="string" offset="8">
+        <match value="(?s)(?:DSDT|SSDT|FACP|APIC|HPET|MCFG|SLIC|BERT|WAET)....[\\x00-\\x06].[\\x20-\\x7e]{6}" type="regex" offset="0"/>
+      </match>
+    </magic>
+    <glob pattern="*.aml"/>
+  </mime-type>
   <mime-type type="application/x-activemime">
     <magic priority="60">
       <!-- ActiveMime\u0000\u0000 -->
@@ -3557,6 +3752,31 @@
       <match value="0xc0b9072e4f93f146a015792ca1d9e821" type="string" offset="0">
          <match value="2" type="big32" offset="17" />
       </match>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-bam">
+    <_comment>Sequence Alignment/Map, binary (BGZF-decompressed)</_comment>
+    <magic priority="50">
+      <match value="BAM\x01" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-bam-index">
+    <_comment>BAM index</_comment>
+    <magic priority="50">
+      <match value="BAI\x01" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.bai"/>
+  </mime-type>
+
+
+  <mime-type type="application/x-adobe-swatch-exchange">
+    <acronym>ASE</acronym>
+    <_comment>Adobe Swatch Exchange</_comment>
+    <!-- no *.ase glob: Aseprite uses it too -->
+    <magic priority="50">
+      <match value="ASEF\x00\x01\x00\x00" type="string" offset="0"/>
     </magic>
   </mime-type>
 
@@ -3842,19 +4062,53 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="application/x-bigbed">
+    <_comment>UCSC bigBed track</_comment>
+    <magic priority="50">
+      <!-- 0x8789F2EB in either byte order, then version 1-5 -->
+      <match value="(?s)\\xeb\\xf2\\x89\\x87[\\x01-\\x05]\\x00" type="regex" offset="0"/>
+      <match value="(?s)\\x87\\x89\\xf2\\xeb\\x00[\\x01-\\x05]" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.bigbed"/>
+  </mime-type>
+
+  <mime-type type="application/x-bigwig">
+    <_comment>UCSC bigWig track</_comment>
+    <magic priority="50">
+      <!-- 0x888FFC26 in either byte order, then version 1-5 -->
+      <match value="(?s)\\x26\\xfc\\x8f\\x88[\\x01-\\x05]\\x00" type="regex" offset="0"/>
+      <match value="(?s)\\x88\\x8f\\xfc\\x26\\x00[\\x01-\\x05]" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.bigwig"/>
+  </mime-type>
+
+
   <mime-type type="application/x-bittorrent">
     <magic priority="50">
+      <!-- bencoded dict; keys are sorted, so the first is one of these -->
       <match value="d8:announce" type="string" offset="0"/>
+      <match value="d13:announce-list" type="string" offset="0"/>
+      <match value="d7:comment" type="string" offset="0"/>
+      <match value="d10:created by" type="string" offset="0"/>
+      <match value="d13:creation date" type="string" offset="0"/>
+      <match value="d8:encoding" type="string" offset="0"/>
+      <match value="d4:infod" type="string" offset="0"/>
     </magic>
     <glob pattern="*.torrent"/>
   </mime-type>
-
   <mime-type type="application/x-blender">
     <acronym>Blend</acronym>
     <_comment>Blender scene</_comment>
     <tika:link>https://www.blender.org/</tika:link>
     <magic priority="50">
-      <match value="BLENDER" type="string" offset="0"/>
+      <!-- then pointer size (_ 32-bit, - 64-bit), endianness, version -->
+      <match value="BLENDER" type="string" offset="0">
+        <match value="BLENDER[_-][vV][0-9]" type="regex" offset="0"/>
+      </match>
+      <!-- 5.0+: header size, pointer size, format version, endianness, 4-digit version -->
+      <match value="BLENDER" type="string" offset="0">
+        <match value="BLENDER[0-9]{2}[_-][0-9]{2}[vV][0-9]{4}" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.blend"/>
     <glob pattern="*.blender"/>
@@ -3889,11 +4143,101 @@
     <sub-class-of type="application/xml"/>
   </mime-type>
 
+  <mime-type type="application/x-casio-fxi">
+    <_comment>Casio calculator data (Yellow Computing FX-Interface)</_comment>
+    <magic priority="50">
+      <!-- "FX-INTERFACE" XOR 0xE7 -->
+      <match value="0xA1BFCAAEA9B3A2B5A1A6A4A2" type="string" offset="3"/>
+    </magic>
+    <glob pattern="*.fxi"/>
+  </mime-type>
+  <mime-type type="application/x-casio-g1m">
+    <_comment>Casio calculator file (g1m family)</_comment>
+    <magic priority="50">
+      <!-- "USBPower", bitwise inverted -->
+      <match value="0xAAACBDAF90889A8D" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.g1m"/>
+    <glob pattern="*.g1r"/>
+    <glob pattern="*.g2m"/>
+    <glob pattern="*.g2r"/>
+    <glob pattern="*.g3m"/>
+  </mime-type>
   <mime-type type="application/x-cdf">
     <_comment>CD Audio</_comment>
     <magic priority="50">
       <match value="RIFF$\x00\x00\x00CDDAfmt\x20\x18" type="string" offset="0" />
       <glob pattern="*.cda"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-fec">
+    <_comment>US Federal Election Commission electronic filing</_comment>
+    <tika:link>https://www.fec.gov/help-candidates-and-committees/filing-reports/fecfile-software/</tika:link>
+    <sub-class-of type="text/plain"/>
+    <magic priority="50">
+      <!-- header record, fields separated by FS (0x1C) -->
+      <match value="HDR\x1cFEC\x1c" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.fec"/>
+  </mime-type>
+  <mime-type type="application/x-garmin-gdb">
+    <_comment>Garmin MapSource GPS database</_comment>
+    <!-- no *.gdb glob: InterBase/Firebird and others use it -->
+    <magic priority="50">
+      <match value="MsRcf\x00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-gbx">
+    <_comment>Nadeo GameBox (TrackMania, ManiaPlanet)</_comment>
+    <magic priority="50">
+      <!-- version 3-6, then format and compression flags -->
+      <match value="GBX" type="string" offset="0">
+        <match value="GBX[\x03-\x06]\x00[BT][UC][UC]" type="regex" offset="0"/>
+      </match>
+    </magic>
+    <glob pattern="*.gbx"/>
+  </mime-type>
+  <mime-type type="application/x-gcov-data">
+    <_comment>gcov coverage data</_comment>
+    <magic priority="50">
+      <!-- "gcda" in either byte order, then a 4-character version -->
+      <match value="adcg" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
+      <match value="gcda" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.gcda"/>
+  </mime-type>
+  <mime-type type="application/x-gcov-notes">
+    <_comment>gcov notes</_comment>
+    <magic priority="50">
+      <match value="oncg" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
+      <match value="gcno" type="string" offset="0">
+        <match value="[0-9A-Z*]{4}" type="regex" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.gcno"/>
+  </mime-type>
+  <mime-type type="application/x-gettext-translation">
+    <_comment>GNU gettext message catalog</_comment>
+    <magic priority="50">
+      <!-- magic in either byte order, then major revision 0, minor 0 or 1 (system-dependent strings) -->
+      <match value="0xDE12049500000000" mask="0xFFFFFFFFFEFFFFFF" type="string" offset="0"/>
+      <match value="0x950412DE00000000" mask="0xFFFFFFFFFFFFFFFE" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.mo"/>
+    <glob pattern="*.gmo"/>
+  </mime-type>
+  <mime-type type="application/x-git-pack">
+    <_comment>git packfile</_comment>
+    <alias type="application/x-git"/>
+    <magic priority="50">
+      <match value="PACK\x00\x00\x00\x02" type="string" offset="0"/>
+      <match value="PACK\x00\x00\x00\x03" type="string" offset="0"/>
     </magic>
   </mime-type>
   <mime-type type="application/x-gtar">
@@ -3928,6 +4272,14 @@
         <match value="\x06" offset="4" type="string"/>
         <match value="\x07" offset="4" type="string"/>
       </match>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-amiga-executable">
+    <_comment>AmigaOS hunk executable</_comment>
+    <magic priority="50">
+      <!-- HUNK_HEADER, no resident libraries, then a nonzero hunk table size -->
+      <match value="(?s)\\x00\\x00\\x03\\xf3\\x00{7}[\\x01-\\xff]" type="regex" offset="0"/>
     </magic>
   </mime-type>
 
@@ -3977,6 +4329,22 @@
     </magic>
     <glob pattern="*.crx"/>
   </mime-type>
+  <mime-type type="application/x-clamav-database">
+    <_comment>ClamAV signature database</_comment>
+    <alias type="application/x-clamav"/>
+    <magic priority="50">
+      <match value="ClamAV-VDB:" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.cvd"/>
+    <glob pattern="*.cld"/>
+  </mime-type>
+  <mime-type type="application/x-clamav-diff">
+    <_comment>ClamAV signature database update</_comment>
+    <magic priority="50">
+      <match value="ClamAV-Diff:" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.cdiff"/>
+  </mime-type>
 
   <mime-type type="application/x-compress">
     <magic priority="50">
@@ -4016,6 +4384,18 @@
     </magic>
     <glob pattern="*.deb"/>
     <glob pattern="*.udeb"/>
+  </mime-type>
+
+  <mime-type type="application/x-device-tree-blob">
+    <_comment>Flattened devicetree (DTB, U-Boot FIT image)</_comment>
+    <magic priority="50">
+      <!-- magic, then version 16 or 17 at offset 20 -->
+      <match value="0xD00DFEED" type="string" offset="0">
+        <match value="0x00000010" mask="0xFFFFFFFE" type="string" offset="20"/>
+      </match>
+    </magic>
+    <glob pattern="*.dtbo"/>
+    <glob pattern="*.itb"/>
   </mime-type>
 
   <mime-type type="application/x-dex">
@@ -4067,6 +4447,14 @@
     <glob pattern="*.dvi"/>
   </mime-type>
 
+  <mime-type type="application/x-elasto-mania-level">
+    <_comment>Elasto Mania level</_comment>
+    <magic priority="50">
+      <!-- Elma; POT06 is Across -->
+      <match value="POT14" type="string" offset="0"/>
+      <match value="POT06" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-elc">
     <_comment>Emacs Lisp bytecode</_comment>
     <magic priority="50">
@@ -4134,6 +4522,13 @@
       </match>
     </magic>
   </mime-type>
+  <mime-type type="application/x-fbx">
+    <_comment>Autodesk FBX (binary)</_comment>
+    <magic priority="50">
+      <match value="Kaydara FBX Binary  \x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.fbx"/>
+  </mime-type>
 
   <mime-type type="application/x-killustrator">
     <_comment>KIllustrator File</_comment>
@@ -4161,6 +4556,17 @@
     <glob pattern="*.scad"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
+
+  <mime-type type="application/x-osm-pbf">
+    <_comment>OpenStreetMap PBF</_comment>
+    <magic priority="50">
+      <!-- big-endian BlobHeader length, then BlobHeader.type "OSMHeader" -->
+      <match value="0x0A094F534D486561646572" type="string" offset="4">
+        <match value="0x0000" type="string" offset="0"/>
+      </match>
+    </magic>
+    <glob pattern="*.osm.pbf"/>
+  </mime-type>
   <mime-type type="application/x-extension-fcstd">
     <_comment>FreeCAD document</_comment>
     <tika:link>https://wiki.freecad.org/File_Format_FCStd</tika:link>
@@ -4176,6 +4582,13 @@
         <match value="0x0002" type="string" offset="16"/>
       </match>
     </magic>
+  </mime-type>
+  <mime-type type="application/x-fastcad">
+    <_comment>FastCAD drawing</_comment>
+    <magic priority="50">
+      <match value="FCW (FastCAD for Windows)" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.fcw"/>
   </mime-type>
   <mime-type type="application/x-sharedlib">
     <sub-class-of type="application/x-elf"/>
@@ -4205,6 +4618,20 @@
     </magic>
     <!-- too rare to use? <glob pattern="*.mmm"/> -->
   </mime-type>
+  <mime-type type="application/x-dmp">
+    <_comment>Windows minidump</_comment>
+    <magic priority="50">
+      <match value="MDMP\x93\xa7" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-windows-kernel-dump">
+    <_comment>Windows kernel memory dump</_comment>
+    <alias type="application/x-ms-dmp"/>
+    <magic priority="50">
+      <match value="PAGEDUMP" type="string" offset="0"/>
+      <match value="PAGEDU64" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-dosexec">
     <_comment>DOS/Windows executable (EXE)</_comment>
     <!-- magic is MZ at offset=0, but that may not be unique enough -->
@@ -4228,6 +4655,12 @@
     </match>
     </magic>
     <glob pattern="*.fp7" />
+  </mime-type>
+  <mime-type type="application/x-finale">
+    <_comment>Finale notation (Enigma binary)</_comment>
+    <magic priority="50">
+      <match value="ENIGMA BINARY FILE" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-font-bdf">
@@ -4319,6 +4752,14 @@
     <glob pattern="*.spl"/>
   </mime-type>
 
+  <mime-type type="application/x-glulx">
+    <_comment>Glulx game</_comment>
+    <magic priority="50">
+      <match value="Glul\x00\x02" type="string" offset="0"/>
+      <match value="Glul\x00\x03" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ulx"/>
+  </mime-type>
   <mime-type type="application/x-gnucash">
     <glob pattern="*.gnucash" />
   </mime-type>
@@ -4377,6 +4818,15 @@
     <sub-class-of type="application/x-tika-msoffice"/>
     <glob pattern="*.lyr"/>
   </mime-type>
+  <mime-type type="application/x-haihaisoft-drm">
+    <_comment>Haihaisoft DRM-X protected file</_comment>
+    <magic priority="50">
+      <!-- the <XDRMHEADER> that follows names its license server at drm-x.com -->
+      <match value="XDRM" type="string" offset="0">
+        <match value="HEAD" type="string" offset="10"/>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-hdf">
     <_comment>Hierarchical Data Format File</_comment>
     <magic priority="50">
@@ -4426,6 +4876,13 @@
     <tika:link>https://www.l3harrisgeospatial.com/docs/idl_savefile.html</tika:link>
     <magic priority="50">
       <match value="0x535200040000000A000004" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-imagedisk">
+    <_comment>ImageDisk floppy image</_comment>
+    <magic priority="50">
+      <match value="IMD [0-9]\\.[0-9]{2}: " type="regex" offset="0"/>
     </magic>
   </mime-type>
   <mime-type type="application/x-internet-archive">
@@ -4508,6 +4965,18 @@
       <match value="JigsawDownload template" offset="0"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-jw-cad">
+    <_comment>Jw_cad drawing</_comment>
+    <magic priority="50">
+      <match value="JwwData." type="string" offset="0"/>
+      <match value="JwsData." type="string" offset="0"/>
+      <!-- older JWC drawings and symbols -->
+      <match value="jw_cad(c)" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jww"/>
+    <glob pattern="*.jwc"/>
+    <glob pattern="*.jws"/>
+  </mime-type>
   <mime-type type="application/x-kdelnk">
     <magic priority="50">
       <match value="[KDE\ Desktop\ Entry]" type="string" offset="0"/>
@@ -4546,7 +5015,31 @@
       <match value="-lz5-" type="string" offset="2"/>
     </magic>
   </mime-type>
+
+  <mime-type type="application/x-ligo-frame">
+    <_comment>LIGO/Virgo gravitational-wave frame file</_comment>
+    <magic priority="50">
+      <match value="IGWD\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.gwf"/>
+  </mime-type>
   
+  <mime-type type="application/x-lrzip">
+    <_comment>Long Range ZIP</_comment>
+    <magic priority="50">
+      <match value="LRZI\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lrz"/>
+  </mime-type>
+  <mime-type type="application/x-lucene-index">
+    <_comment>Apache Lucene index file</_comment>
+    <magic priority="50">
+      <!-- CodecUtil header: magic 0x3FD76C17, then the codec name (length byte + ASCII) -->
+      <match value="0x3FD76C17" type="string" offset="0">
+        <match value="(?s)\\x3f\\xd7\\x6c\\x17[\\x02-\\x40][A-Za-z]" type="regex" offset="0"/>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-lz4">
      <_comment>First match LZ4 Frame</_comment>
      <_comment>Second match Legacy Frame</_comment>
@@ -4568,6 +5061,13 @@
   <mime-type type="application/x-lzma">
     <_comment>LZMA compressed archive</_comment>
     <glob pattern="*.lzma"/>
+  </mime-type>
+  <mime-type type="application/x-lzx">
+    <_comment>Amiga LZX archive</_comment>
+    <magic priority="50">
+      <match value="LZX\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lzx"/>
   </mime-type>
   <mime-type type="application/x-mach-o">
     <_comment>Mach-O</_comment>
@@ -4772,6 +5272,14 @@
     <sub-class-of type="application/x-bplist"/>
     <glob pattern="*.memgraph"/>
   </mime-type>
+  <mime-type type="application/x-mikrotik-npk">
+    <_comment>MikroTik RouterOS package</_comment>
+    <magic priority="50">
+      <match value="0x1EF1D0BA" type="string" offset="0"/>
+      <match value="0xFB0F10A1" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.npk"/>
+  </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
     <acronym>MOBI</acronym>
@@ -4836,6 +5344,19 @@
   </mime-type>
   <mime-type type="application/x-msclip">
     <glob pattern="*.clp"/>
+  </mime-type>
+
+  <mime-type type="application/x-mpq">
+    <_comment>Blizzard MPQ archive</_comment>
+    <magic priority="50">
+      <!-- archive header with its v1-v4 header size, or the user-data header that precedes one -->
+      <match value="MPQ\x1a\x20\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1a\x2c\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1a\x44\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1a\xd0\x00\x00\x00" type="string" offset="0"/>
+      <match value="MPQ\x1b" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.mpq"/>
   </mime-type>
 
   <mime-type type="application/x-msdownload">
@@ -5020,6 +5541,42 @@
       <match value="0x43444601" type="string" offset="0"/>
     </magic>
   </mime-type>
+
+  <mime-type type="application/x-nexrad-level3">
+    <_comment>NEXRAD Level III radar product</_comment>
+    <magic priority="50">
+      <!-- WMO abbreviated heading for radar data (SDUSii CCCC YYGGgg), then the AWIPS id -->
+      <match value="SDUS" type="string" offset="0">
+        <match value="SDUS[0-9]{2} [A-Z]{4} [0-9]{6}(?: [A-Z]{3})?\\r\\r\\n[A-Z0-9]{4,6}\\r\\r\\n" type="regex" offset="0"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-navitel-map">
+    <_comment>Navitel Navigator map</_comment>
+    <magic priority="50">
+      <!-- crawl files name their source "OpenStreetMap (converted by KonTur)", a Navitel OSM map series -->
+      <match value="PMGC\x05\x00" type="string" offset="0">
+        <match value="0x8400000084000000" type="string" offset="20"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-nufx">
+    <_comment>NuFX (ShrinkIt) archive</_comment>
+    <magic priority="50">
+      <match value="0x4EF546E96CE5" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.shk"/>
+  </mime-type>
+  <mime-type type="application/x-nwc">
+    <_comment>NoteWorthy Composer song</_comment>
+    <magic priority="50">
+      <!-- compressed: zlib stream follows -->
+      <match value="[NWZ]\x00\x78" type="string" offset="0"/>
+      <match value="[NoteWorthy ArtWare]" type="string" offset="0"/>
+      <match value="[NoteWorthy Composer]" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.nwc"/>
+  </mime-type>
   <mime-type type="application/x-parquet">
     <glob pattern="*.parquet"/>
     <magic priority="50">
@@ -5064,6 +5621,80 @@
     <magic priority="50">
       <match value="0M3C" type="string" offset="8" />
     </magic>
+  </mime-type>
+  <mime-type type="application/x-promethean-flipchart">
+    <_comment>Promethean ActivInspire flipchart</_comment>
+    <!-- " Bamboo " is the container; its zlib members carry the prometheanworld.com/Inspire XML namespace -->
+    <magic priority="50">
+      <match value=" Bamboo " type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-ps3-package">
+    <_comment>PlayStation 3/PSP package</_comment>
+    <magic priority="50">
+      <!-- then package type: 0x80000001 retail, 0x00000001 debug -->
+      <match value="0x7F504B4700000001" mask="0xFFFFFFFF7FFFFFFF" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-ps3-theme">
+    <_comment>PlayStation 3 theme</_comment>
+    <magic priority="50">
+      <match value="P3TF\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.p3t"/>
+  </mime-type>
+  <mime-type type="application/x-python-bytecode">
+    <_comment>Python bytecode</_comment>
+    <magic priority="50">
+      <!-- 2.3-2.7 magic numbers, then CR LF -->
+      <match value="0x3BF20D0A" type="string" offset="0"/>
+      <match value="0x6DF20D0A" type="string" offset="0"/>
+      <match value="0xB3F20D0A" type="string" offset="0"/>
+      <match value="0xD1F20D0A" type="string" offset="0"/>
+      <match value="0x03F30D0A" type="string" offset="0"/>
+      <!-- 3.x: a little-endian magic (3.0 is 3131, 3.14 is 3627), then CR LF. Text whose first line is
+           one character with CR CR LF endings looks the same, so also check the rest of the header -->
+      <match value="0x0D0A" type="string" offset="2">
+        <!-- 3.0-3.4: the code object after the 8- or 12-byte header -->
+        <match value="0x0C" type="string" offset="1">
+          <match value="c" type="string" offset="8"/>
+          <match value="c" type="string" offset="12"/>
+          <match value="0xE3" type="string" offset="12"/>
+        </match>
+        <!-- 3.5-3.6: a code object at 12; 3.7+: PEP 552 flags 0-3 -->
+        <match value="0x0D" type="string" offset="1">
+          <match value="0xE3" type="string" offset="12"/>
+          <match value="0x00000000" mask="0xFCFFFFFF" type="string" offset="4"/>
+        </match>
+        <match value="0x0E" type="string" offset="1">
+          <match value="0x00000000" mask="0xFCFFFFFF" type="string" offset="4"/>
+        </match>
+      </match>
+    </magic>
+    <glob pattern="*.pyc"/>
+    <glob pattern="*.pyo"/>
+  </mime-type>
+  <mime-type type="application/x-python-pickle">
+    <_comment>Python pickle</_comment>
+    <magic priority="50">
+      <!-- protocol 2-3, then a dict/list/mark/global opcode; protocol 4-5 start with FRAME -->
+      <match value="0x80" type="string" offset="0">
+        <match value="(?s)\\x80[\\x02\\x03][}\\](c]" type="regex" offset="0"/>
+        <match value="(?s)\\x80[\\x04\\x05]\\x95" type="regex" offset="0"/>
+      </match>
+    </magic>
+    <glob pattern="*.pkl"/>
+    <glob pattern="*.pickle"/>
+  </mime-type>
+
+  <mime-type type="application/x-qemu-disk">
+    <_comment>QEMU copy-on-write disk image</_comment>
+    <magic priority="50">
+      <!-- qcow version 1, 2 or 3 -->
+      <match value="(?s)QFI\\xfb\\x00\\x00\\x00[\\x01-\\x03]" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.qcow"/>
+    <glob pattern="*.qcow2"/>
   </mime-type>
 
   <mime-type type="application/x-quattro-pro">
@@ -5348,6 +5979,22 @@
     </magic>
     <glob pattern="*.sz"/>
   </mime-type>
+  <mime-type type="application/x-source-bsp">
+    <_comment>Valve Source engine map</_comment>
+    <magic priority="50">
+      <!-- then version 0x10-0x1f (Half-Life 2 .. CS:GO use 19-21) -->
+      <match value="VBSP" type="string" offset="0">
+        <match value="0x11" mask="0xF0" type="string" offset="4"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-spectrum-rzx">
+    <_comment>ZX Spectrum input recording (RZX)</_comment>
+    <magic priority="50">
+      <match value="RZX!\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.rzx"/>
+  </mime-type>
 
   <mime-type type="application/x-sfdu">
     <_comment>Standard Formatted Data Units (SFDUs) data</_comment>
@@ -5400,14 +6047,6 @@
     </magic>
     <sub-class-of type="application/x-sqlite3"/>
   </mime-type>
-  <mime-type type="application/x-fossil-checkout">
-    <magic priority="60">
-      <match value="SQLite format 3\x00" type="string" offset="0">
-        <match value="0x0f055112" type="string" offset="68"/>
-      </match>
-    </magic>
-    <sub-class-of type="application/x-sqlite3"/>
-  </mime-type>
   <mime-type type="application/x-fossil-global-conf">
     <magic priority="60">
       <match value="SQLite format 3\x00" type="string" offset="0">
@@ -5448,6 +6087,16 @@
     </magic>
     <sub-class-of type="application/x-sqlite3"/>
   </mime-type>
+  <mime-type type="application/x-mozlz4">
+    <_comment>Mozilla LZ4 (Firefox jsonlz4/mozlz4)</_comment>
+    <alias type="application/x-lz4+json"/>
+    <magic priority="50">
+      <match value="mozLz40\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jsonlz4"/>
+    <glob pattern="*.mozlz4"/>
+    <glob pattern="*.baklz4"/>
+  </mime-type>
   <mime-type type="application/x-esri-spatially-enabled-db">
     <magic priority="60">
       <match value="SQLite format 3\x00" type="string" offset="0">
@@ -5471,6 +6120,26 @@
       </match>
     </magic>
     <sub-class-of type="application/x-sqlite3"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.squashfs">
+    <alias type="application/x-squashfs"/>
+    <_comment>SquashFS filesystem image</_comment>
+    <magic priority="50">
+      <!-- superblock magic, then s_major (2-4) at offset 28 in the same byte order -->
+      <match value="hsqs" type="string" offset="0">
+        <match value="0x0400" type="string" offset="28"/>
+        <match value="0x0300" type="string" offset="28"/>
+        <match value="0x0200" type="string" offset="28"/>
+      </match>
+      <match value="sqsh" type="string" offset="0">
+        <match value="0x0004" type="string" offset="28"/>
+        <match value="0x0003" type="string" offset="28"/>
+        <match value="0x0002" type="string" offset="28"/>
+      </match>
+    </magic>
+    <glob pattern="*.sqsh"/>
+    <glob pattern="*.squashfs"/>
   </mime-type>
   <mime-type type="application/x-stata-do">
     <_comment>Stata DTA Script</_comment>
@@ -5527,6 +6196,9 @@
   <mime-type type="application/x-stuffit">
     <magic priority="50">
       <match value="StuffIt" type="string" offset="0"/>
+      <match value="SIT!" type="string" offset="0">
+        <match value="rLau" type="string" offset="10"/>
+      </match>
     </magic>
     <glob pattern="*.sit"/>
   </mime-type>
@@ -5600,6 +6272,32 @@
       </match>
     </magic>
     <!-- do we want to use this for such a rare format?   <glob pattern="*.rpy"/> -->
+  </mime-type>
+  <mime-type type="application/x-trainz-cdp">
+    <_comment>Trainz content package</_comment>
+    <magic priority="50">
+      <match value="ACS$\x01\x00\x00\x00\x00\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.cdp"/>
+  </mime-type>
+
+  <mime-type type="application/x-ubi-image">
+    <_comment>UBI flash image</_comment>
+    <magic priority="50">
+      <!-- erase-count header, version 1 -->
+      <match value="UBI#\x01" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ubi"/>
+  </mime-type>
+
+  <mime-type type="application/x-uboot-image">
+    <_comment>U-Boot legacy image</_comment>
+    <magic priority="50">
+      <!-- magic, then OS, architecture, image type and compression codes at offset 28 -->
+      <match value="0x27051956" type="string" offset="0">
+        <match value="(?s).{28}[\\x00-\\x18][\\x00-\\x1a][\\x00-\\x18][\\x00-\\x05]" type="regex" offset="0"/>
+      </match>
+    </magic>
   </mime-type>
 
   <!-- =================================================================== -->
@@ -5680,6 +6378,30 @@
     </magic>
     <glob pattern="*.uc2"/>
   </mime-type>
+
+  <mime-type type="application/x-ucsc-2bit">
+    <_comment>UCSC 2bit sequence</_comment>
+    <magic priority="50">
+      <!-- 0x1A412743 in either byte order, then version 0 or 1 (64-bit offsets) -->
+      <match value="0x4327411A00000000" mask="0xFFFFFFFFFEFFFFFF" type="string" offset="0"/>
+      <match value="0x1A41274300000000" mask="0xFFFFFFFFFFFFFFFE" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.2bit"/>
+  </mime-type>
+  <mime-type type="application/x-unreal-uz">
+    <_comment>Unreal Tournament compressed package</_comment>
+    <magic priority="50">
+      <!-- UZ (1234) or UZ2 (5678), then the original file name: compact length, name, NUL -->
+      <match value="0xD2040000" type="string" offset="0">
+        <match value="(?s)[\\x02-\\x3f][\\x20-\\x7e]{1,63}\\.u[a-z]{0,2}\\x00" type="regex" offset="4"/>
+      </match>
+      <match value="0x2E160000" type="string" offset="0">
+        <match value="(?s)[\\x02-\\x3f][\\x20-\\x7e]{1,63}\\.u[a-z]{0,2}\\x00" type="regex" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.uz"/>
+    <glob pattern="*.uz2"/>
+  </mime-type>
   <mime-type type="application/x-ustar">
     <glob pattern="*.ustar"/>
   </mime-type>
@@ -5707,6 +6429,15 @@
     <sub-class-of type="application/x-bplist"/>
     <glob pattern="*.webarchive"/>
   </mime-type>
+  <mime-type type="application/x-wfdb-annotation">
+    <_comment>PhysioNet WFDB annotation</_comment>
+    <magic priority="50">
+      <!-- NOTE annotation (type 22) carrying the "## time resolution" aux string -->
+      <match value="0x0058" type="string" offset="0">
+        <match value="## time resolution: " type="string" offset="4"/>
+      </match>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/x-x509-cert">
     <alias type="application/x-x509-ca-cert"/>
@@ -5723,6 +6454,13 @@
   <mime-type type="application/x-x509-cert;format=der">
     <sub-class-of type="application/x-x509-cert"/>
     <glob pattern="*.der"/>
+    <magic priority="50">
+      <!-- Certificate { TBSCertificate { [0] version v1-v3, serialNumber INTEGER ...
+           any signature algorithm (SM2, Ed25519, ...) -->
+      <match value="0x3080" mask="0xFFFC" type="string" offset="0">
+        <match value="(?s)\\x30(?:\\x81.|\\x82..|\\x83...)\\x30(?:\\x81.|\\x82..|\\x83...)\\xa0\\x03\\x02\\x01[\\x00-\\x02]\\x02" type="regex" offset="0"/>
+      </match>
+    </magic>
     <magic priority="50">
       <match value="0x3080" type="string"
               mask="0xFFF8" offset="0">
@@ -5805,6 +6543,39 @@
 <!-- <glob pattern="*.xmap"/> -->
   </mime-type>
 
+  <mime-type type="application/x-vcdiff">
+    <_comment>VCDIFF delta (RFC 3284)</_comment>
+    <magic priority="50">
+      <!-- header bytes, version 0, then Hdr_Indicator with only its low 3 bits defined -->
+      <match value="0xD6C3C40000" mask="0xFFFFFFFFF8" type="string" offset="0"/>
+      <!-- open-vcdiff's SDCH interleaved format puts 'S' in the version byte -->
+      <match value="0xD6C3C45300" mask="0xFFFFFFFFF8" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.vcdiff"/>
+  </mime-type>
+  <mime-type type="application/x-warcraft3-map">
+    <_comment>Warcraft III map</_comment>
+    <sub-class-of type="application/x-mpq"/>
+    <magic priority="50">
+      <match value="HM3W\x00\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.w3m"/>
+    <glob pattern="*.w3x"/>
+  </mime-type>
+  <mime-type type="application/x-warcraft3-replay">
+    <_comment>Warcraft III replay</_comment>
+    <magic priority="50">
+      <match value="Warcraft III recorded game\x1a" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.w3g"/>
+  </mime-type>
+  <mime-type type="application/x-xdelta">
+    <_comment>Xdelta 1 patch</_comment>
+    <magic priority="50">
+      <match value="%XDZ00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-xz">
     <glob pattern="*.xz"/>
     <magic priority="50">
@@ -5823,6 +6594,13 @@
       <match value="0xfdc4a7dc" type="little32" offset="20"/>
     </magic>
     <glob pattern="*.zoo"/>
+  </mime-type>
+  <mime-type type="application/x-zsync">
+    <_comment>zsync control file</_comment>
+    <magic priority="50">
+      <match value="zsync: " type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.zsync"/>
   </mime-type>
 
   <mime-type type="application/x400-bp"/>
@@ -5873,6 +6651,12 @@
          for them to be preferred for HTML starting with comment.-->
     <magic priority="30">
       <match value="&lt;!--" type="string" offset="0"/>
+    </magic>
+    <!-- ties the text/html fragment rule (which sorts first) so a .xml name can pick XML -->
+    <magic priority="15">
+      <match value="&lt;" type="string" offset="0">
+        <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.xml"/>
     <glob pattern="*.xsl"/>
@@ -6236,6 +7020,24 @@
     <glob pattern="*.gslib"/>
     <glob pattern="*.minigsf"/>
   </mime-type>
+  <mime-type type="audio/x-rex2">
+    <_comment>Propellerhead ReCycle REX2 loop</_comment>
+    <magic priority="50">
+      <match value="CAT " type="string" offset="0">
+        <match value="REX2HEAD" type="string" offset="8"/>
+      </match>
+    </magic>
+    <glob pattern="*.rx2"/>
+  </mime-type>
+  <mime-type type="audio/x-s3m">
+    <_comment>Scream Tracker 3 module</_comment>
+    <magic priority="50">
+      <match value="0x1A10" type="string" offset="28">
+        <match value="SCRM" type="string" offset="44"/>
+      </match>
+    </magic>
+    <glob pattern="*.s3m"/>
+  </mime-type>
   <mime-type type="audio/x-sap">
     <_comment>Slight Atari Player</_comment>
     <tika:link>https://asap.sourceforge.net/sap-format.html</tika:link>
@@ -6243,6 +7045,32 @@
       <match value="SAP\r\n" type="string" offset="0"/>
     </magic>
     <glob pattern="*.sap"/>
+  </mime-type>
+  <mime-type type="audio/x-soundfont">
+    <_comment>SoundFont 2 bank</_comment>
+    <alias type="audio/x-sfbk"/>
+    <magic priority="50">
+      <match value="RIFF" type="string" offset="0">
+        <match value="sfbk" type="string" offset="8"/>
+      </match>
+    </magic>
+    <glob pattern="*.sf2"/>
+  </mime-type>
+
+  <mime-type type="audio/x-ym">
+    <_comment>YM Atari ST / Amstrad CPC chiptune</_comment>
+    <magic priority="50">
+      <match value="LeOnArD!" type="string" offset="4">
+        <match value="YM4!" type="string" offset="0"/>
+        <match value="YM5!" type="string" offset="0"/>
+        <match value="YM6!" type="string" offset="0"/>
+      </match>
+      <!-- older raw register dumps have no signature -->
+      <match value="YM2!" type="string" offset="0"/>
+      <match value="YM3!" type="string" offset="0"/>
+      <match value="YM3b" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ym"/>
   </mime-type>
   <mime-type type="audio/x-oggflac">
     <_comment>Ogg Packaged Free Lossless Audio Codec</_comment>
@@ -6300,9 +7128,19 @@
   <mime-type type="audio/pcmu"/>
 
   <mime-type type="audio/prs.sid">
+    <_comment>Commodore 64 SID tune</_comment>
     <magic priority="50">
-      <match value="PSID" type="string" offset="0"/>
+      <!-- PSID/RSID, then version 1-4 -->
+      <match value="PSID\x00\x01" type="string" offset="0"/>
+      <match value="PSID\x00\x02" type="string" offset="0"/>
+      <match value="PSID\x00\x03" type="string" offset="0"/>
+      <match value="PSID\x00\x04" type="string" offset="0"/>
+      <match value="RSID\x00\x02" type="string" offset="0"/>
+      <match value="RSID\x00\x03" type="string" offset="0"/>
+      <match value="RSID\x00\x04" type="string" offset="0"/>
     </magic>
+    <glob pattern="*.sid"/>
+    <glob pattern="*.psid"/>
   </mime-type>
 
   <mime-type type="audio/qcelp"/>
@@ -6374,6 +7212,17 @@
   <mime-type type="audio/vnd.sealedmedia.softseal.mpeg"/>
   <mime-type type="audio/vnd.vmx.cvsd"/>
   <mime-type type="audio/vorbis-config"/>
+  <mime-type type="audio/x-ape">
+    <_comment>Monkey's Audio</_comment>
+    <magic priority="50">
+      <!-- then format version 3.80-4.xx -->
+      <match value="MAC " type="string" offset="0">
+        <match value="0x0E" type="string" offset="5"/>
+        <match value="0x0F" type="string" offset="5"/>
+      </match>
+    </magic>
+    <glob pattern="*.ape"/>
+  </mime-type>
   <mime-type type="audio/x-aac">
     <alias type="audio/aac"/>
     <glob pattern="*.aac"/>
@@ -6556,6 +7405,36 @@
 
   <mime-type type="chemical/x-xyz">
     <glob pattern="*.xyz"/>
+  </mime-type>
+
+  <mime-type type="font/woff">
+    <alias type="application/font-woff"/>
+    <alias type="application/x-font-woff"/>
+    <acronym>WOFF</acronym>
+    <_comment>Web Open Font Format</_comment>
+    <tika:link>https://www.w3.org/TR/WOFF/</tika:link>
+    <magic priority="50">
+      <match value="wOFF" type="string" offset="0">
+        <match value="0x00010000" type="string" offset="4"/>
+        <match value="OTTO" type="string" offset="4"/>
+        <match value="true" type="string" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.woff"/>
+  </mime-type>
+  <mime-type type="font/woff2">
+    <alias type="application/font-woff2"/>
+    <acronym>WOFF2</acronym>
+    <_comment>Web Open Font Format 2</_comment>
+    <tika:link>https://www.w3.org/TR/WOFF2/</tika:link>
+    <magic priority="50">
+      <match value="wOF2" type="string" offset="0">
+        <match value="0x00010000" type="string" offset="4"/>
+        <match value="OTTO" type="string" offset="4"/>
+        <match value="true" type="string" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.woff2"/>
   </mime-type>
   <mime-type type="image/x-3ds">
     <_comment>3D Studio (V1)</_comment>
@@ -6746,6 +7625,7 @@
   </mime-type>
   <mime-type type="image/heif-sequence">
     <_comment>HEIF Sequence - High Efficiency Image Sequence</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="60">
       <match value="ftypmsf1" type="string" offset="4"/>
     </magic>
@@ -6756,6 +7636,7 @@
     <alias   type="image/hevc"/>
     <_comment>HEIF Image using HEVC Codec</_comment>
     <acronym>HEIC</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="60">
       <match value="ftypheic" type="string" offset="4"/>
       <match value="ftypheix" type="string" offset="4"/>
@@ -6767,6 +7648,7 @@
     <alias   type="image/hevc-sequence"/>
     <_comment>HEIF Sequence using HEVC Codec</_comment>
     <acronym>HEVC</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="60">
       <match value="ftyphevc" type="string" offset="4"/>
       <match value="ftyphevx" type="string" offset="4"/>
@@ -7067,6 +7949,16 @@
   </mime-type>
 
   <mime-type type="image/vnd.mix"/>
+
+  <mime-type type="image/vnd.ms-dds">
+    <alias type="image/x-dds"/>
+    <_comment>DirectDraw Surface</_comment>
+    <magic priority="50">
+      <!-- magic, then the 124-byte header size -->
+      <match value="DDS \x7c\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.dds"/>
+  </mime-type>
   <mime-type type="image/vnd.ms-modi">
        <glob pattern="*.mdi"/>
        <_comment>Microsoft Document Imaging</_comment>
@@ -7125,38 +8017,6 @@
              mask="0xFFFFFFFF00000000FFFFFFFF"/>
     </magic>
     <glob pattern="*.webp"/>
-  </mime-type>
-
-  <mime-type type="image/heic">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftypheic" type="string" offset="4"/>
-      <match value="ftypheix" type="string" offset="4"/>
-    </magic>
-    <glob pattern="*.heic"/>
-  </mime-type>
-
-  <mime-type type="image/heif">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftypmif1" type="string" offset="4"/>
-    </magic>
-    <glob pattern="*.heif"/>
-  </mime-type>
-
-  <mime-type type="image/heif-sequence">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftypmsf1" type="string" offset="4"/>
-    </magic>
-  </mime-type>
-
-  <mime-type type="image/heic-sequence">
-    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
-    <magic priority="50">
-      <match value="ftyphevc" type="string" offset="4"/>
-      <match value="ftyphevx" type="string" offset="4"/>
-    </magic>
   </mime-type>
 
   <mime-type type="image/wmf">
@@ -7249,12 +8109,29 @@
     </magic>
     <glob pattern="*.jxl"/>
   </mime-type>
+  <mime-type type="image/jxr">
+    <_comment>JPEG XR (HD Photo)</_comment>
+    <magic priority="50">
+      <match value="0x4949BC01" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jxr"/>
+    <glob pattern="*.wdp"/>
+    <glob pattern="*.hdp"/>
+  </mime-type>
 
   <mime-type type="image/x-niff">
     <_comment>Navy Interchange File Format</_comment>
     <magic priority="50">
       <match value="IIN1" type="string" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="image/x-paintshoppro">
+    <_comment>Paint Shop Pro image</_comment>
+    <magic priority="50">
+      <match value="Paint Shop Pro Image File\x0a\x1a" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.pspimage"/>
   </mime-type>
 
   <mime-type type="image/x-pict">
@@ -7328,6 +8205,14 @@
       </match>
     </magic>
     <glob pattern="*.ppm"/>
+  </mime-type>
+  <mime-type type="image/x-quake-sprite">
+    <_comment>Quake (v1) / Half-Life (v2) sprite</_comment>
+    <magic priority="50">
+      <match value="IDSP\x01\x00\x00\x00" type="string" offset="0"/>
+      <match value="IDSP\x02\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.spr"/>
   </mime-type>
   <mime-type type="image/x-portable-arbitrarymap">
     <sub-class-of type="image/x-portable-anymap"/>
@@ -7758,6 +8643,13 @@
     <glob pattern="*.e57"/>
   </mime-type>
   <mime-type type="model/example"/>
+  <mime-type type="model/gltf-binary">
+    <_comment>glTF binary</_comment>
+    <magic priority="50">
+      <match value="glTF\x02\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.glb"/>
+  </mime-type>
   <mime-type type="model/iges">
     <_comment>Initial Graphics Exchange Specification Format</_comment>
     <glob pattern="*.igs"/>
@@ -7996,6 +8888,13 @@
     <magic priority="60">
       <match value="(?i)&lt;(html|head|body|title|div)[ >]" type="regex" offset="0"/>
       <match value="(?i)&lt;h[123][ >]" type="regex" offset="0"/>
+    </magic>
+    <!-- fragments served as pages: meta-first, PHP warnings, partials; below the weak
+         %PDF-/xhtml matches so a PDF or XHTML with a junk HTML prefix keeps its type -->
+    <magic priority="15">
+      <match value="&lt;" type="string" offset="0">
+        <match value="(?i)&lt;/?(meta|script|p|br|table|font|center|small|img|a|b)[\\s>/]" type="regex" offset="0"/>
+      </match>
     </magic>
     <!-- The magic priority needs to be lower than that of -->
     <!--  files which contain HTML within them, eg mime emails -->
@@ -8958,7 +9857,32 @@
 
   <mime-type type="video/mp1s"/>
   <mime-type type="video/mp2p"/>
-  <mime-type type="video/mp2t"/>
+  <mime-type type="video/mp2t">
+    <magic priority="50">
+      <!-- sync byte on five consecutive 188-byte packets, or 192-byte M2TS packets -->
+      <match value="0x47" type="string" offset="0">
+        <match value="0x47" type="string" offset="188">
+          <match value="0x47" type="string" offset="376">
+            <match value="0x47" type="string" offset="564">
+              <match value="0x47" type="string" offset="752"/>
+            </match>
+          </match>
+        </match>
+      </match>
+      <match value="0x47" type="string" offset="4">
+        <match value="0x47" type="string" offset="196">
+          <match value="0x47" type="string" offset="388">
+            <match value="0x47" type="string" offset="580">
+              <match value="0x47" type="string" offset="772"/>
+            </match>
+          </match>
+        </match>
+      </match>
+    </magic>
+    <!-- not *.ts (TypeScript) or *.mts (model/vnd.mts) -->
+    <glob pattern="*.m2ts"/>
+    <glob pattern="*.m2t"/>
+  </mime-type>
 
   <mime-type type="video/mp4">
     <magic priority="60">
@@ -9141,10 +10065,21 @@
   </mime-type>
 
   <mime-type type="video/x-flc">
+    <magic priority="50">
+      <!-- frame type, then 8-bit depth -->
+      <match value="0xAF12" type="little16" offset="4">
+        <match value="0x0008" type="little16" offset="12"/>
+      </match>
+    </magic>
     <glob pattern="*.flc"/>
   </mime-type>
 
   <mime-type type="video/x-fli">
+    <magic priority="50">
+      <match value="0xAF11" type="little16" offset="4">
+        <match value="0x0008" type="little16" offset="12"/>
+      </match>
+    </magic>
     <glob pattern="*.fli"/>
   </mime-type>
 
@@ -9185,11 +10120,24 @@
        <match value="0x3026b275" type="big32" offset="0" />
     </magic>
   </mime-type>
+  <mime-type type="application/x-ms-reader">
+    <_comment>Microsoft Reader eBook</_comment>
+    <magic priority="50">
+      <match value="ITOLITLS\x01\x00\x00\x00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lit"/>
+  </mime-type>
   <mime-type type="application/x-ms-asx">
     <_comment>Windows Media Metafile</_comment>
     <glob pattern="*.asx"/>
     <root-XML localName="asx"/>
     <root-XML localName="ASX"/>
+    <!-- often no XML declaration -->
+    <magic priority="50">
+      <match value="&lt;" type="string" offset="0">
+        <match value="(?i)&lt;asx[\\s>]" type="regex" offset="0"/>
+      </match>
+    </magic>
     <sub-class-of type="application/xml"/>
   </mime-type>
   <mime-type type="video/x-ms-wm">
@@ -9254,6 +10202,16 @@
   <mime-type type="audio/x-matroska">
     <sub-class-of type="application/x-matroska"/>
     <glob pattern="*.mka" />
+  </mime-type>
+  <mime-type type="audio/x-mfi">
+    <_comment>i-mode MFi melody</_comment>
+    <magic priority="50">
+      <!-- then lengths, types, track count and the first chunk name -->
+      <match value="melo" type="string" offset="0">
+        <match value="[a-z]{4}" type="regex" offset="13"/>
+      </match>
+    </magic>
+    <glob pattern="*.mld"/>
   </mime-type>
 
   <mime-type type="video/webm">
