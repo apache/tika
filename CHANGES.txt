@@ -81,14 +81,28 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * EpubParser resolves manifest hrefs as URI references relative to the OPF: a '+' is
+     no longer read as a space, and '../' is followed, so such chapters and images are no
+     longer skipped. encryption.xml URIs are resolved the same way. The new
+     ZipEntryPaths in tika-parser-zip-commons does the resolving (TIKA-5050).
+     
+   * Canon CR3 raws have a parser of their own, Cr3Parser in the image module, instead
+     of going through the MP4 parser: their Exif data (IFD0, Exif IFD, Canon maker note,
+     GPS) is extracted, the JPEG preview (PRVW, 1620x1080 on current bodies) is the
+     THUMBNAIL and the 160x120 THMB thumbnail is INLINE, so the thumbnail preset serves
+     a preview (TIKA-5042).
+
    * Blender files (.blend, .blender, application/x-blender, new) yield the preview Blender stores
      as the THUMBNAIL embedded document, for every file format version including the one
      of Blender 5.0. A gzip- or zstd-compressed file is detected by its content and read
      the same way; zstd needs zstd-jni on the classpath (TIKA-5036).
-     
+
    * RAR5 archives are parsed: RarParser no longer refuses them, junrar has read RAR5
      since 8.0.0 (TIKA-5043).
 
+   * SketchUp models (application/vnd.sketchup.skp, new, detected by their header) yield
+     the preview SketchUp stores as the THUMBNAIL embedded document, from SketchUp 3 to
+     2026 (TIKA-5036).
 
    * Jupyter notebooks (.ipynb, new type application/x-ipynb+json) are parsed: cell
      sources and plain-text outputs as text, kernel, language and format version as
@@ -147,6 +161,10 @@ Release 4.3.0 - ???
 
    * 3MF packages are parsed as zip packages instead of failing as XML: the type is a
      sub-type of application/zip, and the streaming zip detector recognizes it (TIKA-5031).
+
+   * 3MF packages have the image their package thumbnail relationship names emitted as the
+     THUMBNAIL, usually Metadata/thumbnail.png; a model part's own thumbnail is not taken
+     (TIKA-5032).
 
    * New SubtitleParser for WebVTT (.vtt) and SubRip (.srt). Each cue becomes
      <div class="cue"> with data-start/data-end (HH:MM:SS.mmm) and data-id, its text
@@ -220,6 +238,11 @@ Release 4.3.0 - ???
      windows-1252. Input the model calls binary gets the low-confidence windows-1252
      fallback, as undetectable input did before. Adds IBM437 as a detected charset
      (TIKA-5052, TIKA-5048).
+
+   * The charset model no longer calls valid UTF-8 binary when it has no NUL and no control
+     character other than tab, line feed, form feed, carriage return and escape (a character
+     cut at the end of the sample is allowed); its next most likely charset is used. Short
+     CJK, Greek and Thai samples were often called binary (TIKA-5052).
 
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>
