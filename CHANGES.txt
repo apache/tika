@@ -216,6 +216,11 @@ Release 4.3.0 - ???
      other tracks' blocks in a file and reading through them in a stream. No container
      metadata yet. Off with extractSubtitles on matroska-parser (TIKA-5030).
 
+   * MP4Parser extracts CEA-608 closed captions (CC1-CC4) as embedded text/vtt
+     documents: from QuickTime c608 tracks by default (off with extractClosedCaptions),
+     and from H.264/HEVC SEI with videoCaptionScan PROBE or FULL. Caption reads have
+     their own per-file limits (TIKA-5039).
+
    * Parse Mobipocket and Kindle ebooks (.mobi, .prc, .azw, .azw3): EXTH metadata, the
      cover as the THUMBNAIL embedded document, the other images, and the text, stored,
      PalmDOC- or HUFF/CDIC-compressed, through the HTML parser (of a KF8 book the HTML flow
