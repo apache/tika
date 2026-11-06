@@ -53,11 +53,19 @@ import org.apache.tika.io.TikaInputStream;
  */
 final class Mp4SubtitleExtractor {
 
-    /**
-     * Which captions to read: {@code c608} tracks, H.264/HEVC {@code video} SEI, and whether
-     * video is probed before it is read in full.
-     */
-    record Captions(boolean c608, boolean video, boolean probe) {
+    /** Which captions to read: {@code c608} tracks, and H.264/HEVC SEI as {@code scan} says. */
+    record Captions(boolean c608, VideoCaptionScan scan) {
+        Captions {
+            scan = scan == null ? VideoCaptionScan.NONE : scan;
+        }
+
+        boolean video() {
+            return scan != VideoCaptionScan.NONE;
+        }
+
+        boolean probe() {
+            return scan == VideoCaptionScan.PROBE;
+        }
     }
 
     // absent from runtimes built without jdk.charsets
@@ -72,7 +80,7 @@ final class Mp4SubtitleExtractor {
     static final int PROBE_HEAD = 300;
     static final int PROBE_INTERVAL_SECONDS = 5;
     static final int PROBE_WINDOW = 8;
-    // c608 and video tracks read for captions, apart from the text tracks' MAX_TRACKS
+    // c608 and video tracks read for captions; each channel they yield still takes a track
     static final int MAX_CAPTION_SOURCES = 16;
     // NAL units looked at before a sample's first slice; SEI follows parameter sets and other
     // SEI (HDR keyframes carry several)
@@ -127,6 +135,23 @@ final class Mp4SubtitleExtractor {
         }
         Set<Long> chapterTracks = chapterTracks(ch, traks, out);
         Map<Long, Track> tracks = new LinkedHashMap<>();
+        try {
+            readTracks(ch, size, traks, trex, chapterTracks, tracks, captions, out);
+        } finally {
+            // caption pairs are held until here: damage later in the file must not lose them
+            for (Track t : tracks.values()) {
+                if (t.pairs != null && t.pairs.found) {
+                    t.pairs.decode(out, "track-" + t.id + "-",
+                            t.kind == Kind.C608 ? t.language : null);
+                }
+            }
+        }
+    }
+
+    private static void readTracks(SeekableByteChannel ch, long size, List<Box> traks,
+                                   Map<Long, long[]> trex, Set<Long> chapterTracks,
+                                   Map<Long, Track> tracks, Captions captions,
+                                   SubtitleTracks out) throws IOException {
         int captionSources = 0;
         for (Box trak : traks) {
             boolean room = captionSources < MAX_CAPTION_SOURCES;
@@ -163,11 +188,6 @@ final class Mp4SubtitleExtractor {
         }
         readFragments(ch, moofs, trex, tracks, out);
         rescan(ch, moofs, trex, chapterTracks, tracks, captions, out);
-        for (Track t : tracks.values()) {
-            if (t.pairs != null && t.pairs.found) {
-                t.pairs.decode(out, "track-" + t.id + "-", t.kind == Kind.C608 ? t.language : null);
-            }
-        }
     }
 
     /**
@@ -186,13 +206,19 @@ final class Mp4SubtitleExtractor {
             if (r == null) {
                 continue;
             }
+            // the reread collects these pairs again; the probe's stay held in case it fails
+            out.refundCaptionPairs(t.pairs.count);
             r.startCaptions(t.trak, false, out);
             again.put(r.id, r);
             r.readCues(ch, out);
         }
         if (!again.isEmpty()) {
             readFragments(ch, moofs, trex, again, out);
-            tracks.putAll(again);
+            for (Track r : again.values()) {
+                if (r.pairs.found) {
+                    tracks.put(r.id, r);
+                }
+            }
         }
     }
 
@@ -263,7 +289,7 @@ final class Mp4SubtitleExtractor {
     }
 
     /**
-     * Emits the samples of {@code traf} if it belongs to an open subtitle track; returns where
+     * Emits the samples of {@code traf} if it belongs to an open track; returns where
      * its data ends. Damage ends that track's fragments; in any traf it loses where the traf's
      * data ends ({@link Unlocated}).
      */
@@ -341,7 +367,7 @@ final class Mp4SubtitleExtractor {
         return next;
     }
 
-    /** Ends {@code t}'s fragments (if it is a subtitle track) and loses the traf's end. */
+    /** Ends {@code t}'s fragments (if not null) and loses the traf's end. */
     private static Unlocated lost(Track t, String message) {
         if (t != null) {
             t.done = true;
@@ -349,7 +375,7 @@ final class Mp4SubtitleExtractor {
         return new Unlocated(message);
     }
 
-    /** Emits the run's samples to {@code t} (null: not a subtitle track); returns its data end. */
+    /** Emits the run's samples to {@code t} (null: not read); returns its data end. */
     private static long readTrun(SeekableByteChannel ch, Box trun, long base, long next,
                                  long defDuration, long defSize, Track t, SubtitleTracks out)
             throws IOException {
@@ -368,13 +394,12 @@ final class Mp4SubtitleExtractor {
             throw lost(t, "MP4 trun shorter than its sample count declares");
         }
         long offset = (flags & 0x01) != 0 ? base + (int) getUIntBE(p, 8) : next;
-        if (width == 0 && t == null) {
-            // every sample has the default size; nothing to walk
-            return defSize > 0 && count > (Long.MAX_VALUE - Math.max(offset, 0)) / defSize
-                    ? Long.MAX_VALUE : offset + count * defSize;
-        }
         long fileSize = ch.size();
         for (long s = 0; s < count; s++) {
+            if (width == 0 && t == null) {
+                // every sample left has the default size; nothing to walk
+                return runEnd(offset, count - s, defSize);
+            }
             long duration = defDuration;
             long size = defSize;
             if ((flags & 0x100) != 0) {
@@ -402,6 +427,11 @@ final class Mp4SubtitleExtractor {
             offset += size;
         }
         return offset;
+    }
+
+    private static long runEnd(long offset, long count, long defSize) {
+        return defSize > 0 && count > (Long.MAX_VALUE - Math.max(offset, 0)) / defSize
+                ? Long.MAX_VALUE : offset + count * defSize;
     }
 
     private enum Kind { TEXT, AVC, HEVC, C608 }
@@ -672,7 +702,8 @@ final class Mp4SubtitleExtractor {
         boolean cue(SeekableByteChannel ch, long offset, long size, long duration, long cto,
                     long fileSize, SubtitleTracks budget) throws IOException {
             if (kind != Kind.TEXT) {
-                boolean more = captionSample(ch, offset, size, time + cto, fileSize, budget);
+                boolean more = captionSample(ch, offset, size, time + cto, duration, fileSize,
+                        budget);
                 time += duration;
                 return more;
             }
@@ -697,7 +728,12 @@ final class Mp4SubtitleExtractor {
 
         /** Collects one sample's caption pairs; false to stop the walk. */
         private boolean captionSample(SeekableByteChannel ch, long offset, long size, long pts,
-                                      long fileSize, SubtitleTracks budget) throws IOException {
+                                      long duration, long fileSize, SubtitleTracks budget)
+                throws IOException {
+            // charged before any skip: the walk is bounded, not only the reads
+            if (!budget.chargeCaptionSample()) {
+                return false;
+            }
             long index = sampleIndex++;
             if (probing && index >= PROBE_HEAD) {
                 if (probeLeft > 0) {
@@ -712,11 +748,10 @@ final class Mp4SubtitleExtractor {
             if (offset < 0 || size <= 0 || offset >= fileSize) {
                 return true;
             }
-            if (!budget.chargeCaptionSample()) {
-                return false;
-            }
             long end = Math.min(offset + size, fileSize);
-            long ms = Math.max(0, millis(pts));
+            // may be negative: kept so that such frames still sort by presentation time
+            long ms = millis(pts);
+            pairs.shownUntil(millis(pts + duration));
             boolean more = kind == Kind.C608 ? c608(ch, offset, end, ms, budget)
                     : nals(ch, offset, end, ms, budget);
             if (probing && pairs.found) {
@@ -812,25 +847,33 @@ final class Mp4SubtitleExtractor {
 
     /** Caption pairs with presentation times, decoded in time order (stable within a frame). */
     private static final class CaptionPairs {
-        private static final int INDEX_BITS = 21;
+        private static final int INDEX_BITS = SubtitleTracks.CAPTION_PAIR_BITS;
+        // keys hold the time in the remaining bits, offset so that negative times sort first
+        private static final long TIME_BIAS = 1L << (62 - INDEX_BITS);
         private final SubtitleTracks budget;
         private long[] keys = new long[256];
         private int[] data = new int[256];
         int count;
         boolean overflow;
-        // a pair other than padding was seen
+        // a caption character was seen
         boolean found;
-        // latest time of any pair: when the last caption leaves the screen
+        // field 2 is inside an XDS packet, whose bytes are not captions
+        private boolean xds;
+        // when the last frame read leaves the screen
         long lastMillis;
 
         CaptionPairs(SubtitleTracks budget) {
             this.budget = budget;
         }
 
+        void shownUntil(long ms) {
+            lastMillis = Math.max(lastMillis, ms);
+        }
+
         // padding is kept: it separates a repeated control code from a new one, and that must
         // be judged in presentation order
         void add(long ms, int field, int b1, int b2) {
-            lastMillis = Math.max(lastMillis, ms);
+            shownUntil(ms);
             if (overflow || count >= 1 << INDEX_BITS || !budget.chargeCaptionPair()) {
                 overflow = true;
                 return;
@@ -839,19 +882,28 @@ final class Mp4SubtitleExtractor {
                 keys = Arrays.copyOf(keys, count * 2);
                 data = Arrays.copyOf(data, count * 2);
             }
-            keys[count] = (Math.min(ms, (1L << 42) - 1) << INDEX_BITS) | count;
+            long t = Math.max(-TIME_BIAS, Math.min(ms, TIME_BIAS - 1)) + TIME_BIAS;
+            keys[count] = (t << INDEX_BITS) | count;
             data[count] = (field << 16) | (b1 << 8) | b2;
             count++;
-            found |= ((b1 | b2) & 0x7F) != 0;
+            int c = b1 & 0x7F;
+            if (field == 1 && c >= 0x01 && c <= 0x1F) {
+                // 0x01-0x0E start or continue XDS, 0x0F ends it, a caption control leaves it
+                xds = c < 0x0F;
+            }
+            // a basic character, or a special one such as a music note (0x11 or 0x19, 0x30-0x3F)
+            boolean character = c >= 0x20 || ((c & 0x77) == 0x11 && (b2 & 0x70) == 0x30);
+            found |= character && !(field == 1 && xds);
         }
 
         void decode(SubtitleTracks owner, String prefix, String language) {
-            long[] sorted = Arrays.copyOf(keys, count);
-            Arrays.sort(sorted);
+            Arrays.sort(keys, 0, count);
             Cea608Decoder decoder = new Cea608Decoder(owner, prefix, language);
-            for (long key : sorted) {
+            for (int i = 0; i < count; i++) {
+                long key = keys[i];
                 int v = data[(int) (key & ((1 << INDEX_BITS) - 1))];
-                decoder.pair(key >>> INDEX_BITS, v >> 16, (v >> 8) & 0xFF, v & 0xFF);
+                long ms = Math.max(0, (key >>> INDEX_BITS) - TIME_BIAS);
+                decoder.pair(ms, v >> 16, (v >> 8) & 0xFF, v & 0xFF);
             }
             decoder.finish(lastMillis);
         }
@@ -1043,8 +1095,10 @@ final class Mp4SubtitleExtractor {
     private static byte[] table(SeekableByteChannel ch, Box b, boolean prefix,
                                 SubtitleTracks out) throws IOException {
         long len = b.end - b.payload;
-        if (prefix) {
-            len = Math.min(len, MAX_TABLE_BYTES);
+        if (prefix && len > MAX_TABLE_BYTES) {
+            out.warn("MP4 '" + b.type + "' box of " + len + " bytes; captions read from its first "
+                    + MAX_TABLE_BYTES);
+            len = MAX_TABLE_BYTES;
         } else if (len > MAX_TABLE_BYTES) {
             out.warn("MP4 '" + b.type + "' box of " + len
                     + " bytes exceeds the subtitle table limit of " + MAX_TABLE_BYTES);

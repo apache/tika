@@ -42,7 +42,9 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.Initializable;
 import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -58,6 +60,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.video.SubtitleTracks;
+import org.apache.tika.parser.video.VideoCaptionScan;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -69,7 +72,7 @@ import org.apache.tika.utils.StringUtils;
  * This uses Drew Noakes' metadata-extractor: https://github.com/drewnoakes/metadata-extractor
  */
 @TikaComponent(name = "mp4-parser")
-public class MP4Parser implements Parser {
+public class MP4Parser implements Parser, Initializable {
     /**
      * Serial version UID
      */
@@ -97,19 +100,6 @@ public class MP4Parser implements Parser {
     private boolean extractSubtitles = true;
     private boolean extractClosedCaptions = true;
     private VideoCaptionScan videoCaptionScan = VideoCaptionScan.NONE;
-
-    /** How H.264 and HEVC video is read for CEA-608 captions carried in its SEI messages. */
-    public enum VideoCaptionScan {
-        /** Not read. */
-        NONE,
-        /**
-         * The first 300 frames, then 8 frames every 5 seconds; every frame only once a caption
-         * character turns up. A caption run between two probes is missed.
-         */
-        PROBE,
-        /** Every frame. */
-        FULL
-    }
 
     static {
         // All types should be 4 bytes long, space padded as needed
@@ -178,9 +168,9 @@ public class MP4Parser implements Parser {
 
     /**
      * How video is read for captions in its SEI messages; default {@link VideoCaptionScan#NONE},
-     * as it reads a few bytes of each probed frame of every H.264 and HEVC file. Applies only
-     * while {@link #isExtractClosedCaptions()} is true. Set in tika-config.json; not read from a
-     * per-request config.
+     * as it reads a few bytes of each probed frame of every H.264 and HEVC file. Anything else
+     * needs {@link #isExtractSubtitles()} and {@link #isExtractClosedCaptions()}, or loading the
+     * config fails. Set in tika-config.json; not read from a per-request config.
      */
     public VideoCaptionScan getVideoCaptionScan() {
         return videoCaptionScan;
@@ -189,6 +179,16 @@ public class MP4Parser implements Parser {
     public void setVideoCaptionScan(VideoCaptionScan videoCaptionScan) {
         this.videoCaptionScan = videoCaptionScan == null ? VideoCaptionScan.NONE
                 : videoCaptionScan;
+    }
+
+    /** A video caption scan that could never run is a configuration error, not a no-op. */
+    @Override
+    public void initialize() throws TikaConfigException {
+        if (videoCaptionScan != VideoCaptionScan.NONE && !(extractSubtitles
+                && extractClosedCaptions)) {
+            throw new TikaConfigException("mp4-parser: videoCaptionScan " + videoCaptionScan
+                    + " needs extractSubtitles and extractClosedCaptions to be true");
+        }
     }
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
@@ -248,9 +248,8 @@ public class MP4Parser implements Parser {
                     new TikaException("subtitles: " + e.getMessage(), e), metadata, context);
             return null;
         }
-        boolean video = extractClosedCaptions && videoCaptionScan != VideoCaptionScan.NONE;
-        return SubtitleTracks.readMp4(tis, metadata, context, extractClosedCaptions, video,
-                videoCaptionScan == VideoCaptionScan.FULL);
+        return SubtitleTracks.readMp4(tis, metadata, context, extractClosedCaptions,
+                videoCaptionScan);
     }
 
     //content already on disk or in memory, or a measured length short enough to buffer;

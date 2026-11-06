@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.video;
 
+import static org.apache.tika.parser.video.VideoCaptionScan.FULL;
+import static org.apache.tika.parser.video.VideoCaptionScan.NONE;
+import static org.apache.tika.parser.video.VideoCaptionScan.PROBE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -46,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -54,6 +58,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.CacheMemoryBudget;
@@ -112,26 +117,22 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
 
     private static List<Emitted> extract(byte[] mp4, Metadata container, Capture capture)
             throws Exception {
-        return extract(mp4, container, capture, Scan.NONE);
+        return extract(mp4, container, capture, NONE);
     }
 
-    /** How video is read for captions; c608 tracks are always read. */
-    private enum Scan { NONE, PROBE, FULL }
-
-    private static List<Emitted> extract(byte[] mp4, Scan scan) throws Exception {
+    private static List<Emitted> extract(byte[] mp4, VideoCaptionScan scan) throws Exception {
         return extract(mp4, new Metadata(), new Capture(), scan);
     }
 
     private static List<Emitted> extract(byte[] mp4, Metadata container, Capture capture,
-                                         Scan scan) throws Exception {
+                                         VideoCaptionScan scan) throws Exception {
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, capture);
         XHTMLContentHandler xhtml =
                 new XHTMLContentHandler(new DefaultHandler(), container, context);
         xhtml.startDocument();
         try (TikaInputStream tis = TikaInputStream.get(mp4)) {
-            SubtitleTracks.readMp4(tis, container, context, true, scan != Scan.NONE,
-                    scan == Scan.FULL).emit(xhtml);
+            SubtitleTracks.readMp4(tis, container, context, true, scan).emit(xhtml);
         }
         xhtml.endDocument();
         return capture.docs;
@@ -519,7 +520,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 bad = Arrays.copyOf(bad, r.nextInt(bad.length));
             }
             try {
-                extract(bad, Scan.PROBE);
+                extract(bad, PROBE);
             } catch (RuntimeException | Error e) {
                 throw new AssertionError("seed=" + seed + " iteration=" + i, e);
             }
@@ -903,10 +904,10 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = {2000, 0})
+    @ValueSource(longs = {2000, 0, -7000})
     public void testCaptionsFromAvcSeiInPresentationOrder(long bias) throws Exception {
         // decode order swaps frames 4 and 5 ("LL" before "HE"); ctts puts them back, with
-        // negative offsets when there is no bias
+        // negative offsets when there is no bias, and negative times before the caption
         int[] decodeOrder = {0, 1, 2, 3, 5, 4, 6, 8, 7, 9, 10};
         byte[][] samples = new byte[decodeOrder.length][];
         long[][] ctts = new long[decodeOrder.length][];
@@ -914,7 +915,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
             samples[k] = avcSample(HELLO[decodeOrder[k]]);
             ctts[k] = new long[]{1, (decodeOrder[k] - k) * 1000L + bias};
         }
-        List<Emitted> docs = extract(videoMp4("avc1", avcC(), samples, ctts, 1000), Scan.FULL);
+        List<Emitted> docs = extract(videoMp4("avc1", avcC(), samples, ctts, 1000), FULL);
         assertEquals(1, docs.size());
         assertEquals("track-1-cc1.vtt",
                 docs.get(0).metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -941,7 +942,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
             samples[k] = avcSample(display[decodeOrder[k]]);
             ctts[k] = new long[]{1, (decodeOrder[k] - k) * 1000L + 2000};
         }
-        List<Emitted> docs = extract(videoMp4("avc1", avcC(), samples, ctts, 1000), Scan.FULL);
+        List<Emitted> docs = extract(videoMp4("avc1", avcC(), samples, ctts, 1000), FULL);
         assertEquals("WEBVTT\n\n00:00:11.000 --> 00:00:16.000\nHELLO\n", docs.get(0).body());
     }
 
@@ -994,10 +995,19 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
      * cc_data from {@code paddingFrom}.
      */
     private static byte[] captionedAt(int paddingFrom, int helloAt) throws IOException {
+        return captionedAt(paddingFrom, helloAt, 0, new int[0][]);
+    }
+
+    /** As {@link #captionedAt(int, int)}, with {@code field2} pairs on field 2 from {@code at}. */
+    private static byte[] captionedAt(int paddingFrom, int helloAt, int at, int[][] field2)
+            throws IOException {
         byte[][] samples = new byte[1000][];
         for (int k = 0; k < samples.length; k++) {
             if (k >= helloAt && k < helloAt + HELLO.length) {
                 samples[k] = avcSample(HELLO[k - helloAt]);
+            } else if (k >= at && k < at + field2.length) {
+                samples[k] = cat(nal(seiNal(cc608(1, field2[k - at][0], field2[k - at][1]))),
+                        nal(SLICE));
             } else if (k >= paddingFrom) {
                 samples[k] = avcSample(new int[]{0x80, 0x80});
             } else {
@@ -1010,7 +1020,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     @Test
     public void testProbeHeadIsReadInFull() throws Exception {
         // frames 200-210 are inside the first 300; no window of the later probe covers them
-        List<Emitted> docs = extract(captionedAt(Integer.MAX_VALUE, 200), Scan.PROBE);
+        List<Emitted> docs = extract(captionedAt(Integer.MAX_VALUE, 200), PROBE);
         assertEquals(1, docs.size());
         assertEquals("WEBVTT\n\n00:00:06.831 --> 00:00:06.897\nHELLO\n", docs.get(0).body());
     }
@@ -1019,7 +1029,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     public void testProbeWindowFindRereadsTheTrack() throws Exception {
         // windows open at frames 300, 452, 604, ...: "HE" at frame 604 is seen there, after
         // RCL and the PAC at 600-603 were skipped, so the track is read again from the start
-        List<Emitted> docs = extract(captionedAt(Integer.MAX_VALUE, 600), Scan.PROBE);
+        List<Emitted> docs = extract(captionedAt(Integer.MAX_VALUE, 600), PROBE);
         assertEquals(1, docs.size());
         assertEquals("WEBVTT\n\n00:00:20.031 --> 00:00:20.097\nHELLO\n", docs.get(0).body());
     }
@@ -1027,17 +1037,17 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     @Test
     public void testProbeMissesARunBetweenWindows() throws Exception {
         byte[] bare = captionedAt(Integer.MAX_VALUE, 700);
-        assertEquals(0, extract(bare, Scan.PROBE).size());
-        assertEquals(1, extract(bare, Scan.FULL).size());
+        assertEquals(0, extract(bare, PROBE).size());
+        assertEquals(1, extract(bare, FULL).size());
         // video is not read at all unless asked
-        assertEquals(0, extract(bare, Scan.NONE).size());
+        assertEquals(0, extract(bare, NONE).size());
     }
 
     @Test
     public void testPaddingDoesNotTriggerAFullRead() throws Exception {
         // padding cc_data on every frame (common in broadcast) is not caption text: the run at
         // 700 stays between windows
-        assertEquals(0, extract(captionedAt(0, 700), Scan.PROBE).size());
+        assertEquals(0, extract(captionedAt(0, 700), PROBE).size());
     }
 
     private static byte[][] hevcHello() {
@@ -1049,12 +1059,12 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     @Test
     public void testCaptionsFromHevcSei() throws Exception {
         List<Emitted> docs = extract(videoMp4("hvc1", hvcC(), hevcHello(), null, 1000),
-                Scan.PROBE);
+                PROBE);
         assertEquals(1, docs.size());
         assertEquals(HELLO_VTT, docs.get(0).body());
         // Dolby Vision profile 8 is HEVC underneath
         assertEquals(HELLO_VTT, extract(videoMp4("dvh1", hvcC(), hevcHello(), null, 1000),
-                Scan.PROBE).get(0).body());
+                PROBE).get(0).body());
     }
 
     @Test
@@ -1062,7 +1072,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         // a 5 KB colr box ahead of avcC: the entry's boxes are walked, not a fixed prefix
         byte[] children = cat(box("colr", new byte[5000]), avcC());
         assertEquals(HELLO_VTT, extract(videoMp4("avc3", children,
-                helloSamples(Mp4SubtitleExtractorTest::avcSample), null, 1000), Scan.PROBE)
+                helloSamples(Mp4SubtitleExtractorTest::avcSample), null, 1000), PROBE)
                 .get(0).body());
     }
 
@@ -1072,12 +1082,12 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
             byte[][] samples = helloSamples(p -> cat(nalN(size, seiNal(cc608(p[0], p[1]))),
                     nalN(size, SLICE)));
             assertEquals(HELLO_VTT, extract(videoMp4("avc1", avcC(size), samples, null, 1000),
-                    Scan.PROBE).get(0).body(), "length size " + size);
+                    PROBE).get(0).body(), "length size " + size);
         }
         // a length size of 3 is not allowed: well-formed 3-byte lengths are still not read
         byte[][] three = helloSamples(p -> cat(nalN(3, seiNal(cc608(p[0], p[1]))),
                 nalN(3, SLICE)));
-        assertEquals(0, extract(videoMp4("avc1", avcC(3), three, null, 1000), Scan.PROBE)
+        assertEquals(0, extract(videoMp4("avc1", avcC(3), three, null, 1000), PROBE)
                 .size());
     }
 
@@ -1094,14 +1104,227 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         byte[] prefix = cat(fillers, nal(new byte[]{0x0C, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
         byte[][] samples = helloSamples(p -> cat(prefix, avcSample(p)));
         assertEquals(HELLO_VTT, extract(videoMp4("avc1", avcC(), samples, null, 1000),
-                Scan.PROBE).get(0).body());
+                PROBE).get(0).body());
     }
 
     @Test
     public void testSeiAfterTheSliceIsIgnored() throws Exception {
         byte[][] samples = helloSamples(p -> cat(nal(SLICE), nal(seiNal(cc608(p[0], p[1])))));
-        assertEquals(0, extract(videoMp4("avc1", avcC(), samples, null, 1000), Scan.FULL)
+        assertEquals(0, extract(videoMp4("avc1", avcC(), samples, null, 1000), FULL)
                 .size());
+    }
+
+    @Test
+    public void testOnlyTheFirstNalsOfASampleAreRead() throws Exception {
+        for (int fillers : new int[]{31, 32}) {
+            byte[] prefix = new byte[0];
+            for (int i = 0; i < fillers; i++) {
+                prefix = cat(prefix, nal(new byte[]{0x0C, 0}));
+            }
+            byte[] p = prefix;
+            byte[][] samples = helloSamples(pair -> cat(p, avcSample(pair)));
+            assertEquals(fillers < 32 ? 1 : 0, extract(videoMp4("avc1", avcC(), samples, null,
+                    1000), FULL).size(), fillers + " fillers");
+        }
+    }
+
+    @Test
+    public void testCaptionSourcesPastTheLimitAreSkipped() throws Exception {
+        byte[] ftyp = box("ftyp", ascii("isom"), u32(0), ascii("isom"));
+        byte[][] samples = c608Hello(0);
+        byte[] moov = box("mvhd", new byte[100]);
+        for (int id = 1; id <= Mp4SubtitleExtractor.MAX_CAPTION_SOURCES + 1; id++) {
+            moov = cat(moov, videoTrak(id, "c608", new byte[0], null, samples, 1000,
+                    ftyp.length + 8L));
+        }
+        Metadata container = new Metadata();
+        List<Emitted> docs = extract(cat(ftyp, box("mdat", cat(samples)), box("moov", moov)),
+                container);
+        assertEquals(Mp4SubtitleExtractor.MAX_CAPTION_SOURCES, docs.size());
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("caption sources"), container.toString());
+    }
+
+    @Test
+    public void testProbeFindInALaterFragmentRereadsTheTrack() throws Exception {
+        // as testProbeWindowFindRereadsTheTrack, the 1000 frames split over two fragments
+        byte[][] frames = new byte[1000][];
+        for (int k = 0; k < frames.length; k++) {
+            frames[k] = k >= 600 && k < 600 + HELLO.length ? avcSample(HELLO[k - 600])
+                    : nal(SLICE);
+        }
+        byte[] mvex = box("mvex", box("trex", u32(0), u32(1), u32(1), u32(0), u32(0), u32(0)));
+        byte[] mp4 = withMvex(videoMp4("avc1", avcC(), new byte[0][], null, 33), mvex);
+        for (int from = 0; from < frames.length; from += 500) {
+            byte[][] part = Arrays.copyOfRange(frames, from, from + 500);
+            ByteArrayOutputStream entries = new ByteArrayOutputStream();
+            for (byte[] f : part) {
+                entries.writeBytes(u32(33));
+                entries.writeBytes(u32(f.length));
+                entries.writeBytes(u32(0));
+            }
+            byte[] moof = fragMoof(0, part.length, entries.toByteArray());
+            moof = fragMoof(moof.length + 8, part.length, entries.toByteArray());
+            // tfdt carries on from the previous fragment
+            int tfdt = indexOf(moof, ascii("tfdt")) + 8;
+            ByteBuffer.wrap(moof).putInt(tfdt, from * 33);
+            mp4 = cat(mp4, moof, box("mdat", cat(part)));
+        }
+        List<Emitted> docs = extract(mp4, PROBE);
+        assertEquals(1, docs.size());
+        assertEquals("WEBVTT\n\n00:00:20.031 --> 00:00:20.097\nHELLO\n", docs.get(0).body());
+    }
+
+    @Test
+    public void testCaptionStillShownAtTheEndLastsThroughTheLastFrame() throws Exception {
+        // no EDM: the caption put up at 7 s is on screen until the last frame ends at 9 s
+        byte[][] samples = new byte[9][];
+        for (int k = 0; k < samples.length; k++) {
+            samples[k] = avcSample(HELLO[k]);
+        }
+        assertEquals(HELLO_VTT, extract(videoMp4("avc1", avcC(), samples, null, 1000),
+                FULL).get(0).body());
+    }
+
+    @Test
+    public void testXdsDoesNotTriggerAFullRead() throws Exception {
+        // a field-2 XDS program name in the head is not caption text: the run at 700 stays
+        // between windows
+        byte[] mp4 = captionedAt(Integer.MAX_VALUE, 700, 10, new int[][]{
+                {0x01, 0x03}, {'T', 'V'}, {0x0F, 0x1D}});
+        assertEquals(0, extract(mp4, PROBE).size());
+        assertEquals(1, extract(mp4, FULL).size());
+    }
+
+    @Test
+    public void testAMusicNoteIsACaptionCharacter() throws Exception {
+        // RCL, PAC, then only a note (0x11 0x37) at frame 200: found in the head, so frame 700
+        // is read too
+        byte[] mp4 = captionedAt(Integer.MAX_VALUE, 700, 200, new int[][]{
+                {0x14, 0x20}, {0x14, 0x60}, {0x11, 0x37}});
+        assertEquals(1, extract(mp4, PROBE).size());
+    }
+
+    /** One caption source per entry, each declaring 2^32-1 samples, none in the file. */
+    private static byte[] hugeTables(String... formats) {
+        byte[] tables = cat(
+                box("stts", u32(0), u32(1), u32(0xFFFFFFFFL), u32(0)),
+                box("stsc", u32(0), u32(1), u32(1), u32(0xFFFFFFFFL), u32(1)),
+                box("stsz", u32(0), u32(1), u32(0xFFFFFFFFL)),
+                box("stco", u32(0), u32(1), u32(0x7FFFFFF0L)));
+        byte[] moov = box("mvhd", new byte[100]);
+        for (int i = 0; i < formats.length; i++) {
+            moov = cat(moov, trak(i + 1, formats[i],
+                    formats[i].equals("c608") ? new byte[0] : avcC(), tables));
+        }
+        return cat(box("ftyp", ascii("isom"), u32(0), ascii("isom")), box("moov", moov));
+    }
+
+    @ParameterizedTest
+    @EnumSource(VideoCaptionScan.class)
+    public void testHugeSampleTablesAreBounded(VideoCaptionScan scan) {
+        // every sample walked is charged, not only those read: c608 tracks are read by default
+        byte[] mp4 = hugeTables("c608", "avc1", "c608", "avc1");
+        Metadata container = new Metadata();
+        assertTimeoutPreemptively(Duration.ofSeconds(30),
+                () -> extract(mp4, container, new Capture(), scan));
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("caption samples"), container.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"c608 NONE", "avc1 PROBE", "avc1 FULL"})
+    public void testHugeEmptyRunsAreBounded(String formatAndScan) throws Exception {
+        // default duration and size 0, and 2^32-1 samples declared by each 20-byte trun
+        String format = formatAndScan.split(" ")[0];
+        byte[] mvex = box("mvex", box("trex", u32(0), u32(1), u32(1), u32(0), u32(0), u32(0)));
+        byte[] head = withMvex(videoMp4(format, format.equals("c608") ? new byte[0] : avcC(),
+                new byte[0][], null, 1000), mvex);
+        byte[] moof = box("moof", box("mfhd", u32(0), u32(1)), box("traf",
+                box("tfhd", u32(0x020000), u32(1)), box("trun", u32(0), u32(0xFFFFFFFFL))));
+        byte[] mp4 = cat(head, moof, moof, moof, moof);
+        Metadata container = new Metadata();
+        assertTimeoutPreemptively(Duration.ofSeconds(30), () -> extract(mp4, container,
+                new Capture(), VideoCaptionScan.valueOf(formatAndScan.split(" ")[1])));
+        assertTrue(String.valueOf(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("caption samples"), container.toString());
+    }
+
+    @Test
+    public void testCaptionsReadBeforeDamageAreKept() throws Exception {
+        byte[] mp4 = videoMp4("c608", new byte[0], c608Hello(0), null, 1000);
+        Capture capture = new Capture();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, capture);
+        Metadata container = new Metadata();
+        SubtitleTracks out = new SubtitleTracks(container, context);
+        try (TikaInputStream tis = TikaInputStream.get(mp4);
+                FailingChannel ch = new FailingChannel(tis.getSeekableByteChannel())) {
+            // the moof scan after the tracks rereads the first box header
+            assertThrows(IOException.class, () -> Mp4SubtitleExtractor.extract(ch, out,
+                    new Mp4SubtitleExtractor.Captions(true, NONE)));
+        }
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), container,
+                context);
+        xhtml.startDocument();
+        out.emit(xhtml);
+        xhtml.endDocument();
+        assertEquals(1, capture.docs.size());
+        assertEquals(HELLO_VTT, capture.docs.get(0).body());
+    }
+
+    /** Fails the second read at position 0. */
+    private static final class FailingChannel implements SeekableByteChannel {
+        private final SeekableByteChannel delegate;
+        private int readsAtZero;
+
+        FailingChannel(SeekableByteChannel delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public int read(ByteBuffer dst) throws IOException {
+            if (delegate.position() == 0 && ++readsAtZero > 1) {
+                throw new IOException("read failed");
+            }
+            return delegate.read(dst);
+        }
+
+        @Override
+        public int write(ByteBuffer src) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long position() throws IOException {
+            return delegate.position();
+        }
+
+        @Override
+        public SeekableByteChannel position(long p) throws IOException {
+            delegate.position(p);
+            return this;
+        }
+
+        @Override
+        public long size() throws IOException {
+            return delegate.size();
+        }
+
+        @Override
+        public SeekableByteChannel truncate(long size) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isOpen() {
+            return delegate.isOpen();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
     }
 
     private static byte[] captionsInFragments(long bias) throws IOException {
@@ -1126,7 +1349,7 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     @ParameterizedTest
     @ValueSource(longs = {2000, 0})
     public void testCaptionsInFragments(long bias) throws Exception {
-        List<Emitted> docs = extract(captionsInFragments(bias), Scan.PROBE);
+        List<Emitted> docs = extract(captionsInFragments(bias), PROBE);
         assertEquals(1, docs.size());
         long s = 7000 + bias;
         assertEquals("WEBVTT\n\n" + SubtitleTrack.time(s) + " --> " + SubtitleTrack.time(s + 2000)
@@ -1146,24 +1369,26 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(mp4);
                 CountingChannel ch = new CountingChannel(tis.getSeekableByteChannel())) {
             Mp4SubtitleExtractor.extract(ch, new SubtitleTracks(new Metadata(), new ParseContext()),
-                    new Mp4SubtitleExtractor.Captions(true, video, true));
+                    new Mp4SubtitleExtractor.Captions(true,
+                            video ? PROBE : NONE));
             return ch.furthest;
         }
     }
 
     @Test
     public void testVideoSamplesDoNotSpendTheTextBudget() throws Exception {
-        // a video track walked for captions ahead of the text track: its samples are charged
-        // to the captions' budget, so the text track is still read
+        // a video track walked for captions ahead of the text track: its samples spend the
+        // captions' budget, not the text tracks'
         int n = SubtitleTracks.MAX_SAMPLES + 10;
         byte[] video = videoTrak(9, "avc1", avcC(), new int[n], null, 1, 0);
         byte[] mp4 = withTrakFirst(new Builder().build(true), video);
         Metadata container = new Metadata();
-        List<Emitted> docs = extract(mp4, container, new Capture(), Scan.FULL);
+        List<Emitted> docs = extract(mp4, container, new Capture(), FULL);
         assertEquals(1, docs.size());
         assertEquals("track-2.vtt", docs.get(0).metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING),
-                container.toString());
+        String[] warnings = container.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertEquals(1, warnings.length, container.toString());
+        assertTrue(warnings[0].contains("caption samples"), warnings[0]);
     }
 
     @Test
@@ -1175,13 +1400,13 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         byte[] video = videoTrak(9, "avc1", avcC(), null, samples, 1000,
                 base.length + trakLength + 8L);
         byte[] mp4 = cat(withTrakFirst(base, video), box("mdat", cat(samples)));
-        List<Emitted> docs = extract(mp4, Scan.PROBE);
+        List<Emitted> docs = extract(mp4, PROBE);
         assertEquals(2, docs.size());
         assertEquals("track-2.vtt", docs.get(0).metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("track-9-cc1.vtt",
                 docs.get(1).metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(HELLO_VTT, docs.get(1).body());
-        assertEquals(1, extract(mp4, Scan.NONE).size());
+        assertEquals(1, extract(mp4, NONE).size());
     }
 
     @Test
@@ -1219,10 +1444,10 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
         MP4Parser parser = new MP4Parser();
         assertEquals(1, parsed(parser, sei).size(), "video is not read by default");
         assertEquals(2, parsed(parser, c608).size(), "c608 tracks are read by default");
-        parser.setVideoCaptionScan(MP4Parser.VideoCaptionScan.PROBE);
+        parser.setVideoCaptionScan(PROBE);
         assertEquals(2, parsed(parser, sei).size());
         assertEquals(1, parsed(parser, between).size());
-        parser.setVideoCaptionScan(MP4Parser.VideoCaptionScan.FULL);
+        parser.setVideoCaptionScan(FULL);
         assertEquals(2, parsed(parser, between).size());
         parser.setExtractClosedCaptions(false);
         assertEquals(1, parsed(parser, sei).size());
@@ -1241,6 +1466,20 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 "tika-config-mp4-no-captions.json")).loadParsers();
         assertEquals(1, parsed(off, videoMp4("c608", new byte[0], c608Hello(0), null, 1000))
                 .size());
+    }
+
+    @Test
+    public void testVideoScanThatCannotRunFailsAtLoad() throws Exception {
+        MP4Parser parser = new MP4Parser();
+        parser.setVideoCaptionScan(FULL);
+        parser.initialize();
+        parser.setExtractClosedCaptions(false);
+        assertThrows(TikaConfigException.class, parser::initialize);
+        parser.setExtractClosedCaptions(true);
+        parser.setExtractSubtitles(false);
+        assertThrows(TikaConfigException.class, parser::initialize);
+        parser.setVideoCaptionScan(NONE);
+        parser.initialize();
     }
 
     // parsed as video/mp4, checking that MP4Parser's metadata walk ran and nothing was swallowed
@@ -1321,10 +1560,6 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
             stco.writeBytes(u32(offset));
             offset += size;
         }
-        boolean visual = !format.equals("c608");
-        // VisualSampleEntry fields after reserved + data_reference_index: 70 bytes
-        byte[] entry = box(format, new byte[6], new byte[]{0, 1},
-                visual ? new byte[70] : new byte[0], entryChildren);
         ByteArrayOutputStream cttsBody = new ByteArrayOutputStream();
         if (ctts != null) {
             for (long[] e : ctts) {
@@ -1332,13 +1567,22 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
                 cttsBody.writeBytes(u32(e[1]));
             }
         }
-        byte[] stbl = box("stbl", box("stsd", u32(0), u32(1), entry),
+        return trak(id, format, entryChildren, cat(
                 box("stts", u32(0), u32(1), u32(n), u32(delta)),
                 ctts == null ? new byte[0] : box("ctts", u32(0x01000000), u32(ctts.length),
                         cttsBody.toByteArray()),
                 box("stsc", u32(0), u32(1), u32(1), u32(1), u32(1)),
                 box("stsz", u32(0), u32(0), u32(n), stsz.toByteArray()),
-                box("stco", u32(0), u32(n), stco.toByteArray()));
+                box("stco", u32(0), u32(n), stco.toByteArray())));
+    }
+
+    /** A video or c608 track of timescale 1000 and language "ita" with these sample tables. */
+    private static byte[] trak(int id, String format, byte[] entryChildren, byte[] tables) {
+        boolean visual = !format.equals("c608");
+        // VisualSampleEntry fields after reserved + data_reference_index: 70 bytes
+        byte[] entry = box(format, new byte[6], new byte[]{0, 1},
+                visual ? new byte[70] : new byte[0], entryChildren);
+        byte[] stbl = box("stbl", box("stsd", u32(0), u32(1), entry), tables);
         byte[] tkhd = new byte[84];
         ByteBuffer.wrap(tkhd).putInt(12, id);
         // "ita"
@@ -1402,7 +1646,11 @@ public class Mp4SubtitleExtractorTest extends TikaTest {
     }
 
     private static byte[] cc608(int b1, int b2) {
-        return new byte[]{0x40 | 1, (byte) 0xFF, (byte) 0xFC, (byte) parity(b1),
+        return cc608(0, b1, b2);
+    }
+
+    private static byte[] cc608(int field, int b1, int b2) {
+        return new byte[]{0x40 | 1, (byte) 0xFF, (byte) (0xFC | field), (byte) parity(b1),
                 (byte) parity(b2)};
     }
 

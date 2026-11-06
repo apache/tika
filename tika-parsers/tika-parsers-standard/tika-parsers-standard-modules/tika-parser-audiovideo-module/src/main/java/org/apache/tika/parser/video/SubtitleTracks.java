@@ -33,10 +33,10 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
- * The text subtitle tracks of one container file, read up front (random access needs the
- * stream unread) and held, under limits they share, until {@link #emit}, so a container
- * parser can emit them after its own metadata pass. Used by Tika's MP4 and Matroska parsers;
- * not a stable API.
+ * The text subtitle tracks and closed captions of one container file, read up front (random
+ * access needs the stream unread) and held, under limits they share, until {@link #emit}, so
+ * a container parser can emit them after its own metadata pass. Used by Tika's MP4 and
+ * Matroska parsers; not a stable API.
  */
 public final class SubtitleTracks {
 
@@ -47,11 +47,13 @@ public final class SubtitleTracks {
     static final long MAX_DECODED_BYTES = 256L * 1024 * 1024;
     // samples or blocks walked per file, empty ones included
     static final int MAX_SAMPLES = 1_000_000;
-    // captions have their own read budgets: a long video cannot starve the text tracks
+    // captions have their own budgets, so a long video cannot starve the text tracks;
+    // samples are counted as walked, skipped ones included
     static final int MAX_CAPTION_SAMPLES = 1_000_000;
     static final long MAX_CAPTION_BYTES = 128L * 1024 * 1024;
     // caption byte pairs held for reordering, across tracks, padding included
-    static final int MAX_CAPTION_PAIRS = 1 << 21;
+    static final int CAPTION_PAIR_BITS = 21;
+    static final int MAX_CAPTION_PAIRS = 1 << CAPTION_PAIR_BITS;
     private static final int MAX_WARNINGS = 32;
 
     private final Metadata containerMetadata;
@@ -74,26 +76,19 @@ public final class SubtitleTracks {
     }
 
     /**
-     * The tx3g and QuickTime text tracks of an MP4 or QuickTime file, read through
+     * The tx3g and QuickTime text tracks of an MP4 or QuickTime file and, with
+     * {@code closedCaptions}, its CEA-608 captions: from QuickTime {@code c608} tracks, and
+     * from the SEI messages of H.264 and HEVC video as {@code videoScan} says. Read through
      * {@link TikaInputStream#getSeekableByteChannel()}; the caller decides whether that is
      * cheap. Leaves the stream's read position alone.
      */
     public static SubtitleTracks readMp4(TikaInputStream tis, Metadata containerMetadata,
-                                         ParseContext context) {
-        return readMp4(tis, containerMetadata, context, true, false, false);
-    }
-
-    /**
-     * As {@link #readMp4(TikaInputStream, Metadata, ParseContext)}, with CEA-608 captions from
-     * QuickTime {@code c608} tracks ({@code c608Tracks}) and from the SEI messages of H.264 and
-     * HEVC video ({@code videoCaptions}): probed unless {@code fullVideoScan}.
-     */
-    public static SubtitleTracks readMp4(TikaInputStream tis, Metadata containerMetadata,
-                                         ParseContext context, boolean c608Tracks,
-                                         boolean videoCaptions, boolean fullVideoScan) {
+                                         ParseContext context, boolean closedCaptions,
+                                         VideoCaptionScan videoScan) {
         SubtitleTracks out = new SubtitleTracks(containerMetadata, context);
-        Mp4SubtitleExtractor.extract(tis, out,
-                new Mp4SubtitleExtractor.Captions(c608Tracks, videoCaptions, !fullVideoScan));
+        Mp4SubtitleExtractor.extract(tis, out, closedCaptions
+                ? new Mp4SubtitleExtractor.Captions(true, videoScan)
+                : new Mp4SubtitleExtractor.Captions(false, VideoCaptionScan.NONE));
         return out;
     }
 
@@ -173,13 +168,13 @@ public final class SubtitleTracks {
         return true;
     }
 
-    /** Charges one sample read for captions; false once the captions' budget is spent. */
+    /** Charges one sample walked for captions; false once the captions' budget is spent. */
     boolean chargeCaptionSample() {
         if (captionsSpent) {
             return false;
         }
         if (++captionSamples > MAX_CAPTION_SAMPLES) {
-            spendCaptions("more than " + MAX_CAPTION_SAMPLES + " video samples read for captions");
+            spendCaptions("more than " + MAX_CAPTION_SAMPLES + " caption samples");
             return false;
         }
         return true;
@@ -208,6 +203,11 @@ public final class SubtitleTracks {
             return false;
         }
         return true;
+    }
+
+    /** Uncounts pairs that a track read again will collect anew. */
+    void refundCaptionPairs(int n) {
+        captionPairs -= Math.min(n, captionPairs);
     }
 
     /** True once a caption budget is spent: no more caption data is read. */

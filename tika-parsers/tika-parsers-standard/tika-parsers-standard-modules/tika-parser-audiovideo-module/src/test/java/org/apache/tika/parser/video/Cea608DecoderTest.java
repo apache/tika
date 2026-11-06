@@ -141,6 +141,22 @@ public class Cea608DecoderTest {
     }
 
     @Test
+    public void testEnmErasesHiddenMemory() throws Exception {
+        // without the erase, NEW would overwrite only the start of OLDER
+        Feed f = new Feed().control(RCL).control(ROW15).text("OLDER").control(ENM).control(ROW15)
+                .text("NEW").at(1000).control(EOC).at(3000).control(EDM);
+        assertEquals("WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nNEW\n", f.vtt(0));
+    }
+
+    @Test
+    public void testRollUpEndsAPopOnCaption() throws Exception {
+        Feed f = new Feed().control(RCL).control(ROW15).text("POP").at(1000).control(EOC)
+                .at(3000).control(RU2).control(ROW15).text("ROLL").at(5000).control(CR);
+        assertEquals("WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nPOP\n"
+                + "\n00:00:03.000 --> 00:00:05.000\nROLL\n", f.vtt(0));
+    }
+
+    @Test
     public void testRollUpLinesOnce() throws Exception {
         Feed f = new Feed().control(RU2).control(ROW15).text("LINE ONE").at(2000).control(CR)
                 .at(2500).text("LINE TWO").at(4000).control(CR).at(5000).control(EDM);
