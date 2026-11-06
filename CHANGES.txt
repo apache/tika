@@ -204,10 +204,13 @@ Release 4.3.0 - ???
      is honored only when the bytes after it decode in that charset, and a rejected BOM
      is dropped rather than left in the text as junk characters (TIKA-5019).
 
-   * Charset detection keeps the statistical detector's pick when an HTML or HTTP charset
-     declaration names the same charset, rather than letting text-quality scoring override
-     two agreeing signals; and UTF-8 with sparse corruption (up to one bad sequence per
-     ten valid ones, existing U+FFFD not counted) is read as UTF-8 (TIKA-5019).
+   * Charset detection reads UTF-8 with sparse corruption (up to one bad sequence per
+     ten valid ones, existing U+FFFD not counted) as UTF-8 (TIKA-5019).
+
+   * Charset detection reports the windows-125x sibling of an ISO-8859 charset (e.g.
+     windows-1250 for ISO-8859-2) when the page's 0x80-0x9F bytes are punctuation that
+     only the windows charset prints (… “ ” €) and no letters decode differently, even
+     when the page declares the ISO charset (TIKA-5027).
 
    * Charset detection uses a hashed byte n-gram model in place of the byte-bigram Naive
      Bayes model, with UTF-16 and UTF-32 detected by the same model instead of a separate

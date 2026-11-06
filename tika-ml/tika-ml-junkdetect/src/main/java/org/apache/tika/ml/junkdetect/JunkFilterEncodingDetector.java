@@ -165,8 +165,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
                 context.setArbitrationInfo("junk-filter-prefer-declarative");
                 LOG.trace("junk-filter -> {} (declarative with equivalent decode)",
                         prepared.getRuleCharset().name());
-                return List.of(new EncodingResult(prepared.getRuleCharset(),
-                        context.getTopConfidenceFor(prepared.getRuleCharset())));
+                return result(prepared.getRuleCharset(), bytes, context);
             case IDENTICAL_DECODINGS: {
                 // Text cannot tell them apart.  A validated BOM is then the only discriminating
                 // evidence (it also tells the reader to drop the BOM bytes); else the legacy-page
@@ -196,7 +195,73 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         context.setArbitrationInfo(deferred ? "junk-filter-hashed-deferred" : "junk-filter-hashed");
         LOG.trace("junk-filter -> {} (champion {}, margin {}, anchor {})", pick.name(),
                 decision.getChampion().name(), decision.getLogit(), decision.getAnchor());
-        return List.of(new EncodingResult(pick, context.getTopConfidenceFor(pick)));
+        return result(pick, bytes, context);
+    }
+
+    /** {@code pick}, or its windows-125x sibling when the probe's C1 bytes prove it (see {@link #windowsSibling}). */
+    private static List<EncodingResult> result(Charset pick, byte[] bytes, EncodingDetectorContext context) {
+        float confidence = context.getTopConfidenceFor(pick);
+        Charset sibling = windowsSibling(pick, bytes);
+        if (sibling != null) {
+            context.setArbitrationInfo(context.getArbitrationInfo() + "-c1-sibling");
+            return List.of(new EncodingResult(sibling, confidence));
+        }
+        return List.of(new EncodingResult(pick, confidence));
+    }
+
+    private static final Map<String, String> WINDOWS_SIBLING = Map.of(
+            "ISO-8859-1", "windows-1252", "ISO-8859-15", "windows-1252", "ISO-8859-2", "windows-1250",
+            "ISO-8859-7", "windows-1253", "ISO-8859-8", "windows-1255", "ISO-8859-9", "windows-1254",
+            "ISO-8859-13", "windows-1257");
+
+    /**
+     * The windows-125x sibling of an ISO-8859 {@code pick}, or {@code null}. It applies when the two
+     * cleaned decodes differ only where the ISO side has a C1 control (0x80-0x9F) that the sibling
+     * prints: such a byte is punctuation typed in windows-125x (… “ ” €), never ISO-8859 text, and
+     * a declaration does not outweigh it (gold rule). A letter difference means the text decides,
+     * so the pick stands. A C1 byte after a high byte is likely a UTF-8 continuation (Ã + 0x9F for
+     * ß), which is mojibake, not evidence.
+     */
+    static Charset windowsSibling(Charset pick, byte[] bytes) {
+        String name = WINDOWS_SIBLING.get(pick.name());
+        if (name == null || !hasC1Evidence(bytes)) {
+            return null;
+        }
+        Charset windows;
+        try {
+            windows = Charset.forName(name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        String iso = HtmlContentCleaner.clean(new String(bytes, pick));
+        String win = HtmlContentCleaner.clean(new String(bytes, windows));
+        if (iso.length() != win.length()) {
+            return null;
+        }
+        boolean differs = false;
+        for (int i = 0; i < iso.length(); i++) {
+            char a = iso.charAt(i);
+            char b = win.charAt(i);
+            if (a == b) {
+                continue;
+            }
+            if (a < 0x80 || a > 0x9F || b == '�' || Character.isISOControl(b)) {
+                return null;
+            }
+            differs = true;
+        }
+        return differs ? windows : null;
+    }
+
+    /** A 0x80-0x9F byte that follows an ASCII byte (or starts the probe). */
+    private static boolean hasC1Evidence(byte[] bytes) {
+        for (int i = 0; i < bytes.length; i++) {
+            int v = bytes[i] & 0xFF;
+            if (v >= 0x80 && v <= 0x9F && (i == 0 || (bytes[i - 1] & 0xFF) < 0x80)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isCjkCharset(String name) {
