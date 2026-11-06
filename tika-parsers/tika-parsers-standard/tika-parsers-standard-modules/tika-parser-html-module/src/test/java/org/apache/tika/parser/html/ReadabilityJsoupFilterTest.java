@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HTML;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.ReadabilityMetadata;
@@ -88,6 +89,40 @@ public class ReadabilityJsoupFilterTest extends TikaTest {
         String xml = parse("<html><body><p>x</p></body></html>", context).xml;
         assertContains("x-then-b", xml);
         assertNotContained("from-a-then-b", xml);
+    }
+
+    @Test
+    public void testInlineResourcesComeFromUnfilteredPage() throws Exception {
+        // the sidebar Readability drops holds one of each inline resource
+        String page = PAGE.replace("<div class=\"sidebar\">", "<div class=\"sidebar\">"
+                + "<img src=\"data:text/plain;base64,aGVsbG8gZnJvbSBkYXRh\">"
+                + "<iframe srcdoc=\"<p>framed page</p>\"></iframe>"
+                + "<script src=\"side.js\">var sidebarWidget = 1;</script>");
+        JSoupParser parser = new JSoupParser();
+        parser.setExtractScripts(true);
+
+        List<Metadata> plain = rmeta(page, parser, new ParseContext());
+        List<Metadata> filtered = rmeta(page, parser, withFilter(new ReadabilityJsoupFilter()));
+
+        assertEquals(ReadabilityMetadata.STATUS_EXTRACTED, filtered.get(0).get(ReadabilityMetadata.STATUS));
+        assertNotContained("Most read nav link", filtered.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(List.of("INLINE", "INLINE", "MACRO"), resourceTypes(plain));
+        assertEquals(resourceTypes(plain), resourceTypes(filtered));
+        assertEquals("side.js", filtered.get(3).get(HTML.SCRIPT_SOURCE));
+        assertContains("sidebarWidget", filtered.get(3).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    private List<Metadata> rmeta(String html, JSoupParser parser, ParseContext context) throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(html.getBytes(StandardCharsets.UTF_8))) {
+            Metadata m = new Metadata();
+            m.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
+            return getRecursiveMetadata(tis, parser, m, context, true);
+        }
+    }
+
+    private static List<String> resourceTypes(List<Metadata> list) {
+        return list.subList(1, list.size()).stream()
+                .map(m -> m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE)).toList();
     }
 
     @Test
@@ -156,20 +191,25 @@ public class ReadabilityJsoupFilterTest extends TikaTest {
     }
 
     @Test
-    public void testTopLevelOnlyByDefault() throws Exception {
+    public void testEmbeddedHtmlDocumentIsFiltered() throws Exception {
         ParseContext context = withFilter(new ReadabilityJsoupFilter());
         ParseRecord record = ParseRecord.newInstance(context);
         record.enterEmbedded();
         context.set(ParseRecord.class, record);
         XMLResult r = parse(PAGE, context);
-        assertNull(r.metadata.get(ReadabilityMetadata.STATUS));
-        assertContains("Most read nav link", r.xml);
-
-        ReadabilityJsoupFilter all = new ReadabilityJsoupFilter();
-        all.setMaxDepth(-1);
-        context.set(JsoupFilter.class, all);
-        r = parse(PAGE, context);
         assertEquals(ReadabilityMetadata.STATUS_EXTRACTED, r.metadata.get(ReadabilityMetadata.STATUS));
+        assertNotContained("Most read nav link", r.xml);
+    }
+
+    @Test
+    public void testParseInlineIsNotFiltered() throws Exception {
+        ToHTMLContentHandler handler = new ToHTMLContentHandler();
+        Metadata m = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(PAGE.getBytes(StandardCharsets.UTF_8))) {
+            new JSoupParser().parseInline(tis, handler, m, withFilter(new ReadabilityJsoupFilter()));
+        }
+        assertContains("Most read nav link", handler.toString());
+        assertNull(m.get(ReadabilityMetadata.STATUS));
     }
 
     @Test

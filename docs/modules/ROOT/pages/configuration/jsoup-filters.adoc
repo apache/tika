@@ -23,9 +23,11 @@ XHTML, text or Markdown. Tika ships one: `readability-jsoup-filter`, a Java port
 https://github.com/mozilla/readability[Mozilla Readability] (the engine behind Firefox Reader
 View), which keeps the article and drops navigation, sidebars and footers. You can add your own.
 
-Filters run only in the HTML parser (`JSoupParser`), and by default only on the top-level
-document. They never touch PDFs, Office files or other formats, and no filter runs unless you
-configure one.
+Filters run on HTML *documents*: a page you hand Tika, and an HTML file inside a zip, a WARC or
+an email attachment. They never run on HTML that is part of another document: an email or
+Outlook message body, a CHM help topic, an Access rich-text field, an e-book chapter, or the page
+in an MHTML (`.mht`) "single file" saved page, which is packaged like an email. They never
+touch PDFs, Office files or other formats, and no filter runs unless you configure one.
 
 NOTE: Since 4.3.0. `tika-app -T` (`--text-main`) turns on `readability-jsoup-filter` with its
 defaults.
@@ -56,10 +58,6 @@ config can raise.
 |Run Readability only when its own "is this an article?" check passes (`isProbablyReaderable`,
 which looks for enough paragraph text). Otherwise the page is emitted unchanged. Set `false` to
 run Readability on every page, including listings and index pages, where it tends to cut too much.
-
-|`maxDepth`
-|`0`
-|Embedded depth to filter at: `0` is the top-level document only, `-1` every depth.
 
 |`charThreshold`
 |`500`
@@ -141,6 +139,8 @@ public class MyCleanupFilter implements JsoupFilter {
   Tika still writes the output.
 * One instance serves concurrent parses: keep it stateless.
 * The API is jsoup's, so a jsoup major-version upgrade can break a filter.
+* A parser that renders HTML as part of its own document should call `JSoupParser.parseInline`
+  (or `parseString`), which never runs filters, not `parse`.
 * Your build needs Tika's annotation processor (`tika-annotation-processor`) so the name is
   registered.
 

@@ -87,7 +87,8 @@ Release 4.3.0 - ???
 
    * HTML main-content extraction: tika-readability is a jsoup-only Java port of Mozilla
      Readability, and "readability-jsoup-filter" in the parse context runs it in JSoupParser
-     (off by default, top-level documents only, tk:readability:* metadata). "jsoup-filters"
+     (off by default; HTML documents only, never message bodies or other HTML inside a
+     document, so .mht saved pages are not trimmed; tk:readability:* metadata). "jsoup-filters"
      runs a list of jsoup filters, including your own JsoupFilter implementations, in order
      (TIKA-5054).
 

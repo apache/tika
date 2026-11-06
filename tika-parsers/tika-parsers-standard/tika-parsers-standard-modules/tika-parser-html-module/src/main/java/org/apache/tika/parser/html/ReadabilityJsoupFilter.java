@@ -54,7 +54,6 @@ public class ReadabilityJsoupFilter implements JsoupFilter {
     public static final int DEFAULT_MAX_ELEMENTS = 20_000;
     public static final long DEFAULT_MAX_TEXT_SCANNED = 50_000_000L;
 
-    private int maxDepth = 0;
     private int maxElements = DEFAULT_MAX_ELEMENTS;
     private long maxTextScanned = DEFAULT_MAX_TEXT_SCANNED;
     private int charThreshold = ReadabilityOptions.DEFAULT_CHAR_THRESHOLD;
@@ -63,11 +62,6 @@ public class ReadabilityJsoupFilter implements JsoupFilter {
 
     @Override
     public Document filter(Document document, Metadata metadata, ParseContext context) {
-        ParseRecord record = context.get(ParseRecord.class);
-        int depth = record == null ? 0 : record.getEmbeddedDepth();
-        if (maxDepth >= 0 && depth > maxDepth) {
-            return document;
-        }
         Document working = document.clone();
         removeComments(working);
         // TODO if requested: operator CSS selectors to keep/remove elements here, for site-specific crawls
@@ -88,6 +82,7 @@ public class ReadabilityJsoupFilter implements JsoupFilter {
             return document;
         } catch (RuntimeException e) {
             metadata.set(ReadabilityMetadata.STATUS, ReadabilityMetadata.STATUS_ERROR);
+            ParseRecord record = context.get(ParseRecord.class);
             if (record != null) {
                 record.addWarning("readability failed: " + e);
             }
@@ -124,15 +119,6 @@ public class ReadabilityJsoupFilter implements JsoupFilter {
                 removeComments(child);
             }
         }
-    }
-
-    public int getMaxDepth() {
-        return maxDepth;
-    }
-
-    /** Deepest embedding level to filter: 0 (default) for the top-level document only, -1 for all. */
-    public void setMaxDepth(int maxDepth) {
-        this.maxDepth = maxDepth;
     }
 
     public int getMaxElements() {

@@ -24,9 +24,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Rewrites the jsoup document {@link JSoupParser#parse} builds, before any SAX events are
- * emitted. Off unless one is set in the {@link ParseContext}: a single filter, or several in
- * order via {@link CompositeJsoupFilter} ({@code "jsoup-filters": [...]}).
+ * Rewrites the jsoup document {@link JSoupParser#parse} builds for an HTML document, at any
+ * embedding depth, before any SAX events are emitted. HTML that is part of another document goes
+ * through {@link JSoupParser#parseInline} or {@link JSoupParser#parseString} and is never filtered.
+ * Off unless one is set in the {@link ParseContext}: a single filter, or several in order via
+ * {@link CompositeJsoupFilter} ({@code "jsoup-filters": [...]}).
  * <p>
  * To add one: implement this, annotate it
  * {@code @TikaComponent(name = "...", spi = false, contextKey = JsoupFilter.class)}, configure it

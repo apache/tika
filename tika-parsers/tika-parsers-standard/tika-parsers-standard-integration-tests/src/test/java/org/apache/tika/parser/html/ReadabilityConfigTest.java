@@ -18,7 +18,6 @@ package org.apache.tika.parser.html;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -114,7 +113,7 @@ public class ReadabilityConfigTest extends TikaTest {
     }
 
     @Test
-    public void testEmbeddedHtmlNotFilteredByDefault() throws Exception {
+    public void testHtmlInZipIsFiltered() throws Exception {
         TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-readability.json");
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(bos)) {
@@ -128,7 +127,7 @@ public class ReadabilityConfigTest extends TikaTest {
         }
         assertEquals(2, list.size());
         Metadata html = list.get(1);
-        assertNull(html.get(ReadabilityMetadata.STATUS));
-        assertContains("Most read nav link", html.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals(ReadabilityMetadata.STATUS_EXTRACTED, html.get(ReadabilityMetadata.STATUS));
+        assertNotContained("Most read nav link", html.get(TikaCoreProperties.TIKA_CONTENT));
     }
 }
