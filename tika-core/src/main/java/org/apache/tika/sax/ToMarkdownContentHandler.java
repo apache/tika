@@ -257,7 +257,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 break;
             case "a":
                 String href = atts.getValue("href");
-                openInline(new Link(href != null ? href : "", null));
+                openInline(new Link(href != null ? normalizeLineEndings(href) : "", null));
                 break;
             case "code":
                 if (codeBlockText == null) {
@@ -292,10 +292,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 break;
             case "img":
                 ensureInlineContainer();
-                Image img = new Image(value(atts, "src"), null);
+                Image img = new Image(normalizeLineEndings(value(atts, "src")), null);
                 String alt = atts.getValue("alt");
                 if (alt != null && !alt.isEmpty()) {
-                    img.appendChild(new Text(alt));
+                    img.appendChild(new Text(collapseLineBreaks(alt)));
                 }
                 stack.peek().appendChild(img);
                 break;
@@ -363,14 +363,16 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 break;
             case "pre":
                 if (codeBlock != null) {
-                    codeBlock.setLiteral(withTrailingNewline(codeBlockText.toString()));
+                    codeBlock.setLiteral(withTrailingNewline(
+                            normalizeLineEndings(codeBlockText.toString())));
                     codeBlock = null;
                     codeBlockText = null;
                 }
                 break;
             case "code":
                 if (inlineCode != null) {
-                    inlineCode.setLiteral(inlineCodeText.toString());
+                    // commonmark writes the literal raw: a line break would end the span's line
+                    inlineCode.setLiteral(collapseLineBreaks(inlineCodeText.toString()));
                     inlineCode = null;
                     inlineCodeText = null;
                 }
@@ -986,6 +988,17 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             }
         }
         return chars == null ? s : new String(chars);
+    }
+
+    /**
+     * commonmark prefixes code block lines and encodes destination line breaks on LF only;
+     * a lone CR still ends a line for every CommonMark parser.
+     */
+    private static String normalizeLineEndings(String s) {
+        if (s.indexOf('\r') < 0) {
+            return s;
+        }
+        return s.replace("\r\n", "\n").replace('\r', '\n');
     }
 
     private static String withTrailingNewline(String s) {
