@@ -25,6 +25,7 @@ import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -133,6 +134,13 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     // <script>/<style> content is dropped.
     private int suppressDepth;
 
+    /**
+     * Deepest open-node stack that still nests: commonmark renders recursively (a stack
+     * overflow at a few thousand levels) and prefixes every line with its containers, so
+     * output would grow with the square of the depth. Past it, content joins the current node.
+     */
+    static final int MAX_NESTING = 64;
+
     // True once endDocument has rendered the full document to the writer.
     private boolean finished;
 
@@ -180,12 +188,22 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 openBlock(new Paragraph());
                 break;
             case "blockquote":
-                openBlock(new BlockQuote());
+                popToBlockHost();
+                if (!flattenAtCap()) {
+                    openBlock(new BlockQuote());
+                }
                 break;
             case "ul":
-                openBlock(newBulletList());
+                popToBlockHost();
+                if (!flattenAtCap()) {
+                    openBlock(newBulletList());
+                }
                 break;
             case "ol":
+                popToBlockHost();
+                if (flattenAtCap()) {
+                    break;
+                }
                 OrderedList ol = new OrderedList();
                 ol.setMarkerStartNumber(1);
                 ol.setMarkerDelimiter(".");
@@ -198,8 +216,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "pre":
                 popToBlockHost();
                 codeBlock = new FencedCodeBlock();
+                // no fence length: commonmark makes the fence longer than any backtick run inside
                 codeBlock.setFenceCharacter("`");
-                codeBlock.setOpeningFenceLength(3);
                 codeBlock.setLiteral("");
                 stack.peek().appendChild(codeBlock);
                 codeBlockText = new StringBuilder();
@@ -345,8 +363,9 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 closeImplicitParagraph();
                 Node popped = stack.size() > 1 ? stack.peek() : null;
                 pop();
-                if (popped instanceof Emphasis || popped instanceof StrongEmphasis
-                        || popped instanceof Strikethrough) {
+                // a flattened duplicate: the node is still open below
+                if (popped != stack.peek() && (popped instanceof Emphasis
+                        || popped instanceof StrongEmphasis || popped instanceof Strikethrough)) {
                     trimDelimited(popped);
                 }
                 break;
@@ -609,6 +628,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
      * implicit bullet list so the model stays renderable.
      */
     private void openListItem() {
+        // an item of an open list always opens, or its text would be dropped
+        if (!(stack.peek() instanceof ListBlock) && flattenAtCap()) {
+            return;
+        }
         if (!(stack.peek() instanceof ListBlock)) {
             popToBlockHost();
             BulletList implicit = newBulletList();
@@ -622,8 +645,29 @@ public class ToMarkdownContentHandler extends DefaultHandler {
 
     private void openInline(Node node) {
         ensureInlineContainer();
+        if (flattenAtCap()) {
+            return;
+        }
         stack.peek().appendChild(node);
         stack.push(node);
+    }
+
+    /**
+     * At {@link #MAX_NESTING}, pushes the current node again so the element's content joins
+     * it and the element's end pops the duplicate.
+     */
+    private boolean flattenAtCap() {
+        if (stack.size() < MAX_NESTING) {
+            return false;
+        }
+        stack.push(stack.peek());
+        return true;
+    }
+
+    private boolean topIsDuplicate() {
+        Iterator<Node> it = stack.iterator();
+        Node top = it.next();
+        return it.hasNext() && it.next() == top;
     }
 
     /**
@@ -678,7 +722,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     private void pop() {
         if (stack.size() > 1) {
             Node popped = stack.pop();
-            if (popped == implicitParagraph) {
+            if (popped == implicitParagraph && stack.peek() != popped) {
                 implicitParagraph = null;
             }
         }
@@ -688,7 +732,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     private void popToBlockHost() {
         while (stack.size() > 1 && !canHostBlocks(stack.peek())) {
             Node popped = stack.pop();
-            if (popped == implicitParagraph) {
+            if (popped == implicitParagraph && stack.peek() != popped) {
                 implicitParagraph = null;
             }
         }
@@ -709,7 +753,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     }
 
     private void closeImplicitParagraph() {
-        if (implicitParagraph != null && stack.peek() == implicitParagraph) {
+        if (implicitParagraph != null && stack.peek() == implicitParagraph && !topIsDuplicate()) {
             stack.pop();
             implicitParagraph = null;
         }
