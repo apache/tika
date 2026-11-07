@@ -1,2 +1,7 @@
 # Jazzer-generated corpus
 .cifuzz-corpus/
+# Jazzer findings: replayed locally, committed only with `git add -f` once fixed and disclosed
+src/test/resources/**/crash-*
+src/test/resources/**/timeout-*
+src/test/resources/**/oom-*
+src/test/resources/**/slow-unit-*

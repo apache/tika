@@ -34,6 +34,9 @@
   <properties>
     <jazzer.version>0.30.0</jazzer.version>
     <maven.deploy.skip>true</maven.deploy.skip>
+    <!-- OSS-Fuzz runs Tika at -Xmx3000m -->
+    <tika.fuzz.xmx>3g</tika.fuzz.xmx>
+    <tika.fuzz.timeout>60</tika.fuzz.timeout>
   </properties>
 
   <dependencies>
@@ -71,10 +74,14 @@
   <build>
     <plugins>
       <plugin>
-        <!-- report the file and mode of a failing corpus replay, not its index -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <argLine>-Xmx${tika.fuzz.xmx} -Djava.awt.headless=true "-Djava.io.tmpdir=${tika.test.tmpdir}" @{surefireArgLine}</argLine>
+          <systemPropertyVariables>
+            <tika.fuzz.timeout>${tika.fuzz.timeout}</tika.fuzz.timeout>
+          </systemPropertyVariables>
+          <!-- report the file and mode of a failing corpus replay, not its index -->
           <statelessTestsetReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
             <usePhrasedTestCaseMethodName>true</usePhrasedTestCaseMethodName>
           </statelessTestsetReporter>

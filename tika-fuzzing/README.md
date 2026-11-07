@@ -28,11 +28,20 @@ The targets look for OOM, stack overflow, hangs, and exceptions other than
 `TikaException`/`IOException`/`SAXException`. `CompositeParser` wraps parser
 `RuntimeException`s in `TikaException`; add `-Dtika.fuzz.strict=true` to report those too.
 
+| Property | Default | |
+|---|---|---|
+| `-Dtika.fuzz.timeout=<s>` | `60` | per-input parse timeout, all modes; a hang is reported with the stuck stack |
+| `-Dtika.fuzz.xmx=<size>` | `3g` | test JVM heap (OSS-Fuzz uses `-Xmx3000m`) |
+| `JAZZER_MAX_DURATION=<d>` | Jazzer's | length of a fuzzing session |
+
+Do not use JUnit's `junit.jupiter.execution.timeout.*`: in fuzzing mode it ends the
+whole session, not one input.
+
 ## Regression mode (every build)
 
 `./mvnw clean test -pl tika-fuzzing` replays each method's inputs from
 `src/test/resources/org/apache/tika/fuzzing/AutoDetectParserFuzzTestInputs/<method>/`
-and `.cifuzz-corpus/`. An input that takes longer than 60 s fails the build.
+and `.cifuzz-corpus/`. An input that exceeds `tika.fuzz.timeout` fails the build.
 
 ## Replaying a directory
 
@@ -42,7 +51,7 @@ input modes, with no fuzzing:
 ```bash
 ./mvnw clean install -pl tika-fuzzing -am -Pfast
 ./mvnw clean test -pl tika-fuzzing -Dtest=CorpusReplayTest -Dtika.fuzz.corpus=<dir> \
-  '-Djunit.jupiter.execution.timeout.default=10 s'
+  -Dtika.fuzz.timeout=10
 grep -o 'testcase name="[^"]*"' tika-fuzzing/target/surefire-reports/TEST-*CorpusReplayTest.xml
 ```
 
@@ -63,8 +72,14 @@ JAZZER_FUZZ=1 JAZZER_MAX_DURATION=10m \
 Fuzzing mode runs one method at a time. To seed it, **copy** real files into
 `.cifuzz-corpus/org.apache.tika.fuzzing.AutoDetectParserFuzzTest/<method>/`
 (git-ignored). libFuzzer adds new inputs to that directory, so never point it at the
-original corpus. A plain test run also replays everything in it. Findings are written to the `...Inputs/<method>/` resource directory as
-`crash-*` / `timeout-*` files, so they become regression inputs.
+original corpus. A plain test run also replays everything in it.
 
-Do not commit a reproducer before the bug is fixed and disclosed (see `SECURITY.md`).
-Commit only small, synthesized files, never corpus documents.
+Jazzer stops at the first finding and writes it to
+`src/test/resources/org/apache/tika/fuzzing/AutoDetectParserFuzzTestInputs/<method>/` as
+`crash-*` (exceptions, OOM and hangs alike). Later plain test runs replay it. Finding
+files are git-ignored. Commit one with `git add -f` only after the bug is fixed and
+disclosed (see `SECURITY.md`). Commit only small, synthesized files, never corpus
+documents.
+
+After a session, empty `.cifuzz-corpus/` and remove the finding files you are not
+keeping, or every later build replays them.
