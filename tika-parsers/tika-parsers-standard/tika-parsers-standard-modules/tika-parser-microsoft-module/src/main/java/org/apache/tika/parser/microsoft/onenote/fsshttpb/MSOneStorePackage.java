@@ -56,6 +56,7 @@ import org.apache.tika.parser.microsoft.onenote.GUID;
 import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
 import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
+import org.apache.tika.parser.microsoft.onenote.OneNoteText;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.EightBytesOfData;
@@ -1463,7 +1464,7 @@ public class MSOneStorePackage {
                             StandardCharsets.UTF_16LE));
                 }
             } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
-                emitParagraph(xhtml, new String(dataProperty.data, StandardCharsets.US_ASCII));
+                emitParagraph(xhtml, new String(dataProperty.data, OneNoteText.EXTENDED_ASCII));
             } else if (!isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                     emitParagraph(xhtml, new String(dataProperty.data,
@@ -1772,29 +1773,34 @@ public class MSOneStorePackage {
         String txt = new String(arr, 0, firstNull, StandardCharsets.UTF_16LE);
         Matcher m = HYPERLINK_PATTERN.matcher(txt);
         if (m.find()) {
+            String anchor = OneNoteText.clean(m.group(2));
             xhtml.startElement("a", "href", m.group(1));
             try {
-                xhtml.characters(m.group(2));
+                if (anchor != null) {
+                    xhtml.characters(anchor);
+                    contentEmitted = true;
+                }
             } finally {
                 xhtml.endElement("a");
             }
-            contentEmitted = true;
         } else {
             emitParagraph(xhtml, txt);
         }
     }
 
     private void emitParagraph(XHTMLContentHandler xhtml, String text) throws SAXException {
+        // blank text is dropped, so it cannot suppress the legacy fallback
+        text = OneNoteText.clean(text);
+        if (text == null) {
+            return;
+        }
         xhtml.startElement(P);
         try {
             xhtml.characters(text);
         } finally {
             xhtml.endElement(P);
         }
-        // blank text does not count as content, so it cannot suppress the legacy fallback
-        if (!text.isBlank()) {
-            contentEmitted = true;
-        }
+        contentEmitted = true;
     }
 
     /**

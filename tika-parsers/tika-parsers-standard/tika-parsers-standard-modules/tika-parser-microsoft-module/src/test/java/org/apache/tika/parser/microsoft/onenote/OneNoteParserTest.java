@@ -256,6 +256,7 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote1.one", metadata);
         assertNoJunk(txt);
+        assertContains("Untitled picture.png\n", txt);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
         assertContains("Olya Veselova\u0000", authors);
@@ -917,6 +918,8 @@ public class OneNoteParserTest extends TikaTest {
         assertNotContained("\u83F2", txt);
         assertNotContained("\u432F", txt);
         assertNotContained("\u01E1", txt);
+        // NULs and vertical tabs come out as U+FFFD
+        assertNotContained("\uFFFD", txt);
     }
 
     /**
@@ -930,6 +933,7 @@ public class OneNoteParserTest extends TikaTest {
         assertEquals(1, StringUtils.countMatches(txt, "Sunday morning"));
         // page body text under ElementChildNodes references, written once
         assertEquals(1, StringUtils.countMatches(txt, "One more sun comes sliding down the sky"));
+        assertNoJunk(txt);
     }
 
     /**
