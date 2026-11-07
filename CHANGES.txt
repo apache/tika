@@ -128,6 +128,11 @@ Release 4.3.0 - ???
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
 
+   * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
+     ![alt](name)) instead of a paragraph holding the file name, and carry their alt
+     text, including OneNote's OCR text for file printouts, which was not extracted
+     before (TIKA-5057).
+
    * OneNote files whose file node lists are numbered below 0x10, as Aspose.Note
      writes them and as some .onetoc2 files have, parse instead of falling back to the
      legacy text dump (TIKA-5057).

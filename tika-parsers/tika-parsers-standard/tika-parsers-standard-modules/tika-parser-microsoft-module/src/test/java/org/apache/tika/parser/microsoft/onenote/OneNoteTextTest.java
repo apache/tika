@@ -27,6 +27,7 @@ public class OneNoteTextTest {
     public void testClean() {
         assertEquals("Untitled picture.png", OneNoteText.clean("Untitled picture.png\u0000"));
         assertEquals("Answer:\n\n", OneNoteText.clean("Answer:\u000B\u000B"));
+        assertEquals("Pages view:\nCamping\n", OneNoteText.clean("Pages view:\r\nCamping\r"));
         assertEquals("a￼b", OneNoteText.clean("a￼b"));
         assertNull(OneNoteText.clean("￼￼"));
         assertNull(OneNoteText.clean("\u0000"));

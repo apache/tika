@@ -59,6 +59,7 @@ import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
+import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -310,7 +311,17 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote1.one", metadata);
         assertNoJunk(txt);
-        assertContains("Untitled picture.png\n", txt);
+        // pictures are <img>, not paragraphs of their file names
+        assertNotContained("Untitled picture.png", txt);
+        String xml = getXML("testOneNote1.one").xml;
+        assertContains("<img src=\"embedded:Untitled picture.png\" alt=\"Play button\" />", xml);
+        assertContains("alt=\"Pages view: \nSummer vacation\nCamping", xml);
+        ToMarkdownContentHandler md = new ToMarkdownContentHandler();
+        try (InputStream input = getClass().getResourceAsStream("/test-documents/testOneNote1.one");
+             TikaInputStream tis = TikaInputStream.get(input)) {
+            new OneNoteParser().parse(tis, md, new Metadata(), new ParseContext());
+        }
+        assertContains("![Play button](<embedded:Untitled picture.png>)\n", md.toString());
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
         assertContains("Olya Veselova", authors);

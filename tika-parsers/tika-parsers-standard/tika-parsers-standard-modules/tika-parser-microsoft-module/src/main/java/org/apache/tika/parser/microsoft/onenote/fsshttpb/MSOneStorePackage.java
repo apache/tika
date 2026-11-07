@@ -632,6 +632,7 @@ public class MSOneStorePackage {
         ListStyle listStyle = listStyleForObject(object, actions, objectsById);
         startObjectStructure(objectType, listStyle, xhtml);
         try {
+            emitImage(actions, options, xhtml);
             // Emit the title structure before page body nodes to preserve visual order.
             List<PropertyAction> structureActions = new ArrayList<>();
             for (PropertyAction action : actions) {
@@ -1459,14 +1460,16 @@ public class MSOneStorePackage {
                     (PrtFourBytesOfLengthFollowedByData) property;
             if ((dataProperty.data.length & 1) == 0 &&
                     oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
-                if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
+                if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&
+                        !OneNoteText.isImageText(oneNotePropertyEnum)) {
                     emitParagraph(xhtml, new String(dataProperty.data,
                             StandardCharsets.UTF_16LE));
                 }
             } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
                 emitParagraph(xhtml, new String(dataProperty.data, OneNoteText.EXTENDED_ASCII));
             } else if (!isBinary) {
-                if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
+                if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&
+                        !OneNoteText.isImageText(oneNotePropertyEnum)) {
                     emitParagraph(xhtml, new String(dataProperty.data,
                             StandardCharsets.UTF_16LE));
                 }
@@ -1788,6 +1791,29 @@ public class MSOneStorePackage {
             }
         } else {
             emitParagraph(xhtml, txt);
+        }
+    }
+
+    private void emitImage(List<PropertyAction> actions, OneNoteTreeWalkerOptions options,
+                           XHTMLContentHandler xhtml) throws SAXException {
+        String fileName = null;
+        String altText = null;
+        for (PropertyAction action : actions) {
+            if (!action.isChildReference && OneNoteText.isImageText(action.oneNotePropertyEnum) &&
+                    action.property instanceof PrtFourBytesOfLengthFollowedByData &&
+                    options.getUtf16PropertiesToPrint().contains(action.oneNotePropertyEnum)) {
+                String text = new String(
+                        ((PrtFourBytesOfLengthFollowedByData) action.property).data,
+                        StandardCharsets.UTF_16LE);
+                if (action.oneNotePropertyEnum == OneNotePropertyEnum.ImageFilename) {
+                    fileName = sanitizeResourceName(text.replace("\u0000", ""));
+                } else {
+                    altText = text;
+                }
+            }
+        }
+        if (OneNoteText.emitImage(xhtml, fileName, altText)) {
+            contentEmitted = true;
         }
     }
 

@@ -2370,8 +2370,8 @@ public class MSOneStorePackageTest {
         assertTrue(text.contains("nested text"));
         assertTrue(text.contains("array text"));
         assertTrue(text.contains("child text"));
-        assertTrue(text.contains("u"));
         assertTrue(text.contains("hi"));
+        assertTrue(walkXml(pkg).contains("<img src=\"embedded:u"));
     }
 
     private static class CountingMSOneStorePackage extends MSOneStorePackage {

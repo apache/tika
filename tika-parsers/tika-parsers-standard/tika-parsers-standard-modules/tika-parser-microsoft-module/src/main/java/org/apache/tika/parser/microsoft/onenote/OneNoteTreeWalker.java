@@ -540,11 +540,50 @@ class OneNoteTreeWalker {
                                                          int objectType)
             throws IOException, TikaException, SAXException {
         List<Map<String, Object>> propValues = new ArrayList<>();
+        emitImage(propertySet);
         for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
             PropertyValue propertyValue = propertySet.rgPridsData.get(i);
             propValues.add(processPropertyValue(propertyValue, parentPropertyId, objectType));
         }
         return propValues;
+    }
+
+    private void emitImage(PropertySet propertySet)
+            throws IOException, TikaException, SAXException {
+        String fileName = null;
+        String altText = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (OneNoteText.isImageText(property) && value.propertyId.type == 7 &&
+                    options.getUtf16PropertiesToPrint().contains(property)) {
+                String text = readUtf16(value);
+                if (property == OneNotePropertyEnum.ImageFilename) {
+                    fileName = text;
+                } else {
+                    altText = text;
+                }
+            }
+        }
+        if (OneNoteText.emitImage(xhtml, fileName, altText)) {
+            contentEmitted = true;
+        }
+    }
+
+    /** @return the property's UTF-16 text, or null if it was already emitted */
+    private String readUtf16(PropertyValue value) throws IOException, TikaException {
+        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
+        content.reposition(value.rawData);
+        if (content.size() > dif.size()) {
+            throw new TikaMemoryLimitException(
+                    "File data store cb " + content.size() + " exceeds document size: " +
+                            dif.size());
+        }
+        if (!shouldEmitText(content.size())) {
+            return null;
+        }
+        ByteBuffer buf = ByteBuffer.allocate(content.size());
+        dif.read(buf);
+        return new String(buf.array(), StandardCharsets.UTF_16LE);
     }
 
     /**
@@ -635,6 +674,7 @@ class OneNoteTreeWalker {
                 }
                 boolean print = options.getUtf16PropertiesToPrint()
                         .contains(propertyValue.propertyId.propertyEnum) &&
+                        !OneNoteText.isImageText(propertyValue.propertyId.propertyEnum) &&
                         shouldEmitText(content.size());
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
@@ -664,6 +704,7 @@ class OneNoteTreeWalker {
                 }
                 boolean print = options.getUtf16PropertiesToPrint()
                         .contains(propertyValue.propertyId.propertyEnum) &&
+                        !OneNoteText.isImageText(propertyValue.propertyId.propertyEnum) &&
                         shouldEmitText(content.size());
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);

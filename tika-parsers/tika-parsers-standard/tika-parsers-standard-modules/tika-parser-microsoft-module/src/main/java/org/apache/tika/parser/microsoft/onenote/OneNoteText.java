@@ -18,7 +18,12 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import java.nio.charset.Charset;
 
-/** Text clean-up shared by the .one and FSSHTTPB walkers. */
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import org.apache.tika.sax.XHTMLContentHandler;
+
+/** Text clean-up and markup shared by the .one and FSSHTTPB walkers. */
 public final class OneNoteText {
 
     /** MS-ONE TextExtendedAscii holds code-page bytes; Western text is windows-1252. */
@@ -29,14 +34,15 @@ public final class OneNoteText {
 
     /**
      * @return the text with NUL terminators removed and vertical tabs (OneNote soft line
-     * breaks) as newlines, or {@code null} if nothing but spaces and U+FFFC
+     * breaks) and CR/CRLF (alt text) as newlines, or {@code null} if nothing but spaces and U+FFFC
      * object-placeholders is left
      */
     public static String clean(String text) {
         if (text == null) {
             return null;
         }
-        String s = text.replace("\u0000", "").replace('\u000B', '\n');
+        String s = text.replace("\u0000", "").replace('\u000B', '\n')
+                .replace("\r\n", "\n").replace('\r', '\n');
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if (c != '\uFFFC' && !Character.isWhitespace(c) && !Character.isSpaceChar(c)) {
@@ -44,5 +50,38 @@ public final class OneNoteText {
             }
         }
         return null;
+    }
+
+    /**
+     * Emits a picture as {@code <p><img src="embedded:fileName" alt="altText"/></p>}, leaving out
+     * whichever is missing.
+     *
+     * @return whether an element was emitted
+     */
+    public static boolean emitImage(XHTMLContentHandler xhtml, String fileName, String altText)
+            throws SAXException {
+        fileName = fileName == null ? null : clean(fileName.strip());
+        altText = altText == null ? null : clean(altText.strip());
+        if (fileName == null && altText == null) {
+            return false;
+        }
+        AttributesImpl atts = new AttributesImpl();
+        if (fileName != null) {
+            atts.addAttribute("", "src", "src", "CDATA", "embedded:" + fileName);
+        }
+        if (altText != null) {
+            atts.addAttribute("", "alt", "alt", "CDATA", altText);
+        }
+        // its own paragraph, so Markdown does not run it into the next inline element
+        xhtml.startElement("p");
+        xhtml.startElement("img", atts);
+        xhtml.endElement("img");
+        xhtml.endElement("p");
+        return true;
+    }
+
+    public static boolean isImageText(OneNotePropertyEnum property) {
+        return property == OneNotePropertyEnum.ImageFilename ||
+                property == OneNotePropertyEnum.ImageAltText;
     }
 }
