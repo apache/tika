@@ -119,6 +119,8 @@ class OneNoteTreeWalker {
     // contexts (parent property, inside version history) each node was walked in; a repeat
     // walk in the same context adds nothing, as text is deduplicated by position
     private final Map<FileNode, Set<Long>> walkedContexts = new IdentityHashMap<>();
+    // recognized words of the inline ink in the paragraph being walked
+    private List<String> inkWords = Collections.emptyList();
     private final Set<FileNode> reportedCycleNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private int cycleWarningCount;
@@ -541,9 +543,15 @@ class OneNoteTreeWalker {
             throws IOException, TikaException, SAXException {
         List<Map<String, Object>> propValues = new ArrayList<>();
         emitImage(propertySet);
-        for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
-            PropertyValue propertyValue = propertySet.rgPridsData.get(i);
-            propValues.add(processPropertyValue(propertyValue, parentPropertyId, objectType));
+        List<String> outerInkWords = inkWords;
+        inkWords = inlineInkWords(propertySet);
+        try {
+            for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
+                PropertyValue propertyValue = propertySet.rgPridsData.get(i);
+                propValues.add(processPropertyValue(propertyValue, parentPropertyId, objectType));
+            }
+        } finally {
+            inkWords = outerInkWords;
         }
         return propValues;
     }
@@ -567,6 +575,50 @@ class OneNoteTreeWalker {
         if (OneNoteText.emitImage(xhtml, fileName, altText)) {
             contentEmitted = true;
         }
+    }
+
+    /** @return the recognized words of the paragraph's inline ink, in order */
+    private List<String> inlineInkWords(PropertySet propertySet)
+            throws IOException, TikaException {
+        List<String> words = Collections.emptyList();
+        for (PropertyValue value : propertySet.rgPridsData) {
+            if (value.propertyId.propertyEnum != OneNotePropertyEnum.InlineInkWords ||
+                    value.compactIDs == null) {
+                continue;
+            }
+            words = new ArrayList<>();
+            for (CompactID compactID : value.compactIDs) {
+                FileNodePtr ptr = oneNoteDocument.guidToObject.get(compactID.guid);
+                FileNode word = ptr == null ? null : ptr.dereference(oneNoteDocument);
+                String alternates = word == null || word.propertySet == null ? null :
+                        readAlternates(word.propertySet);
+                String best = alternates == null ? null :
+                        OneNoteText.bestInkAlternate(alternates);
+                if (best != null) {
+                    words.add(best);
+                }
+            }
+        }
+        return words;
+    }
+
+    private String readAlternates(PropertySet word) throws IOException, TikaException {
+        for (PropertyValue value : word.rgPridsData) {
+            if (value.propertyId.propertyEnum == OneNotePropertyEnum.InkRecognitionAlternates &&
+                    value.propertyId.type == 7) {
+                OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
+                content.reposition(value.rawData);
+                if (content.size() > dif.size()) {
+                    throw new TikaMemoryLimitException(
+                            "File data store cb " + content.size() + " exceeds document size: " +
+                                    dif.size());
+                }
+                ByteBuffer buf = ByteBuffer.allocate(content.size());
+                dif.read(buf);
+                return new String(buf.array(), StandardCharsets.UTF_16LE);
+            }
+        }
+        return null;
     }
 
     /** @return the property's UTF-16 text, or null if it was already emitted */
@@ -843,6 +895,10 @@ class OneNoteTreeWalker {
                 }
             } finally {
                 xhtml.endElement("a");
+            }
+        } else if (!inkWords.isEmpty()) {
+            if (OneNoteText.emitParagraphWithInk(xhtml, txt, inkWords)) {
+                contentEmitted = true;
             }
         } else {
             emitParagraph(txt);

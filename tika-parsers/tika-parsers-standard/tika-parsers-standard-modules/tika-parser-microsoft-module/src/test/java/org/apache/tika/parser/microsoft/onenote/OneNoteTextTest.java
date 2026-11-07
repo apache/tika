@@ -17,9 +17,18 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 public class OneNoteTextTest {
 
@@ -40,5 +49,57 @@ public class OneNoteTextTest {
         assertEquals("Übung Thévenin ",
                 new String(new byte[]{(byte) 0xDC, 'b', 'u', 'n', 'g', ' ', 'T', 'h', (byte) 0xE9,
                         'v', 'e', 'n', 'i', 'n', (byte) 0xA0}, OneNoteText.EXTENDED_ASCII));
+    }
+
+    @Test
+    public void testBestInkAlternate() {
+        assertEquals("algebras,", OneNoteText.bestInkAlternate(
+                "algebras,\u0000algebras\u0000alphas,\u0000\u0000"));
+        assertNull(OneNoteText.bestInkAlternate("\u0000\u0000"));
+    }
+
+    @Test
+    public void testInkReplacesPlaceholders() throws SAXException {
+        // ink only: the words share one span, punctuation kept against its word
+        assertEquals("<p><span class=\"handwriting\">This is a test!</span></p>",
+                body(x -> OneNoteText.emitParagraphWithInk(x, "\uFFFC\uFFFC\uFFFC\uFFFC\uFFFC",
+                        List.of("This", "is", "a", "test", "!"))));
+        // mixed with typed text, in place
+        assertEquals("<p>Call <span class=\"handwriting\">Bernard</span> at noon</p>",
+                body(x -> OneNoteText.emitParagraphWithInk(x, "Call \uFFFC at noon",
+                        List.of("Bernard"))));
+        // unrecognized ink leaves nothing to emit
+        assertEquals("", body(x -> assertFalse(
+                OneNoteText.emitParagraphWithInk(x, "\uFFFC\uFFFC", List.of()))));
+    }
+
+    @Test
+    public void testImage() throws SAXException {
+        assertEquals("<p><img src=\"embedded:a.png\" alt=\"Play button\" /></p>",
+                body(x -> OneNoteText.emitImage(x, "a.png\u0000", "Play button\r\n")));
+        // OneNote's OCR of a printout is body text, not alt text
+        assertEquals("<p><img src=\"embedded:b.png\" /></p><div class=\"ocr\">Name:\nDate:</div>",
+                body(x -> OneNoteText.emitImage(x, "b.png",
+                        "Machine generated alternative text:\r\nName:\r\nDate:\r\n")));
+    }
+
+    private interface Emitter {
+        void emit(XHTMLContentHandler xhtml) throws SAXException;
+    }
+
+    private static String body(Emitter emitter) throws SAXException {
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, new Metadata(),
+                new ParseContext());
+        xhtml.startDocument();
+        emitter.emit(xhtml);
+        xhtml.endDocument();
+        String xml = handler.toString();
+        if (!xml.contains("</body>")) {
+            return "";
+        }
+        // XHTMLContentHandler ends each block with a newline
+        return xml.substring(xml.indexOf("<body>") + 6, xml.indexOf("</body>")).strip()
+                .replace("</p>\n", "</p>");
     }
 }

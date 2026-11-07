@@ -76,6 +76,10 @@ public enum OneNotePropertyEnum {
     PictureWidth(0x140034CD), PictureHeight(0x140034CE), PageMarginOriginX(0x14001D0F),
     PageMarginOriginY(0x14001D10), WzHyperlinkUrl(0x1C001E20), TaskTagDueDate(0x1400346B),
     NotebookElementOrderingID(0x14001CB9),
+    // undocumented: a paragraph's inline ink words, one per U+FFFC in its text
+    InlineInkWords(0x24003458),
+    // undocumented: an ink word's handwriting-recognition alternates, NUL-separated, best first
+    InkRecognitionAlternates(0x1C00341E),
     Unknown(0x00000000);
 
     private static final Map<Long, OneNotePropertyEnum> BY_ID = new HashMap<>();

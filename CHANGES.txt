@@ -130,8 +130,13 @@ Release 4.3.0 - ???
 
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt
-     text, including OneNote's OCR text for file printouts, which was not extracted
-     before (TIKA-5057).
+     text, which was not extracted before. OneNote's own OCR of pictures and file
+     printouts ("Machine generated alternative text") goes in a <div class="ocr"> as
+     body text instead (TIKA-5057).
+
+   * OneNote handwriting in .one sections is extracted: each inline ink word's best
+     recognition guess replaces its placeholder in the paragraph, inside
+     <span class="handwriting"> (TIKA-5057).
 
    * OneNote files whose file node lists are numbered below 0x10, as Aspose.Note
      writes them and as some .onetoc2 files have, parse instead of falling back to the
