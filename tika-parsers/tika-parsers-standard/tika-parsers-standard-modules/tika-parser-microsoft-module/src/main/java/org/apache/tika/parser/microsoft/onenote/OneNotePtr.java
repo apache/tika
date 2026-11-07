@@ -71,7 +71,9 @@ class OneNotePtr {
      */
     private static final class FileNodeListRecursion {
         private int depth;
-        private final Set<Long> activeListOffsets = new HashSet<>();
+        // each list is referenced once in a valid file; a second reference would re-parse
+        // the whole subtree, exponentially so for a chain of shared lists
+        private final Set<Long> parsedListOffsets = new HashSet<>();
     }
 
     int indentLevel = 0;
@@ -295,9 +297,9 @@ class OneNotePtr {
                             MAX_FILE_NODE_LIST_DEPTH);
         }
         long listOffset = offset;
-        if (!fileNodeListRecursion.activeListOffsets.add(listOffset)) {
-            throw new TikaException(
-                    "OneNote file node list cycle detected at offset " + listOffset);
+        if (!fileNodeListRecursion.parsedListOffsets.add(listOffset)) {
+            throw new TikaException("OneNote file node list at offset " + listOffset +
+                    " is referenced more than once (cycle or shared list)");
         }
         fileNodeListRecursion.depth++;
         try {
@@ -305,7 +307,6 @@ class OneNotePtr {
             return internalDeserializeFileNodeList(this, fileNodeList, curPath);
         } finally {
             fileNodeListRecursion.depth--;
-            fileNodeListRecursion.activeListOffsets.remove(listOffset);
         }
     }
 
@@ -344,6 +345,7 @@ class OneNotePtr {
                     break;
                 }
                 pushBack.commit();
+                document.fileNodeCount++;
                 FileNode dereference = curPath.dereference(document);
                 FileNode lastChild = data.children.get(data.children.size() - 1);
                 assert dereference.equals(lastChild); // is this correct? or should we be

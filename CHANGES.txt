@@ -127,6 +127,11 @@ Release 4.3.0 - ???
 
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
+
+   * OneNote: a .one file whose file node lists or objects are referenced more than once no
+     longer costs time and memory exponential in its nesting depth. A file node list
+     referenced twice fails the structured parse (the legacy text dump still runs), and the
+     tree walk stops with a warning after a visit budget sized from the file (TIKA-5057).
      
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary

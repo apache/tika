@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -621,6 +623,71 @@ public class OneNoteParserTest extends TikaTest {
                     () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
             assertTrue(e.getMessage().contains("cycle"), e.getMessage());
         }
+    }
+
+    @Test
+    public void testSharedFileNodeListFailsCleanly(@TempDir Path tempDir) throws Exception {
+        // each list holds two baseType-2 nodes pointing at the same next list; parsing every
+        // reference would cost 2^lists list parses
+        int lists = 40;
+        int listSize = 72;
+        int emptyListSize = 40;
+        ByteBuffer buf = ByteBuffer.allocate(listSize * lists + emptyListSize)
+                .order(ByteOrder.LITTLE_ENDIAN);
+        int nodeHeader = 0x10 | (16 << 10) | (2 << 27) | (1 << 31);
+        for (int i = 0; i < lists; i++) {
+            long childStp = (long) (i + 1) * listSize;
+            int childCb = i + 1 < lists ? listSize : emptyListSize;
+            buf.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0);
+            for (int n = 0; n < 2; n++) {
+                buf.putInt(nodeHeader).putLong(childStp).putInt(childCb);
+            }
+            buf.putInt(0).putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST);
+        }
+        buf.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putInt(0).putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST);
+        Path shared = tempDir.resolve("shared");
+        Files.write(shared, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(shared.toFile())) {
+            OneNoteDocument document = new OneNoteDocument();
+            OneNotePtr ptr = new OneNotePtr(document, dif);
+            TikaException e = assertTimeoutPreemptively(Duration.ofSeconds(30),
+                    () -> assertThrows(TikaException.class,
+                            () -> ptr.deserializeFileNodeList(document.root,
+                                    new FileNodePtr())));
+            assertTrue(e.getMessage().contains("referenced more than once"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testSharedFileNodesAreBoundedByVisitBudget(@TempDir Path tempDir)
+            throws Exception {
+        // every node lists the next node twice: acyclic, shallow, but 2^60 paths
+        FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
+        FileNode current = root;
+        for (int i = 0; i < 60; i++) {
+            FileNode child = new FileNode().setGosid(ExtendedGUID.nil());
+            current.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+                    FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+            current.childFileNodeList.children.add(child);
+            current.childFileNodeList.children.add(child);
+            current = child;
+        }
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                    new OneNoteDocument(), dif,
+                    new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
+                    metadata, parseContext, null);
+            assertTimeoutPreemptively(Duration.ofSeconds(30),
+                    () -> walker.walkFileNode(root, null));
+        }
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("exceeded visit budget"))
+                .count());
     }
 
     @Test

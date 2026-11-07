@@ -62,6 +62,10 @@ class OneNoteTreeWalker {
     private static final int MAX_CYCLE_WARNINGS = 100;
     // low enough that the ~3 stack frames per level cannot overflow a default thread stack
     private static final int MAX_WALK_DEPTH = 500;
+    // real files revisit each node a few times (once per reference); shared references in a
+    // crafted file can make the visits exponential in depth without forming a cycle
+    private static final long VISITS_PER_FILE_NODE = 64;
+    private static final long MIN_VISIT_BUDGET = 100_000;
     private static final String P = "p";
     /**
      * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
@@ -120,6 +124,8 @@ class OneNoteTreeWalker {
     private boolean cycleWarningsSuppressed;
     private int walkDepth;
     private boolean depthWarningRecorded;
+    private long visitsRemaining;
+    private boolean visitBudgetWarningRecorded;
 
     /**
      * Create a one tree walker.
@@ -145,6 +151,8 @@ class OneNoteTreeWalker {
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
         this.guidCollector = new OneNoteGuidCollector(this::recordGuidCapWarning);
+        this.visitsRemaining = Math.max(MIN_VISIT_BUDGET,
+                VISITS_PER_FILE_NODE * oneNoteDocument.fileNodeCount);
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
@@ -323,16 +331,33 @@ class OneNoteTreeWalker {
             recordDepthWarning();
             return Collections.emptyMap();
         }
+        if (visitsRemaining <= 0) {
+            recordVisitBudgetWarning();
+            return Collections.emptyMap();
+        }
         if (!activeFileNodes.add(fileNode)) {
             recordCycleWarning(fileNode);
             return Collections.emptyMap();
         }
+        visitsRemaining--;
         walkDepth++;
         try {
             return walkFileNodeInternal(fileNode, parentPropertyId);
         } finally {
             walkDepth--;
             activeFileNodes.remove(fileNode);
+        }
+    }
+
+    private void recordVisitBudgetWarning() {
+        if (visitBudgetWarningRecorded) {
+            return;
+        }
+        visitBudgetWarningRecorded = true;
+        String warning = "OneNote file-node traversal exceeded visit budget";
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
     }
 
