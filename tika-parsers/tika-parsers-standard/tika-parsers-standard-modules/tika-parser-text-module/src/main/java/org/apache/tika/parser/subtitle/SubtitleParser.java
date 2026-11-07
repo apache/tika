@@ -352,7 +352,11 @@ public class SubtitleParser extends AbstractEncodingDetectorParser {
                     break;
             }
             Matcher timing = timing(line);
-            if (timing != null) {
+            // A line shaped like a cue timing whose endpoints are both out of
+            // range is text, not a cue: otherwise it would open a cue without
+            // timing attributes and capture the lines that follow it.
+            if (timing != null && (normalizeTime(timing.group(1)) != null
+                    || (timing.group(2) != null && normalizeTime(timing.group(2)) != null))) {
                 closeDiv();
                 block = Block.CUE;
                 pendingCue = new AttributesImpl();

@@ -282,4 +282,20 @@ public class SubtitleParserTest extends TikaTest {
         assertEquals(List.of(), cues(r));
         assertNotContained("<div", r.xml);
     }
+
+    @Test
+    public void testInvalidTimingLineIsText() throws Exception {
+        // minutes 61 and 62 are out of range, so normalizeTime returns null for
+        // both endpoints: the line is cue-shaped but is not a cue, and the text
+        // after it must not be captured by an attribute-less cue div.
+        String vtt = "WEBVTT\n\n00:61.000 --> 00:62.000\nafter the bad timing\n\n"
+                + "00:01.000 --> 00:02.000\nreal cue\n";
+        XMLResult r = parse(vtt, "x.vtt", StandardCharsets.UTF_8);
+        // the malformed timing line degrades to cue text; the real cue keeps
+        // its timing attributes and no attribute-less cue div is emitted
+        assertEquals(List.of("00:61.000 --&gt; 00:62.000\nafter the bad timing", "real cue"),
+                cues(r));
+        assertTrue(r.xml.contains("data-start=\"00:00:01.000\""), r.xml);
+        assertEquals(1, r.xml.split("<div class=\"cue\" data-start", -1).length - 1);
+    }
 }
