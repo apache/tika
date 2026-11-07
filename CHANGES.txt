@@ -128,10 +128,18 @@ Release 4.3.0 - ???
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
 
+   * OneNote .one sections whose file node lists are followed by leftover bytes from
+     earlier saves parse instead of falling back to the legacy text dump: each list now
+     ends at the node count the transaction log commits. The tree walker visits an
+     object reached through many references once per context rather than once per
+     path, which keeps large notebooks within memory and halves walk time (TIKA-5057).
+
    * OneNote text no longer turns accented letters, NUL terminators and soft line breaks
      into U+FFFD: single-byte (TextExtendedAscii) text is read as windows-1252 rather
      than US-ASCII, image file names lose their trailing NUL, and paragraphs that are
-     only object placeholders are dropped (TIKA-5057).
+     only object placeholders are dropped. Author names in .one metadata
+     (dc:creator, onenote:mostRecentAuthors, onenote:originalAuthors) no longer end in
+     a NUL, and empty names are skipped (TIKA-5057).
 
    * OneNote .one sections extract page text they used to drop: outline, table and image
      text (including OCR text of printouts and pictures) reached through element child

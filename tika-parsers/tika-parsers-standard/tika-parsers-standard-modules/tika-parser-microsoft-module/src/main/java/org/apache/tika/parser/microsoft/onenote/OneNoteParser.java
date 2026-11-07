@@ -323,6 +323,14 @@ public class OneNoteParser implements Parser {
         oneNoteDocument.header = oneNotePtr.deserializeHeader();
 
         if (oneNoteDocument.header.isMsOneStoreFormat()) {
+            try {
+                oneNoteDocument.committedFileNodeCounts = oneNotePtr.deserializeTransactionLog(
+                        oneNoteDocument.header.fcrTransactionLog,
+                        oneNoteDocument.header.cTransactionsInLog);
+            } catch (TikaException | IOException | RuntimeException e) {
+                // without the log, lists end at a terminator or the end of their fragments
+                LOG.debug("Could not read the OneNote transaction log", e);
+            }
             // Now that we parsed the header, the "root file node list"
             try {
                 oneNotePtr.reposition(oneNoteDocument.header.fcrFileNodeListRoot);

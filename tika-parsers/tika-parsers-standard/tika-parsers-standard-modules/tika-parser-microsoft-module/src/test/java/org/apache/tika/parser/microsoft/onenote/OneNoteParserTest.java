@@ -248,6 +248,35 @@ public class OneNoteParserTest extends TikaTest {
                 .anyMatch(warning -> warning.contains("falling back to legacy text dump")));
     }
 
+    @Test
+    public void testUncommittedFileNodesAreIgnored(@TempDir Path tempDir) throws Exception {
+        byte[] full;
+        try (InputStream is = getClass()
+                .getResourceAsStream("/test-documents/testOneNote1.one")) {
+            full = is.readAllBytes();
+        }
+        // 4950 is just past the last node the transaction log commits for file node list
+        // 0x12; plant a header there with the reserved bit clear, as leftover bytes have
+        byte[] planted = full.clone();
+        ByteBuffer.wrap(planted, 4950, 4).order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(0x123 | (16 << 10));
+
+        Metadata metadata = new Metadata();
+        String txt = parseToText(tempDir.resolve("planted.one"), planted, metadata);
+        assertNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals(parseToText(tempDir.resolve("full.one"), full, new Metadata()), txt);
+    }
+
+    private static String parseToText(Path path, byte[] bytes, Metadata metadata)
+            throws Exception {
+        Files.write(path, bytes);
+        ToTextContentHandler handler = new ToTextContentHandler();
+        try (TikaInputStream tis = TikaInputStream.get(path)) {
+            new OneNoteParser().parse(tis, handler, metadata, new ParseContext());
+        }
+        return handler.toString();
+    }
+
     /**
      * This is the sample document that is automatically created from onenote 2013.
      */
@@ -259,16 +288,19 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Untitled picture.png\n", txt);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
-        assertContains("Olya Veselova\u0000", authors);
-        assertContains("Microsoft\u0000", authors);
-        assertContains("Scott\u0000", authors);
-        assertContains("Scott H. W. Snyder\u0000", authors);
+        assertContains("Olya Veselova", authors);
+        assertContains("Microsoft", authors);
+        assertNotContained("Microsoft\u0000", authors);
+        assertContains("Scott", authors);
+        assertContains("Scott H. W. Snyder", authors);
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
-        assertContains("Microsoft\u0000", mostRecentAuthors);
+        // roles come from the reference an author object is reached through
+        assertEquals(List.of("Microsoft"), mostRecentAuthors);
 
         List<String> originalAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "originalAuthors"));
-        assertContains("Microsoft\u0000", originalAuthors);
+        assertContains("Microsoft", originalAuthors);
+        assertEquals(4, originalAuthors.size());
 
         assertEquals(Instant.ofEpochSecond(1336059427),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
@@ -290,19 +322,19 @@ public class OneNoteParserTest extends TikaTest {
         assertNoJunk(txt);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
-        assertContains("Olya Veselova\u0000", authors);
-        assertContains("Microsoft\u0000", authors);
-        assertContains("Scott\u0000", authors);
-        assertContains("Scott H. W. Snyder\u0000", authors);
-        assertContains("ndipiazza\u0000", authors);
+        assertContains("Olya Veselova", authors);
+        assertContains("Microsoft", authors);
+        assertContains("Scott", authors);
+        assertContains("Scott H. W. Snyder", authors);
+        assertContains("ndipiazza", authors);
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
-        assertContains("ndipiazza\u0000", mostRecentAuthors);
-        assertContains("Microsoft\u0000", mostRecentAuthors);
+        assertContains("ndipiazza", mostRecentAuthors);
+        assertContains("Microsoft", mostRecentAuthors);
 
         List<String> originalAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "originalAuthors"));
-        assertContains("Microsoft\u0000", originalAuthors);
-        assertContains("ndipiazza\u0000", mostRecentAuthors);
+        assertContains("Microsoft", originalAuthors);
+        assertContains("ndipiazza", mostRecentAuthors);
 
         assertEquals(Instant.ofEpochSecond(1336059427),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
@@ -324,19 +356,19 @@ public class OneNoteParserTest extends TikaTest {
         assertNoJunk(txt);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
-        assertNotContained("Olya Veselova\u0000", authors);
-        assertNotContained("Microsoft\u0000", authors);
-        assertNotContained("Scott\u0000", authors);
-        assertNotContained("Scott H. W. Snyder\u0000", authors);
-        assertContains("ndipiazza\u0000", authors);
+        assertNotContained("Olya Veselova", authors);
+        assertNotContained("Microsoft", authors);
+        assertNotContained("Scott", authors);
+        assertNotContained("Scott H. W. Snyder", authors);
+        assertContains("ndipiazza", authors);
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
-        assertContains("ndipiazza\u0000", mostRecentAuthors);
-        assertNotContained("Microsoft\u0000", mostRecentAuthors);
+        assertContains("ndipiazza", mostRecentAuthors);
+        assertNotContained("Microsoft", mostRecentAuthors);
 
         List<String> originalAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "originalAuthors"));
-        assertNotContained("Microsoft\u0000", originalAuthors);
-        assertContains("ndipiazza\u0000", mostRecentAuthors);
+        assertNotContained("Microsoft", originalAuthors);
+        assertContains("ndipiazza", mostRecentAuthors);
 
         assertEquals(Instant.ofEpochSecond(1574426349),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
@@ -358,19 +390,19 @@ public class OneNoteParserTest extends TikaTest {
         assertNoJunk(txt);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
-        assertNotContained("Olya Veselova\u0000", authors);
-        assertNotContained("Microsoft\u0000", authors);
-        assertNotContained("Scott\u0000", authors);
-        assertNotContained("Scott H. W. Snyder\u0000", authors);
-        assertContains("ndipiazza\u0000", authors);
+        assertNotContained("Olya Veselova", authors);
+        assertNotContained("Microsoft", authors);
+        assertNotContained("Scott", authors);
+        assertNotContained("Scott H. W. Snyder", authors);
+        assertContains("ndipiazza", authors);
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
-        assertContains("ndipiazza\u0000", mostRecentAuthors);
-        assertNotContained("Microsoft\u0000", mostRecentAuthors);
+        assertContains("ndipiazza", mostRecentAuthors);
+        assertNotContained("Microsoft", mostRecentAuthors);
 
         List<String> originalAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "originalAuthors"));
-        assertNotContained("Microsoft\u0000", originalAuthors);
-        assertContains("ndipiazza\u0000", mostRecentAuthors);
+        assertNotContained("Microsoft", originalAuthors);
+        assertContains("ndipiazza", mostRecentAuthors);
 
         String[] pageGuids = metadata.getValues(OneNote.PAGE_GUIDS);
         assertNotNull(pageGuids);
@@ -398,13 +430,13 @@ public class OneNoteParserTest extends TikaTest {
         assertNoJunk(txt);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
-        assertContains("nicholas dipiazza\u0000", authors);
+        assertContains("nicholas dipiazza", authors);
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
-        assertContains("nicholas dipiazza\u0000", mostRecentAuthors);
+        assertContains("nicholas dipiazza", mostRecentAuthors);
 
         List<String> originalAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "originalAuthors"));
-        assertContains("nicholas dipiazza\u0000", originalAuthors);
+        assertContains("nicholas dipiazza", originalAuthors);
 
         assertEquals(Instant.ofEpochSecond(1576107472),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
@@ -661,7 +693,7 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
-    public void testSharedFileNodesAreBoundedByVisitBudget(@TempDir Path tempDir)
+    public void testSharedFileNodesAreWalkedOnce(@TempDir Path tempDir)
             throws Exception {
         // every node lists the next node twice: acyclic, shallow, but 2^60 paths
         FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
@@ -674,6 +706,28 @@ public class OneNoteParserTest extends TikaTest {
             current.childFileNodeList.children.add(child);
             current = child;
         }
+        Metadata metadata = walkWithEmptyFile(tempDir, root);
+        assertNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    @Test
+    public void testDistinctFileNodesAreBoundedByVisitBudget(@TempDir Path tempDir)
+            throws Exception {
+        FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
+        root.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+                FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+        // more distinct nodes than the minimum visit budget of an empty document
+        for (int i = 0; i < 100_001; i++) {
+            root.childFileNodeList.children.add(new FileNode().setGosid(ExtendedGUID.nil()));
+        }
+        Metadata metadata = walkWithEmptyFile(tempDir, root);
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("exceeded visit budget"))
+                .count());
+    }
+
+    private static Metadata walkWithEmptyFile(Path tempDir, FileNode root) throws Exception {
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         Path emptyFile = Files.createFile(tempDir.resolve("empty"));
@@ -685,10 +739,7 @@ public class OneNoteParserTest extends TikaTest {
             assertTimeoutPreemptively(Duration.ofSeconds(30),
                     () -> walker.walkFileNode(root, null));
         }
-        assertEquals(1, Arrays.stream(
-                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                .filter(warning -> warning.contains("exceeded visit budget"))
-                .count());
+        return metadata;
     }
 
     @Test

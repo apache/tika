@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -238,6 +239,44 @@ class OneNotePtr {
         return retval.toString();
     }
 
+    /**
+     * Reads the committed FileNode count of each file node list from the transaction log
+     * (MS-ONESTORE 2.3.3): the last value per FileNodeListID over the first
+     * {@code cTransactionsInLog} transactions.
+     */
+    Map<Long, Long> deserializeTransactionLog(FileChunkReference first, long cTransactions)
+            throws IOException, TikaException {
+        Map<Long, Long> counts = new HashMap<>();
+        Map<Long, Long> pending = new HashMap<>();
+        Set<Long> seenFragments = new HashSet<>();
+        FileChunkReference fragment = first;
+        long transactions = 0;
+        while (transactions < cTransactions && !FileChunkReference.nil().equals(fragment)) {
+            if (!seenFragments.add(fragment.stp) || fragment.cb < 12 ||
+                    fragment.stp + fragment.cb > dif.size()) {
+                throw new TikaException("Invalid OneNote transaction log fragment at " +
+                        fragment.stp);
+            }
+            reposition(fragment);
+            long entries = (fragment.cb - 12) / 8;
+            for (long i = 0; i < entries && transactions < cTransactions; i++) {
+                long srcId = deserializeLittleEndianInt();
+                long value = deserializeLittleEndianInt();
+                if (srcId == 1) {
+                    // sentinel: commits the transaction; value is a CRC
+                    counts.putAll(pending);
+                    pending.clear();
+                    transactions++;
+                } else {
+                    pending.put(srcId, value);
+                }
+            }
+            reposition(fragment.stp + fragment.cb - 12);
+            fragment = deserializeFileChunkReference64x32();
+        }
+        return counts;
+    }
+
     public void reposition(FileChunkReference loc) throws IOException {
         reposition(loc.stp);
         this.end = offset + loc.cb;
@@ -337,8 +376,14 @@ class OneNotePtr {
     void deserializeFileNodeListFragment(FileNodeList data, FileChunkReference next,
                                          FileNodePtr curPath) throws IOException, TikaException {
         data.fileNodeListHeader = deserializeFileNodeListHeader();
+        Long committed = document.committedFileNodeCounts
+                .get(data.fileNodeListHeader.fileNodeListId);
         boolean terminated = false;
         while (offset + 24 <= end) { // while there are at least 24 bytes free
+            if (committed != null && data.children.size() >= committed) {
+                terminated = true;
+                break;
+            }
             // 24 = sizeof(nextFragment) [12 bytes] + sizeof(footer) [8 bytes]
             // + 4 bytes for the FileNode header
             CheckedFileNodePushBack pushBack = new CheckedFileNodePushBack(data);

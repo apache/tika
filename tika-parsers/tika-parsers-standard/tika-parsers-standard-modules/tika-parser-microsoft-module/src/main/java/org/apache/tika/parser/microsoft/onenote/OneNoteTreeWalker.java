@@ -109,8 +109,6 @@ class OneNoteTreeWalker {
     private Instant lastModifiedTimestamp = Instant.MIN;
     private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;
-    private boolean mostRecentAuthorProp = false;
-    private boolean originalAuthorProp = false;
 
     /**
      * Contains pairs of {Offset,Length} that we have added to the text stream already.
@@ -118,6 +116,9 @@ class OneNoteTreeWalker {
     private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
     private final Set<FileNode> activeFileNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
+    // contexts (parent property, inside version history) each node was walked in; a repeat
+    // walk in the same context adds nothing, as text is deduplicated by position
+    private final Map<FileNode, Set<Long>> walkedContexts = new IdentityHashMap<>();
     private final Set<FileNode> reportedCycleNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private int cycleWarningCount;
@@ -339,6 +340,12 @@ class OneNoteTreeWalker {
         }
         if (!activeFileNodes.add(fileNode)) {
             recordCycleWarning(fileNode);
+            return Collections.emptyMap();
+        }
+        long context = ((parentPropertyId == null ? -1L : parentPropertyId.pid) << 1) |
+                (versionHistoryDepth > 0 ? 1 : 0);
+        if (!walkedContexts.computeIfAbsent(fileNode, k -> new HashSet<>()).add(context)) {
+            activeFileNodes.remove(fileNode);
             return Collections.emptyMap();
         }
         visitsRemaining--;
@@ -594,22 +601,24 @@ class OneNoteTreeWalker {
             }
         } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.Author) {
             String author = getAuthor(propertyValue);
-            if (mostRecentAuthorProp) {
-                propMap.put("MostRecentAuthor", author);
-                mostRecentAuthors.add(author);
-            } else if (originalAuthorProp) {
-                propMap.put("OriginalAuthor", author);
-                originalAuthors.add(author);
-            } else {
-                propMap.put("Author", author);
-                authors.add(author);
+            // the role is the reference the author object was reached through
+            OneNotePropertyEnum role =
+                    parentPropertyId == null ? null : parentPropertyId.propertyEnum;
+            if (!author.isBlank()) {
+                if (role == OneNotePropertyEnum.AuthorMostRecent) {
+                    propMap.put("MostRecentAuthor", author);
+                    mostRecentAuthors.add(author);
+                } else if (role == OneNotePropertyEnum.AuthorOriginal) {
+                    propMap.put("OriginalAuthor", author);
+                    originalAuthors.add(author);
+                } else {
+                    propMap.put("Author", author);
+                    authors.add(author);
+                }
             }
-            mostRecentAuthorProp = false;
-            originalAuthorProp = false;
-        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorMostRecent) {
-            mostRecentAuthorProp = true;
-        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorOriginal) {
-            originalAuthorProp = true;
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorMostRecent ||
+                propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorOriginal) {
+            // reference only; its target records the author under this role
         } else if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
             propMap.put("scalar", propertyValue.scalar);
         } else {
@@ -734,7 +743,7 @@ class OneNoteTreeWalker {
      * returns a UTF-16LE author string.
      *
      * @param propertyValue The property value of an author.
-     * @return Resulting author string in UTF-16LE format.
+     * @return the author, without its NUL terminator
      */
     private String getAuthor(PropertyValue propertyValue)
             throws IOException, TikaMemoryLimitException {
@@ -747,7 +756,7 @@ class OneNoteTreeWalker {
         }
         ByteBuffer buf = ByteBuffer.allocate(content.size());
         dif.read(buf);
-        return new String(buf.array(), StandardCharsets.UTF_16LE);
+        return new String(buf.array(), StandardCharsets.UTF_16LE).replace("\u0000", "");
     }
 
     /**

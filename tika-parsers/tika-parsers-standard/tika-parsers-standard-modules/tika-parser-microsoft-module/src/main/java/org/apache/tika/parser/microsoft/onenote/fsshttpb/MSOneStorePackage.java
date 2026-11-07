@@ -1488,6 +1488,9 @@ public class MSOneStorePackage {
     }
 
     private void recordAuthor(String author, AuthorRole role) {
+        if (author.isBlank()) {
+            return;
+        }
         if (role == AuthorRole.MOST_RECENT) {
             mostRecentAuthors.add(author);
         } else if (role == AuthorRole.ORIGINAL) {

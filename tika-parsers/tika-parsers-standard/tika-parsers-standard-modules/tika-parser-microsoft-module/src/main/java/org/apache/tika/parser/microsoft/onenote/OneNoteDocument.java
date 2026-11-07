@@ -39,6 +39,9 @@ class OneNoteDocument {
     Exception structureParseException;
     // file nodes committed while parsing; sizes the tree walker's visit budget
     long fileNodeCount;
+    // committed FileNode count per FileNodeListID from the transaction log; nodes past it
+    // are uncommitted leftovers. Empty when the log could not be read.
+    Map<Long, Long> committedFileNodeCounts = new HashMap<>();
 
     public OneNoteDocument() {
 
