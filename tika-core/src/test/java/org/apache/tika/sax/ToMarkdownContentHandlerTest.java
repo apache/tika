@@ -1689,6 +1689,77 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testLineBreakInCodeSpanCannotOpenHtml() throws Exception {
+        for (String lineBreak : new String[]{"\n", "\r", "\r\n"}) {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            startElement(handler, "p");
+            chars(handler, "See ");
+            startElement(handler, "code");
+            chars(handler, "x" + lineBreak + "<details open ontoggle=alert(1)>");
+            endElement(handler, "code");
+            chars(handler, " here");
+            endElement(handler, "p");
+            handler.endDocument();
+
+            String md = handler.toString();
+            String html = renderHtml(md);
+            assertFalse(html.contains("<details"), md);
+            assertContains("&lt;details open ontoggle=alert(1)&gt;</code> here", html);
+        }
+    }
+
+    @Test
+    public void testCarriageReturnInCodeBlockCannotLeaveContainer() throws Exception {
+        for (String container : new String[]{"li", "blockquote"}) {
+            for (String lineBreak : new String[]{"\r", "\r\n"}) {
+                ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+                handler.startDocument();
+                if (container.equals("li")) {
+                    startElement(handler, "ul");
+                }
+                startElement(handler, container);
+                startElement(handler, "pre");
+                chars(handler, "a" + lineBreak + "<img src=x onerror=alert(1)>");
+                endElement(handler, "pre");
+                endElement(handler, container);
+                if (container.equals("li")) {
+                    endElement(handler, "ul");
+                }
+                handler.endDocument();
+
+                String md = handler.toString();
+                String html = renderHtml(md);
+                assertFalse(html.contains("<img"), md);
+                assertContains("<pre><code>a\n&lt;img src=x onerror=alert(1)&gt;\n</code></pre>", html);
+            }
+        }
+    }
+
+    @Test
+    public void testLineBreakInImageAltOrDestinationStaysInline() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "alt", "alt", "CDATA", "a\r# alt");
+        atts.addAttribute("", "src", "src", "CDATA", "i.png\r# src");
+        startElement(handler, "img", atts);
+        endElement(handler, "img");
+        startElement(handler, "a", "href", "http://e\r#href");
+        chars(handler, "link");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String md = handler.toString();
+        String html = renderHtml(md);
+        assertFalse(html.contains("<h1>"), md);
+        assertContains("alt=\"a # alt\"", html);
+        assertContains(">link</a>", html);
+    }
+
+    @Test
     public void testBoldInsideLinkIsNested() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
