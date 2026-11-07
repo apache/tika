@@ -31,8 +31,9 @@ class FileNodeListHeader {
      * @param position          Position of the file where this header starts.
      * @param uintMagic         An unsigned integer; MUST be "0xA4567AB1F5F7F4C4"
      * @param fileNodeListId    An unsigned integer that specifies the identity of
-     *                          the file node list this fragment belongs to. MUST be equal to or
-     *                          greater than 0x00000010. The pair of
+     *                          the file node list this fragment belongs to. The spec requires at
+     *                          least 0x00000010; real files (OneNote's own .onetoc2, Aspose)
+     *                          use smaller IDs, so it is not enforced. The pair of
      *                          FileNodeListID and nFragmentSequence fields MUST be unique
      *                          relative to other FileNodeListFragment structures in the file.
      * @param nFragmentSequence An unsigned integer that specifies the index of the fragment in the
@@ -49,10 +50,6 @@ class FileNodeListHeader {
         }
         this.position = position;
         this.fileNodeListId = fileNodeListId;
-        if (fileNodeListId < 0x00000010) {
-            throw new TikaException("FileNodeListHeader.fileNodeListId MUST be equal " +
-                    "to or greater than 0x00000010");
-        }
         this.nFragmentSequence = nFragmentSequence;
     }
 

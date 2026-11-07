@@ -267,6 +267,31 @@ public class OneNoteParserTest extends TikaTest {
         assertEquals(parseToText(tempDir.resolve("full.one"), full, new Metadata()), txt);
     }
 
+    @Test
+    public void testFileNodeListIdsBelowSpecMinimum(@TempDir Path tempDir) throws Exception {
+        byte[] full;
+        try (InputStream is = getClass()
+                .getResourceAsStream("/test-documents/testOneNote1.one")) {
+            full = is.readAllBytes();
+        }
+        // Aspose and OneNote's .onetoc2 files number lists from 2, below the spec's 0x10
+        byte[] renumbered = full.clone();
+        ByteBuffer bb = ByteBuffer.wrap(renumbered).order(ByteOrder.LITTLE_ENDIAN);
+        int lists = 0;
+        for (int i = 0; i + 16 <= renumbered.length; i++) {
+            if (bb.getLong(i) == 0xA4567AB1F5F7F4C4L) {
+                bb.putInt(i + 8, bb.getInt(i + 8) - 0x0E);
+                lists++;
+            }
+        }
+        assertEquals(19, lists);
+
+        Metadata metadata = new Metadata();
+        String txt = parseToText(tempDir.resolve("renumbered.one"), renumbered, metadata);
+        assertNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals(parseToText(tempDir.resolve("full.one"), full, new Metadata()), txt);
+    }
+
     private static String parseToText(Path path, byte[] bytes, Metadata metadata)
             throws Exception {
         Files.write(path, bytes);
