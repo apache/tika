@@ -19,7 +19,10 @@ limitations under the License.
 
 [Jazzer](https://github.com/CodeIntelligenceTesting/jazzer) `@FuzzTest` targets.
 `AutoDetectParserFuzzTest` runs `AutoDetectParser` (via `RecursiveParserWrapper`) on
-`TikaInputStream.get(byte[])`, `get(InputStream)` and `get(Path)`.
+`TikaInputStream.get(byte[])`, `get(InputStream)` and `get(Path)`. The classpath holds
+`tika-parsers-standard-package` plus `tika-parser-sqlite3-module`; add a parser module to
+the pom to fuzz it. Jazzer gets no coverage from native code (sqlite-jdbc), and a native
+crash kills the JVM.
 
 The targets look for OOM, stack overflow, hangs, and exceptions other than
 `TikaException`/`IOException`/`SAXException`. `CompositeParser` wraps parser
@@ -47,9 +50,7 @@ The report names the mode and file of each failure; the console shows only an in
 
 One JVM runs the whole directory. An OOM ends the run, and a timed-out parse cannot be
 stopped: it keeps a core and its memory, so files after it can time out falsely. Trust
-the first timeout; re-run later ones alone. Use this for small or targeted directories.
-For a large sweep, `java -jar tika-app.jar -i <dir> -o <out>` forks each parse and kills
-hangs (path mode only).
+the first timeout; re-run later ones alone.
 
 ## Fuzzing
 
