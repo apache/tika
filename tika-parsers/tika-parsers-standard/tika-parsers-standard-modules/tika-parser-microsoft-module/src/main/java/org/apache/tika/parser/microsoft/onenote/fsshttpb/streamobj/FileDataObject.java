@@ -25,17 +25,33 @@ public class FileDataObject {
     public DataElement objectDataBLOBDataElement;
 
     /**
-     * @return the opaque binary data of this file data object, or null if it could not be
-     * resolved.
+     * @return a copy of the opaque binary data of this file data object, or null if it could
+     * not be resolved.
      */
     public byte[] getData() {
+        ObjectDataBLOB blob = getBlob();
+        return blob == null ? null : blob.getData();
+    }
+
+    /**
+     * @return the length of the binary data, 0 if it could not be resolved
+     */
+    public int getDataLength() {
+        ObjectDataBLOB blob = getBlob();
+        return blob == null ? 0 : blob.getDataLength();
+    }
+
+    /**
+     * @return whether the file data resolves to non-empty binary data, without copying it.
+     */
+    public boolean hasData() {
+        return getDataLength() > 0;
+    }
+
+    private ObjectDataBLOB getBlob() {
         if (objectDataBLOBDataElement != null &&
                 objectDataBLOBDataElement.data instanceof ObjectDataBLOBDataElementData) {
-            ObjectDataBLOBDataElementData blobData =
-                    (ObjectDataBLOBDataElementData) objectDataBLOBDataElement.data;
-            if (blobData.objectDataBLOB != null) {
-                return blobData.objectDataBLOB.getData();
-            }
+            return ((ObjectDataBLOBDataElementData) objectDataBLOBDataElement.data).objectDataBLOB;
         }
         return null;
     }

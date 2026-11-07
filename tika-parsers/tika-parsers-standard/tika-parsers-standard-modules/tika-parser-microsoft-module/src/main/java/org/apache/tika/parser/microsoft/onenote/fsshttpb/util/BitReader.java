@@ -17,14 +17,24 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.BitSet;
 import java.util.UUID;
 
 /**
  * A class is used to extract values across byte boundaries with arbitrary bit positions.
  */
 public class BitReader {
+    /**
+     * Direct-mapped cache from raw GUID bytes to the derived UUID. A file references the same
+     * few GUIDs from every ExGuid and cell ID, so most reads would otherwise recompute the same
+     * MD5. Entries are immutable and the mapping is a pure function of the key, so racing
+     * writers can only replace one correct entry with another.
+     */
+    private static final int GUID_CACHE_MASK = 1023;
+    private static final GuidCacheEntry[] GUID_CACHE = new GuidCacheEntry[GUID_CACHE_MASK + 1];
+
+    private record GuidCacheEntry(long high, long low, UUID uuid) {
+    }
+
     /**
      * A start position which will be not changed in the process of reading.
      * This value will be used for recording the start position and will be used by the function reset.
@@ -54,18 +64,6 @@ public class BitReader {
         this.startPosition = this.offset;
         this.length = (long) array.length * 8;
         this.byteArray = array;
-    }
-
-    private static String toBinaryString(BitSet bs, int nbits) {
-        final StringBuilder buffer = new StringBuilder(bs.size());
-        for (int i = nbits - 1; i >= 0; --i) {
-            if (i < bs.size()) {
-                buffer.append(bs.get(i) ? "1" : "0");
-            } else {
-                buffer.append("0");
-            }
-        }
-        return buffer.toString();
     }
 
     public boolean getCurrent() {
@@ -137,7 +135,22 @@ public class BitReader {
      * @return Return the GUID value.
      */
     public UUID readGuid() throws IOException {
-        return UUID.nameUUIDFromBytes(this.getBytes(128, 16));
+        byte[] raw = this.getBytes(128, 16);
+        long high = 0;
+        long low = 0;
+        for (int i = 0; i < 8; i++) {
+            high = (high << 8) | (raw[i] & 0xff);
+            low = (low << 8) | (raw[i + 8] & 0xff);
+        }
+        long mixed = (high ^ low) * 0x9E3779B97F4A7C15L;
+        int slot = (int) (mixed >>> 54) & GUID_CACHE_MASK;
+        GuidCacheEntry entry = GUID_CACHE[slot];
+        if (entry != null && entry.high == high && entry.low == low) {
+            return entry.uuid;
+        }
+        UUID uuid = UUID.nameUUIDFromBytes(raw);
+        GUID_CACHE[slot] = new GuidCacheEntry(high, low, uuid);
+        return uuid;
     }
 
     /**
@@ -172,25 +185,35 @@ public class BitReader {
      * @return Returns the constructed byte array.
      */
     private byte[] getBytes(int needReadlength, int size) throws IOException {
-        BitSet retSet = new BitSet(size);
-        int i = 0;
-        while (i < needReadlength) {
-            if (!this.moveNext()) {
-                throw new IOException("Unexpected to meet the byte array end.");
-            }
-            if (getCurrent()) {
-                retSet.set(i);
-            } else {
-                retSet.clear(i);
-            }
-            i++;
+        // Bit i of the result is bit i after the current offset, least significant bit first.
+        // The bounds check below guarantees every source byte read holds a requested bit.
+        long start = this.offset + 1;
+        if (needReadlength > this.length - start) {
+            this.offset = this.length;
+            throw new IOException("Unexpected to meet the byte array end.");
         }
         byte[] result = new byte[size];
-        Arrays.fill(result, (byte) 0);
-        byte[] retSetBa = retSet.toByteArray();
-        for (i = 0; i < retSetBa.length; ++i) {
-            result[i] = retSetBa[i];
+        int shift = (int) (start & 7);
+        int source = (int) (start >> 3);
+        int fullBytes = needReadlength >> 3;
+        int remainingBits = needReadlength & 7;
+        if (shift == 0) {
+            System.arraycopy(byteArray, source, result, 0, fullBytes);
+            source += fullBytes;
+        } else {
+            for (int i = 0; i < fullBytes; i++, source++) {
+                result[i] = (byte) (((byteArray[source] & 0xFF) >>> shift) |
+                        (byteArray[source + 1] << (8 - shift)));
+            }
         }
+        if (remainingBits > 0) {
+            int bits = (byteArray[source] & 0xFF) >>> shift;
+            if (shift + remainingBits > 8) {
+                bits |= byteArray[source + 1] << (8 - shift);
+            }
+            result[fullBytes] = (byte) (bits & ((1 << remainingBits) - 1));
+        }
+        this.offset += needReadlength;
         return result;
     }
 }

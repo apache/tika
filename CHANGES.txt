@@ -611,6 +611,12 @@ Release 4.2.0 - 10/25/2026
    * OneNote: table and list structure in FSSHTTPB files (TIKA-4943); section and page
      GUID metadata (TIKA-4944).
 
+   * OneNote FSSHTTPB parsing is ~6% faster with ~20% fewer GCs: binary items are read
+     in place instead of copied, bit reads assemble whole bytes, and GUIDs are cached.
+     Compat: BinaryItem.content (a List<Byte>) is replaced by getContent()/setContent()
+     on byte[]; a binary item whose length decodes as 2^63 or more now fails the
+     FSSHTTPB parse (TIKA-5055).
+
    * Detection: *.rs is text/x-rust (TIKA-4977); a MIME email nesting
      multipart/related is message/rfc822, not MHTML (TIKA-4973); XML with an element
      like <htmlPath> is no longer HTML (TIKA-4962); XUL is detected by content and

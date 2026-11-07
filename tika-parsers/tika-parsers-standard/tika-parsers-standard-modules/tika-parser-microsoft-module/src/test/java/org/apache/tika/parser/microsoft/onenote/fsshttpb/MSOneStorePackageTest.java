@@ -76,7 +76,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderC
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -2678,7 +2677,7 @@ public class MSOneStorePackageTest {
 
     private static FileDataObject fileData(String value) {
         ObjectDataBLOB blob = new ObjectDataBLOB();
-        blob.data.content.addAll(ByteUtil.toListOfByte(value.getBytes(StandardCharsets.UTF_8)));
+        blob.data.setContent(value.getBytes(StandardCharsets.UTF_8));
         ObjectDataBLOBDataElementData blobData = new ObjectDataBLOBDataElementData();
         blobData.objectDataBLOB = blob;
         DataElement element = new DataElement();
@@ -2745,8 +2744,7 @@ public class MSOneStorePackageTest {
 
     private static ObjectGroupObjectData emptyObjectData() {
         ObjectGroupObjectData data = new ObjectGroupObjectData();
-        data.data.content.addAll(ByteUtil.toListOfByte(new byte[]{0, 0, 0, (byte) 0x80,
-                0, 0, 0, 0}));
+        data.data.setContent(new byte[]{0, 0, 0, (byte) 0x80, 0, 0, 0, 0});
         return data;
     }
 
