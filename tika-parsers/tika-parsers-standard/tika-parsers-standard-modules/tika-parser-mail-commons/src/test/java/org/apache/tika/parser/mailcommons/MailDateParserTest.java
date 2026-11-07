@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.DateFormat;
-import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -94,7 +93,7 @@ public class MailDateParserTest {
         try {
             Date d = MailDateParser.parseDateLenient(s);
             DateFormat df =
-                    new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
+                    new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             String dateString = df.format(d);
             System.out.println("dev parser lenient: " + dateString);
@@ -130,7 +129,7 @@ public class MailDateParserTest {
 
     @Test
     public void testTrickyDates() throws Exception {
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd", new DateFormatSymbols(Locale.US));
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
         //make sure there are no mis-parses of e.g. 90 = year 90 A.D, not 1990
         Date date1980 = df.parse("1980-01-01");
         Date date2010 = df.parse("2010-01-01");
@@ -180,7 +179,7 @@ public class MailDateParserTest {
         Date parsedDate = MailDateParser.parseDateLenient(dateString);
         assertNotNull(parsedDate, "couldn't parse " + dateString);
         DateFormat df =
-                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
+                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
         if (useUTC) {
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
         }
