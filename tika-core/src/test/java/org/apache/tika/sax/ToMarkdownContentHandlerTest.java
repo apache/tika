@@ -472,6 +472,114 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testPlusAtLineStartIsNotAList() throws Exception {
+        for (String container : new String[]{"p", "li", "blockquote"}) {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            if (container.equals("li")) {
+                startElement(handler, "ul");
+            }
+            startElement(handler, container);
+            chars(handler, "+ not a list");
+            endElement(handler, container);
+            if (container.equals("li")) {
+                endElement(handler, "ul");
+            }
+            handler.endDocument();
+
+            String md = handler.toString();
+            String html = renderHtml(md);
+            assertContains("+ not a list", html);
+            assertFalse(html.contains("<li>not a list"), md);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"blockquote", "ul", "b", "s", "a"})
+    public void testDeepNestingIsCappedWithoutLosingText(String element) throws Exception {
+        int depth = 20_000;
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        boolean inline = !element.equals("blockquote") && !element.equals("ul");
+        if (inline) {
+            startElement(handler, "p");
+        }
+        for (int i = 0; i < depth; i++) {
+            startElement(handler, element);
+            if (element.equals("ul")) {
+                startElement(handler, "li");
+            }
+            chars(handler, "w" + i + " ");
+        }
+        for (int i = 0; i < depth; i++) {
+            if (element.equals("ul")) {
+                endElement(handler, "li");
+            }
+            endElement(handler, element);
+        }
+        if (inline) {
+            endElement(handler, "p");
+        }
+        chars(handler, "after");
+        handler.endDocument();
+
+        String md = handler.toString();
+        // the cap keeps each line's container prefix short: output stays linear in the input
+        assertTrue(md.length() < depth * 400, "markdown length " + md.length());
+        String text = renderHtml(md);
+        for (int i : new int[]{0, 63, 64, 19_999}) {
+            assertContains("w" + i, text);
+        }
+        assertContains("after", text);
+    }
+
+    @Test
+    public void testEmptyFlattenedInlineKeepsLaterText() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        int depth = ToMarkdownContentHandler.MAX_NESTING + 6;
+        for (int i = 0; i < depth; i++) {
+            startElement(handler, "b");
+        }
+        endElement(handler, "b");
+        chars(handler, "kept");
+        for (int i = 1; i < depth; i++) {
+            endElement(handler, "b");
+        }
+        endElement(handler, "p");
+        handler.endDocument();
+
+        assertContains("kept", handler.toString());
+    }
+
+    @Test
+    public void testFlattenedInlineDoesNotSplitParagraph() throws Exception {
+        // sweeps the depths at which the cap lands right on the implicit paragraph
+        for (int depth = ToMarkdownContentHandler.MAX_NESTING - 6;
+                depth <= ToMarkdownContentHandler.MAX_NESTING + 6; depth++) {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            for (int i = 0; i < depth; i++) {
+                startElement(handler, "blockquote");
+            }
+            chars(handler, "x ");
+            startElement(handler, "b");
+            chars(handler, "z");
+            endElement(handler, "b");
+            chars(handler, " y");
+            for (int i = 0; i < depth; i++) {
+                endElement(handler, "blockquote");
+            }
+            handler.endDocument();
+
+            String html = renderHtml(handler.toString());
+            assertTrue(html.matches("(?s).*<p>x (<strong>z</strong>|z) y</p>.*"),
+                    "depth " + depth + ": " + html);
+        }
+    }
+
+    @Test
     public void testInlineCode() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
