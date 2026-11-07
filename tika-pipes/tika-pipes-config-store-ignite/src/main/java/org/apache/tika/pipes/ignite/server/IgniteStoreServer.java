@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.ignite.server;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +43,9 @@ public class IgniteStoreServer implements AutoCloseable {
     private IgniteServer node;
     private final String tableName;
     private final String nodeName;
-    private final Path workDir;
+    // ignite.work.dir, or null for a private directory created per start
+    private final Path configuredWorkDir;
+    private Path workDir;
 
     public IgniteStoreServer() {
         this(DEFAULT_TABLE_NAME, DEFAULT_NODE_NAME);
@@ -51,21 +54,34 @@ public class IgniteStoreServer implements AutoCloseable {
     public IgniteStoreServer(String tableName, String nodeName) {
         this.tableName = tableName;
         this.nodeName = nodeName;
-        this.workDir = Paths.get(System.getProperty("ignite.work.dir",
-                System.getProperty("java.io.tmpdir") + "/tika-ignite-work"));
+        String configured = System.getProperty("ignite.work.dir");
+        this.configuredWorkDir = configured == null ? null : Paths.get(configured);
+    }
+
+    /**
+     * The configured directory, emptied, or without one a fresh private directory under
+     * java.io.tmpdir. Ignite persists the store's rows, credentials included, under it, so
+     * the default is not a fixed name in the shared temp dir that any local user can read
+     * or create first.
+     */
+    static Path prepareWorkDir(Path configured) throws IOException {
+        if (configured == null) {
+            return Files.createTempDirectory("tika-ignite-work-");
+        }
+        if (Files.exists(configured)) {
+            deleteDirectory(configured);
+        }
+        Files.createDirectories(configured);
+        return configured;
     }
 
     /**
      * Start the Ignite server node and initialize the cluster synchronously.
      */
     public void start() throws Exception {
+        workDir = prepareWorkDir(configuredWorkDir);
         LOG.info("Starting Ignite 3.x server: node={}, table={}, workDir={}",
                 nodeName, tableName, workDir);
-
-        if (Files.exists(workDir)) {
-            deleteDirectory(workDir);
-        }
-        Files.createDirectories(workDir);
 
         Path configPath = workDir.resolve("ignite-config.conf");
         String config = """
@@ -142,7 +158,7 @@ public class IgniteStoreServer implements AutoCloseable {
         return node != null;
     }
 
-    private void deleteDirectory(Path dir) throws Exception {
+    private static void deleteDirectory(Path dir) throws IOException {
         Files.walk(dir)
                 .sorted((a, b) -> b.compareTo(a))
                 .forEach(path -> {
@@ -160,6 +176,15 @@ public class IgniteStoreServer implements AutoCloseable {
             LOG.info("Stopping Ignite server: {}", nodeName);
             node.shutdown();
             node = null;
+        }
+        if (configuredWorkDir == null && workDir != null) {
+            // a private directory is this server's to remove; a configured one is kept
+            try {
+                deleteDirectory(workDir);
+            } catch (IOException e) {
+                LOG.warn("Failed to delete {}", workDir, e);
+            }
+            workDir = null;
         }
     }
 }
