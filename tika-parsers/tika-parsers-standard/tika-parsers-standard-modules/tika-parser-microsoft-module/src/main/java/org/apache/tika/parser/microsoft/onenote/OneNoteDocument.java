@@ -37,6 +37,8 @@ class OneNoteDocument {
     // set when the root file node list could not be fully parsed (e.g. a truncated file);
     // the header and any structure parsed so far remain usable
     Exception structureParseException;
+    // file nodes committed while parsing; sizes the tree walker's visit budget
+    long fileNodeCount;
 
     public OneNoteDocument() {
 

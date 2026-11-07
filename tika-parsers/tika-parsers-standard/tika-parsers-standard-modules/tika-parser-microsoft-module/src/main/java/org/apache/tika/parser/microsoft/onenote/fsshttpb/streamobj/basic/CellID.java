@@ -17,8 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -58,19 +56,6 @@ public class CellID extends BasicObject {
      * Initializes a new instance of the CellID class, this is default constructor.
      */
     public CellID() {
-    }
-
-    /**
-     * This method is used to convert the element of CellID basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of CellID.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        java.util.List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.extendGUID1.serializeToByteList());
-        byteList.addAll(this.extendGUID2.serializeToByteList());
-        return byteList;
     }
 
     /**

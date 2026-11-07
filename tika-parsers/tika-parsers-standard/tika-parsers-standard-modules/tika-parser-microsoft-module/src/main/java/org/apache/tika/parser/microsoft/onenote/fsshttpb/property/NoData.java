@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class is used to represent the property contains no data.
@@ -32,14 +30,5 @@ public class NoData implements IProperty {
      */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         return 0;
-    }
-
-    /**
-     * This method is used to convert the element of NoData into a byte List.
-     *
-     * @return Return the byte list which store the byte information of NoData.
-     */
-    public List<Byte> serializeToByteList() {
-        return new ArrayList<>();
     }
 }

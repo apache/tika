@@ -17,9 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
@@ -53,21 +51,5 @@ public class PrtFourBytesOfLengthFollowedByData implements IProperty {
         index += this.cb;
 
         return index - startIndex;
-    }
-
-    /**
-     * This method is used to convert the element of prtFourBytesOfLengthFollowedByData into a byte List.
-     *
-     * @return Return the byte list which store the byte information of prtFourBytesOfLengthFollowedByData.
-     */
-    public List<Byte> serializeToByteList() {
-        List<Byte> byteList = new ArrayList<>();
-        for (byte b : BitConverter.getBytes(this.cb)) {
-            byteList.add(b);
-        }
-        for (byte b : this.data) {
-            byteList.add(b);
-        }
-        return byteList;
     }
 }

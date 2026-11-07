@@ -42,30 +42,6 @@ public class ObjectGroupData extends StreamObject {
     }
 
     /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return A constant value 0
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
-        if (this.objectGroupObjectDataList != null) {
-            for (ObjectGroupObjectData objectGroupObjectData : this.objectGroupObjectDataList) {
-                byteList.addAll(objectGroupObjectData.serializeToByteList());
-            }
-        }
-
-        if (this.objectGroupObjectDataBLOBReferenceList != null) {
-            for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference :
-                    this.objectGroupObjectDataBLOBReferenceList) {
-                byteList.addAll(objectGroupObjectDataBLOBReference.serializeToByteList());
-            }
-        }
-
-        return 0;
-    }
-
-    /**
      * Used to de-serialize the element.
      *
      * @param byteArray     A Byte array

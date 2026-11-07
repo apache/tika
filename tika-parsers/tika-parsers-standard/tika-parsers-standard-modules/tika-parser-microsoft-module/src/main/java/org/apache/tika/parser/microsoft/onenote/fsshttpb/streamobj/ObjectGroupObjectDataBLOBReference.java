@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -66,20 +65,5 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         }
 
         currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The number of the elements
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.objectExtendedGUIDArray.serializeToByteList());
-        byteList.addAll(cellIDArray.serializeToByteList());
-        byteList.addAll(this.blobExtendedGUID.serializeToByteList());
-        return byteList.size() - itemsIndex;
     }
 }

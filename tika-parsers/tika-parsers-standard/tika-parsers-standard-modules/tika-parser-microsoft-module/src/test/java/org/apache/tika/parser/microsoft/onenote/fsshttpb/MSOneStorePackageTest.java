@@ -2231,7 +2231,8 @@ public class MSOneStorePackageTest {
                 RevisionStoreObject.class, Map.class, Set.class,
                 Class.forName(MSOneStorePackage.class.getName() + "$AuthorRole"),
                 OneNoteTreeWalkerOptions.class, Metadata.class, XHTMLContentHandler.class,
-                int.class);
+                int.class,
+                Class.forName(MSOneStorePackage.class.getName() + "$EmbeddedResourceInfo"));
         walkObject.setAccessible(true);
         // an object that emits text when walked, so the depth-capped walk's blank
         // output proves the cap fired rather than the setup having nothing to emit
@@ -2246,11 +2247,11 @@ public class MSOneStorePackageTest {
         xhtml.startDocument();
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteTreeWalkerOptions(), metadata, xhtml, 1000);
+                new OneNoteTreeWalkerOptions(), metadata, xhtml, 1000, null);
         assertTrue(writer.toString().isBlank());
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteTreeWalkerOptions(), metadata, xhtml, 0);
+                new OneNoteTreeWalkerOptions(), metadata, xhtml, 0, null);
         xhtml.endDocument();
         assertTrue(writer.toString().contains("depth capped text"));
     }

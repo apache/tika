@@ -61,20 +61,4 @@ public class DataElementPackage extends StreamObject {
             this.dataElements.add(dataElement.get());
         }
     }
-
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return The number of elements actually contained in the list
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
-        // Add the reserved byte
-        byteList.add((byte) 0);
-        for (DataElement dataElement : dataElements) {
-            byteList.addAll(dataElement.serializeToByteList());
-        }
-        return 1;
-    }
 }

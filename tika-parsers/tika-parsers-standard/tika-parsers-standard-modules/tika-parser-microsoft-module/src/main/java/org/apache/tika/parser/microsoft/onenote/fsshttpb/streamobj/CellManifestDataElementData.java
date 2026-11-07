@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -49,15 +48,5 @@ public class CellManifestDataElementData extends DataElementData {
         this.cellManifestCurrentRevision =
                 StreamObject.getCurrent(byteArray, index, CellManifestCurrentRevision.class);
         return index.get() - startIndex;
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @return The Byte list
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws TikaException, IOException {
-        return this.cellManifestCurrentRevision.serializeToByteList();
     }
 }

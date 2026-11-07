@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,7 +67,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -79,6 +78,12 @@ public class MSOneStoreBlobTest {
 
     private static final byte[] BLOB_BYTES =
             "these are the bytes of an embedded image".getBytes(StandardCharsets.UTF_8);
+
+    // an ObjectDataBLOB DataElement (exGuid {1, ...0001}, serial {...0002, 1}) wrapping BLOB_BYTES
+    private static final byte[] BLOB_ELEMENT = HexFormat.of().parseHex(
+            "0c560c00000000000000000000000000000001800000000000000000000000000000000201" +
+                    "000000000000001510525174686573652061726520746865206279746573206f6620616e" +
+                    "20656d62656464656420696d61676505");
 
     /**
      * An object data BLOB data element must survive a serialization round trip. Before
@@ -211,12 +216,8 @@ public class MSOneStoreBlobTest {
         blob.data = new BinaryItem();
         blob.data.setContent(null);
         assertNull(blob.getData());
-        blob.data = new BinaryItem(new byte[]{1});
-        assertFalse(blob.serializeToByteList().isEmpty());
-
-        ObjectDataBLOB validBlob = new ObjectDataBLOB();
-        validBlob.data.setContent(new byte[]{1});
-        byte[] itemBytes = ByteUtil.toByteArray(validBlob.data.serializeToByteList());
+        // BinaryItem holding one byte: compact length 1 (0x03), then the byte
+        byte[] itemBytes = new byte[]{0x03, 0x01};
         AtomicInteger index = new AtomicInteger(0);
         java.lang.reflect.Method deserialize = ObjectDataBLOB.class.getDeclaredMethod(
                 "deserializeItemsFromByteArray", byte[].class, AtomicInteger.class, int.class);
@@ -334,11 +335,6 @@ public class MSOneStoreBlobTest {
     }
 
     private DataElement roundTripBlobElement() throws Exception {
-        ObjectDataBLOBDataElementData blobData = new ObjectDataBLOBDataElementData();
-        blobData.objectDataBLOB.data.setContent(BLOB_BYTES.clone());
-        DataElement blobElement =
-                new DataElement(DataElementType.ObjectDataBLOBDataElementData, blobData);
-        byte[] serialized = ByteUtil.toByteArray(blobElement.serializeToByteList());
-        return StreamObject.getCurrent(serialized, new AtomicInteger(0), DataElement.class);
+        return StreamObject.getCurrent(BLOB_ELEMENT, new AtomicInteger(0), DataElement.class);
     }
 }

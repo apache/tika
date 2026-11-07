@@ -127,6 +127,34 @@ Release 4.3.0 - ???
 
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
+
+   * OneNote: a .one file whose file node lists or objects are referenced more than once no
+     longer costs time and memory exponential in its nesting depth. A file node list
+     referenced twice fails the structured parse (the legacy text dump still runs), and the
+     tree walk stops with a warning after a visit budget sized from the file (TIKA-5057).
+
+   * OneNote legacy text dump (the fallback when structured parsing fails): a string that
+     crosses a 1 MB read boundary is written once instead of once per boundary, and the last
+     byte of each read is no longer dropped. Strings are kept or dropped by the text-quality
+     detector (tika-ml-junkdetect) when it is on the class path, as it is in tika-app and
+     tika-server: all-caps lines, captions such as "Table 3-5" and digit-heavy lines now
+     survive, and image bytes that happened to be letter-heavy no longer do. Without the
+     detector, a string needs a lower-case word and mostly letters (TIKA-5057).
+
+   * OneNote .one sections whose object declarations set the reserved trailing bits (MS-ONESTORE
+     says to ignore them) are parsed structurally instead of failing over to the legacy text
+     dump (25 of 65 fallbacks in a 260-file sample, mostly .onetoc2 tables of contents). A
+     section whose structured walk finds no text still falls back to the dump, as FSSHTTPB
+     files already did (TIKA-5057).
+
+   * tika-ml-junkdetect: JunkDetector has a public no-arg constructor, so
+     ServiceLoader.load(TextQualityDetector.class) finds it on the class path; the
+     registration only worked on the module path before (TIKA-5057).
+
+   * OneNote parsing rejects more malformed structures up front instead of reading past
+     them: dependency-override counts larger than their node, negative file-data lengths,
+     unbounded global ID table copies, property sets with 0x8000 or more properties or an
+     undefined property type, and short reads in the FSSHTTPB integer readers (TIKA-5057).
      
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary

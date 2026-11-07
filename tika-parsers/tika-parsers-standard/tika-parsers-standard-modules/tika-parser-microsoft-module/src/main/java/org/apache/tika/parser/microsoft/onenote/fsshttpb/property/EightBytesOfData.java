@@ -17,9 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 import java.util.Arrays;
-import java.util.List;
 
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 
 /**
@@ -38,14 +36,5 @@ public class EightBytesOfData implements IProperty {
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 8);
         return 8;
-    }
-
-    /**
-     * This method is used to convert the element of EightBytesOfData into a byte List.
-     *
-     * @return Return the byte list which store the byte information of EightBytesOfData.
-     */
-    public List<Byte> serializeToByteList() {
-        return ByteUtil.toListOfByte(this.data);
     }
 }

@@ -61,6 +61,14 @@ class OneNotePtr {
     // margin while keeping the recursion far from any stack limit
     private static final int MAX_FILE_NODE_LIST_DEPTH = 100;
 
+    // the per-node cap still lets many GlobalIdTableEntry3 nodes copy entries without bound
+    private static final long MAX_GLOBAL_ID_COPIES = 10_000_000;
+
+    /** Limits shared by every pointer copied while parsing one document. */
+    private static final class DocumentBudget {
+        private long globalIdCopiesRemaining = MAX_GLOBAL_ID_COPIES;
+    }
+
     private static final class PropertyValueBudget {
         private long remaining = MAX_PROPERTY_VALUES;
     }
@@ -71,12 +79,15 @@ class OneNotePtr {
      */
     private static final class FileNodeListRecursion {
         private int depth;
-        private final Set<Long> activeListOffsets = new HashSet<>();
+        // each list is referenced once in a valid file; a second reference would re-parse
+        // the whole subtree, exponentially so for a chain of shared lists
+        private final Set<Long> parsedListOffsets = new HashSet<>();
     }
 
     int indentLevel = 0;
     private PropertyValueBudget propertyValueBudget = new PropertyValueBudget();
     private FileNodeListRecursion fileNodeListRecursion = new FileNodeListRecursion();
+    private DocumentBudget documentBudget = new DocumentBudget();
 
     long offset;
     long end;
@@ -100,6 +111,7 @@ class OneNotePtr {
         this.indentLevel = oneNotePtr.indentLevel;
         this.propertyValueBudget = oneNotePtr.propertyValueBudget;
         this.fileNodeListRecursion = oneNotePtr.fileNodeListRecursion;
+        this.documentBudget = oneNotePtr.documentBudget;
     }
 
     public OneNoteHeader deserializeHeader() throws IOException, TikaException {
@@ -160,18 +172,6 @@ class OneNotePtr {
         GUID guid = GUID.fromMicrosoftBytes(guidBytes);
         offset = dif.position();
         return guid;
-    }
-
-    private byte[] deserializedReservedHeader() throws IOException {
-        if (dif.position() != offset) {
-            dif.position(offset);
-        }
-        ByteBuffer data = ByteBuffer.allocate(728);
-
-        dif.read(data);
-
-        offset = dif.position();
-        return data.array();
     }
 
     private FileChunkReference deserializeFileChunkReference64() throws IOException {
@@ -307,9 +307,9 @@ class OneNotePtr {
                             MAX_FILE_NODE_LIST_DEPTH);
         }
         long listOffset = offset;
-        if (!fileNodeListRecursion.activeListOffsets.add(listOffset)) {
-            throw new TikaException(
-                    "OneNote file node list cycle detected at offset " + listOffset);
+        if (!fileNodeListRecursion.parsedListOffsets.add(listOffset)) {
+            throw new TikaException("OneNote file node list at offset " + listOffset +
+                    " is referenced more than once (cycle or shared list)");
         }
         fileNodeListRecursion.depth++;
         try {
@@ -317,7 +317,6 @@ class OneNotePtr {
             return internalDeserializeFileNodeList(this, fileNodeList, curPath);
         } finally {
             fileNodeListRecursion.depth--;
-            fileNodeListRecursion.activeListOffsets.remove(listOffset);
         }
     }
 
@@ -356,6 +355,7 @@ class OneNotePtr {
                     break;
                 }
                 pushBack.commit();
+                document.fileNodeCount++;
                 FileNode dereference = curPath.dereference(document);
                 FileNode lastChild = data.children.get(data.children.size() - 1);
                 assert dereference.equals(lastChild); // is this correct? or should we be
@@ -517,6 +517,7 @@ class OneNotePtr {
             Revision dependentRevision = getRevision(currentRevision.dependent);
             int entriesToCopy = checkedCount(
                     data.subType.globalIdTableEntry3FNDX.entriesToCopy, "global ID entries");
+            reserveGlobalIdCopies(entriesToCopy);
             for (int i = 0; i < entriesToCopy; ++i) {
                 GUID compactId = dependentRevision.globalId.get(
                         data.subType.globalIdTableEntry3FNDX.indexCopyFromStart + i);
@@ -769,11 +770,10 @@ class OneNotePtr {
         long must_be_zeroA = ((jci_odcs_etc >> 14) & 0x3);
         data.fHasOidReferences = ((jci_odcs_etc >> 16) & 0x1) != 0;
         data.hasOsidReferences = ((jci_odcs_etc >> 17) & 0x1) != 0;
-        if (jci_odcs_etc >> 18L > 0) {
-            throw new TikaException("RESERVED_NONZERO");
-        }
-        if (reserved != 0 || must_be_zeroA != 0 || must_be_zero != 0) {
-            throw new TikaException("RESERVED_NONZERO");
+        // MS-ONESTORE 2.6.15: the reserved fields MUST be ignored; some writers set the
+        // trailing 16 bits to 0xFFFF in otherwise well-formed declarations
+        if (must_be_zero != 0) {
+            throw new TikaException("ObjectDeclarationWithRefCountBody odcs must be zero");
         }
         return data;
     }
@@ -806,7 +806,7 @@ class OneNotePtr {
         long len = deserializeLittleEndianLong();
         long unused = deserializeLittleEndianInt();
         long reserved = deserializeLittleEndianLong();
-        if (offset + len + 16 > end) {
+        if (len < 0 || len > end - offset - 16) {
             throw new TikaException("SEGV error");
         }
         if (unused > 0 || reserved > 0) {
@@ -829,12 +829,18 @@ class OneNotePtr {
     }
 
     private ObjectInfoDependencyOverrideData deserializeObjectInfoDependencyOverrideData()
-            throws IOException {
+            throws IOException, TikaException {
         ObjectInfoDependencyOverrideData objectInfoDependencyOverrideData =
                 new ObjectInfoDependencyOverrideData();
         long num_8bit_overrides = deserializeLittleEndianInt();
         long num_32bit_overrides = deserializeLittleEndianInt();
         long crc = deserializeLittleEndianInt();
+        // the reads would otherwise run past this node into whatever follows it
+        if (num_8bit_overrides + 4 * num_32bit_overrides > end - offset) {
+            throw new TikaException("ObjectInfoDependencyOverrideData counts " +
+                    num_8bit_overrides + "/" + num_32bit_overrides + " exceed the " +
+                    (end - offset) + " bytes remaining");
+        }
         for (int i = 0; i < num_8bit_overrides; ++i) {
             int local = deserializeLittleEndianChar();
             objectInfoDependencyOverrideData.overrides1.add(local);
@@ -1027,6 +1033,14 @@ class OneNotePtr {
             throw new TikaException("Missing dependent revision");
         }
         return revision;
+    }
+
+    private void reserveGlobalIdCopies(int count) throws TikaException {
+        if (count > documentBudget.globalIdCopiesRemaining) {
+            throw new TikaMemoryLimitException("OneNote global ID table copies exceed limit " +
+                    MAX_GLOBAL_ID_COPIES);
+        }
+        documentBudget.globalIdCopiesRemaining -= count;
     }
 
     private int checkedCount(long count, String description) throws TikaException {

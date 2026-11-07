@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -39,10 +38,5 @@ public class ObjectDataBLOBDataElementData extends DataElementData {
         AtomicInteger index = new AtomicInteger(startIndex);
         this.objectDataBLOB = StreamObject.getCurrent(byteArray, index, ObjectDataBLOB.class);
         return index.get() - startIndex;
-    }
-
-    @Override
-    public List<Byte> serializeToByteList() throws TikaException, IOException {
-        return this.objectDataBLOB.serializeToByteList();
     }
 }

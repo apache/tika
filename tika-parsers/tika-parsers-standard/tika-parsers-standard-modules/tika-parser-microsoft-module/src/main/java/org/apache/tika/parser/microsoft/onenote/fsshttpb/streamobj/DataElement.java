@@ -16,13 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -32,7 +29,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataElementType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.SequenceNumberGenerator;
 
 public class DataElement extends StreamObject {
 
@@ -62,33 +58,6 @@ public class DataElement extends StreamObject {
     public SerialNumber serialNumber;
     public DataElementType dataElementType;
     public DataElementData data;
-
-    /**
-     * Initializes a new instance of the DataElement class.
-     *
-     * @param type data
-     *             element type
-     *             *
-     * @param data Specifies
-     *             the data
-     *             of the
-     *             element .
-     */
-
-
-    public DataElement(DataElementType type, DataElementData data) {
-        super(StreamObjectTypeHeaderStart.DataElement);
-        if (!DATA_ELEMENT_DATA_TYPE_MAPPING.containsKey(type)) {
-            throw new IllegalArgumentException("Invalid argument type value" + type.getIntVal());
-        }
-
-        this.dataElementType = type;
-        this.data = data;
-        this.dataElementExGuid =
-                new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
-        this.serialNumber = new SerialNumber(UUID.randomUUID(),
-                SequenceNumberGenerator.GetCurrentSerialNumber());
-    }
 
     /**
      * Initializes a new instance of the DataElement class.
@@ -167,25 +136,5 @@ public class DataElement extends StreamObject {
         }
 
         currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The element length
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException, TikaException {
-        int startIndex = byteList.size();
-        byteList.addAll(this.dataElementExGuid.serializeToByteList());
-        byteList.addAll(this.serialNumber.serializeToByteList());
-        byteList.addAll(
-                new Compact64bitInt(this.dataElementType.getIntVal()).serializeToByteList());
-
-        int headerLength = byteList.size() - startIndex;
-        byteList.addAll(this.data.serializeToByteList());
-
-        return headerLength;
     }
 }

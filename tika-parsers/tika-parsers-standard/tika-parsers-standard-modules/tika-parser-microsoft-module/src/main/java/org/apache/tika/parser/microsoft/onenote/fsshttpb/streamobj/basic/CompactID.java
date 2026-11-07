@@ -17,10 +17,8 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 
 /**
  * This class is used to represent the CompactID structrue.
@@ -28,19 +26,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 public class CompactID {
     public long n;
     public long guidIndex;
-
-    /**
-     * This method is used to convert the element of CompactID object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of CompactID.
-     */
-    public List<Byte> serializeToByteList() throws IOException {
-        BitWriter bitWriter = new BitWriter(4);
-        bitWriter.appendUInit32((int) this.n, 8);
-        bitWriter.appendUInit32((int) this.guidIndex, 24);
-
-        return bitWriter.getByteList();
-    }
 
     /**
      * This method is used to deserialize the CompactID object from the specified byte array and start index.

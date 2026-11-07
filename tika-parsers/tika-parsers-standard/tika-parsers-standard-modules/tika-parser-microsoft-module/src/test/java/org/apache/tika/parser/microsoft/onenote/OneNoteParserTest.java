@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -620,6 +622,163 @@ public class OneNoteParserTest extends TikaTest {
             TikaException e = assertThrows(TikaException.class,
                     () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
             assertTrue(e.getMessage().contains("cycle"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testSharedFileNodeListFailsCleanly(@TempDir Path tempDir) throws Exception {
+        // each list holds two baseType-2 nodes pointing at the same next list; parsing every
+        // reference would cost 2^lists list parses
+        int lists = 40;
+        int listSize = 72;
+        int emptyListSize = 40;
+        ByteBuffer buf = ByteBuffer.allocate(listSize * lists + emptyListSize)
+                .order(ByteOrder.LITTLE_ENDIAN);
+        int nodeHeader = 0x10 | (16 << 10) | (2 << 27) | (1 << 31);
+        for (int i = 0; i < lists; i++) {
+            long childStp = (long) (i + 1) * listSize;
+            int childCb = i + 1 < lists ? listSize : emptyListSize;
+            buf.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0);
+            for (int n = 0; n < 2; n++) {
+                buf.putInt(nodeHeader).putLong(childStp).putInt(childCb);
+            }
+            buf.putInt(0).putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST);
+        }
+        buf.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putInt(0).putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST);
+        Path shared = tempDir.resolve("shared");
+        Files.write(shared, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(shared.toFile())) {
+            OneNoteDocument document = new OneNoteDocument();
+            OneNotePtr ptr = new OneNotePtr(document, dif);
+            TikaException e = assertTimeoutPreemptively(Duration.ofSeconds(30),
+                    () -> assertThrows(TikaException.class,
+                            () -> ptr.deserializeFileNodeList(document.root,
+                                    new FileNodePtr())));
+            assertTrue(e.getMessage().contains("referenced more than once"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testSharedFileNodesAreBoundedByVisitBudget(@TempDir Path tempDir)
+            throws Exception {
+        // every node lists the next node twice: acyclic, shallow, but 2^60 paths
+        FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
+        FileNode current = root;
+        for (int i = 0; i < 60; i++) {
+            FileNode child = new FileNode().setGosid(ExtendedGUID.nil());
+            current.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+                    FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+            current.childFileNodeList.children.add(child);
+            current.childFileNodeList.children.add(child);
+            current = child;
+        }
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                    new OneNoteDocument(), dif,
+                    new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
+                    metadata, parseContext, null);
+            assertTimeoutPreemptively(Duration.ofSeconds(30),
+                    () -> walker.walkFileNode(root, null));
+        }
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("exceeded visit budget"))
+                .count());
+    }
+
+    @Test
+    public void testDependencyOverrideCountsAreBoundedByTheNode(@TempDir Path tempDir)
+            throws Exception {
+        // a 12-byte node declaring 500 one-byte overrides inside a larger file: the counts
+        // must be checked against the node, not left to read the bytes that follow it
+        Path file = tempDir.resolve("overrides");
+        Files.write(file, ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(500).putInt(0).putInt(0).array());
+        Method deserialize = OneNotePtr.class.getDeclaredMethod(
+                "deserializeObjectInfoDependencyOverrideData");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            ptr.reposition(new FileChunkReference(0, 12));
+            InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                    () -> deserialize.invoke(ptr));
+            assertTrue(e.getCause() instanceof TikaException, e.getCause().toString());
+        }
+    }
+
+    @Test
+    public void testNegativeFileDataStoreLengthIsRejected(@TempDir Path tempDir)
+            throws Exception {
+        // header GUID, cb = -16, unused, reserved, then room for a footer
+        Path file = tempDir.resolve("filedata");
+        Files.write(file, ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN)
+                .put(new byte[16]).putLong(-16).putInt(0).putLong(0).array());
+        Method deserialize = OneNotePtr.class.getDeclaredMethod("deserializeFileDataStoreObject");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                    () -> deserialize.invoke(ptr));
+            assertTrue(e.getCause() instanceof TikaException, e.getCause().toString());
+        }
+    }
+
+    @Test
+    public void testGlobalIdCopyBudgetIsSharedAcrossCopies(@TempDir Path tempDir)
+            throws Exception {
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        Method reserve = OneNotePtr.class.getDeclaredMethod("reserveGlobalIdCopies", int.class);
+        reserve.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            OneNotePtr copy = new OneNotePtr(ptr);
+            for (int i = 0; i < 100; i++) {
+                reserve.invoke(i % 2 == 0 ? ptr : copy, 100_000);
+            }
+            InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                    () -> reserve.invoke(copy, 1));
+            assertTrue(e.getCause() instanceof TikaMemoryLimitException,
+                    e.getCause().toString());
+        }
+    }
+
+    @Test
+    public void testObjectDeclarationWithSetReservedBitsParses(@TempDir Path tempDir)
+            throws Exception {
+        // oid (compact ID n=1, index 0), jci 0xd with fHasOidReferences, then the trailing
+        // reserved 16 bits as 0xFFFF, as some writers produce
+        Path file = tempDir.resolve("objdecl");
+        Files.write(file, new byte[]{1, 0, 0, 0, 0x0d, 0, 1, 0, (byte) 0xff, (byte) 0xff});
+        OneNoteDocument document = new OneNoteDocument();
+        Revision revision = new Revision();
+        revision.globalId.put(0L, GUID.nil());
+        document.revisionMap.put(document.currentRevision, revision);
+        Method deserialize = OneNotePtr.class.getDeclaredMethod(
+                "deserializeObjectDeclarationWithRefCountBody");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            ObjectDeclarationWithRefCountBody body = (ObjectDeclarationWithRefCountBody)
+                    deserialize.invoke(new OneNotePtr(document, dif));
+            assertEquals(0xd, body.jcid.index);
+            assertTrue(body.fHasOidReferences);
+        }
+    }
+
+    @Test
+    public void testTableOfContentsIsRecognized() throws Exception {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNote-fuzz1.one");
+             OneNoteDirectFileResource dif = new OneNoteDirectFileResource(tis.getFile())) {
+            OneNoteHeader header = new OneNotePtr(new OneNoteDocument(), dif).deserializeHeader();
+            assertTrue(OneNoteParser.isTableOfContents(header));
+        }
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNote.one");
+             OneNoteDirectFileResource dif = new OneNoteDirectFileResource(tis.getFile())) {
+            OneNoteHeader header = new OneNotePtr(new OneNoteDocument(), dif).deserializeHeader();
+            assertFalse(OneNoteParser.isTableOfContents(header));
         }
     }
 

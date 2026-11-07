@@ -80,7 +80,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderCell;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -162,6 +161,8 @@ public class MSOneStorePackage {
             new LinkedHashMap<>();
     // flattened property actions per object; objects can be re-flattened many times during
     // picture/resource-name resolution, which is quadratic without this cache
+    private Map<ExGuid, RevisionStoreObject> containerReferencesIndexed;
+    private Map<ExGuid, List<ContainerReference>> containerReferences;
     private final Map<RevisionStoreObject, List<PropertyAction>> objectActionsCache =
             new IdentityHashMap<>();
     private final Map<RevisionStoreObject, NumberListInfo> numberListInfoCache =
@@ -563,15 +564,6 @@ public class MSOneStorePackage {
             }
         }
         return objectsById;
-    }
-
-    private void walkObject(RevisionStoreObject object,
-                             Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                             AuthorRole authorRole, OneNoteTreeWalkerOptions options,
-                             Metadata metadata, XHTMLContentHandler xhtml, int depth)
-            throws SAXException, TikaException, IOException {
-        walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml,
-                depth, null);
     }
 
     private void walkObject(RevisionStoreObject object,
@@ -1137,28 +1129,58 @@ public class MSOneStorePackage {
             return null;
         }
         EmbeddedResourceInfo typeOnlyFallback = null;
-        for (RevisionStoreObject candidate : objectsById.values()) {
-            if (candidate.propertySet == null ||
-                    candidate.propertySet.objectSpaceObjectPropSet == null) {
-                continue;
+        for (ContainerReference reference : containerReferences(objectsById)
+                .getOrDefault(target.objectID, Collections.emptyList())) {
+            EmbeddedResourceInfo info =
+                    embeddedResourceInfo(collectObjectActions(reference.container));
+            if (info != null) {
+                return info;
             }
-            List<PropertyAction> candidateActions = collectObjectActions(candidate);
-            for (PropertyAction action : candidateActions) {
-                if (action.isChildReference && target.objectID.equals(action.childReference) &&
-                        (action.oneNotePropertyEnum == OneNotePropertyEnum.PictureContainer ||
-                                action.oneNotePropertyEnum == OneNotePropertyEnum.EmbeddedFileContainer ||
-                                action.oneNotePropertyEnum == OneNotePropertyEnum.WebPictureContainer14)) {
-                    EmbeddedResourceInfo info = embeddedResourceInfo(candidateActions);
-                    if (info != null) {
-                        return info;
-                    }
-                    if (typeOnlyFallback == null) {
-                        typeOnlyFallback = resourceInfoForChild(action, null);
-                    }
-                }
+            if (typeOnlyFallback == null) {
+                typeOnlyFallback = resourceInfoForChild(reference.action, null);
             }
         }
         return typeOnlyFallback;
+    }
+
+    /**
+     * Picture and embedded-file container references by the object they point at, in the
+     * order of objectsById and then of each container's properties. Built once per index so
+     * that resolving a blob's name does not scan every object.
+     */
+    private Map<ExGuid, List<ContainerReference>> containerReferences(
+            Map<ExGuid, RevisionStoreObject> objectsById) {
+        if (containerReferencesIndexed != objectsById) {
+            Map<ExGuid, List<ContainerReference>> references = new HashMap<>();
+            for (RevisionStoreObject candidate : objectsById.values()) {
+                if (candidate.propertySet == null ||
+                        candidate.propertySet.objectSpaceObjectPropSet == null) {
+                    continue;
+                }
+                for (PropertyAction action : collectObjectActions(candidate)) {
+                    if (action.isChildReference && action.childReference != null &&
+                            (action.oneNotePropertyEnum == OneNotePropertyEnum.PictureContainer ||
+                                    action.oneNotePropertyEnum == OneNotePropertyEnum.EmbeddedFileContainer ||
+                                    action.oneNotePropertyEnum == OneNotePropertyEnum.WebPictureContainer14)) {
+                        references.computeIfAbsent(action.childReference, k -> new ArrayList<>())
+                                .add(new ContainerReference(candidate, action));
+                    }
+                }
+            }
+            containerReferences = references;
+            containerReferencesIndexed = objectsById;
+        }
+        return containerReferences;
+    }
+
+    private static final class ContainerReference {
+        private final RevisionStoreObject container;
+        private final PropertyAction action;
+
+        private ContainerReference(RevisionStoreObject container, PropertyAction action) {
+            this.container = container;
+            this.action = action;
+        }
     }
 
     private EmbeddedResourceInfo resourceInfoForChild(PropertyAction action,
@@ -1258,7 +1280,7 @@ public class MSOneStorePackage {
             PropertyID propertyID = propertySet.rgPrids[i];
             PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
             OneNotePropertyEnum oneNotePropertyEnum =
-                    OneNotePropertyEnum.of(Unsigned.uint(propertyID.value).longValue());
+                    OneNotePropertyEnum.of(Integer.toUnsignedLong(propertyID.value));
             if (propertyType == PropertyType.ObjectID) {
                 ExGuid childReference = nextReference(referencedObjects, referenceCursor);
                 if (childReference == null) {
@@ -1546,7 +1568,7 @@ public class MSOneStorePackage {
         for (int i = 0; i < count && !guids.isFull() && !sectionGuidCollected(); i++) {
             PropertyID propertyID = propertySet.rgPrids[i];
             IProperty property = propertySet.rgData.get(i);
-            long propertyIdValue = Unsigned.uint(propertyID.value).longValue();
+            long propertyIdValue = Integer.toUnsignedLong(propertyID.value);
             PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
             if (propertyIdValue == FILE_IDENTITY_GUID_PROPERTY_ID
                     && property instanceof PrtFourBytesOfLengthFollowedByData) {

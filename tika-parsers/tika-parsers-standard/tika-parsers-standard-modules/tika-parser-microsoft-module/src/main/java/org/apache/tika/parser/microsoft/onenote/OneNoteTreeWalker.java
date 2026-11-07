@@ -62,6 +62,10 @@ class OneNoteTreeWalker {
     private static final int MAX_CYCLE_WARNINGS = 100;
     // low enough that the ~3 stack frames per level cannot overflow a default thread stack
     private static final int MAX_WALK_DEPTH = 500;
+    // real files revisit each node a few times (once per reference); shared references in a
+    // crafted file can make the visits exponential in depth without forming a cycle
+    private static final long VISITS_PER_FILE_NODE = 64;
+    private static final long MIN_VISIT_BUDGET = 100_000;
     private static final String P = "p";
     /**
      * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
@@ -120,6 +124,9 @@ class OneNoteTreeWalker {
     private boolean cycleWarningsSuppressed;
     private int walkDepth;
     private boolean depthWarningRecorded;
+    private long visitsRemaining;
+    private boolean contentEmitted;
+    private boolean visitBudgetWarningRecorded;
 
     /**
      * Create a one tree walker.
@@ -145,6 +152,8 @@ class OneNoteTreeWalker {
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
         this.guidCollector = new OneNoteGuidCollector(this::recordGuidCapWarning);
+        this.visitsRemaining = Math.max(MIN_VISIT_BUDGET,
+                VISITS_PER_FILE_NODE * oneNoteDocument.fileNodeCount);
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
@@ -323,16 +332,48 @@ class OneNoteTreeWalker {
             recordDepthWarning();
             return Collections.emptyMap();
         }
+        if (visitsRemaining <= 0) {
+            recordVisitBudgetWarning();
+            return Collections.emptyMap();
+        }
         if (!activeFileNodes.add(fileNode)) {
             recordCycleWarning(fileNode);
             return Collections.emptyMap();
         }
+        visitsRemaining--;
         walkDepth++;
         try {
             return walkFileNodeInternal(fileNode, parentPropertyId);
         } finally {
             walkDepth--;
             activeFileNodes.remove(fileNode);
+        }
+    }
+
+    private void emitText(String text) throws SAXException {
+        if (text != null && !text.isEmpty()) {
+            contentEmitted = true;
+        }
+        xhtml.characters(text);
+    }
+
+    /**
+     * @return whether the walk wrote any text or handed any embedded document to the
+     * extractor
+     */
+    public boolean hasEmittedContent() {
+        return contentEmitted;
+    }
+
+    private void recordVisitBudgetWarning() {
+        if (visitBudgetWarningRecorded) {
+            return;
+        }
+        visitBudgetWarningRecorded = true;
+        String warning = "OneNote file-node traversal exceeded visit budget";
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
     }
 
@@ -415,30 +456,20 @@ class OneNoteTreeWalker {
             FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
         Map<String, Object> structure = new HashMap<>();
-        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-        content.reposition(fileDataStoreObjectReference.ref.fileData);
-        if (fileDataStoreObjectReference.ref.fileData.cb > dif.size()) {
+        FileChunkReference fileData = fileDataStoreObjectReference.ref.fileData;
+        if (fileData.cb > dif.size()) {
             throw new TikaMemoryLimitException(
-                    "File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
-                            " exceeds document size: " + dif.size());
+                    "File data store cb " + fileData.cb + " exceeds document size: " +
+                            dif.size());
         }
-        handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb, gosid);
+        handleEmbedded(fileData.stp, (int) fileData.cb, gosid);
         structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
         return structure;
     }
 
-    private void handleEmbedded(int length, ExtendedGUID gosid)
+    private void handleEmbedded(long stp, int length, ExtendedGUID gosid)
             throws TikaException, IOException, SAXException {
         TikaInputStream tis = null;
-        ByteBuffer buf;
-        try {
-            buf = ByteBuffer.allocate(length);
-            dif.read(buf);
-        } catch (IOException e) {
-            //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
-            return;
-        }
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
@@ -451,7 +482,18 @@ class OneNoteTreeWalker {
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                ByteBuffer buf;
+                try {
+                    buf = ByteBuffer.allocate(length);
+                    dif.position(stp);
+                    dif.read(buf);
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata,
+                            parseContext);
+                    return;
+                }
                 tis = TikaInputStream.get(buf.array());
+                contentEmitted = true;
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);
             }
@@ -569,7 +611,7 @@ class OneNoteTreeWalker {
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
                     try {
-                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                        emitText((String) propMap.get("dataUnicode16LE"));
                     } finally {
                         xhtml.endElement(P);
                     }
@@ -586,7 +628,7 @@ class OneNoteTreeWalker {
                 propMap.put("dataAscii", new String(buf.array(), StandardCharsets.US_ASCII));
                 xhtml.startElement(P);
                 try {
-                    xhtml.characters((String) propMap.get("dataAscii"));
+                    emitText((String) propMap.get("dataAscii"));
                 } finally {
                     xhtml.endElement(P);
                 }
@@ -602,7 +644,7 @@ class OneNoteTreeWalker {
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
                     try {
-                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                        emitText((String) propMap.get("dataUnicode16LE"));
                     } finally {
                         xhtml.endElement(P);
                     }
@@ -713,14 +755,14 @@ class OneNoteTreeWalker {
         if (m.find()) {
             xhtml.startElement("a", "href", m.group(1));
             try {
-                xhtml.characters(m.group(2));
+                emitText(m.group(2));
             } finally {
                 xhtml.endElement("a");
             }
         } else {
             xhtml.startElement(P);
             try {
-                xhtml.characters(txt);
+                emitText(txt);
             } finally {
                 xhtml.endElement(P);
             }

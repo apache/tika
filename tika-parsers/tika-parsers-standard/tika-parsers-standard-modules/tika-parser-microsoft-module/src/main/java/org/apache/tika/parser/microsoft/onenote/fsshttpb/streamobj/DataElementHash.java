@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -60,20 +59,5 @@ public class DataElementHash extends StreamObject {
         }
 
         currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return The number of elements actually contained in the list
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int startPoint = byteList.size();
-        byteList.addAll(this.dataElementHashScheme.serializeToByteList());
-        byteList.addAll(this.dataElementHashData.serializeToByteList());
-
-        return byteList.size() - startPoint;
     }
 }

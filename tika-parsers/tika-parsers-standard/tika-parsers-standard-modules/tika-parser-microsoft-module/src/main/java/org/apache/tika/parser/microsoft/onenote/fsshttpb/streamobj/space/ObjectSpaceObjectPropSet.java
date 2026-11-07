@@ -17,8 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySet;
 
@@ -65,22 +63,5 @@ public class ObjectSpaceObjectPropSet {
             index += paddingLength;
         }
         return index - startIndex;
-    }
-
-    /**
-     * This method is used to convert the element of the ObjectSpaceObjectPropSet into a byte List.
-     *
-     * @return Return the byte list which store the byte information of the ObjectSpaceObjectPropSet.
-     */
-    public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> byteList = new ArrayList<>();
-        byteList.addAll(this.oids.serializeToByteList());
-        byteList.addAll(this.osids.serializeToByteList());
-        byteList.addAll(this.contextIDs.serializeToByteList());
-        byteList.addAll(this.body.serializeToByteList());
-        for (byte b : this.padding) {
-            byteList.add(b);
-        }
-        return byteList;
     }
 }

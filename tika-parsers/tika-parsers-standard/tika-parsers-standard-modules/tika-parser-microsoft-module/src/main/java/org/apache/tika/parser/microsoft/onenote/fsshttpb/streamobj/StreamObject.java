@@ -18,11 +18,9 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -30,11 +28,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.IFSSHTTPBSerializable;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
-public abstract class StreamObject implements IFSSHTTPBSerializable {
+public abstract class StreamObject {
 
     /**
      * Hash set contains the StreamObjectTypeHeaderStart type.
@@ -231,38 +228,6 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
     }
 
     /**
-     * Serialize item to byte list.
-     *
-     * @return The byte list.
-     */
-    public List<Byte> serializeToByteList() throws IOException, TikaException {
-        List<Byte> byteList = new ArrayList<>();
-
-        int lengthOfItems = this.serializeItemsToByteList(byteList);
-
-        AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
-        if (this.streamObjectType.getIntVal() <= 0x3F && lengthOfItems <= 127) {
-            header.set(new StreamObjectHeaderStart16bit(this.streamObjectType, lengthOfItems));
-        } else {
-            header.set(new StreamObjectHeaderStart32bit(this.streamObjectType, lengthOfItems));
-        }
-
-        byteList.addAll(0, header.get().serializeToByteList());
-
-        if (compoundTypes.contains(this.streamObjectType)) {
-            if (this.streamObjectType.getIntVal() <= 0x3F) {
-                byteList.addAll(new StreamObjectHeaderEnd8bit(
-                        this.streamObjectType.getIntVal()).serializeToByteList());
-            } else {
-                byteList.addAll(new StreamObjectHeaderEnd16bit(
-                        this.streamObjectType.getIntVal()).serializeToByteList());
-            }
-        }
-
-        return byteList;
-    }
-
-    /**
      * Used to return the length of this element.
      *
      * @param header     Then instance of StreamObjectHeaderStart.
@@ -308,15 +273,6 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
         return index.get() - startIndex;
     }
-
-    /**
-     * Serialize items to byte list.
-     *
-     * @param byteList The byte list need to serialized.
-     * @return The length in bytes for additional data if the current stream object has, otherwise return 0.
-     */
-    protected abstract int serializeItemsToByteList(List<Byte> byteList)
-            throws IOException, TikaException;
 
     /**
      * De-serialize items from byte array.

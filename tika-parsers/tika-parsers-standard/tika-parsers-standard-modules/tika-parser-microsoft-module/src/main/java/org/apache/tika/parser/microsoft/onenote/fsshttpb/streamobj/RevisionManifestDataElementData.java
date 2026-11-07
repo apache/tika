@@ -79,29 +79,4 @@ public class RevisionManifestDataElementData extends DataElementData {
 
         return index.get() - startIndex;
     }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @return A Byte list
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws TikaException, IOException {
-        List<Byte> byteList = new ArrayList<>(this.revisionManifest.serializeToByteList());
-
-        if (this.revisionManifestRootDeclareList != null) {
-            for (RevisionManifestRootDeclare revisionManifestRootDeclare : this.revisionManifestRootDeclareList) {
-                byteList.addAll(revisionManifestRootDeclare.serializeToByteList());
-            }
-        }
-
-        if (this.revisionManifestObjectGroupReferences != null) {
-            for (RevisionManifestObjectGroupReferences revisionManifestObjectGroupReferences :
-                    this.revisionManifestObjectGroupReferences) {
-                byteList.addAll(revisionManifestObjectGroupReferences.serializeToByteList());
-            }
-        }
-
-        return byteList;
-    }
 }

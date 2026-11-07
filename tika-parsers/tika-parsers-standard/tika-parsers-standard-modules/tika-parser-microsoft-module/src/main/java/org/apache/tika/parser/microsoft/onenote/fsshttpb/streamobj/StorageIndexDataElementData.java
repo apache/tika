@@ -40,35 +40,6 @@ public class StorageIndexDataElementData extends DataElementData {
     }
 
     /**
-     * Used to convert the element into a byte List.
-     *
-     * @return A Byte list
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws TikaException, IOException {
-        List<Byte> byteList = new ArrayList<>();
-
-        if (this.storageIndexManifestMapping != null) {
-            byteList.addAll(this.storageIndexManifestMapping.serializeToByteList());
-        }
-
-        if (this.storageIndexCellMappingList != null) {
-            for (StorageIndexCellMapping cellMapping : this.storageIndexCellMappingList) {
-                byteList.addAll(cellMapping.serializeToByteList());
-            }
-        }
-
-        // Storage Index Revision Mapping
-        if (this.storageIndexRevisionMappingList != null) {
-            for (StorageIndexRevisionMapping revisionMapping : this.storageIndexRevisionMappingList) {
-                byteList.addAll(revisionMapping.serializeToByteList());
-            }
-        }
-
-        return byteList;
-    }
-
-    /**
      * Used to de-serialize the data element.
      *
      * @param byteArray  Byte array

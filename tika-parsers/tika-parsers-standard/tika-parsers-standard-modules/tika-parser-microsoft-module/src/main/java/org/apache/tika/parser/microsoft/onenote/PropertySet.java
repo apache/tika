@@ -16,12 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.tika.exception.TikaException;
 
 /**
  * A property set is a collection of properties that specify the attributes of an object (section
@@ -70,13 +68,6 @@ import org.apache.tika.exception.TikaException;
 
 class PropertySet {
     List<PropertyValue> rgPridsData = new ArrayList<>();
-
-    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaException {
-        for (PropertyValue child : rgPridsData) {
-            child.print(document, pointer, indentLevel);
-        }
-    }
 
     @Override
     public boolean equals(Object o) {

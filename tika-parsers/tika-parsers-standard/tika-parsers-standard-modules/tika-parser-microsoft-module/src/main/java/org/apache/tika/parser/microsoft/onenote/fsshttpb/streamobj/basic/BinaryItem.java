@@ -17,14 +17,10 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 /**
  * A length-prefixed run of bytes.
@@ -58,15 +54,6 @@ public class BinaryItem extends BasicObject {
     public BinaryItem() {
         this.length = new Compact64bitInt();
         this.source = EMPTY;
-    }
-
-    /**
-     * Initializes a new instance of the BinaryItem class with the specified content.
-     *
-     * @param content Specify the binary content.
-     */
-    public BinaryItem(Collection<Byte> content) {
-        this(ByteUtil.toByteArray(content instanceof List<Byte> list ? list : new ArrayList<>(content)));
     }
 
     /**
@@ -116,22 +103,6 @@ public class BinaryItem extends BasicObject {
         this.offset = 0;
         this.count = content == null ? 0 : content.length;
         this.length.setDecodedValue(this.count);
-    }
-
-    /**
-     * This method is used to convert the element of BinaryItem basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of BinaryItem.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> length = this.length.setDecodedValue(count).serializeToByteList();
-        List<Byte> result = new ArrayList<>(length.size() + count);
-        result.addAll(length);
-        for (int i = offset; i < offset + count; i++) {
-            result.add(source[i]);
-        }
-        return result;
     }
 
     /**

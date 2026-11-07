@@ -60,23 +60,6 @@ public class CellIDArray extends BasicObject {
     }
 
     /**
-     * This method is used to convert the element of CellIDArray basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of CellIDArray.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> byteList = new ArrayList<Byte>((new Compact64bitInt(this.count)).serializeToByteList());
-        if (this.content != null) {
-            for (CellID extendGuid : this.content) {
-                byteList.addAll(extendGuid.serializeToByteList());
-            }
-        }
-
-        return byteList;
-    }
-
-    /**
      * This method is used to deserialize the CellIDArray basic object from the specified byte array and start index.
      *
      * @param byteArray  Specify the byte array.

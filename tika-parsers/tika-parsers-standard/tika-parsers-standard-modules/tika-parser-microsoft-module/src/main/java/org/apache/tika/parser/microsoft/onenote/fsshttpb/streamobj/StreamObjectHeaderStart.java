@@ -55,15 +55,6 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     }
 
     /**
-     * Initializes a new instance of the StreamObjectHeaderStart class with specified header type.
-     *
-     * @param streamObjectTypeHeaderStart Specify the value of the StreamObjectHeaderStart Type.
-     */
-    protected StreamObjectHeaderStart(StreamObjectTypeHeaderStart streamObjectTypeHeaderStart) {
-        this.type = streamObjectTypeHeaderStart;
-    }
-
-    /**
      * This method is used to parse the actual 16bit or 32bit stream header.
      *
      * @param byteArray          Specify the Byte array.

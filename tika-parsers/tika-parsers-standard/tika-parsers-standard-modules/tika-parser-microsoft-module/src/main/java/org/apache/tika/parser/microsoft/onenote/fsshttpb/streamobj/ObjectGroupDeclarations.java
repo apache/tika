@@ -84,28 +84,4 @@ public class ObjectGroupDeclarations extends StreamObject {
 
         currentIndex.set(index.get());
     }
-
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList The Byte list
-     * @return A constant value 0
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
-        if (this.objectDeclarationList != null) {
-            for (ObjectGroupObjectDeclare objectGroupObjectDeclare : this.objectDeclarationList) {
-                byteList.addAll(objectGroupObjectDeclare.serializeToByteList());
-            }
-        }
-
-        if (this.objectGroupObjectBLOBDataDeclarationList != null) {
-            for (ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration :
-                    this.objectGroupObjectBLOBDataDeclarationList) {
-                byteList.addAll(objectGroupObjectBLOBDataDeclaration.serializeToByteList());
-            }
-        }
-
-        return 0;
-    }
 }

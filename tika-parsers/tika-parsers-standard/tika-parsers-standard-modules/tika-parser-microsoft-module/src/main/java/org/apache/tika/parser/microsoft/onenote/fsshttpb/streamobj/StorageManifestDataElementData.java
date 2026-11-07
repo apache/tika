@@ -39,24 +39,6 @@ public class StorageManifestDataElementData extends DataElementData {
     }
 
     /**
-     * Used to convert the element into a byte List.
-     *
-     * @return A Byte list
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws TikaException, IOException {
-        List<Byte> byteList = new ArrayList<Byte>(this.storageManifestSchemaGUID.serializeToByteList());
-
-        if (this.storageManifestRootDeclareList != null) {
-            for (StorageManifestRootDeclare storageManifestRootDeclare : this.storageManifestRootDeclareList) {
-                byteList.addAll(storageManifestRootDeclare.serializeToByteList());
-            }
-        }
-
-        return byteList;
-    }
-
-    /**
      * Used to de-serialize data element.
      *
      * @param byteArray  Byte array

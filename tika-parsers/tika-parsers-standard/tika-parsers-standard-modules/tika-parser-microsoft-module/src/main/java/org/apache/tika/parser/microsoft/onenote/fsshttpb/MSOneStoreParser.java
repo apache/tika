@@ -382,23 +382,27 @@ public class MSOneStoreParser {
     private void removeSupersededObjects(List<RevisionStoreObjectGroup> objectGroups) {
         Map<ExGuid, List<RevisionStoreObject>> containingList = new HashMap<>();
         Map<ExGuid, Integer> indexInList = new HashMap<>();
+        List<List<RevisionStoreObject>> keptLists = new ArrayList<>(objectGroups.size());
         for (RevisionStoreObjectGroup objectGroup : objectGroups) {
-            List<RevisionStoreObject> objects = objectGroup.objects;
-            for (int i = 0; i < objects.size(); ) {
-                RevisionStoreObject object = objects.get(i);
+            List<RevisionStoreObject> kept = new ArrayList<>(objectGroup.objects.size());
+            keptLists.add(kept);
+            for (RevisionStoreObject object : objectGroup.objects) {
                 ExGuid objectId = object.objectID;
                 if (objectId != null && containingList.containsKey(objectId)) {
                     // newer version of an already seen object - replace the older one in place
                     containingList.get(objectId).set(indexInList.get(objectId), object);
-                    objects.remove(i);
                 } else {
                     if (objectId != null) {
-                        containingList.put(objectId, objects);
-                        indexInList.put(objectId, i);
+                        containingList.put(objectId, kept);
+                        indexInList.put(objectId, kept.size());
                     }
-                    ++i;
+                    kept.add(object);
                 }
             }
+        }
+        for (int g = 0; g < objectGroups.size(); g++) {
+            objectGroups.get(g).objects.clear();
+            objectGroups.get(g).objects.addAll(keptLists.get(g));
         }
     }
 }

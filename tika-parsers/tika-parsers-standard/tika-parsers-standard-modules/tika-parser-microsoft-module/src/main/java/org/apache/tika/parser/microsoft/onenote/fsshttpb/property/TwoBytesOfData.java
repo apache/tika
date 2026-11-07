@@ -16,9 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
-import java.util.List;
 
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 /**
  * This class is used to represent the property contains 2 bytes of data in the PropertySet.rgData stream field.
@@ -38,14 +36,5 @@ public class TwoBytesOfData implements IProperty {
         this.data = new byte[]{byteArray[startIndex], byteArray[startIndex + 1]};
 
         return 2;
-    }
-
-    /**
-     * This method is used to convert the element of TwoBytesOfData into a byte List.
-     *
-     * @return Return the byte list which store the byte information of TwoBytesOfData.
-     */
-    public List<Byte> serializeToByteList() {
-        return ByteUtil.toListOfByte(this.data);
     }
 }

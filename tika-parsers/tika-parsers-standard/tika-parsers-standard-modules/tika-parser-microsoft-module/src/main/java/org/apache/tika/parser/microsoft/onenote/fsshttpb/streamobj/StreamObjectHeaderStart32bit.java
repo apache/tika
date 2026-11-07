@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,7 +24,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 
 /**
  * An 32-bit header for a compound object would indicate the start of a stream object
@@ -39,60 +37,9 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
     public Compact64bitInt largeLength;
 
     /**
-     * Initializes a new instance of the StreamObjectHeaderStart32bit class with specified type and length.
-     *
-     * @param type   Specify the type of the StreamObjectHeaderStart32bit.
-     * @param length Specify the length of the StreamObjectHeaderStart32bit.
-     */
-    public StreamObjectHeaderStart32bit(StreamObjectTypeHeaderStart type, int length) {
-        this.headerType = StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_32_BIT;
-        this.type = type;
-        this.compound = StreamObject.getCompoundTypes().contains(this.type) ? 1 : 0;
-
-        if (length >= 32767) {
-            this.length = 32767;
-            this.largeLength = new Compact64bitInt(length);
-        } else {
-            this.length = length;
-            this.largeLength = null;
-        }
-    }
-
-    /**
      * Initializes a new instance of the StreamObjectHeaderStart32bit class, this is the default constructor.
      */
     public StreamObjectHeaderStart32bit() {
-    }
-
-    /**
-     * Initializes a new instance of the StreamObjectHeaderStart32bit class with specified type.
-     *
-     * @param streamObjectTypeHeaderStart Specify the type of the StreamObjectHeaderStart32bit.
-     */
-    public StreamObjectHeaderStart32bit(StreamObjectTypeHeaderStart streamObjectTypeHeaderStart) {
-        this.type = streamObjectTypeHeaderStart;
-    }
-
-    /**
-     * This method is used to convert the element of StreamObjectHeaderStart32bit basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of StreamObjectHeaderStart32bit.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        BitWriter bitFieldWriter = new BitWriter(4);
-        bitFieldWriter.appendInit32(this.headerType, 2);
-        bitFieldWriter.appendInit32(this.compound, 1);
-        bitFieldWriter.appendUInit32(this.type.getIntVal(), 14);
-        bitFieldWriter.appendInit32(this.length, 15);
-
-        List<Byte> listByte = bitFieldWriter.getByteList();
-
-        if (this.largeLength != null) {
-            listByte.addAll(this.largeLength.serializeToByteList());
-        }
-
-        return listByte;
     }
 
     /**
