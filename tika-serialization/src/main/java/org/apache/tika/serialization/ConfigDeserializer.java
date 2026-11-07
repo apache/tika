@@ -17,8 +17,12 @@
 package org.apache.tika.serialization;
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.RequestConfigurable;
@@ -52,6 +56,11 @@ import org.apache.tika.parser.ParseContext;
  * @see org.apache.tika.config.ParseContextConfig
  */
 public class ConfigDeserializer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigDeserializer.class);
+
+    // bounded by the component registry
+    private static final Set<String> WARNED_UNDECLARED = ConcurrentHashMap.newKeySet();
 
     private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
@@ -113,13 +122,25 @@ public class ConfigDeserializer {
         return config;
     }
 
-    // an undeclared reader gets a false "has no effect" warning; fails tests run with -ea
+    /**
+     * An undeclared reader gets a false "has no effect" warning. Tika's own components fail an
+     * assertion (tests run with -ea); a custom one gets a warning, once, so upgrading does not
+     * break its tests.
+     */
     private static void assertDeclaredReader(String configKey) {
         ComponentNameResolver.getComponentInfo(configKey).ifPresent(info -> {
-            assert ComponentNameResolver.readsParseContextConfig(info)
-                    : info.componentClass().getName() + " reads its '" + configKey
+            if (ComponentNameResolver.readsParseContextConfig(info)) {
+                return;
+            }
+            String className = info.componentClass().getName();
+            String message = className + " reads its '" + configKey
                     + "' parse-context block but is not annotated @"
                     + RequestConfigurable.class.getSimpleName();
+            if (className.startsWith("org.apache.tika.")) {
+                assert false : message;
+            } else if (WARNED_UNDECLARED.add(className)) {
+                LOG.warn("{}; add the annotation, Tika 5.0 will refuse the block otherwise", message);
+            }
         });
     }
 

@@ -208,9 +208,10 @@ public class PDFParser implements Parser, RenderingParser {
 
 A component that reads such a block must also carry `@RequestConfigurable` (inherited by
 subclasses). A `parse-context` block for a self-configuring component without it is logged as a
-warning when the context is read, because nothing reads it, and Tika 5.0 will refuse it. Reading
-a block for a component without the annotation fails an assertion, so a missing annotation fails
-the component's own tests when they run with `-ea`, as surefire does by default.
+warning when the context is read, because nothing reads it, and Tika 5.0 will refuse it. A
+custom component that reads its block without the annotation still gets it, and Tika logs a
+warning, once, naming the class; add the annotation before 5.0. (For Tika's own components a
+missing annotation fails an assertion, so it fails Tika's tests.)
 
 Benefits:
 

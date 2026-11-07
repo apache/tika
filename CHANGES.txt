@@ -51,7 +51,7 @@ Release 4.3.0 - ???
      translator that never reads one is logged as a warning instead of being silently
      ignored; Tika 5.0 will refuse it. Parsers that read a block carry the new
      @RequestConfigurable annotation, which a custom parser that reads its own block
-     should add (TIKA-5059).
+     should add; until then it still reads it, and a warning names the class (TIKA-5059).
 
 
    * tika-server sets any field of the config's "server" block from the command line

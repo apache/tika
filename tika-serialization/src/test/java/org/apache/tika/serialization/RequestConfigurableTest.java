@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import com.example.tikatest.CustomReaderTestParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -98,6 +99,15 @@ public class RequestConfigurableTest {
         AssertionError e = assertThrows(AssertionError.class,
                 () -> ConfigDeserializer.getConfig(context, "minimal-test-parser", MinimalTestParser.class));
         assertTrue(e.getMessage().contains("RequestConfigurable"), e.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testCustomReaderWithoutAnnotationStillWorks(boolean restricted) throws Exception {
+        // only Tika's own components fail the assertion; upgrading must not break third-party tests
+        ParseContext context = ParseContextDeserializer.readParseContext(
+                json("{\"custom-reader-test-parser\":{\"maxItems\":4}}"), restricted);
+        assertEquals("4", parse(new CustomReaderTestParser(), context).get("maxItems"));
     }
 
     private static boolean readsBlock(String name) {
