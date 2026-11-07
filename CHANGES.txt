@@ -104,6 +104,12 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Markdown output keeps document code inside its code spans and blocks: a line of
+     backticks inside <pre> no longer closes the fenced code block, and a line break inside
+     inline code, alt text or a link destination, or a lone CR inside <pre>, no longer starts
+     a new markdown line, so none of them can turn the text after it into raw HTML
+     (TIKA-5061).
+
    * HTML main-content extraction: tika-readability is a jsoup-only Java port of Mozilla
      Readability, and "readability-jsoup-filter" in the parse context runs it in JSoupParser
      (off by default; HTML documents only, never message bodies or other HTML inside a

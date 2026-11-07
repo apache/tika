@@ -441,6 +441,37 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testFenceInCodeBlockCannotCloseIt() throws Exception {
+        for (String container : new String[]{"", "li", "blockquote"}) {
+            for (String fence : new String[]{"```", "````", "   ```", "```js"}) {
+                ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+                handler.startDocument();
+                if (container.equals("li")) {
+                    startElement(handler, "ul");
+                }
+                if (!container.isEmpty()) {
+                    startElement(handler, container);
+                }
+                startElement(handler, "pre");
+                chars(handler, "a\n" + fence + "\n<img src=x onerror=alert(1)>\n");
+                endElement(handler, "pre");
+                if (!container.isEmpty()) {
+                    endElement(handler, container);
+                }
+                if (container.equals("li")) {
+                    endElement(handler, "ul");
+                }
+                handler.endDocument();
+
+                String md = handler.toString();
+                String html = renderHtml(md);
+                assertFalse(html.contains("<img"), md);
+                assertContains("&lt;img src=x onerror=alert(1)&gt;", html);
+            }
+        }
+    }
+
+    @Test
     public void testInlineCode() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();

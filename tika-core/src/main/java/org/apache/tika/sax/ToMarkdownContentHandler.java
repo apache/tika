@@ -198,8 +198,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "pre":
                 popToBlockHost();
                 codeBlock = new FencedCodeBlock();
+                // no fence length: commonmark makes the fence longer than any backtick run inside
                 codeBlock.setFenceCharacter("`");
-                codeBlock.setOpeningFenceLength(3);
                 codeBlock.setLiteral("");
                 stack.peek().appendChild(codeBlock);
                 codeBlockText = new StringBuilder();
