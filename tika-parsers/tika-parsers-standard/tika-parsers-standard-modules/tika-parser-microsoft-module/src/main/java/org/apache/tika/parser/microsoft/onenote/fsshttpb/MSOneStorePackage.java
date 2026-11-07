@@ -1738,16 +1738,18 @@ public class MSOneStorePackage {
         }
         xhtml.startElement("div", attributes);
         xhtml.endElement("div");
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+            return;
+        }
+        // only counts as content when the extractor accepts it, so a declined
+        // embedded object in an otherwise-empty file still triggers the fallback
+        contentEmitted = true;
         // A byte-array stream, not one re-opened over the parsed buffer: parsers that need a
         // seekable channel (zip containers, PDF) get the array zero-copy instead of a temp file.
+        // Copied only once accepted, so declined embeddings cost no allocation.
         try (TikaInputStream tis = TikaInputStream.get(fileData.getData())) {
-            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
-                // only counts as content when the extractor accepts it, so a declined
-                // embedded object in an otherwise-empty file still triggers the fallback
-                contentEmitted = true;
-                embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                        embeddedMetadata, this.parseContext, false);
-            }
+            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
+                    embeddedMetadata, this.parseContext, false);
         } catch (IOException e) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
         }
