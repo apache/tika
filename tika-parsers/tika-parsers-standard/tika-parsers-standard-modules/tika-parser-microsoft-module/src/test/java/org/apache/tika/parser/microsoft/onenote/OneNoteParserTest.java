@@ -747,6 +747,42 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testObjectDeclarationWithSetReservedBitsParses(@TempDir Path tempDir)
+            throws Exception {
+        // oid (compact ID n=1, index 0), jci 0xd with fHasOidReferences, then the trailing
+        // reserved 16 bits as 0xFFFF, as some writers produce
+        Path file = tempDir.resolve("objdecl");
+        Files.write(file, new byte[]{1, 0, 0, 0, 0x0d, 0, 1, 0, (byte) 0xff, (byte) 0xff});
+        OneNoteDocument document = new OneNoteDocument();
+        Revision revision = new Revision();
+        revision.globalId.put(0L, GUID.nil());
+        document.revisionMap.put(document.currentRevision, revision);
+        Method deserialize = OneNotePtr.class.getDeclaredMethod(
+                "deserializeObjectDeclarationWithRefCountBody");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            ObjectDeclarationWithRefCountBody body = (ObjectDeclarationWithRefCountBody)
+                    deserialize.invoke(new OneNotePtr(document, dif));
+            assertEquals(0xd, body.jcid.index);
+            assertTrue(body.fHasOidReferences);
+        }
+    }
+
+    @Test
+    public void testTableOfContentsIsRecognized() throws Exception {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNote-fuzz1.one");
+             OneNoteDirectFileResource dif = new OneNoteDirectFileResource(tis.getFile())) {
+            OneNoteHeader header = new OneNotePtr(new OneNoteDocument(), dif).deserializeHeader();
+            assertTrue(OneNoteParser.isTableOfContents(header));
+        }
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNote.one");
+             OneNoteDirectFileResource dif = new OneNoteDirectFileResource(tis.getFile())) {
+            OneNoteHeader header = new OneNotePtr(new OneNoteDocument(), dif).deserializeHeader();
+            assertFalse(OneNoteParser.isTableOfContents(header));
+        }
+    }
+
+    @Test
     public void testFileNodeListNestingIsDepthCapped(@TempDir Path tempDir) throws Exception {
         // 120 lists, each holding one baseType-2 node pointing at the next list - acyclic,
         // so only the depth cap can stop the recursion

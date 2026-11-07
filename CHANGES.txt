@@ -141,6 +141,12 @@ Release 4.3.0 - ???
      survive, and image bytes that happened to be letter-heavy no longer do. Without the
      detector, a string needs a lower-case word and mostly letters (TIKA-5057).
 
+   * OneNote .one sections whose object declarations set the reserved trailing bits (MS-ONESTORE
+     says to ignore them) are parsed structurally instead of failing over to the legacy text
+     dump (25 of 65 fallbacks in a 260-file sample, mostly .onetoc2 tables of contents). A
+     section whose structured walk finds no text still falls back to the dump, as FSSHTTPB
+     files already did (TIKA-5057).
+
    * tika-ml-junkdetect: JunkDetector has a public no-arg constructor, so
      ServiceLoader.load(TextQualityDetector.class) finds it on the class path; the
      registration only worked on the module path before (TIKA-5057).

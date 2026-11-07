@@ -770,11 +770,10 @@ class OneNotePtr {
         long must_be_zeroA = ((jci_odcs_etc >> 14) & 0x3);
         data.fHasOidReferences = ((jci_odcs_etc >> 16) & 0x1) != 0;
         data.hasOsidReferences = ((jci_odcs_etc >> 17) & 0x1) != 0;
-        if (jci_odcs_etc >> 18L > 0) {
-            throw new TikaException("RESERVED_NONZERO");
-        }
-        if (reserved != 0 || must_be_zeroA != 0 || must_be_zero != 0) {
-            throw new TikaException("RESERVED_NONZERO");
+        // MS-ONESTORE 2.6.15: the reserved fields MUST be ignored; some writers set the
+        // trailing 16 bits to 0xFFFF in otherwise well-formed declarations
+        if (must_be_zero != 0) {
+            throw new TikaException("ObjectDeclarationWithRefCountBody odcs must be zero");
         }
         return data;
     }

@@ -125,6 +125,7 @@ class OneNoteTreeWalker {
     private int walkDepth;
     private boolean depthWarningRecorded;
     private long visitsRemaining;
+    private boolean contentEmitted;
     private boolean visitBudgetWarningRecorded;
 
     /**
@@ -349,6 +350,21 @@ class OneNoteTreeWalker {
         }
     }
 
+    private void emitText(String text) throws SAXException {
+        if (text != null && !text.isEmpty()) {
+            contentEmitted = true;
+        }
+        xhtml.characters(text);
+    }
+
+    /**
+     * @return whether the walk wrote any text or handed any embedded document to the
+     * extractor
+     */
+    public boolean hasEmittedContent() {
+        return contentEmitted;
+    }
+
     private void recordVisitBudgetWarning() {
         if (visitBudgetWarningRecorded) {
             return;
@@ -477,6 +493,7 @@ class OneNoteTreeWalker {
                     return;
                 }
                 tis = TikaInputStream.get(buf.array());
+                contentEmitted = true;
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);
             }
@@ -594,7 +611,7 @@ class OneNoteTreeWalker {
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
                     try {
-                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                        emitText((String) propMap.get("dataUnicode16LE"));
                     } finally {
                         xhtml.endElement(P);
                     }
@@ -611,7 +628,7 @@ class OneNoteTreeWalker {
                 propMap.put("dataAscii", new String(buf.array(), StandardCharsets.US_ASCII));
                 xhtml.startElement(P);
                 try {
-                    xhtml.characters((String) propMap.get("dataAscii"));
+                    emitText((String) propMap.get("dataAscii"));
                 } finally {
                     xhtml.endElement(P);
                 }
@@ -627,7 +644,7 @@ class OneNoteTreeWalker {
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
                     try {
-                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                        emitText((String) propMap.get("dataUnicode16LE"));
                     } finally {
                         xhtml.endElement(P);
                     }
@@ -738,14 +755,14 @@ class OneNoteTreeWalker {
         if (m.find()) {
             xhtml.startElement("a", "href", m.group(1));
             try {
-                xhtml.characters(m.group(2));
+                emitText(m.group(2));
             } finally {
                 xhtml.endElement("a");
             }
         } else {
             xhtml.startElement(P);
             try {
-                xhtml.characters(txt);
+                emitText(txt);
             } finally {
                 xhtml.endElement(P);
             }
