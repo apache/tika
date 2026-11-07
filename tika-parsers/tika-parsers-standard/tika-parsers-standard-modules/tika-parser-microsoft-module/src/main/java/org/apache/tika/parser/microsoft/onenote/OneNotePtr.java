@@ -1217,6 +1217,14 @@ class OneNotePtr {
                             throw new TikaException("SEGV");
                         }
                     }
+                    // each reference property consumes the next entries of its stream
+                    if (type == 0x8 || type == 0x9) {
+                        counters.oids_count = s_count;
+                    } else if (type == 0xa || type == 0xb) {
+                        counters.osids_count = s_count;
+                    } else {
+                        counters.context_ids_count = s_count;
+                    }
                     break;
                 case 0x10:
                     val32 = deserializeLittleEndianInt();

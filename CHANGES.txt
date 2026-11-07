@@ -128,6 +128,12 @@ Release 4.3.0 - ???
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
 
+   * OneNote .one sections extract page text they used to drop: outline, table and image
+     text (including OCR text of printouts and pictures) reached through element child
+     references was treated as version history and skipped, and object references read
+     past the first entry of each stream. Text an object shares with others is written
+     once, and only version-history content is skipped (TIKA-5057).
+
    * OneNote: a .one file whose file node lists or objects are referenced more than once no
      longer costs time and memory exponential in its nesting depth. A file node list
      referenced twice fails the structured parse (the legacy text dump still runs), and the

@@ -928,6 +928,8 @@ public class OneNoteParserTest extends TikaTest {
         String txt = getText("test-tika-3970-dupetext.one", metadata);
 
         assertEquals(1, StringUtils.countMatches(txt, "Sunday morning"));
+        // page body text under ElementChildNodes references, written once
+        assertEquals(1, StringUtils.countMatches(txt, "One more sun comes sliding down the sky"));
     }
 
     /**
@@ -938,5 +940,6 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         XMLResult xml = getXML("test-tika-4303-Chinese-notes.one", metadata);
         assertContains("<p>中文标题</p>", xml.xml);
+        assertContains("OneNote 是一款数字笔记本", xml.xml);
     }
 }

@@ -125,6 +125,7 @@ class OneNoteTreeWalker {
     private int walkDepth;
     private boolean depthWarningRecorded;
     private long visitsRemaining;
+    private int versionHistoryDepth;
     private boolean contentEmitted;
     private boolean visitBudgetWarningRecorded;
 
@@ -431,10 +432,21 @@ class OneNoteTreeWalker {
             structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList, parentPropertyId));
         }
         if (fileNode.propertySet != null) {
-            List<Map<String, Object>> propSet =
-                    processPropertySet(fileNode.propertySet, parentPropertyId, jcidIndex(fileNode));
-            if (!propSet.isEmpty()) {
-                structure.put("propertySet", propSet);
+            int jcid = jcidIndex(fileNode);
+            boolean history = jcid == OneNoteJcid.VERSION_HISTORY_CONTENT;
+            if (history) {
+                versionHistoryDepth++;
+            }
+            try {
+                List<Map<String, Object>> propSet =
+                        processPropertySet(fileNode.propertySet, parentPropertyId, jcid);
+                if (!propSet.isEmpty()) {
+                    structure.put("propertySet", propSet);
+                }
+            } finally {
+                if (history) {
+                    versionHistoryDepth--;
+                }
             }
         }
         if (fileNode.subType.fileDataStoreObjectReference.ref != null && !FileChunkReference.nil()
@@ -605,10 +617,13 @@ class OneNoteTreeWalker {
                             "File data store cb " + content.size() + " exceeds document size: " +
                                     dif.size());
                 }
+                boolean print = options.getUtf16PropertiesToPrint()
+                        .contains(propertyValue.propertyId.propertyEnum) &&
+                        shouldEmitText(content.size());
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
-                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
+                if (print) {
                     xhtml.startElement(P);
                     try {
                         emitText((String) propMap.get("dataUnicode16LE"));
@@ -623,14 +638,17 @@ class OneNoteTreeWalker {
                             "File data store cb " + content.size() + " exceeds document size: " +
                                     dif.size());
                 }
+                boolean print = shouldEmitText(content.size());
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
                 propMap.put("dataAscii", new String(buf.array(), StandardCharsets.US_ASCII));
-                xhtml.startElement(P);
-                try {
-                    emitText((String) propMap.get("dataAscii"));
-                } finally {
-                    xhtml.endElement(P);
+                if (print) {
+                    xhtml.startElement(P);
+                    try {
+                        emitText((String) propMap.get("dataAscii"));
+                    } finally {
+                        xhtml.endElement(P);
+                    }
                 }
             } else if (!isBinary) {
                 if (content.size() > dif.size()) {
@@ -638,10 +656,13 @@ class OneNoteTreeWalker {
                             "File data store cb " + content.size() + " exceeds document size: " +
                                     dif.size());
                 }
+                boolean print = options.getUtf16PropertiesToPrint()
+                        .contains(propertyValue.propertyId.propertyEnum) &&
+                        shouldEmitText(content.size());
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
-                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
+                if (print) {
                     xhtml.startElement(P);
                     try {
                         emitText((String) propMap.get("dataUnicode16LE"));
@@ -659,11 +680,8 @@ class OneNoteTreeWalker {
                         OneNotePropertyEnum.RichEditTextUnicode
                         || propertyValue.propertyId.propertyEnum ==
                         OneNotePropertyEnum.CachedTitleString) {
-                    if (!options.isOnlyLatestRevision()
-                            || (parentPropertyId != null &&
-                            parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
-                        // only handle text for the latest revision, unless the options
-                        // have the onlyLatestRevision = false
+                    if ((parentPropertyId != null || !options.isOnlyLatestRevision()) &&
+                            shouldEmitText(content.size())) {
                         handleRichEditTextUnicode(content.size());
                     }
                 } else if (propertyValue.propertyId.propertyEnum ==
@@ -689,9 +707,22 @@ class OneNoteTreeWalker {
         }
         if (propertyValue.compactIDs != null) {
             List<Map<String, Object>> children = new ArrayList<>();
-            for (CompactID compactID : propertyValue.compactIDs) {
-                FileNodePtr childFileNodePointer = oneNoteDocument.guidToObject.get(compactID.guid);
-                children.add(walkFileNodePtr(childFileNodePointer, propertyValue.propertyId));
+            // everything below a version-history reference is an older copy
+            boolean history = propertyValue.propertyId.propertyEnum ==
+                    OneNotePropertyEnum.VersionHistoryGraphSpaceContextNodes;
+            if (history) {
+                versionHistoryDepth++;
+            }
+            try {
+                for (CompactID compactID : propertyValue.compactIDs) {
+                    FileNodePtr childFileNodePointer =
+                            oneNoteDocument.guidToObject.get(compactID.guid);
+                    children.add(walkFileNodePtr(childFileNodePointer, propertyValue.propertyId));
+                }
+            } finally {
+                if (history) {
+                    versionHistoryDepth--;
+                }
             }
             if (!children.isEmpty()) {
                 propMap.put("children", children);
@@ -727,13 +758,21 @@ class OneNoteTreeWalker {
         return new String(buf.array(), StandardCharsets.UTF_16LE);
     }
 
+    /**
+     * Whether text at the current {@code dif} position should be written: not already written
+     * (the walk can reach shared objects more than once) and, unless all revisions are asked
+     * for, not under a version-history reference.
+     */
+    private boolean shouldEmitText(int length)
+            throws IOException {
+        if (options.isOnlyLatestRevision() && versionHistoryDepth > 0) {
+            return false;
+        }
+        return textAlreadyFetched.add(Pair.of(dif.position(), length));
+    }
+
     private void handleRichEditTextUnicode(int length)
             throws SAXException, IOException {
-        if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
-            // do not revisit already visited text, as you may encounter references to the same file nodes
-            // while walking the tree.
-            return;
-        }
         //this is a null-ended UTF-16LE string
         ByteBuffer buf = ByteBuffer.allocate(length);
         dif.read(buf);
