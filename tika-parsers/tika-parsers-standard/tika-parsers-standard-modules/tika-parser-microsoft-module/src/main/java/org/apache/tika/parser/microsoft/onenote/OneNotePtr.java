@@ -639,11 +639,14 @@ class OneNotePtr {
             ExtendedGUID extendedGuid = new ExtendedGUID(guid, 0);
             LOG.trace("found extended guid {}", extendedGuid);
             document.guidToRef.put(extendedGuid, ref);
-            OneNotePtr fileDataStorePtr = new OneNotePtr(this);
-            fileDataStorePtr.reposition(data.ref);
+            // an empty reference is file data OneNote never wrote
+            if (data.ref.cb != 0) {
+                OneNotePtr fileDataStorePtr = new OneNotePtr(this);
+                fileDataStorePtr.reposition(data.ref);
 
-            data.subType.fileDataStoreObjectReference.ref =
-                    fileDataStorePtr.deserializeFileDataStoreObject();
+                data.subType.fileDataStoreObjectReference.ref =
+                        fileDataStorePtr.deserializeFileDataStoreObject();
+            }
 
         } else if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCountFNDX ||
                 data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCount2FNDX ||
@@ -757,7 +760,8 @@ class OneNotePtr {
                     "No fnd needed to be parsed for data.id=0x" + Long.toHexString(data.id) + " (" +
                             FndStructureConstants.nameOf(data.id) + ")");
         }
-        if (data.baseType == 2) {
+        // an empty reference (fcrNil or fcrZero) is a child list OneNote never wrote
+        if (data.baseType == 2 && data.ref.cb != 0) {
             // Generic baseType == 2 parser - means we have children to parse.
             OneNotePtr subList = new OneNotePtr(this);
             // position the subList pointer to the data.ref and deserialize recursively.

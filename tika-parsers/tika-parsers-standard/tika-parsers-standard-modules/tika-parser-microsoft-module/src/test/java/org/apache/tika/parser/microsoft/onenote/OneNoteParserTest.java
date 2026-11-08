@@ -328,6 +328,36 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("poptarts", txt);
     }
 
+    @Test
+    public void testUnwrittenRevisionManifestList(@TempDir Path tempDir) throws Exception {
+        byte[] bytes = readTestDocument("testOneNote4.one");
+        // the second object space's RevisionManifestListReferenceFND
+        zeroReference(bytes, 5576, 3, 0x10);
+        Metadata metadata = new Metadata();
+        String txt = parseToText(tempDir.resolve("unwritten.one"), bytes, metadata);
+        assertNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertContains("Section3HeaderTitle", txt);
+        assertNotContained("poptarts", txt);
+    }
+
+    @Test
+    public void testUnwrittenFileData(@TempDir Path tempDir) throws Exception {
+        byte[] bytes = readTestDocument("testOneNoteEmbeddedWordDoc.one");
+        zeroReference(bytes, 31176, 3, 0x94);
+        Metadata metadata = new Metadata();
+        String txt = parseToText(tempDir.resolve("unwritten.one"), bytes, metadata);
+        assertNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertContains("Dude this is a super cool embedded doc.docx", txt);
+    }
+
+    /** Sets the compressed reference of the file node at nodeOffset to fcrZero. */
+    private static void zeroReference(byte[] bytes, int nodeOffset, int refLength,
+                                      int fileNodeId) {
+        ByteBuffer bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+        assertEquals(fileNodeId, bb.getInt(nodeOffset) & 0x3FF);
+        Arrays.fill(bytes, nodeOffset + 4, nodeOffset + 4 + refLength, (byte) 0);
+    }
+
     private byte[] readTestDocument(String name) throws IOException {
         try (InputStream is = getClass().getResourceAsStream("/test-documents/" + name)) {
             return is.readAllBytes();

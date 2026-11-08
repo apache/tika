@@ -136,6 +136,10 @@ Release 4.3.0 - ???
      OneNote 2003 sections fall back to the legacy text dump instead of failing with
      "could not parse headers" (TIKA-5057).
 
+   * OneNote .one sections with an empty reference to a revision list or to file data,
+     which OneNote leaves when it never wrote them, parse instead of falling back to the
+     legacy text dump with "unitMagic must always be" or "SEGV error" (TIKA-5057).
+
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt
      text, which was not extracted before. OneNote's own OCR of pictures and file
