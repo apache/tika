@@ -31,8 +31,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -79,8 +77,6 @@ class OneNoteTreeWalker {
      * .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
 
     static {
         LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
@@ -123,6 +119,7 @@ class OneNoteTreeWalker {
     private final Set<String> emittedFolderChildren = new HashSet<>();
     // recognized words of the inline ink in the paragraph being walked
     private List<String> inkWords = Collections.emptyList();
+    private List<OneNoteText.TextRun> textRuns = null;
     private final Set<FileNode> reportedCycleNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private int cycleWarningCount;
@@ -555,7 +552,9 @@ class OneNoteTreeWalker {
         List<Map<String, Object>> propValues = new ArrayList<>();
         emitImage(propertySet);
         List<String> outerInkWords = inkWords;
+        List<OneNoteText.TextRun> outerTextRuns = textRuns;
         inkWords = inlineInkWords(propertySet);
+        textRuns = textRuns(propertySet);
         try {
             for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
                 PropertyValue propertyValue = propertySet.rgPridsData.get(i);
@@ -563,6 +562,7 @@ class OneNoteTreeWalker {
             }
         } finally {
             inkWords = outerInkWords;
+            textRuns = outerTextRuns;
         }
         return propValues;
     }
@@ -586,6 +586,51 @@ class OneNoteTreeWalker {
         if (OneNoteText.emitImage(xhtml, fileName, altText)) {
             contentEmitted = true;
         }
+    }
+
+    /** @return the paragraph's text runs and which are hyperlink text, or null */
+    private List<OneNoteText.TextRun> textRuns(PropertySet propertySet)
+            throws IOException, TikaException {
+        int[] ends = null;
+        List<Boolean> hyperlink = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (property == OneNotePropertyEnum.TextRunIndex && value.propertyId.type == 7) {
+                ends = OneNoteText.textRunEnds(readBytes(value));
+            } else if (property == OneNotePropertyEnum.TextRunFormatting &&
+                    value.compactIDs != null) {
+                hyperlink = new ArrayList<>();
+                for (CompactID compactID : value.compactIDs) {
+                    FileNodePtr ptr = oneNoteDocument.guidToObject.get(compactID.guid);
+                    FileNode style = ptr == null ? null : ptr.dereference(oneNoteDocument);
+                    hyperlink.add(style != null && style.propertySet != null &&
+                            isHyperlink(style.propertySet));
+                }
+            }
+        }
+        return ends == null || hyperlink == null ? null : OneNoteText.textRuns(ends, hyperlink);
+    }
+
+    private static boolean isHyperlink(PropertySet style) {
+        for (PropertyValue value : style.rgPridsData) {
+            if (value.propertyId.propertyEnum == OneNotePropertyEnum.Hyperlink) {
+                return value.propertyId.inlineBool;
+            }
+        }
+        return false;
+    }
+
+    private byte[] readBytes(PropertyValue value) throws IOException, TikaException {
+        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
+        content.reposition(value.rawData);
+        if (content.size() > dif.size()) {
+            throw new TikaMemoryLimitException(
+                    "File data store cb " + content.size() + " exceeds document size: " +
+                            dif.size());
+        }
+        ByteBuffer buf = ByteBuffer.allocate(content.size());
+        dif.read(buf);
+        return buf.array();
     }
 
     /** @return the recognized words of the paragraph's inline ink, in order */
@@ -896,20 +941,8 @@ class OneNoteTreeWalker {
             return;
         }
         String txt = new String(arr, 0, firstNull, StandardCharsets.UTF_16LE);
-        Matcher m = HYPERLINK_PATTERN.matcher(txt);
-        if (m.find()) {
-            String anchor = OneNoteText.clean(m.group(2));
-            xhtml.startElement("a", "href", m.group(1));
-            try {
-                if (anchor != null) {
-                    xhtml.characters(anchor);
-                    contentEmitted = true;
-                }
-            } finally {
-                xhtml.endElement("a");
-            }
-        } else if (!inkWords.isEmpty()) {
-            if (OneNoteText.emitParagraphWithInk(xhtml, txt, inkWords)) {
+        if (OneNoteText.isRichText(txt, inkWords)) {
+            if (OneNoteText.emitRichText(xhtml, txt, textRuns, inkWords)) {
                 contentEmitted = true;
             }
         } else {

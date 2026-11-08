@@ -50,6 +50,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -427,6 +428,10 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Section1HeaderTitle", txt);
         assertContains("Section1TextArea2", txt);
         assertNoJunk(txt);
+        // the link text is the run flagged as hyperlink after the field code
+        assertContains("<p><a href=\"http://o15.officeredir.microsoft.com/r/" +
+                        "rlidOneNote15Tutorial3?clid=1033\">Search notes instantly</a></p>",
+                getXML("testOneNote2.one").xml);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
         assertContains("Olya Veselova", authors);
@@ -748,6 +753,53 @@ public class OneNoteParserTest extends TikaTest {
                 .putInt(0)
                 .putLong(-1).putInt(0)
                 .putLong(OneNotePtr.FOOTER_CONST);
+    }
+
+    @Test
+    public void testEncryptionKeyNodeThrowsEncrypted(@TempDir Path tempDir) throws Exception {
+        // one fragment holding an ObjectDataEncryptionKeyV2FNDX (baseType 1)
+        int fileNodeHeader = 0x7C | (16 << 10) | (1 << 27) | (1 << 31);
+        ByteBuffer buf = ByteBuffer.allocate(56).order(ByteOrder.LITTLE_ENDIAN);
+        buf.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putInt(fileNodeHeader).putLong(0).putInt(56)
+                .putInt(0)
+                .putLong(-1).putInt(0)
+                .putLong(OneNotePtr.FOOTER_CONST);
+        Path encrypted = tempDir.resolve("encrypted");
+        Files.write(encrypted, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(encrypted.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            assertThrows(EncryptedDocumentException.class,
+                    () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
+        }
+    }
+
+    @Test
+    public void testOneNote2007RawDataObjectsAreNotPropertySets(@TempDir Path tempDir)
+            throws Exception {
+        assertFalse(declaredJcid(tempDir, 0x16).isObjectSpaceObjectPropSet());
+        assertFalse(declaredJcid(tempDir, 0x17).isObjectSpaceObjectPropSet());
+        assertFalse(declaredJcid(tempDir, 0x2A).isObjectSpaceObjectPropSet());
+        assertTrue(declaredJcid(tempDir, 0x0E).isObjectSpaceObjectPropSet());
+    }
+
+    /** The JCID read from an ObjectDeclarationWithRefCountBody with the given jci. */
+    private static JCID declaredJcid(Path tempDir, int jci) throws Exception {
+        // CompactID (n=1, guidIndex=0), jci/odcs/flags, reserved
+        ByteBuffer buf = ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN);
+        buf.put((byte) 1).put((byte) 0).putShort((short) 0).putInt(jci).putShort((short) 0);
+        Path body = Files.write(tempDir.resolve("body-" + jci), buf.array());
+        OneNoteDocument document = new OneNoteDocument();
+        Revision revision = new Revision();
+        revision.globalId.put(0L, GUID.nil());
+        document.revisionMap.put(document.currentRevision, revision);
+        Method deserialize = OneNotePtr.class.getDeclaredMethod(
+                "deserializeObjectDeclarationWithRefCountBody");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(body.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(document, dif);
+            return ((ObjectDeclarationWithRefCountBody) deserialize.invoke(ptr)).jcid;
+        }
     }
 
     @Test

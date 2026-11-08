@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -62,15 +63,34 @@ public class OneNoteTextTest {
     public void testInkReplacesPlaceholders() throws SAXException {
         // ink only: the words share one span, punctuation kept against its word
         assertEquals("<p><span class=\"handwriting\">This is a test!</span></p>",
-                body(x -> OneNoteText.emitParagraphWithInk(x, "\uFFFC\uFFFC\uFFFC\uFFFC\uFFFC",
+                body(x -> OneNoteText.emitRichText(x, "\uFFFC\uFFFC\uFFFC\uFFFC\uFFFC", null,
                         List.of("This", "is", "a", "test", "!"))));
         // mixed with typed text, in place
         assertEquals("<p>Call <span class=\"handwriting\">Bernard</span> at noon</p>",
-                body(x -> OneNoteText.emitParagraphWithInk(x, "Call \uFFFC at noon",
+                body(x -> OneNoteText.emitRichText(x, "Call \uFFFC at noon", null,
                         List.of("Bernard"))));
         // unrecognized ink leaves nothing to emit
         assertEquals("", body(x -> assertFalse(
-                OneNoteText.emitParagraphWithInk(x, "\uFFFC\uFFFC", List.of()))));
+                OneNoteText.emitRichText(x, "\uFFFC\uFFFC", null, List.of()))));
+    }
+
+    @Test
+    public void testHyperlinkKeepsParagraphText() throws SAXException {
+        String field = "﷟HYPERLINK \"http://x\"";
+        String text = "Read the " + field + "topic on the site";
+        // the field code and the link text are runs flagged as hyperlink
+        List<OneNoteText.TextRun> runs = OneNoteText.textRuns(
+                new int[]{9, 9 + field.length(), 9 + field.length() + 5},
+                List.of(false, true, true, false));
+        assertEquals("<p>Read the <a href=\"http://x\">topic</a> on the site</p>",
+                body(x -> OneNoteText.emitRichText(x, text, runs, List.of())));
+        // without runs a link reaches the next field
+        assertEquals("<p>Visit <a href=\"http://a\">A and </a><a href=\"http://b\">B</a></p>",
+                body(x -> OneNoteText.emitRichText(x, "Visit ﷟HYPERLINK \"http://a\"A and " +
+                        "﷟HYPERLINK \"http://b\"B", null, List.of())));
+        assertNull(OneNoteText.textRuns(new int[]{4}, List.of(true)));
+        assertArrayEquals(new int[]{84, 300}, OneNoteText.textRunEnds(
+                new byte[]{84, 0, 0, 0, 44, 1, 0, 0}));
     }
 
     @Test

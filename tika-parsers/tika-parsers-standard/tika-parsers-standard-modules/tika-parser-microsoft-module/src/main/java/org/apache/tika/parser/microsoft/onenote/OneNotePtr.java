@@ -32,6 +32,7 @@ import org.apache.commons.io.EndianUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 
@@ -464,6 +465,9 @@ class OneNotePtr {
             content.reposition(data.ref);
             // would have thrown an error if invalid.
         }
+        if (data.id == FndStructureConstants.ObjectDataEncryptionKeyV2FNDX) {
+            throw new EncryptedDocumentException("OneNote section is password protected");
+        }
         if (data.id == FndStructureConstants.ObjectGroupStartFND) {
             data.idDesc = "oid(group)";
             data.gosid = deserializeExtendedGUID();
@@ -814,6 +818,11 @@ class OneNotePtr {
         long reserved = deserializeLittleEndianShort();
 
         data.jcid.index = jci_odcs_etc & 0x3ffL;
+        // undocumented: OneNote 2007 declares picture (0x16), ink (0x17) and zlib-compressed
+        // (0x2A) data this way; it is raw data, not a property set
+        if (data.jcid.index == 0x16 || data.jcid.index == 0x17 || data.jcid.index == 0x2A) {
+            data.jcid.isFileData = true;
+        }
 
         long must_be_zero = (jci_odcs_etc >> 10) & 0xf;
         long must_be_zeroA = ((jci_odcs_etc >> 14) & 0x3);

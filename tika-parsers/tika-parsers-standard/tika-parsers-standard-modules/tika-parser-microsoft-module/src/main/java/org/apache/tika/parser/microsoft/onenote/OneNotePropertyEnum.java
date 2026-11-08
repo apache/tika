@@ -99,7 +99,8 @@ public enum OneNotePropertyEnum {
     }
 
     public static OneNotePropertyEnum of(Long id) {
-        OneNotePropertyEnum result = BY_ID.get(id);
+        // a Bool property's value is bit 31 of its id
+        OneNotePropertyEnum result = BY_ID.get((id >> 26 & 0x1f) == 0x2 ? id & 0x7FFFFFFFL : id);
         if (result == null) {
             return Unknown;
         }

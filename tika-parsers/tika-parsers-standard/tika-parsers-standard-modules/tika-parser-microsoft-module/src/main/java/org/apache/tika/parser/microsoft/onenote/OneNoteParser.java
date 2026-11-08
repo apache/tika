@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -132,6 +133,9 @@ public class OneNoteParser implements Parser {
                 emitSectionFileGuid(header, metadata);
 
                 Exception structureFailure = oneNoteDocument.structureParseException;
+                if (structureFailure instanceof EncryptedDocumentException) {
+                    throw (EncryptedDocumentException) structureFailure;
+                }
                 boolean walked = false;
                 boolean emittedContent = false;
                 if (structureFailure == null) {

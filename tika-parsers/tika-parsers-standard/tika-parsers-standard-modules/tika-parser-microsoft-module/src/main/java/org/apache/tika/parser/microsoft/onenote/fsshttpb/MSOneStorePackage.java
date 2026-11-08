@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
@@ -98,8 +96,6 @@ public class MSOneStorePackage {
      * .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(MSOneStorePackage.class);
     private static final String P = "p";
     // 3 frames/level; 1000 overflowed a 1 MB stack. Real nesting is tens of levels.
@@ -158,6 +154,7 @@ public class MSOneStorePackage {
     private boolean parseWarningsSuppressed;
     private boolean storageMappingsIndexed;
     private boolean contentEmitted;
+    private List<OneNoteText.TextRun> textRuns;
     // every revision of a notebook's table of contents lists its sections again
     private final Set<String> emittedFolderChildren = new HashSet<>();
     private final Map<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> depthSkippedObjects =
@@ -637,6 +634,8 @@ public class MSOneStorePackage {
         int objectType = jcidIndex(object);
         recordEntityGuid(object, objectType);
         ListStyle listStyle = listStyleForObject(object, actions, objectsById);
+        List<OneNoteText.TextRun> outerTextRuns = textRuns;
+        textRuns = textRuns(actions, objectsById);
         startObjectStructure(objectType, listStyle, xhtml);
         try {
             emitImage(actions, options, xhtml);
@@ -663,7 +662,46 @@ public class MSOneStorePackage {
                     options, metadata, xhtml, depth, resourceInfo);
         } finally {
             endObjectStructure(objectType, listStyle, xhtml);
+            textRuns = outerTextRuns;
         }
+    }
+
+    /** @return the paragraph's text runs and which are hyperlink text, or null */
+    private static List<OneNoteText.TextRun> textRuns(List<PropertyAction> actions,
+                                                      Map<ExGuid, RevisionStoreObject> objectsById) {
+        int[] ends = null;
+        List<Boolean> hyperlink = null;
+        for (PropertyAction action : actions) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.TextRunIndex &&
+                    action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                ends = OneNoteText.textRunEnds(
+                        ((PrtFourBytesOfLengthFollowedByData) action.property).data);
+            } else if (action.oneNotePropertyEnum == OneNotePropertyEnum.TextRunFormatting &&
+                    action.isChildReference) {
+                if (hyperlink == null) {
+                    hyperlink = new ArrayList<>();
+                }
+                RevisionStoreObject style = action.childReference == null ? null :
+                        objectsById.get(action.childReference);
+                hyperlink.add(style != null && isHyperlink(style));
+            }
+        }
+        return ends == null || hyperlink == null ? null : OneNoteText.textRuns(ends, hyperlink);
+    }
+
+    private static boolean isHyperlink(RevisionStoreObject style) {
+        if (style.propertySet == null || style.propertySet.objectSpaceObjectPropSet == null ||
+                style.propertySet.objectSpaceObjectPropSet.body == null ||
+                style.propertySet.objectSpaceObjectPropSet.body.rgPrids == null) {
+            return false;
+        }
+        for (PropertyID prid : style.propertySet.objectSpaceObjectPropSet.body.rgPrids) {
+            if (OneNotePropertyEnum.of(Integer.toUnsignedLong(prid.value)) ==
+                    OneNotePropertyEnum.Hyperlink) {
+                return prid.boolValue != 0;
+            }
+        }
+        return false;
     }
 
     private void startObjectStructure(int objectType, ListStyle listStyle,
@@ -1784,17 +1822,9 @@ public class MSOneStorePackage {
             return;
         }
         String txt = new String(arr, 0, firstNull, StandardCharsets.UTF_16LE);
-        Matcher m = HYPERLINK_PATTERN.matcher(txt);
-        if (m.find()) {
-            String anchor = OneNoteText.clean(m.group(2));
-            xhtml.startElement("a", "href", m.group(1));
-            try {
-                if (anchor != null) {
-                    xhtml.characters(anchor);
-                    contentEmitted = true;
-                }
-            } finally {
-                xhtml.endElement("a");
+        if (OneNoteText.isRichText(txt, Collections.emptyList())) {
+            if (OneNoteText.emitRichText(xhtml, txt, textRuns, Collections.emptyList())) {
+                contentEmitted = true;
             }
         } else {
             emitParagraph(xhtml, txt);

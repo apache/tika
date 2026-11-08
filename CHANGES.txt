@@ -140,6 +140,16 @@ Release 4.3.0 - ???
      which OneNote leaves when it never wrote them, parse instead of falling back to the
      legacy text dump with "unitMagic must always be" or "SEGV error" (TIKA-5057).
 
+   * Password-protected OneNote .one sections throw EncryptedDocumentException instead of
+     falling back to a legacy text dump of the encryption descriptor. OneNote 2007
+     sections with pictures or ink parse instead of failing with "Reserved non-zero" or
+     "Invalid type" (TIKA-5057).
+
+   * OneNote paragraphs with hyperlinks keep all their text, with the link text, taken
+     from the paragraph's text runs, in <a href>. Before, a paragraph ending in a link
+     kept only the link text, and one with text after a link or with two links kept the
+     raw HYPERLINK field code. Bool properties set to true are now recognized (TIKA-5057).
+
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt
      text, which was not extracted before. OneNote's own OCR of pictures and file
