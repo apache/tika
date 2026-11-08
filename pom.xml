@@ -64,6 +64,7 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-handlers</module>
+    <module>tika-fuzzing</module>
   </modules>
 
   <profiles>

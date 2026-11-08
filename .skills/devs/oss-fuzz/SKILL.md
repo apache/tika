@@ -30,6 +30,10 @@ read after this file, wins on conflict.
 
 # Tika OSS-Fuzz — local fuzzing
 
+For fuzzing or replaying a directory of files without Docker, use the in-repo
+`tika-fuzzing` module (Jazzer `@FuzzTest`, see `tika-fuzzing/README.md`). This skill
+covers the OSS-Fuzz project, whose targets still live in the oss-fuzz repo.
+
 Tika is already in OSS-Fuzz as the **`apache-tika`** project (not `tika`).
 It is Jazzer-based (coverage-guided, in-process JVM fuzzing), not the old
 `tika-fuzzing` seed-mutation module (removed in TIKA-4506). The fuzz targets
