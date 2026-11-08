@@ -80,6 +80,8 @@ public enum OneNotePropertyEnum {
     InlineInkWords(0x24003458),
     // undocumented: an ink word's handwriting-recognition alternates, NUL-separated, best first
     InkRecognitionAlternates(0x1C00341E),
+    // undocumented: OneNote 2007 paragraph text, single-byte like TextExtendedAscii
+    TextExtendedAscii2007(0x1C001C40),
     Unknown(0x00000000);
 
     private static final Map<Long, OneNotePropertyEnum> BY_ID = new HashMap<>();

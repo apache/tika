@@ -211,6 +211,11 @@ public class OneNoteParser implements Parser {
                 }
                 legacyFallbackIfNoContent(pkg, metadata, xhtml, oneNoteDirectFileResource,
                         context);
+            } else if (isSection(header)) {
+                // a OneNote 2003 section: a .one header with a legacy file version and an
+                // undocumented layout
+                legacyFallbackDump("OneNote 2003 section; falling back to legacy text dump",
+                        null, metadata, xhtml, oneNoteDirectFileResource, context);
             } else {
                 throw new TikaException("Invalid OneStore document - could not parse headers");
             }
@@ -240,6 +245,13 @@ public class OneNoteParser implements Parser {
     static boolean isTableOfContents(OneNoteHeader header) {
         GUID fileType = header.getGuidFileType();
         return fileType != null && TABLE_OF_CONTENTS_FILE_TYPE.equalsIgnoreCase(fileType.toString());
+    }
+
+    private static final String SECTION_FILE_TYPE = "{7B5C52E4-D88C-4DA7-AEB1-5378D02996D3}";
+
+    static boolean isSection(OneNoteHeader header) {
+        GUID fileType = header.getGuidFileType();
+        return fileType != null && SECTION_FILE_TYPE.equalsIgnoreCase(fileType.toString());
     }
 
     private static void rethrowIfLimitReached(Exception e) throws TikaException, SAXException {

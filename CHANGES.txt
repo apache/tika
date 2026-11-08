@@ -131,6 +131,11 @@ Release 4.3.0 - ???
    * OneNote .onetoc2 notebook tables of contents list their section and section-group
      names, once each; they produced no text before (TIKA-5057).
 
+   * OneNote 2007 sections, whose paragraph text is in a property the parser did not
+     read, give their text from the structured parse instead of the legacy text dump.
+     OneNote 2003 sections fall back to the legacy text dump instead of failing with
+     "could not parse headers" (TIKA-5057).
+
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt
      text, which was not extracted before. OneNote's own OCR of pictures and file

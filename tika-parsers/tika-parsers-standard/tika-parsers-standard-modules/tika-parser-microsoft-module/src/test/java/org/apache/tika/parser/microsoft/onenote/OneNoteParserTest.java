@@ -293,6 +293,47 @@ public class OneNoteParserTest extends TikaTest {
         assertEquals(parseToText(tempDir.resolve("full.one"), full, new Metadata()), txt);
     }
 
+    @Test
+    public void testOneNote2007ParagraphText(@TempDir Path tempDir) throws Exception {
+        byte[] full = readTestDocument("testOneNote4.one");
+        // OneNote 2007 stores single-byte paragraph text under 0x1C001C40, not TextExtendedAscii
+        byte[] renumbered = full.clone();
+        ByteBuffer bb = ByteBuffer.wrap(renumbered).order(ByteOrder.LITTLE_ENDIAN);
+        int props = 0;
+        for (int i = 0; i + 4 <= renumbered.length; i++) {
+            if (bb.getInt(i) == 0x1C003498) {
+                bb.putInt(i, 0x1C001C40);
+                props++;
+            }
+        }
+        assertTrue(props > 0);
+
+        Metadata metadata = new Metadata();
+        String txt = parseToText(tempDir.resolve("renumbered.one"), renumbered, metadata);
+        assertNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertContains("way too much information about poptarts to handle.", txt);
+        assertEquals(parseToText(tempDir.resolve("full.one"), full, new Metadata()), txt);
+    }
+
+    @Test
+    public void testOneNote2003SectionFallsBackToLegacyDump(@TempDir Path tempDir)
+            throws Exception {
+        byte[] bytes = readTestDocument("testOneNote4.one");
+        // OneNote 2003 sections set guidLegacyFileVersion (offset 32), which 2010+ leaves nil
+        bytes[32] = 1;
+        Metadata metadata = new Metadata();
+        String txt = parseToText(tempDir.resolve("2003.one"), bytes, metadata);
+        assertEquals("OneNote 2003 section; falling back to legacy text dump",
+                metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertContains("poptarts", txt);
+    }
+
+    private byte[] readTestDocument(String name) throws IOException {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/" + name)) {
+            return is.readAllBytes();
+        }
+    }
+
     private static String parseToText(Path path, byte[] bytes, Metadata metadata)
             throws Exception {
         Files.write(path, bytes);

@@ -206,6 +206,11 @@ public final class OneNoteText {
         return s.replace('\u00A0', ' ').replace('\uFF1A', ':');
     }
 
+    public static boolean isExtendedAscii(OneNotePropertyEnum property) {
+        return property == OneNotePropertyEnum.TextExtendedAscii ||
+                property == OneNotePropertyEnum.TextExtendedAscii2007;
+    }
+
     public static boolean isImageText(OneNotePropertyEnum property) {
         return property == OneNotePropertyEnum.ImageFilename ||
                 property == OneNotePropertyEnum.ImageAltText;

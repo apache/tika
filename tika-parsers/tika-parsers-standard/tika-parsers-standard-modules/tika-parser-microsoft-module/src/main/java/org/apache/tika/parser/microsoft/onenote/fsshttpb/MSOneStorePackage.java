@@ -1466,13 +1466,13 @@ public class MSOneStorePackage {
             PrtFourBytesOfLengthFollowedByData dataProperty =
                     (PrtFourBytesOfLengthFollowedByData) property;
             if ((dataProperty.data.length & 1) == 0 &&
-                    oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
+                    !OneNoteText.isExtendedAscii(oneNotePropertyEnum) && !isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&
                         !OneNoteText.isImageText(oneNotePropertyEnum)) {
                     emitUtf16Property(xhtml, oneNotePropertyEnum, new String(dataProperty.data,
                             StandardCharsets.UTF_16LE));
                 }
-            } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
+            } else if (OneNoteText.isExtendedAscii(oneNotePropertyEnum)) {
                 emitParagraph(xhtml, new String(dataProperty.data, OneNoteText.EXTENDED_ASCII));
             } else if (!isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&

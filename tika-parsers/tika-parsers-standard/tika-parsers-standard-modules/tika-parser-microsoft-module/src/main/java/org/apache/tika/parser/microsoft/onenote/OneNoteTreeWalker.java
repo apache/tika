@@ -728,8 +728,8 @@ class OneNoteTreeWalker {
             content.reposition(propertyValue.rawData);
             boolean isBinary = propertyIsBinary(propertyValue.propertyId.propertyEnum);
             propMap.put("isBinary", isBinary);
-            if ((content.size() & 1) == 0 && propertyValue.propertyId.propertyEnum !=
-                    OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
+            if ((content.size() & 1) == 0 && !OneNoteText.isExtendedAscii(
+                    propertyValue.propertyId.propertyEnum) && !isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
                             "File data store cb " + content.size() + " exceeds document size: " +
@@ -746,8 +746,7 @@ class OneNoteTreeWalker {
                     emitUtf16Property(propertyValue.propertyId.propertyEnum,
                             (String) propMap.get("dataUnicode16LE"));
                 }
-            } else if (propertyValue.propertyId.propertyEnum ==
-                    OneNotePropertyEnum.TextExtendedAscii) {
+            } else if (OneNoteText.isExtendedAscii(propertyValue.propertyId.propertyEnum)) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
                             "File data store cb " + content.size() + " exceeds document size: " +
