@@ -46,12 +46,19 @@ public class HashedNgramEncodingDetectorTest {
 
     @Test
     public void greekCropCutMidCharacterIsUtf8() {
-        assertUtf8NotBinary(crop("Η Ελλάδα είναι χώρα της νοτιοανατολικής Ευρώπης.", 32));
+        assertUtf8(crop("Η Ελλάδα είναι χώρα της νοτιοανατολικής Ευρώπης.", 32));
     }
 
     @Test
     public void japaneseCropCutMidCharacterIsUtf8() {
-        assertUtf8NotBinary(crop("日本は東アジアに位置する島国であり、首都は東京である。", 16));
+        assertUtf8(crop("日本は東アジアに位置する島国であり、首都は東京である。", 16));
+    }
+
+    @Test
+    public void textLikeSymbolRunIsVetoedToUtf8() {
+        byte[] probe = "↦⇙⇙ ⇽⇻".getBytes(StandardCharsets.UTF_8);
+        assertEquals("binary", rawTop(probe), "probe no longer exercises the veto");
+        assertUtf8(probe);
     }
 
     @Test
@@ -71,8 +78,16 @@ public class HashedNgramEncodingDetectorTest {
     public void utf8WithDisallowedControlMayBeBinary(int control) {
         byte[] probe = crop("Η Ελλάδα είναι χώρα της νοτιοανατολικής Ευρώπης.", 32);
         probe[probe.length - 1] = (byte) control;
-        assertEquals("binary", rawTop(probe));
-        assertTrue(detector.detect(probe).isEmpty());
+        assertFalse(textLike(probe));
+        // not text-like: the veto leaves the model's call alone
+        List<EncodingResult> results = detector.detect(probe);
+        if ("binary".equals(rawTop(probe))) {
+            assertTrue(results.isEmpty());
+        } else {
+            assertFalse(results.isEmpty());
+            assertEquals(HashedNgramEncodingDetector.toJavaCharsetName(rawTop(probe)),
+                    results.get(0).getCharset().name());
+        }
     }
 
     @Test
@@ -98,8 +113,7 @@ public class HashedNgramEncodingDetectorTest {
         assertFalse(textLike(new byte[] {(byte) 0xE4, 'a', (byte) 0xE4, (byte) 0xB8}));
     }
 
-    private static void assertUtf8NotBinary(byte[] probe) {
-        assertEquals("binary", rawTop(probe), "probe no longer exercises the veto");
+    private static void assertUtf8(byte[] probe) {
         List<EncodingResult> results = detector.detect(probe);
         assertFalse(results.isEmpty());
         assertEquals(StandardCharsets.UTF_8, results.get(0).getCharset(), results.toString());

@@ -82,6 +82,40 @@ public class HashedArbitrationTest {
         assertEquals(s.pick(model.getDeferThreshold()), s.pick());
     }
 
+    /**
+     * From a CC page declared iso-8859-3 but written in Latin-1 with UTF-8 fragments: 0xC3 is undefined
+     * in ISO-8859-3, so its decode has U+FFFD the windows-1252 decode lacks.
+     */
+    @Test
+    public void declarationWithReplacementCharactersIsNotAnAnchor() throws Exception {
+        Charset iso3 = Charset.forName("ISO-8859-3");
+        byte[] latin1 = ("Correo Electrónico. ¡Por favor, consulte la Composición Municipal y los"
+                + " Trámites Oficiales. ").getBytes(L1);
+        byte[] utf8 = "Información del municipio, días de atención.".getBytes(UTF8);
+        byte[] page = new byte[latin1.length + utf8.length];
+        System.arraycopy(latin1, 0, page, 0, latin1.length);
+        System.arraycopy(utf8, 0, page, latin1.length, utf8.length);
+        Map<Charset, String> texts = new LinkedHashMap<>();
+        texts.put(W1252, new String(page, W1252));
+        texts.put(iso3, new String(page, iso3));
+        assertTrue(texts.get(iso3).indexOf('�') >= 0);
+
+        HashedJunkModel bundled = JunkDetector.loadFromClasspath().getModel();
+        HashedArbitration.Decision d = HashedArbitration.decide(bundled, texts, null, iso3);
+        assertEquals(W1252, d.getChampion());
+        assertNull(d.getAnchor());
+        assertEquals(W1252, d.pick(Double.MAX_VALUE));
+
+        // when the champion has replacement characters too, the declaration stays the anchor
+        Map<Charset, String> both = new LinkedHashMap<>();
+        both.put(W1252, "caf� und mehr");
+        both.put(iso3, "ca�� und mehr");
+        HashedArbitration.Decision b = HashedArbitration.decide(model, both, null, iso3);
+        if (!b.getChampion().equals(iso3)) {
+            assertEquals(iso3, b.getAnchor());
+        }
+    }
+
     @Test
     public void identicalTextsHaveNoMarginAndNeverDefer() {
         Map<Charset, String> texts = new LinkedHashMap<>();

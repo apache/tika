@@ -81,6 +81,11 @@ public final class HashedArbitration {
             logit = ld[0];
             difference = (long) ld[1];
         }
+        // a declaration whose decode has replacement characters the champion's lacks is a failed decode, not an anchor
+        if (declared != null && texts.containsKey(declared) && texts.get(declared).indexOf('�') >= 0
+                && championText.indexOf('�') < 0) {
+            declared = null;
+        }
         return new Decision(champion, logit, difference, structural != null ? structural : declared,
                 model.getDeferThreshold());
     }
