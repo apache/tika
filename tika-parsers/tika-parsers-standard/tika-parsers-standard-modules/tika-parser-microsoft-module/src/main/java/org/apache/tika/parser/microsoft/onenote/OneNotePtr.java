@@ -272,7 +272,8 @@ class OneNotePtr {
                     pending.put(srcId, value);
                 }
             }
-            reposition(fragment.stp + fragment.cb - 12);
+            // nextFragment follows the last whole entry; a fragment can end in padding
+            reposition(fragment.stp + 8 * entries);
             fragment = deserializeFileChunkReference64x32();
         }
         return counts;
@@ -548,7 +549,7 @@ class OneNotePtr {
 
             Revision currentRevision = getCurrentRevision();
             Revision dependentRevision = getRevision(currentRevision.dependent);
-            GUID compactId = dependentRevision.globalId.get(
+            GUID compactId = globalIds(dependentRevision).get(
                     data.subType.globalIdTableEntry2FNDX.indexMapFrom);
             if (compactId == null) {
                 throw new TikaException("COMPACT_ID_MISSING");
@@ -568,7 +569,7 @@ class OneNotePtr {
                     data.subType.globalIdTableEntry3FNDX.entriesToCopy, "global ID entries");
             reserveGlobalIdCopies(entriesToCopy);
             for (int i = 0; i < entriesToCopy; ++i) {
-                GUID compactId = dependentRevision.globalId.get(
+                GUID compactId = globalIds(dependentRevision).get(
                         data.subType.globalIdTableEntry3FNDX.indexCopyFromStart + i);
                 if (compactId == null) {
                     throw new TikaException("COMPACT_ID_MISSING");
@@ -596,6 +597,7 @@ class OneNotePtr {
                 }
                 data.subType.objectRevisionWithRefCountFNDX.cRef = deserializeLittleEndianInt();
             }
+            postprocessObjectRevision(data, curPath);
         } else if (data.id == FndStructureConstants.RootObjectReference2FNDX) {
             data.subType.rootObjectReference.oidRoot = deserializeCompactID();
 
@@ -917,8 +919,7 @@ class OneNotePtr {
         compactID.guid = ExtendedGUID.nil();
         compactID.guid.n = compactID.n;
         long index = compactID.guidIndex;
-        Map<Long, GUID> globalIdMap = getCurrentRevision().globalId;
-        GUID guid = globalIdMap.get(index);
+        GUID guid = globalIds(getCurrentRevision()).get(index);
         if (guid != null) {
             compactID.guid.guid = guid;
         } else {
@@ -1053,6 +1054,7 @@ class OneNotePtr {
             throws IOException, TikaException {
         data.gosid = data.subType.objectDeclarationWithRefCount.body.oid.guid;
         document.guidToObject.put(data.gosid, new FileNodePtr(curPtr));
+        document.objectJcids.put(data.gosid, data.subType.objectDeclarationWithRefCount.body.jcid);
         if (data.subType.objectDeclarationWithRefCount.body.jcid.isObjectSpaceObjectPropSet()) {
             OneNotePtr objectSpacePropSetPtr = new OneNotePtr(this);
             objectSpacePropSetPtr.reposition(data.ref);
@@ -1075,6 +1077,38 @@ class OneNotePtr {
                 LOG.debug("");
             }
         }
+    }
+
+    /** A new revision of a declared object: the declaration's JCID with new properties. */
+    private void postprocessObjectRevision(FileNode data, FileNodePtr curPtr)
+            throws IOException, TikaException {
+        data.gosid = data.subType.objectRevisionWithRefCountFNDX.oid.guid;
+        data.idDesc = "oid";
+        JCID jcid = document.objectJcids.get(data.gosid);
+        if (jcid == null || !jcid.isObjectSpaceObjectPropSet() || data.ref.cb == 0) {
+            return;
+        }
+        data.subType.objectDeclarationWithRefCount.body.jcid = jcid;
+        OneNotePtr objectSpacePropSetPtr = new OneNotePtr(this);
+        objectSpacePropSetPtr.reposition(data.ref);
+        data.subType.objectRevisionWithRefCountFNDX.ref =
+                objectSpacePropSetPtr.deserializeObjectSpaceObjectPropSet();
+        data.propertySet = objectSpacePropSetPtr.deserializePropertySet(
+                new ObjectStreamCounters(), data.subType.objectRevisionWithRefCountFNDX.ref);
+        document.guidToObject.put(data.gosid, new FileNodePtr(curPtr));
+    }
+
+    /** OneNote 2007 writes an empty global ID table for a revision that keeps its dependent's. */
+    private Map<Long, GUID> globalIds(Revision revision) {
+        Revision r = revision;
+        for (int i = 0; r.globalId.isEmpty() && i < document.revisionMap.size(); i++) {
+            Revision dependent = document.revisionMap.get(r.dependent);
+            if (dependent == null) {
+                break;
+            }
+            r = dependent;
+        }
+        return r.globalId;
     }
 
     private Revision getCurrentRevision() throws TikaException {

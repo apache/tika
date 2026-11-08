@@ -42,6 +42,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -781,6 +782,87 @@ public class OneNoteParserTest extends TikaTest {
         assertFalse(declaredJcid(tempDir, 0x17).isObjectSpaceObjectPropSet());
         assertFalse(declaredJcid(tempDir, 0x2A).isObjectSpaceObjectPropSet());
         assertTrue(declaredJcid(tempDir, 0x0E).isObjectSpaceObjectPropSet());
+    }
+
+    @Test
+    public void testObjectRevisionReplacesDeclaredProperties(@TempDir Path tempDir)
+            throws Exception {
+        // ObjectSpaceObjectPropSet: no OIDs or OSIDs, then RichEditTextUnicode "new"
+        ByteBuffer buf = ByteBuffer.allocate(20).order(ByteOrder.LITTLE_ENDIAN);
+        buf.putInt(0x80000000).putShort((short) 1).putInt(0x1C001C22).putInt(6);
+        buf.put("new".getBytes(StandardCharsets.UTF_16LE));
+        Path propSet = Files.write(tempDir.resolve("revision"), buf.array());
+        ExtendedGUID declared = new ExtendedGUID(GUID.nil(), 11);
+        OneNoteDocument document = new OneNoteDocument();
+        JCID richText = new JCID();
+        richText.loadFrom32BitIndex(0x0006000E);
+        document.objectJcids.put(declared, richText);
+        Method postprocess = OneNotePtr.class.getDeclaredMethod("postprocessObjectRevision",
+                FileNode.class, FileNodePtr.class);
+        postprocess.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(propSet.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(document, dif);
+            FileNode revision = objectRevision(declared, buf.capacity());
+            postprocess.invoke(ptr, revision, new FileNodePtr());
+            assertEquals(OneNotePropertyEnum.RichEditTextUnicode,
+                    revision.propertySet.rgPridsData.get(0).propertyId.propertyEnum);
+            assertEquals(0x0E, OneNoteTreeWalker.jcidIndex(revision));
+            assertNotNull(document.guidToObject.get(declared));
+            // a revision of an object never declared has no JCID to take
+            FileNode orphan = objectRevision(new ExtendedGUID(GUID.nil(), 12), buf.capacity());
+            postprocess.invoke(ptr, orphan, new FileNodePtr());
+            assertNull(orphan.propertySet);
+        }
+    }
+
+    private static FileNode objectRevision(ExtendedGUID oid, int length) {
+        FileNode node = new FileNode();
+        node.subType.objectRevisionWithRefCountFNDX.oid = new CompactID();
+        node.subType.objectRevisionWithRefCountFNDX.oid.guid = oid;
+        node.ref = new FileChunkReference(0, length);
+        return node;
+    }
+
+    @Test
+    public void testEmptyGlobalIdTableUsesDependentRevision(@TempDir Path tempDir)
+            throws Exception {
+        GUID guid = new GUID(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+        OneNoteDocument document = new OneNoteDocument();
+        ExtendedGUID dependentId = new ExtendedGUID(guid, 1);
+        Revision dependent = new Revision();
+        dependent.globalId.put(0L, guid);
+        document.revisionMap.put(dependentId, dependent);
+        // an empty table in between, as a chain of revisions with no new IDs writes
+        ExtendedGUID middleId = new ExtendedGUID(guid, 2);
+        Revision middle = new Revision();
+        middle.dependent = dependentId;
+        document.revisionMap.put(middleId, middle);
+        Revision current = new Revision();
+        current.dependent = middleId;
+        document.revisionMap.put(document.currentRevision, current);
+        // CompactID n=11, guidIndex=0
+        Path compactId = Files.write(tempDir.resolve("compactId"), new byte[]{11, 0, 0, 0});
+        Method deserialize = OneNotePtr.class.getDeclaredMethod("deserializeCompactID");
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(compactId.toFile())) {
+            CompactID id = (CompactID) deserialize.invoke(new OneNotePtr(document, dif));
+            assertEquals(new ExtendedGUID(guid, 11), id.guid);
+        }
+    }
+
+    @Test
+    public void testTransactionLogFragmentWithPadding(@TempDir Path tempDir) throws Exception {
+        ByteBuffer buf = ByteBuffer.allocate(60).order(ByteOrder.LITTLE_ENDIAN);
+        // fragment 1 (cb 32): two entries, nextFragment, then 4 bytes of padding
+        buf.putInt(5).putInt(3).putInt(1).putInt(0).putLong(32).putInt(28).putInt(-1);
+        // fragment 2 (cb 28): two entries, nextFragment (nil)
+        buf.putInt(7).putInt(4).putInt(1).putInt(0).putLong(-1).putInt(0);
+        Path log = Files.write(tempDir.resolve("log"), buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(log.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            assertEquals(Map.of(5L, 3L, 7L, 4L),
+                    ptr.deserializeTransactionLog(new FileChunkReference(0, 32), 2));
+        }
     }
 
     /** The JCID read from an ObjectDeclarationWithRefCountBody with the given jci. */

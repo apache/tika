@@ -75,6 +75,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexD
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexRevisionMapping;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CompactID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderCell;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
@@ -1290,9 +1291,11 @@ public class MSOneStorePackage {
         if (actions != null) {
             return actions;
         }
-        List<ExGuid> referencedObjects =
+        List<ExGuid> referencedObjects = alignToOids(
                 object.referencedObjectID == null || object.referencedObjectID.content == null ?
-                        Collections.emptyList() : object.referencedObjectID.content;
+                        Collections.emptyList() : object.referencedObjectID.content,
+                object.propertySet.objectSpaceObjectPropSet.oids == null ? null :
+                        object.propertySet.objectSpaceObjectPropSet.oids.body);
         List<CellID> referencedSpaces = object.referencedObjectSpacesID == null ||
                 object.referencedObjectSpacesID.content == null ? Collections.emptyList() :
                 object.referencedObjectSpacesID.content;
@@ -1329,8 +1332,9 @@ public class MSOneStorePackage {
             OneNotePropertyEnum oneNotePropertyEnum =
                     OneNotePropertyEnum.of(Integer.toUnsignedLong(propertyID.value));
             if (propertyType == PropertyType.ObjectID) {
+                boolean exhausted = referenceCursor[0] >= referencedObjects.size();
                 ExGuid childReference = nextReference(referencedObjects, referenceCursor);
-                if (childReference == null) {
+                if (exhausted) {
                     recordParseWarning("OneNote object reference slot was exhausted");
                 }
                 actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum, true,
@@ -1446,6 +1450,35 @@ public class MSOneStorePackage {
             return 0;
         }
         return Math.min(declaredCount, remainingReferences);
+    }
+
+    /**
+     * The object extended GUID array leaves out the OID stream's nil CompactIDs (references to
+     * no object); puts a null in each one's place so later references keep their slots.
+     */
+    static List<ExGuid> alignToOids(List<ExGuid> references, CompactID[] oids) {
+        if (oids == null || oids.length == references.size()) {
+            return references;
+        }
+        int nonNil = 0;
+        for (CompactID oid : oids) {
+            if (!isNil(oid)) {
+                nonNil++;
+            }
+        }
+        if (nonNil != references.size()) {
+            return references;
+        }
+        List<ExGuid> aligned = new ArrayList<>(oids.length);
+        int next = 0;
+        for (CompactID oid : oids) {
+            aligned.add(isNil(oid) ? null : references.get(next++));
+        }
+        return aligned;
+    }
+
+    private static boolean isNil(CompactID id) {
+        return id.n == 0 && id.guidIndex == 0;
     }
 
     private ExGuid nextReference(List<ExGuid> referencedObjects, int[] referenceCursor) {

@@ -30,6 +30,8 @@ class OneNoteDocument {
     Map<ExtendedGUID, FileNodePtr> revisionManifestLists = new HashMap<>();
     Map<ExtendedGUID, FileChunkReference> guidToRef = new HashMap<>();
     Map<ExtendedGUID, FileNodePtr> guidToObject = new HashMap<>();
+    // declared JCIDs, for object revisions that do not repeat them
+    Map<ExtendedGUID, JCID> objectJcids = new HashMap<>();
 
     Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap = new HashMap<>();
     ExtendedGUID currentRevision = ExtendedGUID.nil();

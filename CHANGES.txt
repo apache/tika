@@ -150,6 +150,19 @@ Release 4.3.0 - ???
      kept only the link text, and one with text after a link or with two links kept the
      raw HYPERLINK field code. Bool properties set to true are now recognized (TIKA-5057).
 
+   * OneNote FSSHTTPB objects with a reference to no object, such as a paragraph with no
+     paragraph style, no longer shift their later references by one, which warned of
+     "unavailable entries" and gave text runs the wrong styles (TIKA-5057).
+
+   * OneNote .one sections keep the text of objects edited in a later revision; the
+     edited versions were dropped, leaving only the text as first written. A revision
+     with an empty global ID table, written by OneNote 2007, resolves IDs from the
+     revision it depends on instead of failing with "COMPACT ID MISSING" (TIKA-5057).
+
+   * OneNote .one sections whose transaction log spans more than one fragment read the
+     log; it was dropped, so file node lists ran into fragment padding and failed with
+     "RESERVED_NONZERO" (TIKA-5057).
+
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt
      text, which was not extracted before. OneNote's own OCR of pictures and file

@@ -71,6 +71,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStore
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreObjectGroup;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataElementType;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CompactID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderCell;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
@@ -81,6 +82,27 @@ import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MSOneStorePackageTest {
+
+    @Test
+    public void testNilOidsKeepReferenceSlots() {
+        ExGuid a = id(1);
+        ExGuid b = id(2);
+        // ParagraphStyle -> nil, then two TextRunFormatting entries
+        assertEquals(Arrays.asList(null, a, b), MSOneStorePackage.alignToOids(List.of(a, b),
+                new CompactID[]{compactId(0, 0), compactId(16, 1), compactId(31, 1)}));
+        assertEquals(List.of(a, b), MSOneStorePackage.alignToOids(List.of(a, b),
+                new CompactID[]{compactId(16, 1), compactId(31, 1)}));
+        // counts that disagree are left alone
+        assertEquals(List.of(a), MSOneStorePackage.alignToOids(List.of(a),
+                new CompactID[]{compactId(16, 1), compactId(31, 1)}));
+    }
+
+    private static CompactID compactId(long n, long guidIndex) {
+        CompactID id = new CompactID();
+        id.n = n;
+        id.guidIndex = guidIndex;
+        return id;
+    }
 
     @Test
     public void testTableAndListObjectsRetainXhtmlStructure() throws Exception {
