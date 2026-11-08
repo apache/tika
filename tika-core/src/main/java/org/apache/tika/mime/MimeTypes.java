@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.TextDetector;
+import org.apache.tika.detect.TextStatistics;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -75,6 +77,18 @@ public final class MimeTypes implements Detector, Serializable {
      * Name of the {@link #xmlMimeType xml} type, application/xml.
      */
     public static final String XML = "application/xml";
+    // below this share of control bytes, a text glob still wins over binary-looking content
+    private static final int BINARY_CONTROL_PERCENT = 5;
+    private static final boolean[] SAFE_CONTROL = new boolean[0x20];
+    private static final int MIN_TEXT_BEFORE_NUL_TAIL = 128;
+
+    static {
+        SAFE_CONTROL['\t'] = true;
+        SAFE_CONTROL['\n'] = true;
+        SAFE_CONTROL[0x0C] = true;
+        SAFE_CONTROL['\r'] = true;
+        SAFE_CONTROL[0x1B] = true;
+    }
     /**
      * Serial version UID.
      */
@@ -236,19 +250,15 @@ public final class MimeTypes implements Detector, Serializable {
             return rootMimeTypeL;
         }
 
-        // Then, check for magic bytes
-        List<MimeType> result = new ArrayList<>(1);
-        int currentPriority = -1;
-        for (Magic magic : magics) {
-            if (currentPriority > 0 && currentPriority > magic.getPriority()) {
-                break;
-            }
-            if (magic.eval(data)) {
-                result.add(magic.getType());
-                currentPriority = magic.getPriority();
+        // A UTF-8 BOM in front of binary magic (a server prepending one) is not text
+        if (startsWithUtf8Bom(data)) {
+            List<MimeType> afterBom = binaryMagicAfterBom(data);
+            if (afterBom != null) {
+                return afterBom;
             }
         }
 
+        List<MimeType> result = matchMagics(data);
         if (!result.isEmpty()) {
             for (int i = 0; i < result.size(); i++) {
                 final MimeType matched = result.get(i);
@@ -299,13 +309,130 @@ public final class MimeTypes implements Detector, Serializable {
         // Finally, assume plain text if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
-            try (TikaInputStream tis = TikaInputStream.get(data)) {
+            try (TikaInputStream tis = TikaInputStream.get(withoutNulTail(data))) {
                 MimeType type = forName(detector.detect(tis, new Metadata(), new ParseContext()).toString());
                 return Collections.singletonList(type);
             }
         } catch (Exception e) {
             return rootMimeTypeL;
         }
+    }
+
+    private List<MimeType> matchMagics(byte[] data) {
+        List<MimeType> result = new ArrayList<>(1);
+        int currentPriority = -1;
+        for (Magic magic : magics) {
+            if (currentPriority > 0 && currentPriority > magic.getPriority()) {
+                break;
+            }
+            if (magic.eval(data)) {
+                result.add(magic.getType());
+                currentPriority = magic.getPriority();
+            }
+        }
+        return result;
+    }
+
+    private static boolean startsWithUtf8Bom(byte[] data) {
+        return data.length > 3 && data[0] == (byte) 0xEF && data[1] == (byte) 0xBB
+                && data[2] == (byte) 0xBF;
+    }
+
+    /**
+     * Magic of a non-text type matched after the BOM, provided the rest does not read as text,
+     * or null.
+     */
+    private List<MimeType> binaryMagicAfterBom(byte[] data) {
+        byte[] rest = Arrays.copyOfRange(data, 3, data.length);
+        List<MimeType> result = matchMagics(rest);
+        if (result.isEmpty()) {
+            return null;
+        }
+        for (MimeType type : result) {
+            if (isTextBased(type)) {
+                return null;
+            }
+        }
+        TextStatistics stats = new TextStatistics();
+        stats.addData(rest, 0, rest.length);
+        if (stats.isMostlyAscii() || stats.looksLikeUTF8()) {
+            return null;
+        }
+        return result;
+    }
+
+    private boolean isTextBased(MimeType type) {
+        return MediaType.TEXT_PLAIN.equals(type.getType())
+                || registry.isSpecializationOf(type.getType(), MediaType.TEXT_PLAIN);
+    }
+
+    /**
+     * True when the prefix has too many control bytes to be text in any single-byte encoding
+     * or UTF-8, and does not decode as UTF-16 either. Only control bytes count: text in a
+     * legacy 8-bit encoding is mostly high bytes and must not be called binary.
+     */
+    private static boolean looksBinary(byte[] data) {
+        data = withoutNulTail(data);
+        if (data.length == 0) {
+            return false;
+        }
+        int control = 0;
+        for (byte b : data) {
+            int c = b & 0xFF;
+            if (c < 0x20 && !SAFE_CONTROL[c]) {
+                control++;
+            }
+        }
+        if ((long) control * 100 < (long) data.length * BINARY_CONTROL_PERCENT) {
+            return false;
+        }
+        return !decodesAsUtf16(data, false) && !decodesAsUtf16(data, true);
+    }
+
+    /**
+     * Drops zero fill after some lines of text (a preallocated or crashed log). A short header
+     * padded with zeros is left alone: that is how binary formats look.
+     */
+    private static byte[] withoutNulTail(byte[] data) {
+        int end = data.length;
+        while (end > 0 && data[end - 1] == 0) {
+            end--;
+        }
+        if (end == data.length || end < MIN_TEXT_BEFORE_NUL_TAIL) {
+            return data;
+        }
+        for (int i = 0; i < end; i++) {
+            if (data[i] == '\n') {
+                return Arrays.copyOf(data, end);
+            }
+        }
+        return data;
+    }
+
+    // script-agnostic: needs no NULs, only that the code units are plausible characters
+    private static boolean decodesAsUtf16(byte[] data, boolean bigEndian) {
+        int units = data.length / 2;
+        int bad = 0;
+        boolean pendingHigh = false;
+        for (int i = 0; i < units; i++) {
+            int a = data[2 * i] & 0xFF;
+            int b = data[2 * i + 1] & 0xFF;
+            char c = (char) (bigEndian ? (a << 8) | b : (b << 8) | a);
+            if (pendingHigh) {
+                pendingHigh = false;
+                if (Character.isLowSurrogate(c)) {
+                    continue;
+                }
+                bad++;
+            }
+            if (Character.isHighSurrogate(c)) {
+                pendingHigh = true;
+            } else if (Character.isLowSurrogate(c) || c == 0xFFFE || c == 0xFFFF
+                    || (c < 0x20 && !SAFE_CONTROL[c]) || (c >= 0x7F && c < 0xA0)) {
+                bad++;
+            }
+        }
+        return units > 0 && (long) bad * 100 < (long) units * 2;
     }
 
     /**
@@ -540,6 +667,8 @@ public final class MimeTypes implements Detector, Serializable {
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
         List<MimeType> possibleTypes = null;
+        // content with no magic that is not text: a text type from a name or header can't win
+        boolean binaryContent = false;
 
         // Get type based on magic prefix
         if (tis != null) {
@@ -556,6 +685,7 @@ public final class MimeTypes implements Detector, Serializable {
             try {
                 byte[] prefix = readMagicHeader(tis, toRead);
                 possibleTypes = getMimeType(prefix);
+                binaryContent = isRoot(possibleTypes) && looksBinary(prefix);
             } finally {
                 tis.reset();
             }
@@ -593,7 +723,7 @@ public final class MimeTypes implements Detector, Serializable {
 
                 // For server-side scripting languages, we cannot rely on the filename to detect
                 // the mime type
-                if (!(isHttp && hint.isInterpreted())) {
+                if (!(isHttp && hint.isInterpreted()) && !(binaryContent && isTextBased(hint))) {
                     // If we have some types based on mime magic, try to specialise
                     //  and/or select the type based on that
                     // Otherwise, use the type identified from the name
@@ -607,7 +737,9 @@ public final class MimeTypes implements Detector, Serializable {
         if (typeName != null) {
             try {
                 MimeType hint = forName(typeName);
-                possibleTypes = applyHint(possibleTypes, hint);
+                if (!(binaryContent && isTextBased(hint))) {
+                    possibleTypes = applyHint(possibleTypes, hint);
+                }
             } catch (MimeTypeException e) {
                 // Malformed type name, ignore
             }
@@ -627,6 +759,10 @@ public final class MimeTypes implements Detector, Serializable {
      * If the hint is a specialised form, use that instead
      * If there are multiple possible types, use the hint to select one
      */
+    private boolean isRoot(List<MimeType> possibleTypes) {
+        return possibleTypes.size() == 1 && rootMimeType.equals(possibleTypes.get(0));
+    }
+
     private List<MimeType> applyHint(List<MimeType> possibleTypes, MimeType hint) {
         if (possibleTypes == null || possibleTypes.isEmpty()) {
             return Collections.singletonList(hint);

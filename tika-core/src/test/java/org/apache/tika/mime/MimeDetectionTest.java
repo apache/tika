@@ -448,6 +448,125 @@ public class MimeDetectionTest {
     }
 
     @Test
+    public void testBinaryContentRefusesTextGlob() throws IOException {
+        // headers copied from real files that a text glob used to claim
+        String[][] cases = {
+                // Terminal Reality POD archive
+                {"Bulldog.pod", "2f000000436f6d70696c65642062792042696e456469742056657273696f6e20"
+                        + "322e322e38207da62d2900000000000000000000000000000000000000000000"
+                        + "00000000000000000000000000000000000000004152545c4241545453352e41"},
+                // Mozilla startupCache XDR bytecode, named for its source
+                {"AccountManager.js",
+                        "0000001c000000b9000000c5fcc6bf73b9000000000000000000000000000000"
+                        + "0081030000f0000000b900000031000000c1030000000000003b000000000000"
+                        + "0000000000000000000000000022000000000000000010000000010000016368"},
+                {"overlay.xul", "42c073b9000000002306000096000000b9000000720000002b02000000000000"
+                        + "360000000000000000000000000000005d000000000000000430000001010000"
+                        + "016368726f6d653a2f2f676c6f62616c2f636f6e74656e742f42726f77736572"},
+                // CODESYS project .meta
+                {"1f876365.meta", "02200928000000000000000000000000220000000f01bf0df704c00d0180060f"
+                        + "070504f4010000c10df904000a00e70c236f3456d208"},
+                // BM-E record
+                {"10.T", "424d2d4564312e332d574b0031ff0d1a35460bb1000600000048000600000051"
+                        + "0007006f00b800080075005b000b00080077000d006f00d7000e0075001f000e"
+                        + "000000270117007500080019007500c3001900750005001a0075004a001b0000"}};
+        for (String[] c : cases) {
+            byte[] bytes = hex(c[1]);
+            assertEquals(MediaType.OCTET_STREAM, detect(bytes, c[0]), c[0]);
+            Metadata metadata = new Metadata();
+            metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                assertEquals(MediaType.OCTET_STREAM,
+                        MIME_TYPES.detect(tis, metadata, new ParseContext()), c[0]);
+            }
+        }
+    }
+
+    @Test
+    public void testTextGlobStillWinsForText() throws IOException {
+        String latin = "The quick brown fox jumps over the lazy dog.\n";
+        // CJK whose code units have low bytes under 0x20: NULs and controls in both columns
+        String cjk = "一丁七万三上下不与专 且"
+                + "世业东两 abc\n";
+        String russian = "Съешь же ещё "
+                + "этих мягких "
+                + "французских.\n";
+        MediaType log = MediaType.text("x-log");
+        assertEquals(MediaType.TEXT_PLAIN, detect(latin.repeat(20).getBytes(UTF_16LE), "a.txt"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(latin.repeat(20).getBytes(UTF_16BE), "a.txt"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(UTF_16LE), "a.txt"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(UTF_16BE), "a.txt"));
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect(russian.repeat(20).getBytes("windows-1251"), "a.txt"));
+        assertEquals(log, detect(("\u001b[32mINFO\u001b[0m started\n").repeat(40)
+                .getBytes(US_ASCII), "server.log"));
+        // a stray control byte per line stays under the binary threshold
+        assertEquals(log, detect(("2026-11-07 12:00:00 ok\u0000\n").repeat(40)
+                .getBytes(US_ASCII), "server.log"));
+        // zero fill after the text, as a crashed or preallocated log leaves
+        byte[] text = "[Mon Oct 26 03:26:03 2015] [notice] SIGHUP received.\n".repeat(18)
+                .getBytes(US_ASCII);
+        byte[] zeroFilled = java.util.Arrays.copyOf(text, 8192);
+        assertEquals(log, detect(zeroFilled, "error_log.log"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(zeroFilled, null));
+    }
+
+    @Test
+    public void testUtf8BomBeforeBinaryMagic() throws IOException {
+        String bom = "efbbbf";
+        assertEquals(MediaType.image("jpeg"),
+                detect(hex(bom + "ffd8ffe000104a46494600010101004800480000ffdb004300080606"), null));
+        assertEquals(MediaType.image("png"),
+                detect(hex(bom + "89504e470d0a1a0a0000000d4948445200000710000004b008060000"), null));
+        assertEquals(MediaType.audio("mpeg"),
+                detect(hex(bom + "49443303000000001f76434f4d4d0000001e000000646575007777"), null));
+        assertEquals(MediaType.image("gif"),
+                detect(hex(bom + "4749463839610a000a00f70000000000800000008000808000000080"), null));
+        assertEquals(MediaType.application("zip"),
+                detect(hex(bom + "504b03041400000008001c3f364d479244b25801000000a3d4b2"), null));
+        // text that merely starts with a magic string stays text
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect("﻿ID3 tags hold the title and artist.\n".getBytes(UTF_8), null));
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect("﻿GIF89a is the animated variant.\n".getBytes(UTF_8), "notes.txt"));
+    }
+
+    @Test
+    public void testTextHeaderOnBinaryBodyIsNotText() throws IOException {
+        // BSB/KAP chart: text header lines, then 0x1A 0x00 and raster bytes
+        StringBuilder header = new StringBuilder("VER/2.0\r\nBSB/NA=Mallorca,NU=1\r\n");
+        for (int i = 0; header.length() < 1900; i++) {
+            header.append("RGB/").append(i).append(',').append(i * 7 % 256).append(',')
+                    .append(i * 13 % 256).append(',').append(i * 3 % 256).append("\r\n");
+        }
+        byte[] text = header.toString().getBytes(US_ASCII);
+        byte[] raster = new byte[4000];
+        new java.util.Random(42).nextBytes(raster);
+        byte[] kap = new byte[text.length + 2 + raster.length];
+        System.arraycopy(text, 0, kap, 0, text.length);
+        kap[text.length] = 0x1A;
+        System.arraycopy(raster, 0, kap, text.length + 2, raster.length);
+        org.apache.tika.detect.Detector detector =
+                new org.apache.tika.detect.DefaultDetector(MIME_TYPES);
+        try (TikaInputStream tis = TikaInputStream.get(kap)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(tis, new Metadata(), new ParseContext()));
+        }
+        try (TikaInputStream tis = TikaInputStream.get(text)) {
+            assertEquals(MediaType.TEXT_PLAIN,
+                    detector.detect(tis, new Metadata(), new ParseContext()));
+        }
+    }
+
+    private static byte[] hex(String hex) {
+        byte[] bytes = new byte[hex.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
+        }
+        return bytes;
+    }
+
+    @Test
     public void testXulByContent() throws IOException {
         MediaType xul = MediaType.application("vnd.mozilla.xul+xml");
         String ns = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
