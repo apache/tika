@@ -75,7 +75,7 @@ public enum OneNotePropertyEnum {
     WebPictureContainer14(0x200034C8), ImageUploadState(0x140034CB), TextExtendedAscii(0x1C003498),
     PictureWidth(0x140034CD), PictureHeight(0x140034CE), PageMarginOriginX(0x14001D0F),
     PageMarginOriginY(0x14001D10), WzHyperlinkUrl(0x1C001E20), TaskTagDueDate(0x1400346B),
-    NotebookElementOrderingID(0x14001CB9),
+    NotebookElementOrderingID(0x14001CB9), FolderChildFilename(0x1C001D6B),
     // undocumented: a paragraph's inline ink words, one per U+FFFC in its text
     InlineInkWords(0x24003458),
     // undocumented: an ink word's handwriting-recognition alternates, NUL-separated, best first

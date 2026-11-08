@@ -158,6 +158,8 @@ public class MSOneStorePackage {
     private boolean parseWarningsSuppressed;
     private boolean storageMappingsIndexed;
     private boolean contentEmitted;
+    // every revision of a notebook's table of contents lists its sections again
+    private final Set<String> emittedFolderChildren = new HashSet<>();
     private final Map<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> depthSkippedObjects =
             new LinkedHashMap<>();
     // flattened property actions per object; objects can be re-flattened many times during
@@ -275,6 +277,11 @@ public class MSOneStorePackage {
                     walkCell(cell, indexObjectsById(cell.objectGroups), options, metadata, xhtml);
                 }
             } else {
+                // a notebook table of contents has no page cells; its entries are in the data root
+                if (dataRootCell != null) {
+                    walkCell(dataRootCell, indexObjectsById(dataRootCell.objectGroups), options,
+                            metadata, xhtml);
+                }
                 // no cell information available - walk the object groups in revision order
                 Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(OtherFileNodeList);
                 Set<ExGuid> visited = new HashSet<>();
@@ -1462,7 +1469,7 @@ public class MSOneStorePackage {
                     oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&
                         !OneNoteText.isImageText(oneNotePropertyEnum)) {
-                    emitParagraph(xhtml, new String(dataProperty.data,
+                    emitUtf16Property(xhtml, oneNotePropertyEnum, new String(dataProperty.data,
                             StandardCharsets.UTF_16LE));
                 }
             } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
@@ -1470,7 +1477,7 @@ public class MSOneStorePackage {
             } else if (!isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&
                         !OneNoteText.isImageText(oneNotePropertyEnum)) {
-                    emitParagraph(xhtml, new String(dataProperty.data,
+                    emitUtf16Property(xhtml, oneNotePropertyEnum, new String(dataProperty.data,
                             StandardCharsets.UTF_16LE));
                 }
             } else {
@@ -1815,6 +1822,15 @@ public class MSOneStorePackage {
         if (OneNoteText.emitImage(xhtml, fileName, altText)) {
             contentEmitted = true;
         }
+    }
+
+    private void emitUtf16Property(XHTMLContentHandler xhtml, OneNotePropertyEnum property,
+                                   String text) throws SAXException {
+        if (property == OneNotePropertyEnum.FolderChildFilename &&
+                !emittedFolderChildren.add(OneNoteText.clean(text))) {
+            return;
+        }
+        emitParagraph(xhtml, text);
     }
 
     private void emitParagraph(XHTMLContentHandler xhtml, String text) throws SAXException {

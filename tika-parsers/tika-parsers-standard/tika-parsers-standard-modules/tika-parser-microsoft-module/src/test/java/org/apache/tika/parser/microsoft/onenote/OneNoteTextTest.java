@@ -37,16 +37,16 @@ public class OneNoteTextTest {
         assertEquals("Untitled picture.png", OneNoteText.clean("Untitled picture.png\u0000"));
         assertEquals("Answer:\n\n", OneNoteText.clean("Answer:\u000B\u000B"));
         assertEquals("Pages view:\nCamping\n", OneNoteText.clean("Pages view:\r\nCamping\r"));
-        assertEquals("a￼b", OneNoteText.clean("a￼b"));
-        assertNull(OneNoteText.clean("￼￼"));
+        assertEquals("a\uFFFCb", OneNoteText.clean("a\uFFFCb"));
+        assertNull(OneNoteText.clean("\uFFFC\uFFFC"));
         assertNull(OneNoteText.clean("\u0000"));
-        assertNull(OneNoteText.clean("  \u000B"));
+        assertNull(OneNoteText.clean(" \u00A0\u000B"));
         assertNull(OneNoteText.clean(null));
     }
 
     @Test
     public void testExtendedAscii() {
-        assertEquals("Übung Thévenin ",
+        assertEquals("\u00DCbung Th\u00E9venin\u00A0",
                 new String(new byte[]{(byte) 0xDC, 'b', 'u', 'n', 'g', ' ', 'T', 'h', (byte) 0xE9,
                         'v', 'e', 'n', 'i', 'n', (byte) 0xA0}, OneNoteText.EXTENDED_ASCII));
     }
@@ -81,6 +81,11 @@ public class OneNoteTextTest {
         assertEquals("<p><img src=\"embedded:b.png\" /></p><div class=\"ocr\">Name:\nDate:</div>",
                 body(x -> OneNoteText.emitImage(x, "b.png",
                         "Machine generated alternative text:\r\nName:\r\nDate:\r\n")));
+        assertEquals("<p><img src=\"embedded:c.png\" /></p><div class=\"ocr\">Nom</div>",
+                body(x -> OneNoteText.emitImage(x, "c.png",
+                        "Texte de remplacement g\u00E9n\u00E9r\u00E9 par une machine\u00A0:\r\nNom")));
+        assertEquals("<p><img src=\"embedded:d.png\" /></p><div class=\"ocr\">\u540D\u524D</div>",
+                body(x -> OneNoteText.emitImage(x, "d.png", "\u81EA\u52D5\u751F\u6210\u3055\u308C\u305F\u4EE3\u66FF\u30C6\u30AD\u30B9\u30C8: \u540D\u524D")));
     }
 
     private interface Emitter {

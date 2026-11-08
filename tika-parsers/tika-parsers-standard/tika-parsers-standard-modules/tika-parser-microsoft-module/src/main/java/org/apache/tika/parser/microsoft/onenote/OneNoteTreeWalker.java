@@ -119,6 +119,8 @@ class OneNoteTreeWalker {
     // contexts (parent property, inside version history) each node was walked in; a repeat
     // walk in the same context adds nothing, as text is deduplicated by position
     private final Map<FileNode, Set<Long>> walkedContexts = new IdentityHashMap<>();
+    // every revision of a notebook's table of contents lists its sections again
+    private final Set<String> emittedFolderChildren = new HashSet<>();
     // recognized words of the inline ink in the paragraph being walked
     private List<String> inkWords = Collections.emptyList();
     private final Set<FileNode> reportedCycleNodes =
@@ -358,6 +360,15 @@ class OneNoteTreeWalker {
             walkDepth--;
             activeFileNodes.remove(fileNode);
         }
+    }
+
+    private void emitUtf16Property(OneNotePropertyEnum property, String text)
+            throws SAXException {
+        if (property == OneNotePropertyEnum.FolderChildFilename &&
+                !emittedFolderChildren.add(OneNoteText.clean(text))) {
+            return;
+        }
+        emitParagraph(text);
     }
 
     private void emitParagraph(String text) throws SAXException {
@@ -732,7 +743,8 @@ class OneNoteTreeWalker {
                 dif.read(buf);
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (print) {
-                    emitParagraph((String) propMap.get("dataUnicode16LE"));
+                    emitUtf16Property(propertyValue.propertyId.propertyEnum,
+                            (String) propMap.get("dataUnicode16LE"));
                 }
             } else if (propertyValue.propertyId.propertyEnum ==
                     OneNotePropertyEnum.TextExtendedAscii) {
@@ -762,7 +774,8 @@ class OneNoteTreeWalker {
                 dif.read(buf);
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (print) {
-                    emitParagraph((String) propMap.get("dataUnicode16LE"));
+                    emitUtf16Property(propertyValue.propertyId.propertyEnum,
+                            (String) propMap.get("dataUnicode16LE"));
                 }
             } else {
                 if (content.size() > dif.size()) {

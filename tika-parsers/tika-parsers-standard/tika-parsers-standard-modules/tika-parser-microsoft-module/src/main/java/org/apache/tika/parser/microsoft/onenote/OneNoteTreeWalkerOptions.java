@@ -30,7 +30,7 @@ public class OneNoteTreeWalkerOptions implements Serializable {
     private boolean onlyLatestRevision = true;
     private Set<OneNotePropertyEnum> utf16PropertiesToPrint = new HashSet<>(
             Arrays.asList(OneNotePropertyEnum.ImageFilename, OneNotePropertyEnum.ImageAltText,
-                    OneNotePropertyEnum.Author));
+                    OneNotePropertyEnum.Author, OneNotePropertyEnum.FolderChildFilename));
 
     /**
      * Do this to ignore revisions and just parse all file nodes from the root recursively.

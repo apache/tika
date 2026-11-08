@@ -28,11 +28,22 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /** Text clean-up and markup shared by the .one and FSSHTTPB walkers. */
 public final class OneNoteText {
 
-    /** MS-ONE TextExtendedAscii holds code-page bytes; Western text is windows-1252. */
+    /**
+     * MS-ONE TextExtendedAscii. OneNote writes it only for text that fits Latin-1, whatever
+     * the paragraph's language ID (zh-CN and ja text holds NBSP and U+00D7; cs and ru text
+     * holds nothing that windows-1250/1251 would read differently), so the code page is not
+     * taken from the LCID.
+     */
     public static final Charset EXTENDED_ASCII = Charset.forName("windows-1252");
 
-    /** OneNote's prefix for its own OCR of a picture or file printout, stored as alt text. */
-    static final String MACHINE_ALT_TEXT = "Machine generated alternative text:";
+    /**
+     * OneNote's localized prefixes for its own OCR of a picture or file printout, stored as
+     * alt text; those seen in the wild, compared after {@link #normalizeLabel}.
+     */
+    static final List<String> MACHINE_ALT_TEXT_LABELS = List.of(
+            "Machine generated alternative text:",
+            "Texte de remplacement g\u00E9n\u00E9r\u00E9 par une machine :",
+            "\u81EA\u52D5\u751F\u6210\u3055\u308C\u305F\u4EE3\u66FF\u30C6\u30AD\u30B9\u30C8:");
 
     private OneNoteText() {
     }
@@ -149,8 +160,9 @@ public final class OneNoteText {
         fileName = fileName == null ? null : clean(fileName.strip());
         altText = altText == null ? null : clean(altText.strip());
         String ocr = null;
-        if (altText != null && altText.startsWith(MACHINE_ALT_TEXT)) {
-            ocr = clean(altText.substring(MACHINE_ALT_TEXT.length()).strip());
+        int ocrStart = altText == null ? -1 : machineAltTextStart(altText);
+        if (ocrStart >= 0) {
+            ocr = clean(altText.substring(ocrStart).strip());
             altText = null;
         }
         if (fileName == null && altText == null && ocr == null) {
@@ -176,6 +188,22 @@ public final class OneNoteText {
             xhtml.endElement("div");
         }
         return true;
+    }
+
+    /** @return where the OCR text after OneNote's label starts, or -1 if there is no label */
+    static int machineAltTextStart(String altText) {
+        String normalized = normalizeLabel(altText);
+        for (String label : MACHINE_ALT_TEXT_LABELS) {
+            if (normalized.startsWith(label)) {
+                // normalizeLabel keeps lengths, so the offset holds in the original
+                return label.length();
+            }
+        }
+        return -1;
+    }
+
+    private static String normalizeLabel(String s) {
+        return s.replace('\u00A0', ' ').replace('\uFF1A', ':');
     }
 
     public static boolean isImageText(OneNotePropertyEnum property) {

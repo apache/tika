@@ -2374,6 +2374,38 @@ public class MSOneStorePackageTest {
         assertTrue(walkXml(pkg).contains("<img src=\"embedded:u"));
     }
 
+    @Test
+    public void testTableOfContentsListsEachSectionOnce() throws Exception {
+        // FolderChildFilename entries under TocChildren; a second root stands in for an
+        // older revision of the table of contents that lists the same section again
+        RevisionStoreObject a = object(id(2), propertySet(new PropertySpec(
+                        PropertyType.FourBytesOfLengthFollowedByData, 0x1C001D6B,
+                        utf16Text("Section A.one"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject b = object(id(3), propertySet(new PropertySpec(
+                        PropertyType.FourBytesOfLengthFollowedByData, 0x1C001D6B,
+                        utf16Text("Section B.one"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject oldA = object(id(4), propertySet(new PropertySpec(
+                        PropertyType.FourBytesOfLengthFollowedByData, 0x1C001D6B,
+                        utf16Text("Section A.one"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject toc = object(id(1), propertySet(new PropertySpec(
+                        PropertyType.ArrayOfObjectIDs, 0x24001CF6, arrayNumber(3))),
+                Arrays.asList(a.objectID, b.objectID, oldA.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(toc, a, b, oldA));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = toc.objectID;
+        cell.rootDeclares.add(rootDeclare);
+
+        // a table of contents has no page cells, only the data root
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = cell;
+        String text = walk(pkg);
+        assertEquals("Section A.one\nSection B.one\n", text.strip() + "\n");
+    }
+
     private static class CountingMSOneStorePackage extends MSOneStorePackage {
         private int objectIndexBuilds;
         private int identityScanEntries;
