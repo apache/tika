@@ -1098,7 +1098,10 @@ class OneNotePtr {
         document.guidToObject.put(data.gosid, new FileNodePtr(curPtr));
     }
 
-    /** OneNote 2007 writes an empty global ID table for a revision that keeps its dependent's. */
+    /**
+     * An empty global ID table falls back along the dependent chain: inferred from OneNote 2007
+     * files, where it yields the current text, not taken from MS-ONESTORE.
+     */
     private Map<Long, GUID> globalIds(Revision revision) {
         Revision r = revision;
         for (int i = 0; r.globalId.isEmpty() && i < document.revisionMap.size(); i++) {
