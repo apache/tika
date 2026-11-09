@@ -29,7 +29,7 @@
   <name>Apache Tika Pipes Google Drive</name>
   <properties>
     <google-api-services-drive.version>v3-rev20261011-2.9.2</google-api-services-drive.version>
-    <google-auth-library-oauth2-http.version>1.55.0</google-auth-library-oauth2-http.version>
+    <google-auth-library-oauth2-http.version>1.56.0</google-auth-library-oauth2-http.version>
     <google-api-client.version>2.9.2</google-api-client.version>
     <google-http-client.version>2.2.0</google-http-client.version>
   </properties>
