@@ -58,7 +58,7 @@ public class AutoDetectReader extends BufferedReader {
 
     private AutoDetectReader(InputStream stream, Charset charset) throws IOException {
         super(new InputStreamReader(stream, charset));
-        this.charset = charset;
+        this.charset = CharsetSupersets.jdkCharset(charset);
 
         // TIKA-240: Drop the BOM if present
         mark(1);
@@ -152,6 +152,11 @@ public class AutoDetectReader extends BufferedReader {
     }
 
 
+    /**
+     * The charset the content was decoded as, always one {@link Charset#forName} resolves: for a
+     * {@link CharsetSupersets} browser patch, its JDK base (the patched decoder's name is in
+     * {@link org.apache.tika.metadata.TikaCoreProperties#DECODED_CHARSET}).
+     */
     public Charset getCharset() {
         return charset;
     }

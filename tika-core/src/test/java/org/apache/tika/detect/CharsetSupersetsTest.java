@@ -34,11 +34,13 @@ public class CharsetSupersetsTest {
     @Test
     public void mapsLegacyCjkToVendorSupersets() {
         assertEquals("x-windows-949", name("EUC-KR"));
-        assertEquals("Big5-HKSCS", name("Big5"));
+        assertEquals("x-Big5-HKSCS-WHATWG", name("Big5"));
+        assertEquals("x-Big5-HKSCS-WHATWG", name("Big5-HKSCS"));
         assertEquals("GB18030", name("GB2312"));
         assertEquals("GB18030", name("GBK"));
         assertEquals("windows-31j", name("Shift_JIS"));
-        assertEquals("x-eucJP-Open", name("EUC-JP"));
+        assertEquals("x-eucJP-Open-WHATWG", name("EUC-JP"));
+        assertEquals("x-eucJP-Open-WHATWG", name("x-eucJP-Open"));
         assertEquals("x-windows-50221", name("ISO-2022-JP"));
     }
 
@@ -49,6 +51,17 @@ public class CharsetSupersetsTest {
         assertNull(CharsetSupersets.supersetOf(Charset.forName("windows-1252")));
         // Superset targets have no further superset.
         assertNull(CharsetSupersets.supersetOf(Charset.forName("GB18030")));
+        assertNull(CharsetSupersets.supersetOf(CharsetSupersets.decodeAs(Charset.forName("Big5"))));
+    }
+
+    @Test
+    public void jdkDecodeAsLeavesBrowserPatchOff() {
+        assertEquals("Big5-HKSCS", CharsetSupersets.jdkDecodeAs(Charset.forName("Big5")).name());
+        assertEquals("Big5-HKSCS",
+                CharsetSupersets.jdkDecodeAs(Charset.forName("Big5-HKSCS")).name());
+        assertEquals("windows-31j",
+                CharsetSupersets.jdkDecodeAs(Charset.forName("Shift_JIS")).name());
+        assertEquals(StandardCharsets.UTF_8, CharsetSupersets.jdkDecodeAs(StandardCharsets.UTF_8));
     }
 
     /** The point of the map: vendor-extension bytes the strict base drops to
@@ -63,7 +76,8 @@ public class CharsetSupersetsTest {
 
         byte[] eucjp = {(byte) 0xAD, (byte) 0xA1};
         assertEquals('\uFFFD', new String(eucjp, Charset.forName("EUC-JP")).charAt(0));
-        assertEquals("\u2460", new String(eucjp, Charset.forName(name("EUC-JP"))));
+        assertEquals("\u2460", new String(eucjp,
+                CharsetSupersets.supersetOf(Charset.forName("EUC-JP"))));
 
         byte[] jis = "\u65e5\u2460".getBytes(Charset.forName("x-windows-50221"));
         assertEquals('\uFFFD', new String(jis, Charset.forName("ISO-2022-JP")).charAt(1));

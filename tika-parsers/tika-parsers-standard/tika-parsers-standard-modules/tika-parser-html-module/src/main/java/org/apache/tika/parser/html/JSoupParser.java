@@ -225,8 +225,14 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         Document document;
         try {
             BOMDetector.skipForeignBom(tis, decodeAs);
-            document = Jsoup.parse(tis, decodeAs.name(), "",
-                    Parser.htmlParser().tagSet(tagSet));
+            Parser parser = Parser.htmlParser().tagSet(tagSet);
+            if (Charset.isSupported(decodeAs.name())) {
+                document = Jsoup.parse(tis, decodeAs.name(), "", parser);
+            } else {
+                // jsoup takes a charset by name; a decode-as charset outside the JDK has none
+                document = parser.parseInput(new InputStreamReader(tis, decodeAs), "");
+                document.outputSettings().charset(decodeAs);
+            }
         } finally {
             tis.removeCloseShield();
         }

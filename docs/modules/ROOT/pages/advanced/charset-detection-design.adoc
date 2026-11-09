@@ -277,7 +277,11 @@ Two corrections make the rate trustworthy:
 
 * **Decode under the vendor superset, not the strict base** — real vendor
   extensions (NEC/IBM for Shift_JIS/EUC-JP, HKSCS for Big5) would otherwise count
-  as failures and penalize genuine CJK.
+  as failures and penalize genuine CJK.  Big5 and Big5-HKSCS decode as
+  `x-Big5-HKSCS-WHATWG`: Big5-HKSCS with the 144 byte pairs where the WHATWG
+  Encoding Standard differs (A3E1 euro sign, CP950 punctuation forms) patched to
+  the browser value.  It is not resolvable by `Charset.forName`; APIs that take a
+  charset name use `CharsetSupersets.jdkDecodeAs`.
 * **Discount embedded UTF-8** — mixed-encoding pages (legacy CJK body + UTF-8
   widgets) would otherwise read as 2–9.5% failure.  The validator *skips*
   positions that begin a valid UTF-8 sequence rather than physically stripping

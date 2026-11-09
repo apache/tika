@@ -445,6 +445,19 @@ Release 4.3.0 - ???
      tika-eval:languagenessCoverage. Languageness is -99 (unknown) for text with no letters
      or with under 90% of its letters in scripts the model was trained on (TIKA-5027).
 
+   * Big5 text decodes as browsers do: Big5-HKSCS with the 144 byte pairs where the WHATWG
+     Encoding Standard differs patched to the WHATWG value. A3E1 is the euro sign instead of
+     U+FFFD; A145, A1E3 and A1FE are the CP950 forms U+2027, U+FF5E and U+FF0F; six pairs in
+     C6CF-C6DF are radicals and ditto marks, not kana. Detected-charset metadata is unchanged;
+     tk:decoded-charset is x-Big5-HKSCS-WHATWG, which Charset.forName does not resolve
+     (TIKA-5052).
+
+   * EUC-JP text decodes as browsers do: x-eucJP-Open with nine pairs patched to the WHATWG
+     value, the Microsoft forms windows-31j already gives for Shift_JIS (A1C1 wave dash is
+     U+FF5E, A1DD minus U+FF0D, A1F1/A1F2/A2CC cent, pound and not signs U+FFE0-FFE2, A1BD
+     U+2015, A1C2 U+2225, FCFB/FCFC U+FFE2/U+FFE4). tk:decoded-charset is
+     x-eucJP-Open-WHATWG (TIKA-5052).
+
    * Charset detection finds non-ASCII text past the first 16 KB, as in an email with a
      long ASCII header block, a log or a CSV: those were reported as windows-1252. When the
      leading sample is not conclusive, detection reads on (up to 16 MB of a file or byte
