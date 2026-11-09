@@ -34,7 +34,8 @@ public class CharsetSupersetsTest {
     @Test
     public void mapsLegacyCjkToVendorSupersets() {
         assertEquals("x-windows-949", name("EUC-KR"));
-        assertEquals("Big5-HKSCS", name("Big5"));
+        assertEquals("x-Big5-HKSCS-WHATWG", name("Big5"));
+        assertEquals("x-Big5-HKSCS-WHATWG", name("Big5-HKSCS"));
         assertEquals("GB18030", name("GB2312"));
         assertEquals("GB18030", name("GBK"));
         assertEquals("windows-31j", name("Shift_JIS"));
@@ -48,6 +49,17 @@ public class CharsetSupersetsTest {
         assertNull(CharsetSupersets.supersetOf(Charset.forName("windows-1252")));
         // Superset targets have no further superset.
         assertNull(CharsetSupersets.supersetOf(Charset.forName("GB18030")));
+        assertNull(CharsetSupersets.supersetOf(CharsetSupersets.decodeAs(Charset.forName("Big5"))));
+    }
+
+    @Test
+    public void jdkDecodeAsLeavesBrowserPatchOff() {
+        assertEquals("Big5-HKSCS", CharsetSupersets.jdkDecodeAs(Charset.forName("Big5")).name());
+        assertEquals("Big5-HKSCS",
+                CharsetSupersets.jdkDecodeAs(Charset.forName("Big5-HKSCS")).name());
+        assertEquals("windows-31j",
+                CharsetSupersets.jdkDecodeAs(Charset.forName("Shift_JIS")).name());
+        assertEquals(StandardCharsets.UTF_8, CharsetSupersets.jdkDecodeAs(StandardCharsets.UTF_8));
     }
 
     /** The point of the map: vendor-extension bytes the strict base drops to

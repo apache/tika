@@ -67,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
@@ -867,7 +868,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             try (TikaInputStream tis = TikaInputStream.get(body)) {
                 List<EncodingResult> results = encodingDetector.detect(tis, metadata, context);
                 if (!results.isEmpty() && results.get(0).getConfidence() > 0.35f
-                        && tryToSet7BitEncoding(msg, results.get(0).getDecodeAs().name())) {
+                        && tryToSet7BitEncoding(msg,
+                                CharsetSupersets.jdkDecodeAs(results.get(0).getCharset()).name())) {
                     return;
                 }
             } catch (IOException e) {

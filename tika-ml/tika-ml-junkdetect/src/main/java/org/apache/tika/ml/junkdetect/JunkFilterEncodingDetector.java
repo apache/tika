@@ -669,7 +669,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             }
             Long count = LEGACY_FREQUENCY.get(cs.name());
             if (count == null) {
-                count = LEGACY_FREQUENCY.getOrDefault(CharsetSupersets.decodeAs(cs).name(), 0L);
+                count = LEGACY_FREQUENCY.getOrDefault(CharsetSupersets.jdkDecodeAs(cs).name(), 0L);
             }
             if (count > bestCount) {
                 best = cs;
