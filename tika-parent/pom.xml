@@ -338,8 +338,8 @@
     <forbiddenapis.module.signaturesFile>${tika.parent.dir}/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.76.0</google.cloud.version>
-    <aws2.version>2.57.7</aws2.version>
+    <google.cloud.version>2.77.0</google.cloud.version>
+    <aws2.version>2.57.10</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -352,7 +352,7 @@
     <bouncycastle.version>1.86.2</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commonmark.version>0.31.0</commonmark.version>
+    <commonmark.version>0.32.0</commonmark.version>
     <commons.cli.version>1.11.0</commons.cli.version>
     <commons.codec.version>1.23.0</commons.codec.version>
     <commons.collections4.version>4.6.0</commons.collections4.version>
@@ -375,7 +375,7 @@
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.15.0</gson.version>
     <grpc.version>1.85.1</grpc.version>
-    <guava.version>33.7.2-jre</guava.version>
+    <guava.version>33.8.0-jre</guava.version>
     <h2.version>2.5.252</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
@@ -409,7 +409,7 @@
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.23.2</jsoup.version>
+    <jsoup.version>1.24.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit6.version>6.1.3</junit6.version>
     <juniversalchardet.version>2.5.2</juniversalchardet.version>
@@ -427,12 +427,12 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
-    <micronaut.version>3.10.17</micronaut.version>
+    <micronaut.version>3.10.18</micronaut.version>
     <mime4j.version>0.8.15</mime4j.version>
     <mockito.version>5.24.0</mockito.version>
     <mockito-junit-jupiter.version>5.24.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.19.Final</netty.version>
+    <netty.version>4.2.20.Final</netty.version>
     <oak.jackrabbit.version>2.8.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.12</opennlp.version>
@@ -718,7 +718,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.51.0</version>
+        <version>2.52.0</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
@@ -1172,7 +1172,7 @@
       <dependency>
         <groupId>org.pf4j</groupId>
         <artifactId>pf4j</artifactId>
-        <version>3.16.0</version>
+        <version>3.16.1</version>
       </dependency>
       <dependency>
         <groupId>com.nimbusds</groupId>
@@ -1698,7 +1698,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.10.4</version>
+        <version>3.11.0</version>
         <configuration>
           <lineEndings>UNIX</lineEndings>
           <java>
