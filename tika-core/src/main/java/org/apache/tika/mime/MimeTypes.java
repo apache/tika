@@ -368,7 +368,7 @@ public final class MimeTypes implements Detector, Serializable {
 
     /**
      * True when the prefix has too many control bytes to be text in any single-byte encoding
-     * or UTF-8, and does not decode as UTF-16 either. Only control bytes count: text in a
+     * or UTF-8, and does not decode as UTF-16 or UTF-32 either. Only control bytes count: text in a
      * legacy 8-bit encoding is mostly high bytes and must not be called binary.
      */
     private static boolean looksBinary(byte[] data) {
@@ -386,7 +386,8 @@ public final class MimeTypes implements Detector, Serializable {
         if ((long) control * 100 < (long) data.length * BINARY_CONTROL_PERCENT) {
             return false;
         }
-        return !decodesAsUtf16(data, false) && !decodesAsUtf16(data, true);
+        return !decodesAsUtf16(data, false) && !decodesAsUtf16(data, true)
+                && !decodesAsUtf32(data, false) && !decodesAsUtf32(data, true);
     }
 
     /**
@@ -429,6 +430,22 @@ public final class MimeTypes implements Detector, Serializable {
                 pendingHigh = true;
             } else if (Character.isLowSurrogate(c) || c == 0xFFFE || c == 0xFFFF
                     || (c < 0x20 && !SAFE_CONTROL[c]) || (c >= 0x7F && c < 0xA0)) {
+                bad++;
+            }
+        }
+        return units > 0 && (long) bad * 100 < (long) units * 2;
+    }
+
+    private static boolean decodesAsUtf32(byte[] data, boolean bigEndian) {
+        int units = data.length / 4;
+        int bad = 0;
+        for (int i = 0; i < units; i++) {
+            int o = 4 * i;
+            int cp = bigEndian
+                    ? (data[o] & 0xFF) << 24 | (data[o + 1] & 0xFF) << 16 | (data[o + 2] & 0xFF) << 8 | data[o + 3] & 0xFF
+                    : (data[o + 3] & 0xFF) << 24 | (data[o + 2] & 0xFF) << 16 | (data[o + 1] & 0xFF) << 8 | data[o] & 0xFF;
+            if (cp < 0 || cp > Character.MAX_CODE_POINT || (cp >= 0xD800 && cp <= 0xDFFF)
+                    || (cp & 0xFFFE) == 0xFFFE || (cp < 0x20 && !SAFE_CONTROL[cp]) || (cp >= 0x7F && cp < 0xA0)) {
                 bad++;
             }
         }

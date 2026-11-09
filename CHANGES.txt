@@ -106,14 +106,14 @@ Release 4.3.0 - ???
 
    * Binary files are no longer detected as text because of their name or a text header.
      When content has no magic and at least 5% control bytes, and does not decode as
-     UTF-16, a text type from the file name or Content-Type no longer wins: Terminal Reality
+     UTF-16 or UTF-32, a text type from the file name or Content-Type no longer wins: Terminal Reality
      .pod archives, Mozilla startupCache bytecode named .js or .xul, CODESYS .meta files and
      similar are now application/octet-stream. DefaultDetector no longer re-sniffs the first
      512 bytes for text after MimeTypes found the 64 KB prefix binary, so a binary body
      behind a short text header (Sass caches, BSB/KAP charts) is no longer text/plain;
      zero fill after lines of text (a crashed or preallocated log) does not count as binary.
      A UTF-8 BOM followed by binary magic (JPEG, PNG, GIF, ID3, zip, SQLite) is detected by
-     that magic instead of as text (TIKA-XXXX).
+     that magic instead of as text (TIKA-5029).
 
    * New or fixed magic: Emacs bytecode from every Emacs version (only version 19 matched
      before, and *.elc is no longer also an octet-stream glob), Lua bytecode
@@ -121,7 +121,7 @@ Release 4.3.0 - ???
      text/html), SELinux policy packages (application/x-selinux-policy-package, were
      text/x-pascal by *.pp), Performance Co-Pilot archives (application/x-pcp-archive), and
      binary FrameMaker documents ("<MakerFile"), now application/vnd.framemaker instead of
-     the text MIF type application/vnd.mif (TIKA-XXXX).
+     the text MIF type application/vnd.mif (TIKA-5029).
 
    * Markdown output keeps document code inside its code spans and blocks: a line of
      backticks inside <pre> no longer closes the fenced code block, and a line break inside

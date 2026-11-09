@@ -496,6 +496,15 @@ public class MimeDetectionTest {
         assertEquals(MediaType.TEXT_PLAIN, detect(latin.repeat(20).getBytes(UTF_16BE), "a.txt"));
         assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(UTF_16LE), "a.txt"));
         assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(UTF_16BE), "a.txt"));
+        for (String utf32 : new String[] {"UTF-32LE", "UTF-32BE"}) {
+            assertEquals(MediaType.TEXT_PLAIN, detect(latin.repeat(20).getBytes(utf32), "a.txt"), utf32);
+            assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(utf32), "a.txt"), utf32);
+            Metadata metadata = new Metadata();
+            metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+            try (TikaInputStream tis = TikaInputStream.get(russian.repeat(20).getBytes(utf32))) {
+                assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, metadata, new ParseContext()), utf32);
+            }
+        }
         assertEquals(MediaType.TEXT_PLAIN,
                 detect(russian.repeat(20).getBytes("windows-1251"), "a.txt"));
         assertEquals(log, detect(("\u001b[32mINFO\u001b[0m started\n").repeat(40)
