@@ -29,6 +29,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,11 +38,11 @@ import java.util.List;
  * unmappable input, is the base decoder's to decode or report; encoding is the base's.
  *
  * <p>The table is a resource written by {@code WhatwgPatchGenerator} (tika-core tests):
- * {@code name}, {@code base} and optional {@code lead} header lines, then one
+ * {@code name}, {@code base} and optional {@code lead} and {@code lead3} header lines, then one
  * {@code HEXBYTES<TAB>U+XXXX[ U+XXXX...]} line per patched sequence. {@code lead} lists the
- * bytes after which the base always consumes one more byte as a unit (e.g. {@code 80-FF});
- * every other byte is a unit by itself. Patched sequences are units: one byte, or a lead and
- * the byte after it.
+ * bytes the base always reads as a unit with the next byte (e.g. {@code 80-FF}), {@code lead3}
+ * those it reads with the next two; every other byte is a unit by itself. Patched sequences are
+ * one- or two-byte units.
  *
  * <p>Not registered with {@link Charset#forName}; obtain instances from
  * {@link CharsetSupersets}.
@@ -50,7 +51,8 @@ final class PatchedCharset extends Charset {
 
     private final Charset base;
 
-    private final boolean[] lead = new boolean[256];
+    /** Bytes in the base's unit that starts with this byte: 1, 2 or 3. */
+    private final byte[] unitLength = new byte[256];
 
     private final String[] single = new String[256];
 
@@ -61,11 +63,11 @@ final class PatchedCharset extends Charset {
 
     private final int[] patched;
 
-    private PatchedCharset(String name, Charset base, boolean[] lead, List<int[]> keys,
+    private PatchedCharset(String name, Charset base, byte[] unitLength, List<int[]> keys,
                            List<String> values) {
         super(name, null);
         this.base = base;
-        System.arraycopy(lead, 0, this.lead, 0, 256);
+        System.arraycopy(unitLength, 0, this.unitLength, 0, 256);
         List<String> pv = new ArrayList<>();
         short[] slot = null;
         patched = new int[keys.size()];
@@ -104,7 +106,8 @@ final class PatchedCharset extends Charset {
             throws IOException {
         String name = null;
         Charset base = null;
-        boolean[] lead = new boolean[256];
+        byte[] unitLength = new byte[256];
+        Arrays.fill(unitLength, (byte) 1);
         List<int[]> keys = new ArrayList<>();
         List<String> values = new ArrayList<>();
         String line;
@@ -124,34 +127,35 @@ final class PatchedCharset extends Charset {
                     base = Charset.forName(f[1]);
                     break;
                 case "lead":
+                case "lead3":
                     for (String range : f[1].split(",")) {
                         String[] lh = range.split("-");
                         int lo = Integer.parseInt(lh[0], 16);
                         int hi = Integer.parseInt(lh[lh.length - 1], 16);
                         for (int b = lo; b <= hi; b++) {
-                            lead[b] = true;
+                            unitLength[b] = (byte) (f[0].equals("lead") ? 2 : 3);
                         }
                     }
                     break;
                 default:
-                    keys.add(key(f[0], lead, resource));
+                    keys.add(key(f[0], unitLength, resource));
                     values.add(value(f[1]));
             }
         }
         if (name == null || base == null) {
             throw new IllegalStateException(resource + ": needs name and base");
         }
-        return new PatchedCharset(name, base, lead, keys, values);
+        return new PatchedCharset(name, base, unitLength, keys, values);
     }
 
-    private static int[] key(String hex, boolean[] lead, String resource) {
+    private static int[] key(String hex, byte[] unitLength, String resource) {
         int n = hex.length() / 2;
         int[] k = new int[n];
         for (int i = 0; i < n; i++) {
             k[i] = Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
         }
-        if (hex.length() % 2 != 0 || n != (lead[k[0]] ? 2 : 1)) {
-            throw new IllegalStateException(resource + ": " + hex + " is not one unit");
+        if (hex.length() % 2 != 0 || n > 2 || n != unitLength[k[0]]) {
+            throw new IllegalStateException(resource + ": " + hex + " is not a 1- or 2-byte unit");
         }
         return k;
     }
@@ -169,9 +173,9 @@ final class PatchedCharset extends Charset {
         return base;
     }
 
-    /** True if the base always takes the byte after {@code b} with it. */
-    boolean isLead(int b) {
-        return lead[b & 0xFF];
+    /** Bytes in the base's unit that starts with {@code b}. */
+    int unitLength(int b) {
+        return unitLength[b & 0xFF];
     }
 
     /** The patched sequences: a byte, or {@code lead << 8 | trail}. */
@@ -232,24 +236,19 @@ final class PatchedCharset extends Charset {
                 String value = null;
                 while (i < limit) {
                     int b = in.get(i) & 0xFF;
-                    if (!cs.lead[b]) {
+                    int n = cs.unitLength[b];
+                    if (n == 1) {
                         value = cs.single[b];
-                        if (value != null) {
-                            unit = 1;
-                            break;
-                        }
-                        i++;
-                        continue;
-                    }
-                    if (i + 1 == limit) {
+                    } else if (i + n > limit) {
                         break;
+                    } else if (n == 2) {
+                        value = cs.patch(b, in.get(i + 1));
                     }
-                    value = cs.patch(b, in.get(i + 1));
                     if (value != null) {
-                        unit = 2;
+                        unit = n;
                         break;
                     }
-                    i += 2;
+                    i += n;
                 }
                 if (i > start) {
                     ByteBuffer run = in.duplicate();

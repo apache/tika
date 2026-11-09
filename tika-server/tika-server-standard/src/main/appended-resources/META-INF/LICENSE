@@ -186,8 +186,8 @@ ASM library (asm)
     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
     THE POSSIBILITY OF SUCH DAMAGE.
 
-Big5 decode patch table in tika-core (org/apache/tika/detect/x-Big5-HKSCS-WHATWG.tsv),
-derived from index-big5.txt of the WHATWG Encoding Standard
+Big5 and EUC-JP decode patch tables in tika-core (org/apache/tika/detect/*-WHATWG.tsv),
+derived from index-big5.txt and index-jis0208.txt of the WHATWG Encoding Standard
 (https://encoding.spec.whatwg.org/)
 
     Copyright (c) WHATWG (Apple, Google, Mozilla, Microsoft).

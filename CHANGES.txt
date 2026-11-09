@@ -402,6 +402,12 @@ Release 4.3.0 - ???
      tk:decoded-charset is x-Big5-HKSCS-WHATWG, which Charset.forName does not resolve
      (TIKA-5052).
 
+   * EUC-JP text decodes as browsers do: x-eucJP-Open with nine pairs patched to the WHATWG
+     value, the Microsoft forms windows-31j already gives for Shift_JIS (A1C1 wave dash is
+     U+FF5E, A1DD minus U+FF0D, A1F1/A1F2/A2CC cent, pound and not signs U+FFE0-FFE2, A1BD
+     U+2015, A1C2 U+2225, FCFB/FCFC U+FFE2/U+FFE4). tk:decoded-charset is
+     x-eucJP-Open-WHATWG (TIKA-5052).
+
   OTHER CHANGES
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers

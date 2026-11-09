@@ -47,12 +47,14 @@ import java.util.Map;
  *   <li>EUC-JP → x-eucJP-Open (EUC packing of the NEC/IBM vendor extensions)</li>
  * </ul>
  *
- * <h3>Browser patch</h3>
- * <p>Big5-HKSCS (detected, or reached as Big5's superset) decodes as
- * {@code x-Big5-HKSCS-WHATWG}: the JDK's Big5-HKSCS with the byte pairs where the WHATWG
- * Encoding Standard differs (e.g. A3E1 euro sign, CP950 punctuation forms) decoded as browsers
- * do. That charset is not resolvable by {@link Charset#forName}; APIs that take a charset name
- * use {@link #jdkDecodeAs(Charset)}.</p>
+ * <h3>Browser patches</h3>
+ * <p>Big5-HKSCS and x-eucJP-Open (detected, or reached as a superset) decode as
+ * {@code x-Big5-HKSCS-WHATWG} and {@code x-eucJP-Open-WHATWG}: the JDK charset with the byte
+ * pairs where the WHATWG Encoding Standard differs decoded as browsers do (Big5: A3E1 euro
+ * sign, CP950 punctuation forms; EUC-JP: the Microsoft forms of nine punctuation and symbol
+ * pairs, e.g. A1C1 U+FF5E, as windows-31j gives for Shift_JIS). These charsets are not
+ * resolvable by {@link Charset#forName}; APIs that take a charset name use
+ * {@link #jdkDecodeAs(Charset)}.</p>
  */
 public final class CharsetSupersets {
 
@@ -79,7 +81,8 @@ public final class CharsetSupersets {
 
     static {
         Map<String, Charset> m = new HashMap<>();
-        for (String table : new String[]{"x-Big5-HKSCS-WHATWG.tsv"}) {
+        for (String table : new String[]{"x-Big5-HKSCS-WHATWG.tsv",
+                "x-eucJP-Open-WHATWG.tsv"}) {
             PatchedCharset cs = PatchedCharset.load(table);
             m.put(cs.base().name(), cs);
         }

@@ -39,7 +39,8 @@ public class CharsetSupersetsTest {
         assertEquals("GB18030", name("GB2312"));
         assertEquals("GB18030", name("GBK"));
         assertEquals("windows-31j", name("Shift_JIS"));
-        assertEquals("x-eucJP-Open", name("EUC-JP"));
+        assertEquals("x-eucJP-Open-WHATWG", name("EUC-JP"));
+        assertEquals("x-eucJP-Open-WHATWG", name("x-eucJP-Open"));
     }
 
     @Test
@@ -74,6 +75,7 @@ public class CharsetSupersetsTest {
 
         byte[] eucjp = {(byte) 0xAD, (byte) 0xA1};
         assertEquals('\uFFFD', new String(eucjp, Charset.forName("EUC-JP")).charAt(0));
-        assertEquals("\u2460", new String(eucjp, Charset.forName(name("EUC-JP"))));
+        assertEquals("\u2460", new String(eucjp,
+                CharsetSupersets.supersetOf(Charset.forName("EUC-JP"))));
     }
 }

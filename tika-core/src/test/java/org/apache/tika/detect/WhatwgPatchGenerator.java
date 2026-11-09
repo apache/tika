@@ -235,46 +235,58 @@ public final class WhatwgPatchGenerator {
     }
 
     /**
-     * Bytes after which {@code cs} always reads the next byte with it, or {@code null} if some
-     * byte is neither always a unit alone nor always the lead of a two-byte unit.
+     * Bytes in the unit {@code cs} reads starting with each byte (1, 2 or 3, whatever follows),
+     * or {@code null} if some byte has no such fixed length.
      */
-    static boolean[] leadBytes(Charset cs) {
-        boolean[] lead = new boolean[256];
+    static int[] unitLengths(Charset cs) {
+        int[] len = new int[256];
         CharsetDecoder d = cs.newDecoder();
         for (int b = 0; b < 256; b++) {
-            lead[b] = consumed(d, new byte[]{(byte) b}) == 0;
+            if (consumed(d, (byte) b) == 1) {
+                len[b] = 1;
+                continue;
+            }
+            int n = consumed(d, (byte) b, (byte) 0) == 2 ? 2 : 3;
             for (int x = 0; x < 256; x++) {
-                int n = consumed(d, new byte[]{(byte) b, (byte) x});
-                if (lead[b] ? n != 2 : n == 0) {
+                if (n == 2 ? consumed(d, (byte) b, (byte) x) != 2
+                        : !allConsume3(d, (byte) b, (byte) x)) {
                     return null;
                 }
             }
+            len[b] = n;
         }
-        return lead;
+        return len;
+    }
+
+    private static boolean allConsume3(CharsetDecoder d, byte b, byte x) {
+        for (int y = 0; y < 256; y++) {
+            if (consumed(d, b, x, (byte) y) != 3) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Bytes the first unit of {@code b} takes (0 if it needs more input). */
-    private static int consumed(CharsetDecoder d, byte[] b) {
-        d.reset();
-        ByteBuffer in = ByteBuffer.wrap(b);
-        CoderResult cr = d.decode(in, CharBuffer.allocate(8), false);
-        if (cr.isError()) {
-            return in.position() + cr.length();
+    private static int consumed(CharsetDecoder d, byte... b) {
+        for (int k = 1; k <= b.length; k++) {
+            d.reset();
+            ByteBuffer in = ByteBuffer.wrap(b, 0, k);
+            CoderResult cr = d.decode(in, CharBuffer.allocate(8), false);
+            if (cr.isError()) {
+                return in.position() + cr.length();
+            }
+            if (in.position() > 0) {
+                return in.position();
+            }
         }
-        if (b.length == 1 || in.position() == 0) {
-            return in.position();
-        }
-        // first unit decoded; see whether it took both bytes
-        d.reset();
-        ByteBuffer one = ByteBuffer.wrap(b, 0, 1);
-        CoderResult first = d.decode(one, CharBuffer.allocate(8), false);
-        return first.isError() || one.position() == 0 ? 2 : 1;
+        return 0;
     }
 
     private static String resource(String encoding, Charset base, Path dir, String name,
                                    Map<String, String[]> diff) throws IOException {
-        boolean[] lead = leadBytes(base);
-        if (lead == null) {
+        int[] len = unitLengths(base);
+        if (len == null) {
             throw new IllegalStateException(base.name() + " has units PatchedCharset cannot walk");
         }
         StringBuilder sb = new StringBuilder();
@@ -291,30 +303,35 @@ public final class WhatwgPatchGenerator {
         sb.append(BSD_NOTICE);
         sb.append("name\t").append(name).append('\n');
         sb.append("base\t").append(base.name()).append('\n');
-        String ranges = ranges(lead);
-        if (!ranges.isEmpty()) {
-            sb.append("lead\t").append(ranges).append('\n');
+        for (int n = 2; n <= 3; n++) {
+            String ranges = ranges(len, n);
+            if (!ranges.isEmpty()) {
+                sb.append(n == 2 ? "lead" : "lead3").append('\t').append(ranges).append('\n');
+            }
         }
         for (Map.Entry<String, String[]> e : diff.entrySet()) {
             int first = Integer.parseInt(e.getKey().substring(0, 2), 16);
-            if (e.getKey().length() != (lead[first] ? 4 : 2)) {
+            if (e.getKey().length() != 2 * len[first]) {
                 throw new IllegalStateException(e.getKey() + " is not one " + base.name() + " unit");
             }
             if (e.getValue()[1].indexOf('\uFFFD') >= 0) {
                 // error handling stays the base's
                 continue;
             }
+            if (len[first] > 2) {
+                throw new IllegalStateException(e.getKey() + ": PatchedCharset patches 1- and 2-byte units");
+            }
             sb.append(e.getKey()).append('\t').append(cps(e.getValue()[1])).append('\n');
         }
         return sb.toString();
     }
 
-    private static String ranges(boolean[] lead) {
+    private static String ranges(int[] len, int n) {
         StringBuilder sb = new StringBuilder();
         for (int b = 0; b < 256; b++) {
-            if (lead[b] && (b == 0 || !lead[b - 1])) {
+            if (len[b] == n && (b == 0 || len[b - 1] != n)) {
                 int e = b;
-                while (e + 1 < 256 && lead[e + 1]) {
+                while (e + 1 < 256 && len[e + 1] == n) {
                     e++;
                 }
                 sb.append(sb.length() > 0 ? "," : "")

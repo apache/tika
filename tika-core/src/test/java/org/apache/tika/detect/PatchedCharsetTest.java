@@ -45,6 +45,7 @@ public class PatchedCharsetTest {
 
     private static final Charset HKSCS = Charset.forName("Big5-HKSCS");
     private static final Charset BIG5 = CharsetSupersets.decodeAs(Charset.forName("Big5"));
+    private static final Charset EUCJP = CharsetSupersets.decodeAs(Charset.forName("EUC-JP"));
 
     private static String dec(Charset cs, int... bytes) {
         byte[] b = new byte[bytes.length];
@@ -60,17 +61,19 @@ public class PatchedCharsetTest {
         assertTrue(BIG5 instanceof PatchedCharset);
         assertEquals("x-Big5-HKSCS-WHATWG", BIG5.name());
         assertEquals(144, ((PatchedCharset) BIG5).patchedUnits().length);
+        assertEquals("x-eucJP-Open-WHATWG", EUCJP.name());
+        assertEquals(9, ((PatchedCharset) EUCJP).patchedUnits().length);
     }
 
     /** The table's unit model is the base decoder's: what makes unit-boundary matching sound. */
     @Test
-    public void leadBytesMatchTheBase() {
+    public void unitLengthsMatchTheBase() {
         for (Charset c : CharsetSupersets.patched()) {
             PatchedCharset cs = (PatchedCharset) c;
-            boolean[] lead = WhatwgPatchGenerator.leadBytes(cs.base());
-            assertNotNull(lead, cs.name());
+            int[] len = WhatwgPatchGenerator.unitLengths(cs.base());
+            assertNotNull(len, cs.name());
             for (int b = 0; b < 256; b++) {
-                assertEquals(lead[b], cs.isLead(b), cs.name() + " " + Integer.toHexString(b));
+                assertEquals(len[b], cs.unitLength(b), cs.name() + " " + Integer.toHexString(b));
             }
         }
     }
@@ -92,6 +95,14 @@ public class PatchedCharsetTest {
                     String hex = HexFormat.of().formatHex(two);
                     assertEquals(new String(two, cs.base()), unitwise(cs, two, false), hex);
                     assertEquals(unitwise(cs, two, true), new String(two, cs), hex);
+                    if (cs.unitLength(b1) == 3) {
+                        for (int b3 = 0; b3 <= 0xFF; b3++) {
+                            byte[] three = {(byte) b1, (byte) b2, (byte) b3, 'A'};
+                            assertEquals(new String(three, cs.base()), unitwise(cs, three, true),
+                                    HexFormat.of().formatHex(three));
+                            assertEquals(unitwise(cs, three, true), new String(three, cs));
+                        }
+                    }
                 }
             }
         }
@@ -123,6 +134,23 @@ public class PatchedCharsetTest {
         assertEquals("ê̌", dec(BIG5, 0x88, 0xA5)); // 1166
         assertEquals("中", dec(BIG5, 0xA4, 0xA4)); // unpatched
         assertNull(((PatchedCharset) BIG5).patch(0xA4, 0xA4));
+    }
+
+    /** EUC-JP gets the forms windows-31j gives the same JIS X 0208 characters in Shift_JIS. */
+    @Test
+    public void eucJpMatchesWindows31j() {
+        Charset sjis = Charset.forName("windows-31j");
+        assertEquals("～", dec(EUCJP, 0xA1, 0xC1));
+        assertEquals(dec(sjis, 0x81, 0x60), dec(EUCJP, 0xA1, 0xC1)); // wave dash
+        assertEquals(dec(sjis, 0x81, 0x7C), dec(EUCJP, 0xA1, 0xDD)); // minus
+        assertEquals(dec(sjis, 0x81, 0x91), dec(EUCJP, 0xA1, 0xF1)); // cent
+        assertEquals(dec(sjis, 0x81, 0xCA), dec(EUCJP, 0xA2, 0xCC)); // not sign
+        assertEquals("日本", dec(EUCJP, 0xC6, 0xFC, 0xCB, 0xDC));
+        // JIS X 0212 (three bytes) is the base's, patched pair or not after it
+        assertEquals(dec(Charset.forName("x-eucJP-Open"), 0x8F, 0xB0, 0xA1) + "～",
+                dec(EUCJP, 0x8F, 0xB0, 0xA1, 0xA1, 0xC1));
+        assertEquals("\u2170", dec(EUCJP, 0x8F, 0xF3, 0xF3));
+        assertEquals("\uFFFD", dec(EUCJP, 0x8F, 0xA1, 0xC1));
     }
 
     @Test
@@ -205,8 +233,9 @@ public class PatchedCharsetTest {
     private static String unitwise(PatchedCharset cs, byte[] b, boolean patched) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < b.length; ) {
-            int n = cs.isLead(b[i]) && i + 1 < b.length ? 2 : 1;
-            String patch = !patched ? null : n == 2 ? cs.patch(b[i], b[i + 1]) : cs.patch(b[i]);
+            int n = Math.min(cs.unitLength(b[i]), b.length - i);
+            String patch = !patched || n != cs.unitLength(b[i]) ? null
+                    : n == 1 ? cs.patch(b[i]) : n == 2 ? cs.patch(b[i], b[i + 1]) : null;
             sb.append(patch != null ? patch : new String(b, i, n, cs.base()));
             i += n;
         }
