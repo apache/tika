@@ -104,6 +104,10 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * ASX playlists (application/x-ms-asx) are parsed by JSoupParser; XMLParser failed on
+     many real ones (mixed-case or unclosed tags, raw '&', non-UTF-8 without a declaration).
+     Texinfo files are parsed as text; they produced no content (TIKA-XXXX).
+
    * HTML main-content extraction: tika-readability is a jsoup-only Java port of Mozilla
      Readability, and "readability-jsoup-filter" in the parse context runs it in JSoupParser
      (off by default; HTML documents only, never message bodies or other HTML inside a
