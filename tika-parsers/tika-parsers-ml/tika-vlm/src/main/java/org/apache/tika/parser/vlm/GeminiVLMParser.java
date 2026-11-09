@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -54,6 +55,7 @@ import org.apache.tika.utils.StringUtils;
  *
  * @since Apache Tika 4.0
  */
+@RequestConfigurable
 @TikaComponent(spi = false)
 public class GeminiVLMParser extends AbstractVLMParser {
 

@@ -290,6 +290,23 @@ public class TikaResourceTest extends CXFTestBase {
         assertContains("Happy New Year 2003!", responseMsg);
     }
 
+    @Test
+    public void testConfigForParserThatDoesNotReadItIsAccepted() throws Exception {
+        // mp4-parser takes extractSubtitles from tika-config.json only; warned about until 5.0
+        String configJson = "{\"mp4-parser\": {\"extractSubtitles\": false}}";
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(200, response.getStatus());
+    }
+
     //TIKA-2290
     @Test
     public void testPDFOCRConfig() throws Exception {

@@ -37,6 +37,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -76,6 +77,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * raster preview of a vector thumbnail such as the docProps thumbnail of a
  * Word document.
  */
+@RequestConfigurable
 @TikaComponent
 public class EMFParser extends AbstractMetafileParser {
 
