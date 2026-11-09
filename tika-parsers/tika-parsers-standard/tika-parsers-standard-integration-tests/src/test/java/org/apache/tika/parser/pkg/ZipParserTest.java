@@ -142,9 +142,8 @@ public class ZipParserTest extends AbstractPkgTest {
         //mime is 0 bytes
         assertContains("InputStream must have > 0 bytes",
                 results.get(1).get("tk:exception:embedded-exception"));
-        //source.xml is binary, not xml
-        assertContains("TikaException: XML parse error",
-                results.get(2).get("tk:exception:embedded-exception"));
+        //source.xml is binary, not xml: the .xml name no longer wins
+        assertEquals("application/octet-stream", results.get(2).get(HttpHeaders.CONTENT_TYPE));
         //manifest.xml has malformed xml
         assertContains("TikaException: XML parse error",
                 results.get(4).get("tk:exception:embedded-exception"));

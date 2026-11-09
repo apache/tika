@@ -790,7 +790,6 @@
     <glob pattern="*.pkg"/>
     <glob pattern="*.bpk"/>
     <glob pattern="*.dump"/>
-    <glob pattern="*.elc"/>
     <glob pattern="*.deploy"/>
   </mime-type>
 
@@ -1712,6 +1711,11 @@
   </mime-type>
   <mime-type type="application/vnd.font-fontforge-sfd"/>
   <mime-type type="application/vnd.framemaker">
+    <_comment>FrameMaker binary document</_comment>
+    <!-- above the MIF "&lt;Maker" prefix -->
+    <magic priority="60">
+      <match value="&lt;MakerFile" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.fm"/>
     <glob pattern="*.frame"/>
     <glob pattern="*.maker"/>
@@ -2189,7 +2193,6 @@
     <alias type="application/x-frame"/>
     <sub-class-of type="text/plain"/>
     <magic priority="50">
-      <match value="&lt;MakerFile" type="string" offset="0" />
       <match value="&lt;MIFFile" type="string" offset="0" />
       <match value="&lt;MakerDictionary" type="string" offset="0" />
       <match value="&lt;MakerScreenFont" type="string" offset="0" />
@@ -4497,8 +4500,8 @@
     <magic priority="50">
       <!-- Emacs 18 -->
       <match value="\012(" type="string" offset="0" />
-      <!-- Emacs 19 -->
-      <match value=";ELC\023\000\000\000" type="string" offset="0" />
+      <!-- Emacs 19 and later: the fifth byte is the bytecode version -->
+      <match value=";ELC\000\000\000\000" mask="0xFFFFFFFFE0FFFFFF" type="string" offset="0" />
     </magic>
     <glob pattern="*.elc"/>
   </mime-type>
@@ -5097,6 +5100,14 @@
       </match>
     </magic>
   </mime-type>
+  <mime-type type="application/x-lua-bytecode">
+    <_comment>Lua bytecode</_comment>
+    <magic priority="50">
+      <match value="\033Lua" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.luac"/>
+  </mime-type>
+
   <mime-type type="application/x-lz4">
      <_comment>First match LZ4 Frame</_comment>
      <_comment>Second match Legacy Frame</_comment>
@@ -5664,6 +5675,14 @@
       <match value="PAR1" type="string" offset="0" />
     </magic>
   </mime-type>
+  <mime-type type="application/x-pcp-archive">
+    <_comment>Performance Co-Pilot archive (metadata, index or volume)</_comment>
+    <magic priority="50">
+      <!-- version 2 label record: length 132, then the label magic -->
+      <match value="0x0000008450052602" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-pds">
     <_comment>Planetary Data System Version 3 format</_comment>
     <tika:link>http://fileformats.archiveteam.org/wiki/PDS</tika:link>
@@ -5776,6 +5795,15 @@
     </magic>
     <glob pattern="*.qcow"/>
     <glob pattern="*.qcow2"/>
+  </mime-type>
+
+  <mime-type type="application/x-qt-translation">
+    <_comment>Qt compiled translation</_comment>
+    <!-- the leading '&lt;' would otherwise read as HTML -->
+    <magic priority="60">
+      <match value="0x3cb86418caef9c95cd211cbf60a1bddd" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.qm"/>
   </mime-type>
 
   <mime-type type="application/x-quattro-pro">
@@ -6005,6 +6033,13 @@
     <glob pattern="*.sb2"/>
     <glob pattern="*.sb3"/>
     <sub-class-of type="application/zip"/>
+  </mime-type>
+
+  <mime-type type="application/x-selinux-policy-package">
+    <_comment>SELinux policy module package</_comment>
+    <magic priority="50">
+      <match value="0x8fff7cf9" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-sh">
