@@ -131,14 +131,18 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
     /**
      * Warns, once per component, about a block for a self-configuring component that never
      * reads one: it is accepted and has no effect. To be refused in 5.0.
+     *
+     * @return true if this call logged the warning
      */
-    private static void warnIfUnread(String name) {
+    static boolean warnIfUnread(String name) {
         Optional<ComponentInfo> infoOpt = ComponentNameResolver.getComponentInfo(name);
         if (infoOpt.isPresent() && !ComponentNameResolver.readsParseContextConfig(infoOpt.get())
                 && WARNED_UNREAD.add(name)) {
             LOG.warn(ComponentNameResolver.notRequestConfigurableMessage(name,
                     infoOpt.get().componentClass()));
+            return true;
         }
+        return false;
     }
 
     /**

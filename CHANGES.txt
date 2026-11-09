@@ -53,7 +53,6 @@ Release 4.3.0 - ???
      @RequestConfigurable annotation, which a custom parser that reads its own block
      should add; until then it still reads it, and a warning names the class (TIKA-5059).
 
-
    * tika-server sets any field of the config's "server" block from the command line
      (--serverSetting <field>=<value>, repeatable) and the environment (TIKA_SERVER_SETTING_<FIELD>,
      e.g. TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES), over the file's own value, so raising the

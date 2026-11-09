@@ -33,9 +33,10 @@ import java.lang.annotation.Target;
  * {@code FetchEmitTuple}, a preset or the config file's {@code parse-context}) has no effect
  * and is logged as a warning; Tika 5.0 will refuse it.
  * <p>
- * A component that reads its block must carry this annotation. Reading a block for one of
- * Tika's own components without it fails an assertion, so a missing annotation surfaces in
- * tests run with {@code -ea}; for any other component it is logged as a warning, once.
+ * A component that reads its block must carry this annotation. For Tika's own components a
+ * missing annotation fails an assertion on every read, block or not, so it surfaces in any
+ * test run with {@code -ea}; any other component reading a block without it is logged as a
+ * warning, once.
  *
  * @since Apache Tika 4.3
  */

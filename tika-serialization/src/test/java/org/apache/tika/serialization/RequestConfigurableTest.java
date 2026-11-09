@@ -101,6 +101,14 @@ public class RequestConfigurableTest {
         assertTrue(e.getMessage().contains("RequestConfigurable"), e.getMessage());
     }
 
+    /** Without a block too, so a reader's own tests catch it whether or not they send one. */
+    @Test
+    public void testReadingWithoutAnnotationFailsWithNoBlock() {
+        assumeTrue(ConfigDeserializer.class.desiredAssertionStatus());
+        assertThrows(AssertionError.class, () -> ConfigDeserializer.getConfig(new ParseContext(),
+                "minimal-test-parser", MinimalTestParser.class, new MinimalTestParser()));
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testCustomReaderWithoutAnnotationStillWorks(boolean restricted) throws Exception {
