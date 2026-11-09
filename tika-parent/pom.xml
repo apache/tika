@@ -1172,7 +1172,7 @@
       <dependency>
         <groupId>org.pf4j</groupId>
         <artifactId>pf4j</artifactId>
-        <version>3.16.0</version>
+        <version>3.16.1</version>
       </dependency>
       <dependency>
         <groupId>com.nimbusds</groupId>
