@@ -175,9 +175,10 @@ Release 4.3.0 - ???
      the truncation instead of an IOException "End of stream reached earlier than
      expected" (TIKA-5057).
 
-   * OneNote .one sections whose file node lists hold more than 100,000 property values
-     parse; the limit now grows with file size instead of failing with "exceeds remaining
-     property value budget" (TIKA-5057).
+   * The OneNote .one property value limit covers the whole document, where it reset
+     with every file node list, and grows with file size (one value per 8 bytes, at least
+     100,000): large sections no longer fail with "exceeds remaining property value
+     budget", and crafted files can no longer exceed it list by list (TIKA-5057).
 
    * OneNote FSSHTTPB files no longer warn about cells of deleted version contexts, which
      have no cell manifest by design (TIKA-5057).

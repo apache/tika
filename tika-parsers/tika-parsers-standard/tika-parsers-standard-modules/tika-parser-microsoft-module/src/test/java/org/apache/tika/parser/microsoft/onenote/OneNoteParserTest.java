@@ -465,8 +465,8 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testPropertyValueLimitScalesWithFileSize() {
         assertEquals(100_000, OneNotePtr.propertyValueLimit(6_000));
-        // a 4.3 MB section with 130,790 property values in one file node list
-        assertTrue(OneNotePtr.propertyValueLimit(4_323_368) > 130_790);
+        // the densest section seen: 963,456 bytes, 74,498 values; then scaled up 10x
+        assertTrue(OneNotePtr.propertyValueLimit(9_634_560) > 744_980);
     }
 
     @Test
@@ -713,8 +713,8 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
-    public void testPropertyValueBudgetIsSharedAcrossCopiesAndResetsPerList(
-            @TempDir Path tempDir) throws Exception {
+    public void testPropertyValueBudgetCoversTheWholeDocument(@TempDir Path tempDir)
+            throws Exception {
         Path emptyFile = tempDir.resolve("empty");
         Files.write(emptyFile, ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
                 .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
@@ -730,8 +730,11 @@ public class OneNoteParserTest extends TikaTest {
                     () -> reservePropertyCount.invoke(copy, 1L, "test"));
             assertTrue(exception.getCause() instanceof TikaMemoryLimitException);
 
+            // a new file node list does not refill it
             ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr());
-            reservePropertyCount.invoke(ptr, 1L, "test");
+            exception = assertThrows(InvocationTargetException.class,
+                    () -> reservePropertyCount.invoke(ptr, 1L, "test"));
+            assertTrue(exception.getCause() instanceof TikaMemoryLimitException);
         }
     }
 

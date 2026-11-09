@@ -58,8 +58,8 @@ class OneNotePtr {
     private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID =
             "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
     private static final int MAX_PROPERTY_VALUES = 100_000;
-    // real files spend at least 13 bytes per property value
-    private static final int MIN_BYTES_PER_PROPERTY_VALUE = 4;
+    // real files spend at least 12.9 bytes per property value
+    private static final int MIN_BYTES_PER_PROPERTY_VALUE = 8;
     private static final int MAX_PROPERTY_SET_DEPTH = 1000;
     // the format nests file node lists only a handful of levels deep; 100 leaves wide
     // margin while keeping the recursion far from any stack limit
@@ -71,13 +71,10 @@ class OneNotePtr {
     /** Limits shared by every pointer copied while parsing one document. */
     private static final class DocumentBudget {
         private long globalIdCopiesRemaining = MAX_GLOBAL_ID_COPIES;
-    }
+        private long propertyValuesRemaining;
 
-    private static final class PropertyValueBudget {
-        private long remaining;
-
-        PropertyValueBudget(long remaining) {
-            this.remaining = remaining;
+        DocumentBudget(long fileSize) {
+            propertyValuesRemaining = propertyValueLimit(fileSize);
         }
     }
 
@@ -93,9 +90,8 @@ class OneNotePtr {
     }
 
     int indentLevel = 0;
-    private PropertyValueBudget propertyValueBudget = new PropertyValueBudget(MAX_PROPERTY_VALUES);
     private FileNodeListRecursion fileNodeListRecursion = new FileNodeListRecursion();
-    private DocumentBudget documentBudget = new DocumentBudget();
+    private DocumentBudget documentBudget;
 
     long offset;
     long end;
@@ -109,6 +105,7 @@ class OneNotePtr {
         this.dif = oneNoteDirectFileResource;
         offset = oneNoteDirectFileResource.position();
         end = oneNoteDirectFileResource.size();
+        documentBudget = new DocumentBudget(end);
     }
 
     public OneNotePtr(OneNotePtr oneNotePtr) {
@@ -117,7 +114,6 @@ class OneNotePtr {
         this.offset = oneNotePtr.offset;
         this.end = oneNotePtr.end;
         this.indentLevel = oneNotePtr.indentLevel;
-        this.propertyValueBudget = oneNotePtr.propertyValueBudget;
         this.fileNodeListRecursion = oneNotePtr.fileNodeListRecursion;
         this.documentBudget = oneNotePtr.documentBudget;
     }
@@ -360,7 +356,6 @@ class OneNotePtr {
         }
         fileNodeListRecursion.depth++;
         try {
-            propertyValueBudget = new PropertyValueBudget(propertyValueLimit(dif.size()));
             return internalDeserializeFileNodeList(this, fileNodeList, curPath);
         } finally {
             fileNodeListRecursion.depth--;
@@ -1144,7 +1139,7 @@ class OneNotePtr {
         documentBudget.globalIdCopiesRemaining -= count;
     }
 
-    /** @return how many property values one file node list may hold, linear in file size */
+    /** @return how many property values the document may hold, linear in file size */
     static long propertyValueLimit(long fileSize) {
         return Math.max(MAX_PROPERTY_VALUES, fileSize / MIN_BYTES_PER_PROPERTY_VALUE);
     }
@@ -1159,11 +1154,12 @@ class OneNotePtr {
 
     private int reservePropertyCount(long count, String description) throws TikaException {
         int checked = checkedCount(count, description);
-        if (count > propertyValueBudget.remaining) {
+        if (count > documentBudget.propertyValuesRemaining) {
             throw new TikaMemoryLimitException(description + " count " + count +
-                    " exceeds remaining property value budget " + propertyValueBudget.remaining);
+                    " exceeds remaining property value budget " +
+                    documentBudget.propertyValuesRemaining);
         }
-        propertyValueBudget.remaining -= count;
+        documentBudget.propertyValuesRemaining -= count;
         return checked;
     }
 
