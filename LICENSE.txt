@@ -209,7 +209,7 @@ Apache Tika includes a number of subcomponents with separate copyright notices
 and license terms. Your use of these subcomponents is subject to the terms and
 conditions of the following licenses.
 -------------------------------
-Big5 decode patch table in tika-core (org.apache.tika.detect.Big5HkscsWhatwgCharset),
+Big5 decode patch table in tika-core (org/apache/tika/detect/x-Big5-HKSCS-WHATWG.tsv),
 derived from index-big5.txt of the WHATWG Encoding Standard
 (https://encoding.spec.whatwg.org/)
 

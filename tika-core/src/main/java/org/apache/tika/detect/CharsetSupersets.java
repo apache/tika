@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,8 +74,17 @@ public final class CharsetSupersets {
         SUPERSET_MAP = Collections.unmodifiableMap(m);
     }
 
-    private static final Map<String, Charset> PATCHED =
-            Map.of(Big5HkscsWhatwgCharset.BASE.name(), Big5HkscsWhatwgCharset.INSTANCE);
+    /** Browser patches, by the JDK charset they patch. */
+    private static final Map<String, Charset> PATCHED;
+
+    static {
+        Map<String, Charset> m = new HashMap<>();
+        for (String table : new String[]{"x-Big5-HKSCS-WHATWG.tsv"}) {
+            PatchedCharset cs = PatchedCharset.load(table);
+            m.put(cs.base().name(), cs);
+        }
+        PATCHED = Collections.unmodifiableMap(m);
+    }
 
     private CharsetSupersets() {
     }
@@ -104,9 +114,14 @@ public final class CharsetSupersets {
         return jdk != null ? jdk : detected;
     }
 
+    /** The browser-patched charsets. */
+    static Collection<Charset> patched() {
+        return PATCHED.values();
+    }
+
     /** {@code decodeAs} itself, or the JDK base of a browser-patched charset. */
     static Charset jdkCharset(Charset decodeAs) {
-        return decodeAs instanceof Big5HkscsWhatwgCharset ? Big5HkscsWhatwgCharset.BASE : decodeAs;
+        return decodeAs instanceof PatchedCharset ? ((PatchedCharset) decodeAs).base() : decodeAs;
     }
 
     private static Charset jdkSupersetOf(Charset detected) {
