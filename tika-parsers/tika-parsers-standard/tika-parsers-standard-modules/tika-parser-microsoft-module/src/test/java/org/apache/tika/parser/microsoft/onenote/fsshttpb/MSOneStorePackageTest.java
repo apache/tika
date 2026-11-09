@@ -1788,6 +1788,71 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testDeletedPagesAndOlderVersionsAreOptIn() throws Exception {
+        String current = walkPast(false, false);
+        assertTrue(current.contains(">live page<"));
+        assertTrue(current.contains("unrelated"));
+        assertFalse(current.contains("old live page"));
+        assertFalse(current.contains("deleted page"));
+
+        String history = walkPast(true, false);
+        assertTrue(history.indexOf(">live page<") < history.indexOf("<div class=\"page history\""));
+        assertTrue(history.indexOf("<div class=\"page history\"") <
+                history.indexOf("old live page"));
+        assertFalse(history.contains("deleted page"));
+
+        // a deleted page comes with all its versions: its current one may be empty
+        String deleted = walkPast(false, true);
+        assertTrue(deleted.indexOf("<div class=\"page deleted\"") <
+                deleted.indexOf(">deleted page<"));
+        assertTrue(deleted.indexOf("<div class=\"page deleted history\"") <
+                deleted.indexOf("old deleted page"));
+        assertFalse(deleted.contains("old live page"));
+
+        String all = walkPast(true, true);
+        assertTrue(all.contains("old live page"));
+        assertTrue(all.contains(">deleted page<"));
+        assertTrue(all.contains("old deleted page"));
+    }
+
+    private static String walkPast(boolean history, boolean deleted) throws Exception {
+        return walkXml(deletedPagePackage(), new Metadata(), new ParseContext(),
+                new OneNoteTreeWalkerOptions().setCrawlAllFileNodesFromRoot(history)
+                        .setIncludeDeletedContent(deleted));
+    }
+
+    /**
+     * A section whose current root references one page, next to an object of an older section
+     * revision that references a page since deleted, as OneNote leaves a section after it moves
+     * a page to the recycle bin.
+     */
+    private static MSOneStorePackage deletedPagePackage() throws Exception {
+        CellID livePage = cell(10, 100);
+        CellID deletedPage = cell(10, 200);
+        RevisionStoreObject sectionRoot = object(id(1), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(livePage));
+        RevisionStoreObject oldPageSeries = object(id(2), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(deletedPage));
+        RevisionStoreCell section = new RevisionStoreCell();
+        section.cellID = cell(10, 1);
+        section.objectGroups.add(group(sectionRoot, oldPageSeries));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = sectionRoot.objectID;
+        section.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = section;
+        pkg.cells.addAll(List.of(cellWithText(deletedPage, "deleted page"),
+                cellWithText(cell(12, 200), "old deleted page"),
+                cellWithText(cell(11, 100), "old live page"),
+                cellWithText(livePage, "live page"),
+                cellWithText(cell(30, 300), "unrelated")));
+        return pkg;
+    }
+
+    @Test
     public void testUnresolvedRootsFallBackToAllObjects() throws Exception {
         RevisionStoreCell cell = cellWithText(cell(1, 1), "fallback content");
         cell.rootDeclares.clear();
@@ -2504,10 +2569,15 @@ public class MSOneStorePackageTest {
 
     private static String walkXml(MSOneStorePackage pkg, Metadata metadata, ParseContext context)
             throws Exception {
+        return walkXml(pkg, metadata, context, new OneNoteTreeWalkerOptions());
+    }
+
+    private static String walkXml(MSOneStorePackage pkg, Metadata metadata, ParseContext context,
+                                  OneNoteTreeWalkerOptions options) throws Exception {
         ToXMLContentHandler xml = new ToXMLContentHandler();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(options, metadata, xhtml, context);
         xhtml.endDocument();
         return xml.toString();
     }

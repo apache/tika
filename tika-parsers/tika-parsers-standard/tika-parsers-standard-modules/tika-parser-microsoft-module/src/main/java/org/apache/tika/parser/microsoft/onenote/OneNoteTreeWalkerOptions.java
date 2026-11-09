@@ -27,6 +27,7 @@ import java.util.Set;
  */
 public class OneNoteTreeWalkerOptions implements Serializable {
     private boolean crawlAllFileNodesFromRoot = false;
+    private boolean includeDeletedContent = false;
     private boolean onlyLatestRevision = true;
     private Set<OneNotePropertyEnum> utf16PropertiesToPrint = new HashSet<>(
             Arrays.asList(OneNotePropertyEnum.ImageFilename, OneNotePropertyEnum.ImageAltText,
@@ -47,6 +48,16 @@ public class OneNoteTreeWalkerOptions implements Serializable {
     public OneNoteTreeWalkerOptions setCrawlAllFileNodesFromRoot(
             boolean crawlAllFileNodesFromRoot) {
         this.crawlAllFileNodesFromRoot = crawlAllFileNodesFromRoot;
+        return this;
+    }
+
+    /** Whether text includes pages the section no longer holds, e.g. moved to the recycle bin. */
+    public boolean isIncludeDeletedContent() {
+        return includeDeletedContent;
+    }
+
+    public OneNoteTreeWalkerOptions setIncludeDeletedContent(boolean includeDeletedContent) {
+        this.includeDeletedContent = includeDeletedContent;
         return this;
     }
 

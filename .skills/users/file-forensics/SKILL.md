@@ -212,9 +212,15 @@ The full switch list:
   embedded entries), `includeDeletedContent` and `includeMoveFromContent`
   (tracked-change deletions and moved-away text in the output),
   `includeMissingRows` (spreadsheet row gaps)
-- `one-note-parser.includePageHistory` — OneNote `.one` text includes every
+- `one-note-parser.includePageHistory` — OneNote text includes every
   earlier revision and saved page version, not only each page's current
-  content. History is not marked as such; it is mixed in with the current text.
+  content. In `.one` files saved by OneNote 2010–2016, history is not marked
+  as such; it is mixed in with the current text. In newer (FSSHTTPB)
+  sections each old version is its own `<div class="page history">`.
+- `one-note-parser.includeDeletedContent` — newer (FSSHTTPB) OneNote
+  sections still store pages moved to the recycle bin; with this set they
+  come out as `<div class="page deleted">`, each older version as
+  `<div class="page deleted history">` (the text may be only in those).
 - `jsoup-parser.extractScripts` — script bodies in HTML (including HTML
   email bodies and HTML attachments) become their own `MACRO`-typed embedded
   entries instead of being silently dropped: JavaScript in a document is

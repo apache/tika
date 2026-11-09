@@ -171,6 +171,13 @@ Release 4.3.0 - ???
      revisions. Set includePageHistory on one-note-parser (OneNoteParserConfig) for the
      earlier text (TIKA-5057).
 
+   * OneNote FSSHTTPB sections (OneNote for the web, Windows 10 and later) no longer give
+     the text of pages moved to the recycle bin, once per saved version and outside any
+     page div. Set includeDeletedContent on one-note-parser for them, as
+     <div class="page deleted"> and <div class="page deleted history">; includePageHistory
+     now also gives these sections' older page versions, as <div class="page history">
+     (TIKA-5057).
+
    * A OneNote file shorter than its 1024-byte header fails with a TikaException naming
      the truncation instead of an IOException "End of stream reached earlier than
      expected" (TIKA-5057).

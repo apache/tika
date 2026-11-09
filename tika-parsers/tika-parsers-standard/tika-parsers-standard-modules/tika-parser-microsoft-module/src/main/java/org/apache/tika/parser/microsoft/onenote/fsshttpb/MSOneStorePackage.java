@@ -263,13 +263,20 @@ public class MSOneStorePackage {
                 // Walk each page cell (object space) as a tree, starting from the root objects of
                 // its current revision and following the object references in property order. This
                 // emits the text in document order. The pages are walked in the order in which the
-                // section object space references them; cells that hold older versions of a page
-                // (the same object space in a different revision context) are skipped.
+                // section object space references them; older versions of a page and deleted
+                // pages are emitted only with page history.
                 List<RevisionStoreCell> pageCells = new ArrayList<>();
                 List<RevisionStoreCell> otherCells = new ArrayList<>();
-                splitCells(pageCells, otherCells);
+                Map<RevisionStoreCell, PastPage> pastCells = new LinkedHashMap<>();
+                splitCells(pageCells, otherCells, pastCells);
                 for (RevisionStoreCell cell : pageCells) {
                     emitPage(cell, options, metadata, xhtml);
+                }
+                for (Map.Entry<RevisionStoreCell, PastPage> past : pastCells.entrySet()) {
+                    if (past.getValue().included(options)) {
+                        emitPage(past.getKey(), options, metadata, xhtml,
+                                past.getValue().cssClass);
+                    }
                 }
                 for (RevisionStoreCell cell : otherCells) {
                     walkCell(cell, indexObjectsById(cell.objectGroups), options, metadata, xhtml);
@@ -313,11 +320,17 @@ public class MSOneStorePackage {
     void emitPage(RevisionStoreCell cell, OneNoteTreeWalkerOptions options,
                           Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
+        emitPage(cell, options, metadata, xhtml, "page");
+    }
+
+    private void emitPage(RevisionStoreCell cell, OneNoteTreeWalkerOptions options,
+                          Metadata metadata, XHTMLContentHandler xhtml, String cssClass)
+            throws SAXException, TikaException, IOException {
         Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(cell.objectGroups);
         String pageGuid = findPageGuid(cell, objectsById);
         guids.add(OneNoteGuidCollector.Category.PAGE, pageGuid);
         AttributesImpl attributes = new AttributesImpl();
-        attributes.addAttribute("", "class", "class", "CDATA", "page");
+        attributes.addAttribute("", "class", "class", "CDATA", cssClass);
         if (pageGuid != null) {
             attributes.addAttribute("", "id", "id", "CDATA", pageGuid);
         }
@@ -329,14 +342,40 @@ public class MSOneStorePackage {
         }
     }
 
+    /** A cell that is not part of the section's current pages. */
+    private enum PastPage {
+        HISTORY("page history", true, false),
+        DELETED("page deleted", false, true),
+        // a deleted page's current version can be empty, its text only in older versions
+        DELETED_HISTORY("page deleted history", false, true);
+
+        final String cssClass;
+        private final boolean history;
+        private final boolean deleted;
+
+        PastPage(String cssClass, boolean history, boolean deleted) {
+            this.cssClass = cssClass;
+            this.history = history;
+            this.deleted = deleted;
+        }
+
+        boolean included(OneNoteTreeWalkerOptions options) {
+            return (!history || options.isCrawlAllFileNodesFromRoot()) &&
+                    (!deleted || options.isIncludeDeletedContent());
+        }
+    }
+
     /**
      * Splits the cells into page cells, ordered as the section object space references them,
-     * and the remaining cells. A cell that holds an older version of a page - the same object
-     * space referenced by a page cell, but in a different revision context - is dropped, so
-     * content is not emitted once per version snapshot.
+     * past cells, and the remaining cells. A past cell is an older version of a page (the same
+     * object space as a page cell, in another revision context) or a deleted page: an object
+     * space that only objects of older section revisions reference, as OneNote leaves it when
+     * it moves the page to the recycle bin. A deleted page's current version shares the
+     * section's revision context.
      */
     private void splitCells(List<RevisionStoreCell> pageCells,
-                            List<RevisionStoreCell> otherCells) {
+                            List<RevisionStoreCell> otherCells,
+                            Map<RevisionStoreCell, PastPage> pastCells) {
         if (dataRootCell == null) {
             // Without a data root there is no reliable page ordering information.
             otherCells.addAll(cells);
@@ -362,12 +401,43 @@ public class MSOneStorePackage {
                 }
             }
         }
+        Set<ExGuid> sectionObjectSpaces = sectionReferencedObjectSpaces();
+        ExGuid currentContext = dataRootCell.cellID == null ? null :
+                dataRootCell.cellID.extendGUID1;
         for (RevisionStoreCell cell : remainingCells.values()) {
-            if (!coveredObjectSpaces.contains(cell.cellID.extendGUID2)) {
-                // not an older version of one of the pages - keep it so no content is lost
+            ExGuid space = cell.cellID.extendGUID2;
+            if (coveredObjectSpaces.contains(space)) {
+                pastCells.put(cell, PastPage.HISTORY);
+            } else if (sectionObjectSpaces.contains(space)) {
+                pastCells.put(cell, currentContext == null ||
+                        currentContext.equals(cell.cellID.extendGUID1) ?
+                        PastPage.DELETED : PastPage.DELETED_HISTORY);
+            } else {
+                // nothing says what this is - keep it so no content is lost
                 otherCells.add(cell);
             }
         }
+    }
+
+    /** @return the object spaces that any object of the section object space references */
+    private Set<ExGuid> sectionReferencedObjectSpaces() {
+        Set<ExGuid> spaces = new HashSet<>();
+        for (RevisionStoreObjectGroup group : dataRootCell.objectGroups) {
+            if (group == null || group.objects == null) {
+                continue;
+            }
+            for (RevisionStoreObject object : group.objects) {
+                if (object.referencedObjectSpacesID != null &&
+                        object.referencedObjectSpacesID.content != null) {
+                    for (CellID cellId : object.referencedObjectSpacesID.content) {
+                        if (cellId != null && cellId.extendGUID2 != null) {
+                            spaces.add(cellId.extendGUID2);
+                        }
+                    }
+                }
+            }
+        }
+        return spaces;
     }
 
     /**

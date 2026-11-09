@@ -30,7 +30,8 @@
     },
     {
       "one-note-parser": {
-        "includePageHistory": true
+        "includePageHistory": true,
+        "includeDeletedContent": true
       }
     },
     {
