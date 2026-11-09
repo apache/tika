@@ -70,8 +70,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStore
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreObjectGroup;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataElementType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CompactID;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataElementType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderCell;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;

@@ -163,6 +163,9 @@ Release 4.3.0 - ???
      log; it was dropped, so file node lists ran into fragment padding and failed with
      "RESERVED_NONZERO" (TIKA-5057).
 
+   * OneNote text no longer contains U+FFFC, the placeholder for an inline object such
+     as unrecognized ink or a picture (TIKA-5057).
+
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt
      text, which was not extracted before. OneNote's own OCR of pictures and file

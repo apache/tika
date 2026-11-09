@@ -38,7 +38,7 @@ public class OneNoteTextTest {
         assertEquals("Untitled picture.png", OneNoteText.clean("Untitled picture.png\u0000"));
         assertEquals("Answer:\n\n", OneNoteText.clean("Answer:\u000B\u000B"));
         assertEquals("Pages view:\nCamping\n", OneNoteText.clean("Pages view:\r\nCamping\r"));
-        assertEquals("a\uFFFCb", OneNoteText.clean("a\uFFFCb"));
+        assertEquals("a b", OneNoteText.clean("a \uFFFCb"));
         assertNull(OneNoteText.clean("\uFFFC\uFFFC"));
         assertNull(OneNoteText.clean("\u0000"));
         assertNull(OneNoteText.clean(" \u00A0\u000B"));

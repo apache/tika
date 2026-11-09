@@ -52,9 +52,9 @@ public final class OneNoteText {
     }
 
     /**
-     * @return the text with NUL terminators removed and vertical tabs (OneNote soft line
-     * breaks) and CR/CRLF (alt text) as newlines, or {@code null} if nothing but spaces and U+FFFC
-     * object-placeholders is left
+     * @return the text with NUL terminators and U+FFFC object placeholders removed and vertical
+     * tabs (OneNote soft line breaks) and CR/CRLF (alt text) as newlines, or {@code null} if only
+     * spaces are left
      */
     public static String clean(String text) {
         if (text == null) {
@@ -63,7 +63,7 @@ public final class OneNoteText {
         String s = normalize(text);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c != '\uFFFC' && !Character.isWhitespace(c) && !Character.isSpaceChar(c)) {
+            if (!Character.isWhitespace(c) && !Character.isSpaceChar(c)) {
                 return s;
             }
         }
@@ -71,7 +71,7 @@ public final class OneNoteText {
     }
 
     private static String normalize(String text) {
-        return text.replace("\u0000", "").replace('\u000B', '\n')
+        return text.replace("\u0000", "").replace("\uFFFC", "").replace('\u000B', '\n')
                 .replace("\r\n", "\n").replace('\r', '\n');
     }
 
