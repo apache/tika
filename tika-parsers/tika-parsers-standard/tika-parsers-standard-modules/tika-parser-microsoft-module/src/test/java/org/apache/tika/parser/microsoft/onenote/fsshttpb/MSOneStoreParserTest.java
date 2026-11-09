@@ -123,6 +123,21 @@ public class MSOneStoreParserTest {
     }
 
     @Test
+    public void testDeletedVersionContextIsSkippedWithoutWarning() throws Exception {
+        CellID cellID = cell(10);
+        MSOneStorePackage pkg = packageWithCellMapping(cellID, new ExGuid(0, new UUID(0, 0)));
+        assertNull(parseCell(parserWithEmptyIndexes(), cellID, pkg));
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(), metadata,
+                context);
+        xhtml.startDocument();
+        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        xhtml.endDocument();
+        assertEquals(0, metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+    }
+
+    @Test
     public void testRevisionChainStopsCyclesAndDeduplicatesObjectGroups() throws Exception {
         MSOneStoreParser parser = new MSOneStoreParser();
         set(parser, "cellManifestDataElements", new java.util.ArrayList<>());

@@ -463,6 +463,13 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testPropertyValueLimitScalesWithFileSize() {
+        assertEquals(100_000, OneNotePtr.propertyValueLimit(6_000));
+        // a 4.3 MB section with 130,790 property values in one file node list
+        assertTrue(OneNotePtr.propertyValueLimit(4_323_368) > 130_790);
+    }
+
+    @Test
     public void testTruncatedHeader(@TempDir Path tempDir) throws Exception {
         byte[] file;
         try (InputStream input = getResourceAsStream("/test-documents/testOneNote1.one")) {

@@ -58,6 +58,8 @@ class OneNotePtr {
     private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID =
             "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
     private static final int MAX_PROPERTY_VALUES = 100_000;
+    // real files spend at least 13 bytes per property value
+    private static final int MIN_BYTES_PER_PROPERTY_VALUE = 4;
     private static final int MAX_PROPERTY_SET_DEPTH = 1000;
     // the format nests file node lists only a handful of levels deep; 100 leaves wide
     // margin while keeping the recursion far from any stack limit
@@ -72,7 +74,11 @@ class OneNotePtr {
     }
 
     private static final class PropertyValueBudget {
-        private long remaining = MAX_PROPERTY_VALUES;
+        private long remaining;
+
+        PropertyValueBudget(long remaining) {
+            this.remaining = remaining;
+        }
     }
 
     /**
@@ -87,7 +93,7 @@ class OneNotePtr {
     }
 
     int indentLevel = 0;
-    private PropertyValueBudget propertyValueBudget = new PropertyValueBudget();
+    private PropertyValueBudget propertyValueBudget = new PropertyValueBudget(MAX_PROPERTY_VALUES);
     private FileNodeListRecursion fileNodeListRecursion = new FileNodeListRecursion();
     private DocumentBudget documentBudget = new DocumentBudget();
 
@@ -354,7 +360,7 @@ class OneNotePtr {
         }
         fileNodeListRecursion.depth++;
         try {
-            propertyValueBudget = new PropertyValueBudget();
+            propertyValueBudget = new PropertyValueBudget(propertyValueLimit(dif.size()));
             return internalDeserializeFileNodeList(this, fileNodeList, curPath);
         } finally {
             fileNodeListRecursion.depth--;
@@ -1136,6 +1142,11 @@ class OneNotePtr {
                     MAX_GLOBAL_ID_COPIES);
         }
         documentBudget.globalIdCopiesRemaining -= count;
+    }
+
+    /** @return how many property values one file node list may hold, linear in file size */
+    static long propertyValueLimit(long fileSize) {
+        return Math.max(MAX_PROPERTY_VALUES, fileSize / MIN_BYTES_PER_PROPERTY_VALUE);
     }
 
     private int checkedCount(long count, String description) throws TikaException {

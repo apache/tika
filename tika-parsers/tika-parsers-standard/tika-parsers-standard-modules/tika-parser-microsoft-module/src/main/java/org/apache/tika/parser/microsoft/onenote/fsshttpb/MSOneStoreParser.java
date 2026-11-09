@@ -266,8 +266,13 @@ public class MSOneStoreParser {
             msOneStorePackage.recordParseWarning(warning);
             return null;
         }
-        CellManifestDataElementData cellManifest =
-                this.findCellManifest(storageIndexCellMapping.cellMappingExGuid);
+        ExGuid cellMapping = storageIndexCellMapping.cellMappingExGuid;
+        if (cellMapping == null || cellMapping.guid == null ||
+                GuidUtil.emptyGuid().equals(cellMapping.guid)) {
+            // a deleted version context: nothing to parse, nothing wrong
+            return null;
+        }
+        CellManifestDataElementData cellManifest = this.findCellManifest(cellMapping);
         if (cellManifest == null || cellManifest.cellManifestCurrentRevision == null) {
             String warning = "Skipping OneNote cell " + objectGroupCellID +
                     ": no current cell manifest";
