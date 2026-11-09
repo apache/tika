@@ -94,7 +94,7 @@ public class ConfigDeserializer {
         if (context == null) {
             return defaultConfig;
         }
-        // every read, block or not, so a Tika reader's own -ea tests catch a missing annotation
+        // every call, block or not, so a Tika reader's own -ea tests catch a missing annotation
         assert declaredOrCustom(configKey) : undeclaredMessage(configKey);
 
         // Check resolved cache first

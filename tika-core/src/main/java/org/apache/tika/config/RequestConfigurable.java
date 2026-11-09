@@ -33,9 +33,10 @@ import java.lang.annotation.Target;
  * and is logged as a warning; Tika 5.0 will refuse it.
  * <p>
  * A component that reads its block must carry this annotation. For Tika's own components a
- * missing annotation fails an assertion on every read, block or not, so it surfaces in any
- * test run with {@code -ea}; any other component reading a block without it is logged as a
- * warning, once.
+ * missing annotation fails an assertion on every {@link ParseContextConfig#getConfig} call,
+ * block or not, so it surfaces in any {@code -ea} test that reaches that call (a component
+ * that calls it only when a block is present needs a test that sends one); any other
+ * component reading a block without it is logged as a warning, once.
  * <p>
  * Not inherited: a subclass registered under its own name reads that name's block only if it
  * says so, so it carries the annotation itself.
