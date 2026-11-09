@@ -249,10 +249,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         java.util.List<EncodingResult> pool = new java.util.ArrayList<>();
 
-        // UTF-32 codepoint validity, plus UTF-16 surrogate validity for the model's UTF-16 picks.
+        // UTF-32 codepoint validity, plus UTF-16/UTF-32 validity for the model's wide picks.
         WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(withBom);
-        LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={}",
-                wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be);
+        LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={} invalid32LE={} invalid32BE={}",
+                wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be,
+                wide.invalidUtf32Le, wide.invalidUtf32Be);
         if (wide.charset != null) {
             pool.add(new EncodingResult(wide.charset, UTF32_STRUCTURAL_CONF,
                     wide.charset.name(), EncodingResult.ResultType.STRUCTURAL));
@@ -344,6 +345,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             if (("UTF-16LE".equals(name) && wide.invalidUtf16Le)
                     || ("UTF-16BE".equals(name) && wide.invalidUtf16Be)) {
                 LOG.trace("mojibuster veto {} (broken surrogates)", name);
+                continue;
+            }
+            if (("UTF-32LE".equals(name) && wide.invalidUtf32Le)
+                    || ("UTF-32BE".equals(name) && wide.invalidUtf32Be)) {
+                LOG.trace("mojibuster veto {} (invalid code points)", name);
                 continue;
             }
             // False-CJK veto: a legacy multi-byte CJK pick whose bytes don't

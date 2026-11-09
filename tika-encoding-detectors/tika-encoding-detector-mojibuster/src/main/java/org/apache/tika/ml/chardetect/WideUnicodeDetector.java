@@ -38,7 +38,8 @@ import java.nio.charset.Charset;
  * {@link Result#invalidUtf16Le} carry whether the probe contains
  * structurally impossible UTF-16 surrogate sequences under each
  * endianness, so callers can suppress the model's UTF-16 labels
- * when the bytes cannot be valid UTF-16.  A high surrogate in the last
+ * when the bytes cannot be valid UTF-16.  {@link Result#invalidUtf32Be} and
+ * {@link Result#invalidUtf32Le} do the same for the model's UTF-32 labels.  A high surrogate in the last
  * code unit of the probe is a pair cut by the probe boundary, not an error.</p>
  *
  * <p>All methods are stateless and safe to call from multiple threads.</p>
@@ -59,14 +60,21 @@ final class WideUnicodeDetector {
         public final boolean invalidUtf16Be;
         /** True if the probe contains invalid UTF-16-LE surrogate sequences. */
         public final boolean invalidUtf16Le;
+        /** True if some 4-byte group is not a code point under UTF-32BE. */
+        public final boolean invalidUtf32Be;
+        /** True if some 4-byte group is not a code point under UTF-32LE. */
+        public final boolean invalidUtf32Le;
 
-        private Result(Charset charset, boolean invalidUtf16Be, boolean invalidUtf16Le) {
+        private Result(Charset charset, boolean invalidUtf16Be, boolean invalidUtf16Le,
+                       boolean invalidUtf32Be, boolean invalidUtf32Le) {
             this.charset = charset;
             this.invalidUtf16Be = invalidUtf16Be;
             this.invalidUtf16Le = invalidUtf16Le;
+            this.invalidUtf32Be = invalidUtf32Be;
+            this.invalidUtf32Le = invalidUtf32Le;
         }
 
-        static final Result EMPTY = new Result(null, false, false);
+        static final Result EMPTY = new Result(null, false, false, false, false);
     }
 
     /**
@@ -85,11 +93,17 @@ final class WideUnicodeDetector {
 
         // UTF-32 must be tested before UTF-16: Latin UTF-32 also triggers the
         // UTF-16 null-column check (every other stride-2 pair is (0x00, 0x00)).
-        Charset utf32 = tryUtf32(bytes, offset, length);
-        if (utf32 != null) {
-            return new Result(utf32, false, false);
+        int[] utf32 = utf32Invalid(bytes, offset, length);
+        boolean invalidBe = utf32[0] > 0;
+        boolean invalidLe = utf32[1] > 0;
+        if (!invalidBe && utf32[2] >= UTF32_MIN_VALID) {
+            return new Result(Charset.forName("UTF-32BE"), false, false, false, invalidLe);
         }
-        return tryUtf16(bytes, offset, length);
+        if (!invalidLe && utf32[2] >= UTF32_MIN_VALID) {
+            return new Result(Charset.forName("UTF-32LE"), false, false, invalidBe, false);
+        }
+        Result utf16 = tryUtf16(bytes, offset, length);
+        return new Result(null, utf16.invalidUtf16Be, utf16.invalidUtf16Le, invalidBe, invalidLe);
     }
 
     /** Convenience overload for a full array. */
@@ -118,8 +132,8 @@ final class WideUnicodeDetector {
     private static final int UTF32_MIN_VALID = 2;
 
     /**
-     * Checks if every 4-byte group decodes to a valid Unicode codepoint
-     * (U+0000–U+10FFFF, excluding surrogates U+D800–U+DFFF).
+     * Counts the 4-byte groups that are not a Unicode codepoint
+     * (U+0000–U+10FFFF, excluding surrogates U+D800–U+DFFF) under each order.
      *
      * <p>Inspired by ICU4J's {@code CharsetRecog_UTF_32}: the valid codepoint
      * range is tiny (0x000000–0x10FFFF) relative to the 32-bit value space,
@@ -127,14 +141,12 @@ final class WideUnicodeDetector {
      * immediately disqualify it. No null-byte density threshold is needed,
      * which means non-BMP content (emoji, historic scripts) works perfectly.</p>
      */
-    private static Charset tryUtf32(byte[] bytes, int offset, int length) {
+    /** {invalid BE groups, invalid LE groups, groups} over the first 512 bytes. */
+    private static int[] utf32Invalid(byte[] bytes, int offset, int length) {
         int sampleLen = (Math.min(length, 512) / 4) * 4;
-        if (sampleLen < 8) {
-            return null;
-        }
         int groups = sampleLen / 4;
-        int validBe = 0, invalidBe = 0;
-        int validLe = 0, invalidLe = 0;
+        int invalidBe = 0;
+        int invalidLe = 0;
 
         for (int g = 0; g < groups; g++) {
             int base = offset + g * 4;
@@ -144,27 +156,16 @@ final class WideUnicodeDetector {
             int b3 = bytes[base + 3] & 0xFF;
 
             int cpBe = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
-            if (cpBe >= 0 && cpBe <= 0x10FFFF && (cpBe < 0xD800 || cpBe > 0xDFFF)) {
-                validBe++;
-            } else {
+            if (!(cpBe >= 0 && cpBe <= 0x10FFFF && (cpBe < 0xD800 || cpBe > 0xDFFF))) {
                 invalidBe++;
             }
 
             int cpLe = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-            if (cpLe >= 0 && cpLe <= 0x10FFFF && (cpLe < 0xD800 || cpLe > 0xDFFF)) {
-                validLe++;
-            } else {
+            if (!(cpLe >= 0 && cpLe <= 0x10FFFF && (cpLe < 0xD800 || cpLe > 0xDFFF))) {
                 invalidLe++;
             }
         }
-
-        if (invalidBe == 0 && validBe >= UTF32_MIN_VALID) {
-            return Charset.forName("UTF-32BE");
-        }
-        if (invalidLe == 0 && validLe >= UTF32_MIN_VALID) {
-            return Charset.forName("UTF-32LE");
-        }
-        return null;
+        return new int[] {invalidBe, invalidLe, groups};
     }
 
     // -----------------------------------------------------------------------
@@ -238,7 +239,7 @@ final class WideUnicodeDetector {
             }
         }
 
-        return new Result(null, invalidBe, invalidLe);
+        return new Result(null, invalidBe, invalidLe, false, false);
     }
 
 }
