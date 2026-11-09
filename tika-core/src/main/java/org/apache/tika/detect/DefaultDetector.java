@@ -38,7 +38,6 @@ import org.apache.tika.utils.ServiceLoaderUtils;
  * <ol>
  *   <li>MimeTypes (magic byte) detection</li>
  *   <li>Container and other detectors loaded via SPI</li>
- *   <li>TextDetector as fallback for unknown types</li>
  *   <li>Returns the most specific type detected</li>
  * </ol>
  * <p>
@@ -61,14 +60,12 @@ public class DefaultDetector extends CompositeDetector {
     private transient final ServiceLoader loader;
     private final Collection<Class<? extends Detector>> excludedClasses;
     private final MimeTypes mimeTypes;
-    private final TextDetector textDetector;
 
     public DefaultDetector(MimeTypes types, ServiceLoader loader,
                            Collection<Class<? extends Detector>> excludeDetectors) {
         super(types.getMediaTypeRegistry(), getDefaultDetectors(loader, excludeDetectors));
         this.loader = loader;
         this.mimeTypes = types;
-        this.textDetector = new TextDetector();
         this.excludedClasses = excludeDetectors != null ?
                 Collections.unmodifiableCollection(new ArrayList<>(excludeDetectors)) :
                 Collections.emptySet();
@@ -149,18 +146,12 @@ public class DefaultDetector extends CompositeDetector {
         // Note: Container detectors that need random access handle their own spooling
         MediaType detectedType = super.detect(tis, metadata, parseContext);
 
-        // 3. Text detection - only if still unknown
-        MediaType textType = null;
-        if (MediaType.OCTET_STREAM.equals(detectedType) &&
-                MediaType.OCTET_STREAM.equals(magicType)) {
-            textType = textDetector.detect(tis, metadata, parseContext);
-        }
-
-        // 4. Return most specific
-        return mostSpecific(magicType, detectedType, textType);
+        // 3. Return most specific. No text re-sniff: MimeTypes judged text over its full
+        // prefix, and a shorter window calls a text header on a binary body text.
+        return mostSpecific(magicType, detectedType);
     }
 
-    private MediaType mostSpecific(MediaType magicType, MediaType detectedType, MediaType textType) {
+    private MediaType mostSpecific(MediaType magicType, MediaType detectedType) {
         MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
 
         // Collect non-null, non-octet-stream candidates
@@ -186,12 +177,6 @@ public class DefaultDetector extends CompositeDetector {
                 best = detectedType;
             }
             // else: best is already more specific than detectedType, keep best
-        }
-
-        // Text detection as fallback only if still unknown
-        if (MediaType.OCTET_STREAM.equals(best) && textType != null &&
-                !MediaType.OCTET_STREAM.equals(textType)) {
-            best = textType;
         }
 
         return best;
