@@ -49,13 +49,28 @@ final class JunkFamilies {
     static final List<String> CROSS = List.of("UTF-8", "windows-1252", "windows-1250", "windows-1251",
             "GBK", "Shift_JIS", "windows-1253");
 
+    /**
+     * The other ASCII-compatible labels the charset model can return; {@link #EXTRA_DECODES} of
+     * these are added per text, so every candidate the chain offers appears as a wrong decode
+     * (Shift_JIS tables were lost to x-MacCyrillic, which no CJK text was misread with) without
+     * thinning the common pairs above.
+     */
+    static final List<String> EXTRA = List.of("windows-1254", "windows-1255", "windows-1256",
+            "windows-1257", "windows-1258", "x-windows-874", "ISO-8859-2", "ISO-8859-3", "ISO-8859-5",
+            "ISO-8859-6", "ISO-8859-7", "ISO-8859-16", "KOI8-R", "KOI8-U", "IBM437", "IBM850", "IBM852",
+            "IBM855", "IBM866", "x-MacRoman", "x-MacCyrillic", "GB18030", "Big5-HKSCS", "x-EUC-TW",
+            "EUC-JP", "x-windows-949");
+
+    static final int EXTRA_DECODES = 2;
+
     private JunkFamilies() {
     }
 
     /**
      * Misreadings of {@code text}: encode it in one plausible source charset (UTF-8 or a
      * charset of its script that can encode it), decode with every other candidate, keep those
-     * that differ; shuffled, at most {@code max}.
+     * that differ; shuffled, at most {@code max}, plus up to {@link #EXTRA_DECODES} from
+     * {@link #EXTRA}.
      */
     static List<String> wrongDecodes(String text, String script, Random r, int max) {
         List<String> family = SCRIPT_CHARSETS.getOrDefault(script, List.of());
@@ -71,6 +86,15 @@ final class JunkFamilies {
         LinkedHashSet<String> decoders = new LinkedHashSet<>(family);
         decoders.addAll(CROSS);
         decoders.remove(source);
+        List<String> out = misreads(b, text, decoders, r, max);
+        LinkedHashSet<String> extra = new LinkedHashSet<>(EXTRA);
+        extra.removeAll(decoders);
+        extra.remove(source);
+        out.addAll(misreads(b, text, extra, r, EXTRA_DECODES));
+        return out;
+    }
+
+    private static List<String> misreads(byte[] b, String text, Iterable<String> decoders, Random r, int max) {
         List<String> out = new ArrayList<>();
         for (String d : decoders) {
             String m = new String(b, Charset.forName(d));
@@ -79,7 +103,7 @@ final class JunkFamilies {
             }
         }
         Collections.shuffle(out, r);
-        return out.size() > max ? out.subList(0, max) : out;
+        return out.size() > max ? new ArrayList<>(out.subList(0, max)) : out;
     }
 
     /** One junk version of {@code text} from {@code family}; {@code null} if none applies. */
