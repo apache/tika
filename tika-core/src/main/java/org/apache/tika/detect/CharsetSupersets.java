@@ -45,6 +45,10 @@ import java.util.Map;
  *   <li>GBK → GB18030 (GB18030 is a strict superset; enables 4-byte extension sequences)</li>
  *   <li>Shift_JIS → windows-31j (MS932 is a strict superset with NEC/IBM extensions)</li>
  *   <li>EUC-JP → x-eucJP-Open (EUC packing of the NEC/IBM vendor extensions)</li>
+ *   <li>ISO-2022-JP → x-windows-50221 (CP50221 adds the NEC/IBM extensions)</li>
+ *   <li>ISO-8859-1 → windows-1252, ISO-8859-9 → windows-1254, TIS-620 and ISO-8859-11 →
+ *       windows-874 (what browsers do: 0x80-0x9F are punctuation, not C1 controls; the few
+ *       bytes the windows code page leaves undefined decode as U+FFFD)</li>
  * </ul>
  *
  * <h3>Browser patches</h3>
@@ -73,6 +77,11 @@ public final class CharsetSupersets {
         m.put("GBK",       "GB18030");
         m.put("Shift_JIS", "windows-31j");
         m.put("EUC-JP",    "x-eucJP-Open");
+        m.put("ISO-2022-JP", "x-windows-50221");
+        m.put("ISO-8859-1", "windows-1252");
+        m.put("ISO-8859-9", "windows-1254");
+        m.put("TIS-620",    "x-windows-874");
+        m.put("x-iso-8859-11", "x-windows-874");
         SUPERSET_MAP = Collections.unmodifiableMap(m);
     }
 

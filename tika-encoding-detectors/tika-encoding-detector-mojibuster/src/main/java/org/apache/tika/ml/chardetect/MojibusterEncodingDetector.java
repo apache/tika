@@ -72,7 +72,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     // Probe sized by tag-stripped content (16 KB target), capped at 512 KB raw.
     // Markup-heavy pages whose distinguishing bytes (esp. UTF-8 multi-byte
     // sequences) sit past a fixed 16 KB raw window would otherwise starve the
-    // structural UTF-8 check and the model. See AdaptiveProbe.
+    // structural UTF-8 check and the model. See AdaptiveProbe; EvidenceProbe adds
+    // windows from past this prefix when it is not decisive.
     private static final int PROBE_CONTENT_TARGET = AdaptiveProbe.DEFAULT_CONTENT_TARGET;
     private static final int PROBE_RAW_CAP = AdaptiveProbe.DEFAULT_RAW_CAP;
 
@@ -544,7 +545,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // letter-count compare ties on most of their Latin letters
         // because Unicode classifies both decodings as Letters,
         // misleading the rule into a wrong flip).
-        if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName)) {
+        // MacRoman's curly quotes (0xD2-0xD5) are letters under windows-1252, so the count
+        // below always favours windows-1252 on real MacRoman.
+        if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName) || "x-MacRoman".equals(topName)) {
             return ranked;
         }
         Charset win1252 = Charset.forName(WIN1252);
@@ -673,14 +676,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 parseContext == null ? null : parseContext.get(EncodingDetectorContext.class);
         EncodingProbeCache cache = context == null ? null : context.getProbeCache();
         if (cache != null) {
-            byte[] cached = cache.get(PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+            byte[] cached = cache.get(EvidenceProbe.KIND, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
             if (cached != null) {
                 return cached;
             }
         }
-        byte[] probe = AdaptiveProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+        byte[] probe = EvidenceProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
         if (cache != null) {
-            cache.put(probe, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+            cache.put(probe, EvidenceProbe.KIND, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
         }
         return probe;
     }

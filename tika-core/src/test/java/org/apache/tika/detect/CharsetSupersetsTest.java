@@ -41,6 +41,7 @@ public class CharsetSupersetsTest {
         assertEquals("windows-31j", name("Shift_JIS"));
         assertEquals("x-eucJP-Open-WHATWG", name("EUC-JP"));
         assertEquals("x-eucJP-Open-WHATWG", name("x-eucJP-Open"));
+        assertEquals("x-windows-50221", name("ISO-2022-JP"));
     }
 
     @Test
@@ -77,5 +78,33 @@ public class CharsetSupersetsTest {
         assertEquals('\uFFFD', new String(eucjp, Charset.forName("EUC-JP")).charAt(0));
         assertEquals("\u2460", new String(eucjp,
                 CharsetSupersets.supersetOf(Charset.forName("EUC-JP"))));
+
+        byte[] jis = "\u65e5\u2460".getBytes(Charset.forName("x-windows-50221"));
+        assertEquals('\uFFFD', new String(jis, Charset.forName("ISO-2022-JP")).charAt(1));
+        assertEquals("\u65e5\u2460", new String(jis, Charset.forName(name("ISO-2022-JP"))));
+    }
+
+    @Test
+    public void singleByteDecodeAsBrowserCodePage() {
+        assertEquals("windows-1252", name("ISO-8859-1"));
+        assertEquals("windows-1254", name("ISO-8859-9"));
+        assertEquals("x-windows-874", name("TIS-620"));
+        assertEquals("x-windows-874", name("ISO-8859-11"));
+        // 0x92 is a C1 control under ISO-8859-1, a right single quote on real pages
+        assertEquals("\u2019", new String(new byte[]{(byte) 0x92}, Charset.forName(name("ISO-8859-1"))));
+        for (String narrow : new String[]{"ISO-8859-1", "ISO-8859-9", "TIS-620", "ISO-8859-11"}) {
+            Charset n = Charset.forName(narrow);
+            Charset w = Charset.forName(name(narrow));
+            for (int b = 0; b < 256; b++) {
+                if (b >= 0x80 && b < 0xA0) {
+                    continue;
+                }
+                byte[] one = {(byte) b};
+                String expected = new String(one, n);
+                if (expected.charAt(0) != '\uFFFD') {
+                    assertEquals(expected, new String(one, w), narrow + " byte " + b);
+                }
+            }
+        }
     }
 }
