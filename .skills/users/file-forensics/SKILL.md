@@ -186,7 +186,7 @@ the defaults are NOT the same everywhere:
   config (it prints a banner saying so) that already enables the marquee
   items — `parseIncrementalUpdates`, `extractMacros`, `extractActions`,
   `extractInlineImages`. On tika-app, `file-forensics-config.json` still adds
-  `extractFontNames`, `extractScripts`, `includeMissingRows`,
+  `extractFontNames`, `extractScripts`, `includeMissingRows`, OneNote page history,
   deleted/moved-content for legacy `.doc` (on `.docx` the convenience
   config already includes it, so testing this switch on a docx shows no
   diff — that's expected), and pins `accessCheckMode` to
@@ -212,6 +212,9 @@ The full switch list:
   embedded entries), `includeDeletedContent` and `includeMoveFromContent`
   (tracked-change deletions and moved-away text in the output),
   `includeMissingRows` (spreadsheet row gaps)
+- `one-note-parser.includePageHistory` — OneNote `.one` text includes every
+  earlier revision and saved page version, not only each page's current
+  content. History is not marked as such; it is mixed in with the current text.
 - `jsoup-parser.extractScripts` — script bodies in HTML (including HTML
   email bodies and HTML attachments) become their own `MACRO`-typed embedded
   entries instead of being silently dropped: JavaScript in a document is

@@ -34,6 +34,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -76,7 +78,23 @@ public class OneNoteParser implements Parser {
         // TODO - add onetoc and other onenote mime types
     }
 
-    private final OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions();
+    private final OneNoteParserConfig defaultConfig;
+
+    public OneNoteParser() {
+        this(new OneNoteParserConfig());
+    }
+
+    public OneNoteParser(OneNoteParserConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public OneNoteParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, OneNoteParserConfig.class));
+    }
+
+    public OneNoteParserConfig getDefaultConfig() {
+        return defaultConfig;
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -87,6 +105,9 @@ public class OneNoteParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
+        OneNoteParserConfig config = context.get(OneNoteParserConfig.class, defaultConfig);
+        OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions()
+                .setCrawlAllFileNodesFromRoot(config.isIncludePageHistory());
         try (OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
                         tis.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);

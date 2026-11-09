@@ -168,7 +168,8 @@ Release 4.3.0 - ???
 
    * OneNote .one sections give each page's current text only, no longer every earlier
      revision and page history version as well; metadata and attachments still cover all
-     revisions (TIKA-5057).
+     revisions. Set includePageHistory on one-note-parser (OneNoteParserConfig) for the
+     earlier text (TIKA-5057).
 
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt

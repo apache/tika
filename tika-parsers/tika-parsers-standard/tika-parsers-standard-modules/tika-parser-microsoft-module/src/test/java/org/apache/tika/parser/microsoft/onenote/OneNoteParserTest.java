@@ -53,6 +53,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -62,6 +63,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
 import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.ToTextContentHandler;
@@ -458,6 +460,22 @@ public class OneNoteParserTest extends TikaTest {
                 Instant.ofEpochMilli(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "lastModifiedTimestamp"))));
         assertEquals(Instant.ofEpochSecond(1574426628),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(TikaCoreProperties.MODIFIED))));
+    }
+
+    @Test
+    public void testPageHistory() throws Exception {
+        ParseContext context = new ParseContext();
+        OneNoteParserConfig config = new OneNoteParserConfig();
+        config.setIncludePageHistory(true);
+        context.set(OneNoteParserConfig.class, config);
+        String txt = getText("testOneNote2.one", new Metadata(), context);
+        assertContains("tubular", txt);
+        assertContains("neat info about totally killin it bro", txt);
+
+        Parser parser = TikaLoader.load(getConfigPath(OneNoteParserTest.class,
+                "tika-config-onenote-page-history.json")).loadAutoDetectParser();
+        assertContains("neat info about totally killin it bro",
+                getText("testOneNote2.one", parser));
     }
 
     @Test
