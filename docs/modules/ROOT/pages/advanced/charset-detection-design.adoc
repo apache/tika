@@ -232,8 +232,9 @@ Otherwise the whole probe is scored.
 * **Probes under 2 bytes**, or an empty pool → windows-1252 at 0.1 confidence.
   The WHATWG default; the detector never returns an empty result.
 * **Latin-sibling rewrite** — if the top candidate is a Western Latin sibling
-  (x-MacRoman, IBM850, ISO-8859-15) and the probe has at least as many cased
-  letters at high-byte positions under windows-1252, rewrite it to windows-1252.
+  (IBM850, ISO-8859-15) and the probe has at least as many cased letters at
+  high-byte positions under windows-1252, rewrite it to windows-1252.  x-MacRoman
+  is exempt: its curly quotes (0xD2-0xD5) are letters under windows-1252.
 
 ==== CJK decode-failure veto (`CjkDecodeValidator`)
 
