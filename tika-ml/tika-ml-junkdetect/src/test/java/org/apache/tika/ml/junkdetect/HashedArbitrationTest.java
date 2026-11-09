@@ -106,14 +106,27 @@ public class HashedArbitrationTest {
         assertNull(d.getAnchor());
         assertEquals(W1252, d.pick(Double.MAX_VALUE));
 
-        // when the champion has replacement characters too, the declaration stays the anchor
-        Map<Charset, String> both = new LinkedHashMap<>();
-        both.put(W1252, "caf� und mehr");
-        both.put(iso3, "ca�� und mehr");
-        HashedArbitration.Decision b = HashedArbitration.decide(model, both, null, iso3);
+        // a champion with as many replacement characters leaves the declaration as the anchor
+        Map<Charset, String> same = new LinkedHashMap<>();
+        same.put(W1252, "caf� und mehr");
+        same.put(iso3, "ca�s und mehr");
+        HashedArbitration.Decision b = HashedArbitration.decide(model, same, null, iso3);
         if (!b.getChampion().equals(iso3)) {
             assertEquals(iso3, b.getAnchor());
         }
+        // one with fewer does not: 0x81 is undefined in windows-1252, a C1 control in ISO-8859-3
+        byte[] spanish = ("¡Bienvenidos al Ayuntamiento! ¿Necesita ayuda? ").getBytes(L1);
+        byte[] stray = new byte[spanish.length + page.length + 1];
+        System.arraycopy(spanish, 0, stray, 0, spanish.length);
+        System.arraycopy(page, 0, stray, spanish.length, page.length);
+        stray[stray.length - 1] = (byte) 0x81;
+        Map<Charset, String> fewer = new LinkedHashMap<>();
+        fewer.put(W1252, new String(stray, W1252));
+        fewer.put(iso3, new String(stray, iso3));
+        assertTrue(fewer.get(W1252).indexOf('�') >= 0);
+        HashedArbitration.Decision f = HashedArbitration.decide(bundled, fewer, null, iso3);
+        assertEquals(W1252, f.getChampion());
+        assertNull(f.getAnchor());
     }
 
     @Test

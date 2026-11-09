@@ -81,13 +81,17 @@ public final class HashedArbitration {
             logit = ld[0];
             difference = (long) ld[1];
         }
-        // a declaration whose decode has replacement characters the champion's lacks is a failed decode, not an anchor
-        if (declared != null && texts.containsKey(declared) && texts.get(declared).indexOf('�') >= 0
-                && championText.indexOf('�') < 0) {
+        // a declaration whose decode has more replacement characters than the champion's is a failed decode, not an anchor
+        if (declared != null && texts.containsKey(declared)
+                && replacements(texts.get(declared)) > replacements(championText)) {
             declared = null;
         }
         return new Decision(champion, logit, difference, structural != null ? structural : declared,
                 model.getDeferThreshold());
+    }
+
+    private static long replacements(String s) {
+        return s.chars().filter(c -> c == '�').count();
     }
 
     /** The champion, its margin, and the anchor it yields to on a thin margin. */

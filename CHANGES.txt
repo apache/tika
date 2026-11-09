@@ -381,9 +381,12 @@ Release 4.3.0 - ???
      Portuguese and Catalan text with ¡ ¿ º ª as windows-1252, not ISO-8859-3; Kurmanji
      as windows-1254; and text with a few stray NUL bytes as text (TIKA-5052).
 
-   * Charset arbitration no longer defers to a declared charset whose decode has
-     replacement characters that the best-scoring decode lacks, such as a page declared
+   * Charset arbitration no longer defers to a declared charset whose decode has more
+     replacement characters than the best-scoring decode, such as a page declared
      iso-8859-3 but written in windows-1252 (TIKA-5027).
+
+   * Charset detection keeps x-MacRoman instead of relabelling it windows-1252 when the
+     text has MacRoman curly quotes (TIKA-5052).
 
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>
