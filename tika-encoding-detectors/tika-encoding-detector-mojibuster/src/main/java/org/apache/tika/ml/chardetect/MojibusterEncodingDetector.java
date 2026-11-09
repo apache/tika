@@ -544,7 +544,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // letter-count compare ties on most of their Latin letters
         // because Unicode classifies both decodings as Letters,
         // misleading the rule into a wrong flip).
-        if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName)) {
+        // MacRoman's curly quotes (0xD2-0xD5) are letters under windows-1252, so the count
+        // below always favours windows-1252 on real MacRoman.
+        if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName) || "x-MacRoman".equals(topName)) {
             return ranked;
         }
         Charset win1252 = Charset.forName(WIN1252);

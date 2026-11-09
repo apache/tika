@@ -13,11 +13,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-model_sha256	2342e4c26e1a09371c9d80f616e4a4e89397484e24fa883b5d72298f35060b5f
-model_md5	9915a5d2d98f7128d7419c82127fdf08
+model_sha256	b1a64c01b6404c1dbe9644a054907e4975e9cb527b12c31895612806f72ebeb4
+model_md5	7cd1606fdff904d026678e966c18dab6
 model_bytes	2742509
 format	HNG2 (see tika-ml/tika-ml-chardetect/README.md)
-status	final-v112 "R", seed 11, 2026-11-05; trained on gold v1.12
+status	datafix "ALL", seed 7, 2026-11-07; trained on gold v1.12 (R-s11 recipe plus the data fixes below)
 
 Architecture
   43 classes: 37 legacy/UTF-8 charsets (IBM420/IBM424 as -ltr/-rtl pairs), IBM437, binary,
@@ -33,11 +33,16 @@ Training data (nothing from the 1.2M regression corpus)
   Gold of record v1.12 (Common Crawl HTML, Common Crawl non-HTML, CC v3) fit part only:
   tier A, re-encoded non-HTML UTF-8 units (weight 0.2); tier B, real legacy-charset bytes (weight 0.2).
   UTF-16LE/BE positives (generated, all scripts, with/without BOM, emoji rates, lengths from 16 bytes,
-  even-aligned crops).
+  even-aligned crops), plus rows with trailing U+0000 padding, U+0000 separators and C0 code units, and
+  fully vocalized Arabic (Arabic Wikisource, train buckets by book).
+  Vocalized Arabic in windows-1256 / ISO-8859-6; Spanish/Portuguese/Catalan/Galician Wikisource and Spanish
+  Wikiquote in windows-1252 (dialogue/literary text with ¡ ¿ º ª); Kurmanji Wikipedia in windows-1254.
+  Text with sparse single NULs (<= 2%) labelled by its charset.
+  Tier B rows whose label set decodes identically take windows-1252 as a hard target.
   Negatives: generated UTF-32LE/BE rows (own classes); generated binary (NUL records, deflate, bytecode,
-  integer arrays, random, executables, scattered NULs) plus the gold v1.12 fit binary-verdict documents
+  integer arrays, random, executables; the scattered-NUL text family was removed) plus the gold v1.12 fit binary-verdict documents
   (1,123) as class "binary".
   Web probes went through the production HTML strip rule (maybeStripHtml, no content type).
-  Selection on held-out train-side sets (gold v1.12 train sel split, Wikipedia bucket 8) by a rule fixed
-  before training; gold v1.12 dev scored once, after the freeze.  Test and sealed splits and Wikipedia
+  Selection on held-out train-side sets only (gold v1.12 train sel split, Wikipedia/Wikisource bucket 8,
+  real regression-corpus failures as eval only); seed chosen by the sel score.  Dev not scored.  Test and sealed splits and Wikipedia
   buckets 0 and 9 were not read.
