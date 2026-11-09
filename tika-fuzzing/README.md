@@ -32,10 +32,20 @@ The targets look for OOM, stack overflow, hangs, and exceptions other than
 |---|---|---|
 | `-Dtika.fuzz.timeout=<s>` | `60` | per-input parse timeout, all modes; a hang is reported with the stuck stack |
 | `-Dtika.fuzz.xmx=<size>` | `3g` | test JVM heap (OSS-Fuzz uses `-Xmx3000m`) |
+| `-Dtika.fuzz.config=<path>` | none | Tika JSON config for the parser, e.g. to turn OCR off |
 | `JAZZER_MAX_DURATION=<d>` | Jazzer's | length of a fuzzing session |
 
 Do not use JUnit's `junit.jupiter.execution.timeout.*`: in fuzzing mode it ends the
 whole session, not one input.
+
+## Tesseract
+
+If `tesseract` is on the PATH, Tika runs OCR on every image it meets, embedded ones
+included. OCR is an external process: Jazzer gets no coverage from it, and it makes parses
+slow enough to time out. A timed-out parse cannot be stopped, so its OCR keeps running and
+later inputs time out too. OSS-Fuzz images have no Tesseract. Turn OCR off in every mode
+below with `-Dtika.fuzz.config=src/test/resources/tika-config-no-ocr.json` (relative to
+this module, where the tests run).
 
 ## Regression mode (every build)
 

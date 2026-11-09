@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -45,16 +47,30 @@ import org.apache.tika.sax.RecursiveParserWrapperHandler;
  * (OOM, stack overflow), hangs, and anything not a TikaException/IOException/SAXException.
  * With {@code -Dtika.fuzz.strict=true}, a parser RuntimeException that CompositeParser
  * wrapped in a TikaException is a finding too. A parse longer than {@code tika.fuzz.timeout}
- * seconds (default 60) is reported with the stuck thread's stack.
+ * seconds (default 60) is reported with the stuck thread's stack. {@code -Dtika.fuzz.config}
+ * names a Tika JSON config to build the parser from.
  */
 class AutoDetectParserFuzzTest {
 
-    private static final Parser PARSER = new RecursiveParserWrapper(new AutoDetectParser());
+    private static final Parser PARSER = new RecursiveParserWrapper(autoDetectParser());
     private static final boolean STRICT = Boolean.getBoolean("tika.fuzz.strict");
     private static final long TIMEOUT_SECONDS = Long.getLong("tika.fuzz.timeout", 60);
 
     private static ExecutorService worker;
     private static volatile Thread workerThread;
+
+    /** @return the AutoDetectParser from {@code -Dtika.fuzz.config}, or the default one */
+    private static Parser autoDetectParser() {
+        String config = System.getProperty("tika.fuzz.config");
+        if (config == null || config.isBlank()) {
+            return new AutoDetectParser();
+        }
+        try {
+            return TikaLoader.load(Paths.get(config)).loadAutoDetectParser();
+        } catch (TikaException | IOException e) {
+            throw new IllegalStateException("cannot load tika.fuzz.config " + config, e);
+        }
+    }
 
     @FuzzTest
     void bytes(byte[] data) throws Exception {
