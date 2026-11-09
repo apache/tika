@@ -395,6 +395,15 @@ Release 4.3.0 - ???
      tika-eval:languagenessCoverage. Languageness is -99 (unknown) for text with no letters
      or with under 90% of its letters in scripts the model was trained on (TIKA-5027).
 
+   * Charset detection finds non-ASCII text past the first 16 KB, as in an email with a
+     long ASCII header block, a log or a CSV: those were reported as windows-1252. When the
+     leading sample is not conclusive, detection reads on (up to 16 MB of a file or byte
+     array, 1 MB of a stream) and adds the bytes around each non-ASCII byte and each
+     ISO-2022, HZ or UTF-7 sequence to the sample, stopping at 50 non-ASCII bytes or 16
+     UTF-8 characters. Fewer than 8 scattered non-ASCII bytes leave the sample as it was.
+     The junk filter scores the same sample. EncodingProbeCache keys on a probe kind
+     (TIKA-5046).
+
   OTHER CHANGES
 
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers

@@ -228,8 +228,8 @@ public class TikaEncodingDetectorTest extends TikaTest {
     public void testMarkLimitIntegration() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><head><script>");
-        // ~600 KB of script: past mojibuster's 512 KB probe and the html mark
-        // limit, so the buried meta + UTF-8 body aren't reached by default.
+        // ~600 KB of script: past mojibuster's 512 KB prefix and the html mark
+        // limit, so the buried meta isn't reached by default.
         for (int i = 0; i < 120000; i++) {
             sb.append("blah ");
         }
@@ -241,19 +241,17 @@ public class TikaEncodingDetectorTest extends TikaTest {
 
         byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-        // Default: meta buried at ~byte 600,000, past mojibuster's probe and the
-        // html mark limit, so mojibuster sees pure ASCII and returns windows-1252.
-        // Entities (&#248;) survive; raw UTF-8 (ø in "økologisk") is garbled.
-        // Raised mark limit fixes it (see below).
+        // Default: the meta at ~byte 600,000 is past the html mark limit, but
+        // mojibuster's evidence probe reaches the UTF-8 body (TIKA-5046).
         Parser p = AUTO_DETECT_PARSER;
 
         Metadata metadata = new Metadata();
         String xml = getXML(TikaInputStream.get(bytes), p, metadata).xml;
 
-        assertContains("gr\u00F8nd", xml);       // &#248; entity — correct regardless
-        assertNotContained("\u00f8kologisk", xml); // raw UTF-8 bytes — garbled by default
-        assertNotContained("gr\u00F8nt", xml);
-        assertNotContained("g\u00E5 til", xml);
+        assertContains("gr\u00F8nd", xml);
+        assertContains("\u00f8kologisk", xml);
+        assertContains("gr\u00F8nt", xml);
+        assertContains("g\u00E5 til", xml);
 
         // Raised mark limit reaches the meta and decodes UTF-8.
         p = TikaLoaderHelper.getLoader("TIKA-2485-encoding-detector-mark-limits.json").loadAutoDetectParser();
