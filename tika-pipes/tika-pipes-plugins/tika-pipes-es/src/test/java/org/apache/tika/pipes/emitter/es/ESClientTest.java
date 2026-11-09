@@ -343,4 +343,16 @@ public class ESClientTest extends TikaTest {
         assertThrows(TikaConfigException.class, () -> ESEmitterConfig.load(
                 String.format(Locale.ROOT, base, "PARENT_CHILD", ", \"chunkStrategy\": \"DOCUMENTS\"")));
     }
+
+    /** A valid tk:chunks value with newlines around its tokens cannot split the NDJSON _bulk body. */
+    @Test
+    public void testChunksWithNewlinesStayOnOneLine() throws Exception {
+        CapturingClient client = new CapturingClient(config(
+                ESEmitterConfig.UpdateStrategy.OVERWRITE, ESEmitterConfig.ChunkStrategy.INLINE));
+        client.emitDocument("k", List.of(document("[\n{\"text\":\"a\"},\n{\"text\":\"b\"}\n]")));
+        List<JsonNode> lines = lines(client.bodies.get(0));
+        assertEquals(2, lines.size(), "one action and one source document, not split by newlines");
+        assertTrue(lines.get(1).get("tk:chunks").isArray());
+        assertEquals(2, lines.get(1).get("tk:chunks").size());
+    }
 }

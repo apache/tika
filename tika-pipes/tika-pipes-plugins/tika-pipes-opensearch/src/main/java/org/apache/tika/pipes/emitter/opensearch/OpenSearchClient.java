@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -485,7 +486,10 @@ public class OpenSearchClient {
                 if (isJsonField(n)
                         && isValidJson(vals[0])) {
                     jsonGenerator.writeFieldName(n);
-                    jsonGenerator.writeRawValue(vals[0]);
+                    // re-serialize compact rather than passing vals[0] through raw: an embedded
+                    // newline in an otherwise valid value would split the NDJSON _bulk body into
+                    // extra action lines
+                    jsonGenerator.writeRawValue(VALIDATION_MAPPER.readTree(vals[0]).toString());
                 } else {
                     jsonGenerator.writeStringField(n, vals[0]);
                 }
@@ -501,10 +505,17 @@ public class OpenSearchClient {
 
     private static final ObjectMapper VALIDATION_MAPPER = new ObjectMapper();
 
+    private static final JsonFactory STRICT_JSON_FACTORY = new JsonFactory();
+
     /**
-     * Validates that the value is well-formed JSON (array or object)
-     * before writing it as raw JSON. This prevents injection of
-     * arbitrary content into the bulk request payload.
+     * Validates that the value is well-formed JSON (array or object) with
+     * no trailing content before writing it as raw JSON.
+     *
+     * <p>{@code ObjectMapper.readTree()} silently ignores trailing content,
+     * so a value like {@code [1,2,3], "injected": true} would pass a simple
+     * readTree check and then inject extra fields into the document via
+     * {@code writeRawValue}. We use a {@link JsonParser} directly and
+     * assert that the stream is fully consumed after the root value.
      */
     private static boolean isValidJson(String value) {
         if (value == null || value.isEmpty()) {
@@ -514,8 +525,14 @@ public class OpenSearchClient {
         if (first != '[' && first != '{') {
             return false;
         }
-        try {
-            VALIDATION_MAPPER.readTree(value);
+        try (JsonParser parser = STRICT_JSON_FACTORY.createParser(value)) {
+            parser.nextToken();
+            parser.skipChildren();
+            if (parser.nextToken() != null) {
+                LOG.warn("Field value has trailing content after root JSON value; "
+                        + "writing as escaped string");
+                return false;
+            }
             return true;
         } catch (IOException e) {
             LOG.warn("Field value starts with '{}' but is not valid JSON; "
