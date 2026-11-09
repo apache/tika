@@ -23,60 +23,89 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 /**
- * This is copied mostly from the the
- * former org.apache.tika.parser.mp4.DirectFileReadDataSource
- * <p>
- * Implements a simple way to encapsulate a {@link org.apache.tika.io.TikaInputStream} that you
- * will have to seek,read,repeat while parsing OneNote contents.
+ * Seekable reads over a OneNote file. The parser mostly reads a few bytes at a time, so reads
+ * come from a window of the file rather than one system call each.
  */
 class OneNoteDirectFileResource implements Closeable {
 
-    private static final int TRANSFER_SIZE = 8192;
+    private static final int WINDOW_SIZE = 64 * 1024;
 
     private final RandomAccessFile raf;
+    private final long size;
+    private final byte[] window = new byte[WINDOW_SIZE];
+    // file offset of window[0], and how many bytes of the window are valid
+    private long windowStart;
+    private int windowLength;
+    private long position;
 
     public OneNoteDirectFileResource(File f) throws IOException {
         this.raf = new RandomAccessFile(f, "r");
+        this.size = raf.length();
     }
 
     public int read() throws IOException {
-        return raf.read();
+        if (position >= size) {
+            return -1;
+        }
+        if (!inWindow(position)) {
+            fill(position);
+        }
+        return window[(int) (position++ - windowStart)] & 0xFF;
     }
 
     public int read(ByteBuffer byteBuffer) throws IOException {
         int len = byteBuffer.remaining();
         int totalRead = 0;
-        int bytesRead = 0;
-        byte[] buf = new byte[TRANSFER_SIZE];
-        while (totalRead < len) {
-            int bytesToRead = Math.min((len - totalRead), TRANSFER_SIZE);
-            bytesRead = raf.read(buf, 0, bytesToRead);
-            if (bytesRead < 0) {
-                break;
-            } else {
-                totalRead += bytesRead;
+        while (totalRead < len && position < size) {
+            if (!inWindow(position)) {
+                if (len - totalRead >= WINDOW_SIZE) {
+                    // large reads bypass the window
+                    int n = raf.getChannel().read(byteBuffer, position);
+                    if (n < 0) {
+                        break;
+                    }
+                    position += n;
+                    totalRead += n;
+                    continue;
+                }
+                fill(position);
             }
-            byteBuffer.put(buf, 0, bytesRead);
+            int offset = (int) (position - windowStart);
+            int n = Math.min(len - totalRead, windowLength - offset);
+            byteBuffer.put(window, offset, n);
+            position += n;
+            totalRead += n;
         }
-        if (bytesRead < 0 && position() == size() && byteBuffer.hasRemaining()) {
+        if (totalRead < len && position == size) {
             throw new IOException("End of stream reached earlier than expected");
         }
-        return ((bytesRead < 0) && (totalRead == 0)) ? -1 : totalRead;
+        return totalRead == 0 && len > 0 ? -1 : totalRead;
+    }
+
+    private boolean inWindow(long pos) {
+        return pos >= windowStart && pos < windowStart + windowLength;
+    }
+
+    private void fill(long pos) throws IOException {
+        raf.seek(pos);
+        int n = raf.read(window, 0, (int) Math.min(WINDOW_SIZE, size - pos));
+        windowStart = pos;
+        windowLength = Math.max(n, 0);
     }
 
     public long size() throws IOException {
-        return raf.length();
+        return size;
     }
 
     public long position() throws IOException {
-        return raf.getFilePointer();
+        return position;
     }
 
     public void position(long nuPos) throws IOException {
-        if (nuPos > raf.length()) {
+        if (nuPos > size) {
             throw new IOException("requesting seek past end of stream");
         }
-        raf.seek(nuPos);
+        position = nuPos;
     }
 
     @Override

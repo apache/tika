@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -201,7 +202,7 @@ class OneNoteTreeWalker {
             for (ExtendedGUID revisionListGuid : oneNoteDocument.revisionListOrder) {
                 Map<String, Object> structure = new HashMap<>();
                 structure.put("oneNoteType", "Revision");
-                structure.put("revisionListGuid", revisionListGuid.toString());
+                structure.put("revisionListGuid", revisionListGuid);
                 FileNodePtr fileNodePtr =
                         oneNoteDocument.revisionManifestLists.get(revisionListGuid);
                 structure.put("fileNode", walkRevision(fileNodePtr));
@@ -248,7 +249,7 @@ class OneNoteTreeWalker {
         FileNode revisionFileNode = fileNodePtr.dereference(oneNoteDocument);
         structure.put("fileNodeId", revisionFileNode.id);
         if (revisionFileNode.gosid != null) {
-            structure.put("gosid", revisionFileNode.gosid.toString());
+            structure.put("gosid", revisionFileNode.gosid);
         }
         structure.put("subType", revisionFileNode.subType);
         structure.put("size", revisionFileNode.size);
@@ -493,7 +494,7 @@ class OneNoteTreeWalker {
             throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNode");
-        structure.put("gosid", fileNode.gosid.toString());
+        structure.put("gosid", fileNode.gosid);
         structure.put("size", fileNode.size);
         structure.put("fileNodeId", "0x" + Long.toHexString(fileNode.id));
         structure.put("fileNodeIdName", FndStructureConstants.nameOf(fileNode.id));
@@ -776,7 +777,7 @@ class OneNoteTreeWalker {
             throws IOException, TikaException, SAXException {
         Map<String, Object> propMap = new HashMap<>();
         propMap.put("oneNoteType", "PropertyValue");
-        propMap.put("propertyId", propertyValue.propertyId.toString());
+        propMap.put("propertyId", propertyValue.propertyId);
 
         if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
             long fullval = propertyValue.scalar;
@@ -836,12 +837,9 @@ class OneNoteTreeWalker {
                         .contains(propertyValue.propertyId.propertyEnum) &&
                         !OneNoteText.isImageText(propertyValue.propertyId.propertyEnum) &&
                         shouldEmitText(content.size());
-                ByteBuffer buf = ByteBuffer.allocate(content.size());
-                dif.read(buf);
-                propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (print) {
                     emitUtf16Property(propertyValue.propertyId.propertyEnum,
-                            (String) propMap.get("dataUnicode16LE"));
+                            readString(content.size(), StandardCharsets.UTF_16LE));
                 }
             } else if (OneNoteText.isExtendedAscii(propertyValue.propertyId.propertyEnum)) {
                 if (content.size() > dif.size()) {
@@ -849,12 +847,8 @@ class OneNoteTreeWalker {
                             "File data store cb " + content.size() + " exceeds document size: " +
                                     dif.size());
                 }
-                boolean print = shouldEmitText(content.size());
-                ByteBuffer buf = ByteBuffer.allocate(content.size());
-                dif.read(buf);
-                propMap.put("dataAscii", new String(buf.array(), OneNoteText.EXTENDED_ASCII));
-                if (print) {
-                    emitParagraph((String) propMap.get("dataAscii"));
+                if (shouldEmitText(content.size())) {
+                    emitParagraph(readString(content.size(), OneNoteText.EXTENDED_ASCII));
                 }
             } else if (!isBinary) {
                 if (content.size() > dif.size()) {
@@ -866,12 +860,9 @@ class OneNoteTreeWalker {
                         .contains(propertyValue.propertyId.propertyEnum) &&
                         !OneNoteText.isImageText(propertyValue.propertyId.propertyEnum) &&
                         shouldEmitText(content.size());
-                ByteBuffer buf = ByteBuffer.allocate(content.size());
-                dif.read(buf);
-                propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (print) {
                     emitUtf16Property(propertyValue.propertyId.propertyEnum,
-                            (String) propMap.get("dataUnicode16LE"));
+                            readString(content.size(), StandardCharsets.UTF_16LE));
                 }
             } else {
                 if (content.size() > dif.size()) {
@@ -939,6 +930,13 @@ class OneNoteTreeWalker {
             }
         }
         return propMap;
+    }
+
+    /** @return the next {@code length} bytes at {@code dif}'s position, decoded */
+    private String readString(int length, Charset charset) throws IOException {
+        ByteBuffer buf = ByteBuffer.allocate(length);
+        dif.read(buf);
+        return new String(buf.array(), charset);
     }
 
     /**
