@@ -104,6 +104,11 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * ISO-2022-JP is decoded as x-windows-50221, so NEC/IBM extension characters (circled
+     numbers, Roman numerals) no longer become U+FFFD. ISO-8859-1, ISO-8859-9, TIS-620 and
+     ISO-8859-11 decode as windows-1252, windows-1254 and windows-874, as browsers do, when a
+     detector other than the default chain reports them (TIKA-5045).
+
    * Markdown output keeps document code inside its code spans and blocks: a line of
      backticks inside <pre> no longer closes the fenced code block, and a line break inside
      inline code, alt text or a link destination, or a lone CR inside <pre>, no longer starts
