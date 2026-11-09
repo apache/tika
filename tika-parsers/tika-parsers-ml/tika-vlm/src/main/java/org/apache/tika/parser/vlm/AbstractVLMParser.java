@@ -37,7 +37,6 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.ParseTimeout;
-import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
@@ -68,7 +67,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @since Apache Tika 4.0
  */
-@RequestConfigurable
 public abstract class AbstractVLMParser implements Parser, Initializable, Closeable,
         TextRecognizer {
 

@@ -38,6 +38,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.loader.MinimalTestParser;
 import org.apache.tika.config.loader.RequestConfigTestParser;
+import org.apache.tika.config.loader.RequestConfigTestPlainSubParser;
 import org.apache.tika.config.loader.RequestConfigTestSubParser;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
@@ -78,10 +79,19 @@ public class RequestConfigurableTest {
     }
 
     @Test
-    public void testSubclassInheritsAnnotation() throws Exception {
+    public void testAnnotatedSubclassReadsOwnBlock() throws Exception {
         ParseContext context = ParseContextDeserializer.readParseContext(
                 json("{\"request-config-test-sub-parser\":{\"maxItems\":3}}"), true);
         assertEquals("3", parse(new RequestConfigTestSubParser(), context).get("maxItems"));
+    }
+
+    /** A subclass reading its superclass's key must not inherit the annotation and its silence. */
+    @Test
+    public void testAnnotationNotInherited() throws Exception {
+        assertFalse(readsBlock("request-config-test-plain-sub-parser"));
+        ParseContext context = ParseContextDeserializer.readParseContext(
+                json("{\"request-config-test-plain-sub-parser\":{\"maxItems\":3}}"), true);
+        assertEquals("1", parse(new RequestConfigTestPlainSubParser(), context).get("maxItems"));
     }
 
     @Test

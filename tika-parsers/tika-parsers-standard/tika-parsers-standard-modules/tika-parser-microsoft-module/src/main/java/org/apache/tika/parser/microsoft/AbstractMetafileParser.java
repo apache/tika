@@ -19,7 +19,6 @@ package org.apache.tika.parser.microsoft;
 import java.io.IOException;
 
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -33,7 +32,6 @@ import org.apache.tika.renderer.Renderer;
  * What {@link EMFParser} and {@link WMFParser} share: the configuration of
  * the metafile parsers and the renderer they may be handed.
  */
-@RequestConfigurable
 abstract class AbstractMetafileParser implements Parser, RenderingParser {
 
     private final MetafileParserConfig defaultConfig;

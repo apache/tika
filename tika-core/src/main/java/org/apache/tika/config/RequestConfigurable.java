@@ -18,14 +18,13 @@ package org.apache.tika.config;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a {@link SelfConfiguring} component (inherited by subclasses) that reads a
- * {@code parse-context} block under its own name through {@link ParseContextConfig#getConfig}.
+ * Marks a {@link SelfConfiguring} component that reads a {@code parse-context} block under its
+ * own name through {@link ParseContextConfig#getConfig}.
  * <p>
  * Every parser, detector, renderer and translator is self-configuring, but most never read
  * such a block. A {@code parse-context} entry naming a self-configuring component without
@@ -37,11 +36,13 @@ import java.lang.annotation.Target;
  * missing annotation fails an assertion on every read, block or not, so it surfaces in any
  * test run with {@code -ea}; any other component reading a block without it is logged as a
  * warning, once.
+ * <p>
+ * Not inherited: a subclass registered under its own name reads that name's block only if it
+ * says so, so it carries the annotation itself.
  *
  * @since Apache Tika 4.3
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface RequestConfigurable {

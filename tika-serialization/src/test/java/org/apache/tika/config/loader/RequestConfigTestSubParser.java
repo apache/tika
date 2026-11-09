@@ -17,8 +17,10 @@
 package org.apache.tika.config.loader;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.RequestConfigurable;
 
-/** Inherits {@code @RequestConfigurable} from its superclass. */
+/** Reads a block under its own name, so it carries {@code @RequestConfigurable} itself. */
+@RequestConfigurable
 @TikaComponent(name = "request-config-test-sub-parser", spi = false)
 public class RequestConfigTestSubParser extends RequestConfigTestParser {
 
