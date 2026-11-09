@@ -104,6 +104,10 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * ASX playlists (application/x-ms-asx) are parsed by JSoupParser; XMLParser failed on
+     many real ones (mixed-case or unclosed tags, raw '&', non-UTF-8 without a declaration).
+     Texinfo files are parsed as text; they produced no content (TIKA-5029).
+     
    * ISO-2022-JP is decoded as x-windows-50221, so NEC/IBM extension characters (circled
      numbers, Roman numerals) no longer become U+FFFD. ISO-8859-1, ISO-8859-9, TIS-620 and
      ISO-8859-11 decode as windows-1252, windows-1254 and windows-874, as browsers do, when a
