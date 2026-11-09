@@ -170,17 +170,13 @@ class OneNoteTreeWalker {
     }
 
     /**
-     * Parse the tree.
+     * Walks the tree, writing text, metadata and embedded documents as it goes.
      *
-     * @return Map of the fully parsed one note document.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkTree() throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("header", oneNoteDocument.header);
+    public void walkTree() throws IOException, TikaException, SAXException {
         try {
-            structure.put("rootFileNodes", walkRootFileNodes());
-            return structure;
+            walkRootFileNodes();
         } finally {
             publishGuidBags();
         }
@@ -190,23 +186,14 @@ class OneNoteTreeWalker {
      * Walk the root file nodes, depending on the options will crawl revisions or the entire
      * revision tree.
      *
-     * @return List of the root file nodes.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public List<Map<String, Object>> walkRootFileNodes()
-            throws IOException, TikaException, SAXException {
-        List<Map<String, Object>> res = new ArrayList<>();
+    public void walkRootFileNodes() throws IOException, TikaException, SAXException {
         if (options.isCrawlAllFileNodesFromRoot()) {
-            res.add(walkFileNodeList(oneNoteDocument.root, null));
+            walkFileNodeList(oneNoteDocument.root, null);
         } else {
             for (ExtendedGUID revisionListGuid : oneNoteDocument.revisionListOrder) {
-                Map<String, Object> structure = new HashMap<>();
-                structure.put("oneNoteType", "Revision");
-                structure.put("revisionListGuid", revisionListGuid);
-                FileNodePtr fileNodePtr =
-                        oneNoteDocument.revisionManifestLists.get(revisionListGuid);
-                structure.put("fileNode", walkRevision(fileNodePtr));
-                res.add(structure);
+                walkRevision(oneNoteDocument.revisionManifestLists.get(revisionListGuid));
             }
             // metadata and attachments still come from every revision; with no current
             // content, so does the text
@@ -214,12 +201,11 @@ class OneNoteTreeWalker {
             walkedContexts.clear();
             visitsRemaining = initialVisits;
             try {
-                res.add(walkFileNodeList(oneNoteDocument.root, null));
+                walkFileNodeList(oneNoteDocument.root, null);
             } finally {
                 collectOnly = false;
             }
         }
-        return res;
     }
 
     /**
@@ -238,22 +224,11 @@ class OneNoteTreeWalker {
      * Walk revisions.
      *
      * @param fileNodePtr The file node pointer to start with.
-     * @return A map of the parsed data.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private Map<String, Object> walkRevision(FileNodePtr fileNodePtr)
+    private void walkRevision(FileNodePtr fileNodePtr)
             throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("oneNoteType", "FileNodePointer");
-        structure.put("offsets", fileNodePtr.nodeListPositions);
         FileNode revisionFileNode = fileNodePtr.dereference(oneNoteDocument);
-        structure.put("fileNodeId", revisionFileNode.id);
-        if (revisionFileNode.gosid != null) {
-            structure.put("gosid", revisionFileNode.gosid);
-        }
-        structure.put("subType", revisionFileNode.subType);
-        structure.put("size", revisionFileNode.size);
-        structure.put("isFileData", revisionFileNode.isFileData);
 
         Set<ExtendedGUID> validRevisions = new HashSet<>();
         for (int i = revisionFileNode.childFileNodeList.children.size() - 1; i >= 0; --i) {
@@ -279,7 +254,6 @@ class OneNoteTreeWalker {
                 contentRoots.computeIfAbsent(rid, k -> new ArrayList<>()).add(child.gosid);
             }
         }
-        List<Map<String, Object>> children = new ArrayList<>();
         for (FileNode child : revisionFileNode.childFileNodeList.children) {
             if ((child.id == FndStructureConstants.RevisionManifestStart4FND ||
                     child.id == FndStructureConstants.RevisionManifestStart6FND ||
@@ -288,21 +262,13 @@ class OneNoteTreeWalker {
                 walkedRevision = child.gosid;
                 try {
                     for (ExtendedGUID root : contentRoots(child.gosid, contentRoots)) {
-                        children.add(walkFileNodePtr(object(root), null));
+                        walkFileNodePtr(object(root), null);
                     }
                 } finally {
                     walkedRevision = null;
                 }
             }
         }
-        if (!children.isEmpty()) {
-            Map<String, Object> childFileNodeListMap = new HashMap<>();
-            childFileNodeListMap.put("fileNodeListHeader",
-                    revisionFileNode.childFileNodeList.fileNodeListHeader);
-            childFileNodeListMap.put("children", children);
-            structure.put("revisionFileNodeList", childFileNodeListMap);
-        }
-        return structure;
     }
 
     private FileNodePtr object(ExtendedGUID oid) {
@@ -330,39 +296,26 @@ class OneNoteTreeWalker {
      *
      * @param fileNodePtr The file node pointer.
      * @param parentPropertyId The PropertyId of the parent.
-     * @return Returns a map of the main data.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNodePtr(FileNodePtr fileNodePtr,
-                                               OneNotePropertyId parentPropertyId)
+    public void walkFileNodePtr(FileNodePtr fileNodePtr, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNodePtr != null) {
-            FileNode fileNode = fileNodePtr.dereference(oneNoteDocument);
-            return walkFileNode(fileNode, parentPropertyId);
+            walkFileNode(fileNodePtr.dereference(oneNoteDocument), parentPropertyId);
         }
-        return Collections.emptyMap();
     }
 
     /**
      * Walk the file node list.
      *
      * @param fileNodeList The file node list to parse.
-     * @return The result.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNodeList(FileNodeList fileNodeList, OneNotePropertyId parentPropertyId)
+    public void walkFileNodeList(FileNodeList fileNodeList, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("oneNoteType", "FileNodeList");
-        structure.put("fileNodeListHeader", fileNodeList.fileNodeListHeader);
-        if (!fileNodeList.children.isEmpty()) {
-            List<Map<String, Object>> children = new ArrayList<>();
-            for (FileNode child : fileNodeList.children) {
-                children.add(walkFileNode(child, parentPropertyId));
-            }
-            structure.put("children", children);
+        for (FileNode child : fileNodeList.children) {
+            walkFileNode(child, parentPropertyId);
         }
-        return structure;
     }
 
     /**
@@ -370,39 +323,37 @@ class OneNoteTreeWalker {
      *
      * @param fileNode The file node.
      * @param parentPropertyId
-     * @return Map which is result of the parsed file node.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNode(FileNode fileNode,
-                                            OneNotePropertyId parentPropertyId)
+    public void walkFileNode(FileNode fileNode, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNode == null) {
-            return Collections.emptyMap();
+            return;
         }
         if (walkDepth >= MAX_WALK_DEPTH) {
             // the cycle guard cannot catch a long acyclic chain - cap the recursion depth
             // so a crafted file cannot overflow the stack
             recordDepthWarning();
-            return Collections.emptyMap();
+            return;
         }
         if (visitsRemaining <= 0) {
             recordVisitBudgetWarning();
-            return Collections.emptyMap();
+            return;
         }
         if (!activeFileNodes.add(fileNode)) {
             recordCycleWarning(fileNode);
-            return Collections.emptyMap();
+            return;
         }
         long context = ((parentPropertyId == null ? -1L : parentPropertyId.pid) << 1) |
                 (versionHistoryDepth > 0 ? 1 : 0);
         if (!walkedContexts.computeIfAbsent(fileNode, k -> new HashSet<>()).add(context)) {
             activeFileNodes.remove(fileNode);
-            return Collections.emptyMap();
+            return;
         }
         visitsRemaining--;
         walkDepth++;
         try {
-            return walkFileNodeInternal(fileNode, parentPropertyId);
+            walkFileNodeInternal(fileNode, parentPropertyId);
         } finally {
             walkDepth--;
             activeFileNodes.remove(fileNode);
@@ -489,21 +440,11 @@ class OneNoteTreeWalker {
         }
     }
 
-    private Map<String, Object> walkFileNodeInternal(FileNode fileNode,
-                                                      OneNotePropertyId parentPropertyId)
+    private void walkFileNodeInternal(FileNode fileNode, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("oneNoteType", "FileNode");
-        structure.put("gosid", fileNode.gosid);
-        structure.put("size", fileNode.size);
-        structure.put("fileNodeId", "0x" + Long.toHexString(fileNode.id));
-        structure.put("fileNodeIdName", FndStructureConstants.nameOf(fileNode.id));
-        structure.put("fileNodeBaseType", "0x" + Long.toHexString(fileNode.baseType));
-        structure.put("isFileData", fileNode.isFileData);
-        structure.put("idDesc", fileNode.idDesc);
         if (fileNode.childFileNodeList != null &&
                 fileNode.childFileNodeList.fileNodeListHeader != null) {
-            structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList, parentPropertyId));
+            walkFileNodeList(fileNode.childFileNodeList, parentPropertyId);
         }
         if (fileNode.propertySet != null) {
             int jcid = jcidIndex(fileNode);
@@ -512,11 +453,7 @@ class OneNoteTreeWalker {
                 versionHistoryDepth++;
             }
             try {
-                List<Map<String, Object>> propSet =
-                        processPropertySet(fileNode.propertySet, parentPropertyId, jcid);
-                if (!propSet.isEmpty()) {
-                    structure.put("propertySet", propSet);
-                }
+                processPropertySet(fileNode.propertySet, parentPropertyId, jcid);
             } finally {
                 if (history) {
                     versionHistoryDepth--;
@@ -525,23 +462,20 @@ class OneNoteTreeWalker {
         }
         if (fileNode.subType.fileDataStoreObjectReference.ref != null && !FileChunkReference.nil()
                 .equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
-            structure.put("fileDataStoreObjectReference", walkFileDataStoreObjectReference(
-                    fileNode.subType.fileDataStoreObjectReference, fileNode.gosid));
+            walkFileDataStoreObjectReference(fileNode.subType.fileDataStoreObjectReference,
+                    fileNode.gosid);
         }
-        return structure;
     }
 
     /**
      * Walk a file data store object reference.
      *
      * @param fileDataStoreObjectReference The file data store object reference we are parsing.
-     * @return Map containing parsed content.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private Map<String, Object> walkFileDataStoreObjectReference(
+    private void walkFileDataStoreObjectReference(
             FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> structure = new HashMap<>();
         FileChunkReference fileData = fileDataStoreObjectReference.ref.fileData;
         if (fileData.cb > dif.size()) {
             throw new TikaMemoryLimitException(
@@ -549,8 +483,6 @@ class OneNoteTreeWalker {
                             dif.size());
         }
         handleEmbedded(fileData.stp, (int) fileData.cb, gosid);
-        structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
-        return structure;
     }
 
     private void handleEmbedded(long stp, int length, ExtendedGUID gosid)
@@ -598,11 +530,9 @@ class OneNoteTreeWalker {
      * @return
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private List<Map<String, Object>> processPropertySet(PropertySet propertySet,
-                                                         OneNotePropertyId parentPropertyId,
-                                                         int objectType)
+    private void processPropertySet(PropertySet propertySet, OneNotePropertyId parentPropertyId,
+                                    int objectType)
             throws IOException, TikaException, SAXException {
-        List<Map<String, Object>> propValues = new ArrayList<>();
         emitImage(propertySet);
         List<String> outerInkWords = inkWords;
         List<OneNoteText.TextRun> outerTextRuns = textRuns;
@@ -611,13 +541,12 @@ class OneNoteTreeWalker {
         try {
             for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
                 PropertyValue propertyValue = propertySet.rgPridsData.get(i);
-                propValues.add(processPropertyValue(propertyValue, parentPropertyId, objectType));
+                processPropertyValue(propertyValue, parentPropertyId, objectType);
             }
         } finally {
             inkWords = outerInkWords;
             textRuns = outerTextRuns;
         }
-        return propValues;
     }
 
     private void emitImage(PropertySet propertySet)
@@ -761,24 +690,16 @@ class OneNoteTreeWalker {
     }
 
     /**
-     * Process a property value and populate a map containing all the property value data.
-     * <p>
-     * Parse out any relevant text and write it to the print writer as well for easy search
-     * engine parsing.
+     * Processes a property value: records its metadata, writes its text and walks the
+     * objects it references.
      *
      * @param propertyValue The property value we are parsing.
      * @param parentPropertyId
-     * @return The map parsed by this property value.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    Map<String, Object> processPropertyValue(PropertyValue propertyValue,
-                                                     OneNotePropertyId parentPropertyId,
-                                                     int objectType)
+    void processPropertyValue(PropertyValue propertyValue, OneNotePropertyId parentPropertyId,
+                              int objectType)
             throws IOException, TikaException, SAXException {
-        Map<String, Object> propMap = new HashMap<>();
-        propMap.put("oneNoteType", "PropertyValue");
-        propMap.put("propertyId", propertyValue.propertyId);
-
         if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
             long fullval = propertyValue.scalar;
             Instant instant = Instant.ofEpochSecond(fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
@@ -806,13 +727,10 @@ class OneNoteTreeWalker {
                     parentPropertyId == null ? null : parentPropertyId.propertyEnum;
             if (!author.isBlank()) {
                 if (role == OneNotePropertyEnum.AuthorMostRecent) {
-                    propMap.put("MostRecentAuthor", author);
                     mostRecentAuthors.add(author);
                 } else if (role == OneNotePropertyEnum.AuthorOriginal) {
-                    propMap.put("OriginalAuthor", author);
                     originalAuthors.add(author);
                 } else {
-                    propMap.put("Author", author);
                     authors.add(author);
                 }
             }
@@ -820,12 +738,11 @@ class OneNoteTreeWalker {
                 propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorOriginal) {
             // reference only; its target records the author under this role
         } else if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
-            propMap.put("scalar", propertyValue.scalar);
+            // scalar: nothing to read
         } else {
             OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
             content.reposition(propertyValue.rawData);
             boolean isBinary = propertyIsBinary(propertyValue.propertyId.propertyEnum);
-            propMap.put("isBinary", isBinary);
             if ((content.size() & 1) == 0 && !OneNoteText.isExtendedAscii(
                     propertyValue.propertyId.propertyEnum) && !isBinary) {
                 if (content.size() > dif.size()) {
@@ -884,7 +801,6 @@ class OneNoteTreeWalker {
                     ByteBuffer guidBuffer = ByteBuffer.allocate(16);
                     dif.read(guidBuffer);
                     String guid = pooledGuid(GUID.fromMicrosoftBytes(guidBuffer.array()).toString());
-                    propMap.put("notebookManagementEntityGuid", guid);
                     // Version-history copies of a page are object-space roots; only the
                     // current page's metadata is referenced via MetaDataObjectsAboveGraphSpace.
                     if (objectType != OneNoteJcid.PAGE_METADATA || (parentPropertyId != null
@@ -900,7 +816,6 @@ class OneNoteTreeWalker {
             }
         }
         if (propertyValue.compactIDs != null) {
-            List<Map<String, Object>> children = new ArrayList<>();
             // everything below a version-history reference is an older copy
             boolean history = propertyValue.propertyId.propertyEnum ==
                     OneNotePropertyEnum.VersionHistoryGraphSpaceContextNodes;
@@ -911,25 +826,17 @@ class OneNoteTreeWalker {
                 for (CompactID compactID : propertyValue.compactIDs) {
                     FileNodePtr childFileNodePointer =
                             object(compactID.guid);
-                    children.add(walkFileNodePtr(childFileNodePointer, propertyValue.propertyId));
+                    walkFileNodePtr(childFileNodePointer, propertyValue.propertyId);
                 }
             } finally {
                 if (history) {
                     versionHistoryDepth--;
                 }
             }
-            if (!children.isEmpty()) {
-                propMap.put("children", children);
-            }
         }
         if (propertyValue.propertySet != null && propertyValue.propertySet.rgPridsData != null) {
-            List<Map<String, Object>> propSet =
-                    processPropertySet(propertyValue.propertySet, parentPropertyId, objectType);
-            if (!propSet.isEmpty()) {
-                propMap.put("propertySet", propSet);
-            }
+            processPropertySet(propertyValue.propertySet, parentPropertyId, objectType);
         }
-        return propMap;
     }
 
     /** @return the next {@code length} bytes at {@code dif}'s position, decoded */

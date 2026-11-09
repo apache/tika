@@ -26,9 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -121,18 +119,13 @@ public class OneNoteTreeWalkerGuidTest {
         Metadata metadata = new Metadata();
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(input.toFile())) {
             OneNoteTreeWalker walker = newWalker(metadata, false, dif);
-            PropertyValue valid = notebookGuidProperty(guidBytes.length);
-            Map<String, Object> parsed = walker.processPropertyValue(valid,
+            walker.processPropertyValue(notebookGuidProperty(guidBytes.length),
                     parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
                     OneNoteJcid.PAGE_METADATA);
-            assertEquals("{00112233-4455-6677-8899-AABBCCDDEEFF}",
-                    parsed.get("notebookManagementEntityGuid"));
-
-            PropertyValue shortGuid = notebookGuidProperty(15);
-            Map<String, Object> malformed = walker.processPropertyValue(shortGuid,
+            // a 15-byte value is not a GUID and adds nothing
+            walker.processPropertyValue(notebookGuidProperty(15),
                     parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
                     OneNoteJcid.PAGE_METADATA);
-            assertFalse(malformed.containsKey("notebookManagementEntityGuid"));
             walker.walkTree();
         }
         assertEquals(List.of("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
@@ -206,12 +199,10 @@ public class OneNoteTreeWalkerGuidTest {
         return new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(), new OneNoteDocument(), dif,
                 xhtml, metadata, context, Pair.of(1L, ExtendedGUID.nil())) {
             @Override
-            public List<Map<String, Object>> walkRootFileNodes()
-                    throws IOException, TikaException, SAXException {
+            public void walkRootFileNodes() throws IOException, TikaException, SAXException {
                 if (fail) {
                     throw new TikaException("test walk failure");
                 }
-                return Collections.emptyList();
             }
         };
     }

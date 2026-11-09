@@ -235,6 +235,10 @@ class OneNotePtr {
     }
 
     private String getIndent() {
+        if (!LOG.isDebugEnabled()) {
+            // only debug messages use it
+            return "";
+        }
         StringBuilder retval = new StringBuilder();
         for (int i = 0; i < indentLevel; ++i) {
             retval.append("  ");

@@ -59,7 +59,8 @@ public class ExtendedGUID implements Comparable<ExtendedGUID> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(guid, n);
+        // Objects.hash(guid, n) without its varargs array and boxing
+        return 31 * (31 + Objects.hashCode(guid)) + Long.hashCode(n);
     }
 
     @Override
