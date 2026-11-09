@@ -124,6 +124,33 @@ DECLARATIVE.
 Pure-ASCII probes stop early; every other probe collects candidates from the
 structural checks and the model, which are then ranked STRUCTURAL first.
 
+=== The probe
+
+The probe starts as the leading bytes, read until about 16 KB of tag-stripped
+content is present (at most 512 KB raw; `AdaptiveProbe`).  When that prefix is
+not conclusive (fewer than 50 bytes ≥ 0x80 and fewer than 16 clean UTF-8
+characters) and holds no BOM, NUL or ISO-2022 escape, `EvidenceProbe` reads on
+and appends windows from the rest of the input, each after a line feed:
+
+* about 32 bytes either side of each byte ≥ 0x80, and around each 7-bit
+  signature (`ESC $`, SO/SI, HZ `~{`, UTF-7 `+...-`); a signature window runs to
+  the closing marker, at most 8 KB, and signature windows stop after 32 KB of
+  them (base64 and binary are full of false signatures);
+* a window starts after two ASCII bytes and ends at two ASCII bytes, so a
+  double-byte character whose trail byte is ASCII-range is never cut; windows
+  that touch are merged;
+* the scan stops at 50 bytes ≥ 0x80 or 16 clean UTF-8 characters, at EOF, or at
+  16 MB (file or byte array) or 1 MB (a stream, whose look-ahead is buffered in
+  memory).
+
+The windows are used only when the scan stopped, the evidence is clean UTF-8,
+it holds at least 8 bytes ≥ 0x80, or it is signature-only with no byte ≥ 0x80;
+otherwise the prefix alone is the probe.  The prefix is always kept whole:
+7-bit evidence is ASCII-range, and EBCDIC Hebrew and Arabic letters are all
+below 0x80.  `JunkFilterEncodingDetector` reads the same probe, shared through
+`EncodingProbeCache`.  `detect(byte[])` callers (e.g. zip entry names) score
+the bytes they pass.
+
 === Pure ASCII and ISO-2022
 
 A probe with no byte ≥ 0x80 and no NUL is first checked for ISO-2022-JP/KR/CN.
