@@ -31,12 +31,15 @@ read after this file, wins on conflict.
 # Tika OSS-Fuzz — local fuzzing
 
 For fuzzing or replaying a directory of files without Docker, use the in-repo
-`tika-fuzzing` module (Jazzer `@FuzzTest`, see `tika-fuzzing/README.md`). This skill
+`tika-fuzzing` module (Jazzer `@FuzzTest`, see `tika-fuzzing/README.md`). On a host with
+Tesseract installed, pass `-Dtika.fuzz.config=src/test/resources/tika-config-no-ocr.json`:
+otherwise every embedded image is OCR'd and parses time out falsely. This skill
 covers the OSS-Fuzz project, whose targets still live in the oss-fuzz repo.
 
 Tika is already in OSS-Fuzz as the **`apache-tika`** project (not `tika`).
-It is Jazzer-based (coverage-guided, in-process JVM fuzzing), not the old
-`tika-fuzzing` seed-mutation module (removed in TIKA-4506). The fuzz targets
+It is Jazzer-based (coverage-guided, in-process JVM fuzzing), like today's
+`tika-fuzzing` module; the older seed-mutation module of that name was removed in
+TIKA-4506. The fuzz targets
 and seed logic live in the **oss-fuzz** repo under
 `projects/apache-tika/`, *not* in this repo:
 
