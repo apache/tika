@@ -166,6 +166,10 @@ Release 4.3.0 - ???
    * OneNote text no longer contains U+FFFC, the placeholder for an inline object such
      as unrecognized ink or a picture (TIKA-5057).
 
+   * OneNote .one sections give each page's current text only, no longer every earlier
+     revision and page history version as well; metadata and attachments still cover all
+     revisions (TIKA-5057).
+
    * OneNote pictures are emitted as <img src="embedded:name" alt="..."/> (Markdown
      ![alt](name)) instead of a paragraph holding the file name, and carry their alt
      text, which was not extracted before. OneNote's own OCR of pictures and file

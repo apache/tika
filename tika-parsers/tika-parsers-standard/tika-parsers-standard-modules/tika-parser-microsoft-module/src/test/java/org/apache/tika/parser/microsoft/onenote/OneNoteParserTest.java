@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
@@ -389,6 +391,9 @@ public class OneNoteParserTest extends TikaTest {
         String xml = getXML("testOneNote1.one").xml;
         assertContains("<img src=\"embedded:Untitled picture.png\" alt=\"Play button\" />", xml);
         assertContains("alt=\"Pages view: \nSummer vacation\nCamping", xml);
+        // the link text is the run flagged as hyperlink after the field code
+        assertContains("<p><a href=\"http://o15.officeredir.microsoft.com/r/" +
+                "rlidOneNote15Tutorial3?clid=1033\">Search notes instantly</a></p>", xml);
         ToMarkdownContentHandler md = new ToMarkdownContentHandler();
         try (InputStream input = getClass().getResourceAsStream("/test-documents/testOneNote1.one");
              TikaInputStream tis = TikaInputStream.get(input)) {
@@ -424,15 +429,13 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote2.one", metadata);
         assertContains("wow this is neat", txt);
-        assertContains("neat info about totally killin it bro", txt);
+        // the page's current revision; earlier ones held "neat info about totally killin it bro"
+        assertContains("tubular", txt);
+        assertNotContained("neat info about", txt);
         assertContains("Section1TextArea1", txt);
         assertContains("Section1HeaderTitle", txt);
         assertContains("Section1TextArea2", txt);
         assertNoJunk(txt);
-        // the link text is the run flagged as hyperlink after the field code
-        assertContains("<p><a href=\"http://o15.officeredir.microsoft.com/r/" +
-                        "rlidOneNote15Tutorial3?clid=1033\">Search notes instantly</a></p>",
-                getXML("testOneNote2.one").xml);
 
         List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
         assertContains("Olya Veselova", authors);
@@ -461,8 +464,12 @@ public class OneNoteParserTest extends TikaTest {
     public void testOneNote2013Doc3() throws Exception {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote3.one", metadata);
-        assertContains("awesome information about sports or some crap like that.", txt);
-        assertContains("Quit doing horrible things to me. Dang you. ", txt);
+        // earlier revisions of these paragraphs held "awesome information about sports or some
+        // crap like that." and "Quit doing horrible things to me. Dang you."
+        assertContains("neat info about totally killin it bro", txt);
+        assertContains("Fun", txt);
+        assertNotContained("awesome information", txt);
+        assertNotContained("Quit doing", txt);
         assertContains("Section2TextArea1", txt);
         assertContains("Section2HeaderTitle", txt);
         assertContains("Section2TextArea2", txt);
@@ -863,6 +870,91 @@ public class OneNoteParserTest extends TikaTest {
             assertEquals(Map.of(5L, 3L, 7L, 4L),
                     ptr.deserializeTransactionLog(new FileChunkReference(0, 32), 2));
         }
+    }
+
+    @Test
+    public void testRevisionRolesHaveNilDefaultContext(@TempDir Path tempDir) throws Exception {
+        OneNoteDocument document = new OneNoteDocument();
+        // RevisionManifestStart4FND (OneNote 2007): rid, ridDependent, timeCreation,
+        // revisionRole, odcsDefault
+        ByteBuffer start = ByteBuffer.allocate(58).order(ByteOrder.LITTLE_ENDIAN);
+        start.putInt(0x1B | 58 << 10 | 1 << 31).put(new byte[15]).put((byte) 7).putInt(1)
+                .put(new byte[20]).putLong(0).putInt(1).putShort((short) 0);
+        deserializeFileNode(tempDir, "start4", start, document);
+        ExtendedGUID rid = document.currentRevision;
+        assertEquals(Pair.of(1L, ExtendedGUID.nil()), document.revisionRoleMap.get(rid));
+        // RevisionRoleDeclarationFND: rid, revisionRole
+        ByteBuffer declaration = ByteBuffer.allocate(28).order(ByteOrder.LITTLE_ENDIAN);
+        declaration.putInt(0x5C | 28 << 10 | 1 << 31).put(new byte[15]).put((byte) 8).putInt(1)
+                .putInt(4);
+        deserializeFileNode(tempDir, "declaration", declaration, document);
+        assertEquals(1, document.revisionRoleMap.values().stream()
+                .filter(Pair.of(4L, ExtendedGUID.nil())::equals).count());
+    }
+
+    private static void deserializeFileNode(Path tempDir, String name, ByteBuffer node,
+                                            OneNoteDocument document) throws Exception {
+        Path file = Files.write(tempDir.resolve(name), node.array());
+        Method deserialize = OneNotePtr.class.getDeclaredMethod("deserializeFileNode",
+                FileNode.class, FileNodePtr.class);
+        deserialize.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            deserialize.invoke(new OneNotePtr(document, dif), new FileNode(), new FileNodePtr());
+        }
+    }
+
+    @Test
+    public void testObjectsResolveWithinTheirRevision() {
+        GUID guid = new GUID(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+        ExtendedGUID base = new ExtendedGUID(guid, 1);
+        ExtendedGUID current = new ExtendedGUID(guid, 2);
+        ExtendedGUID history = new ExtendedGUID(guid, 3);
+        ExtendedGUID paragraph = new ExtendedGUID(guid, 10);
+        ExtendedGUID title = new ExtendedGUID(guid, 11);
+        OneNoteDocument document = new OneNoteDocument();
+        Revision currentRevision = new Revision();
+        currentRevision.dependent = base;
+        document.revisionMap.put(current, currentRevision);
+        FileNodePtr baseTitle = new FileNodePtr();
+        FileNodePtr baseParagraph = new FileNodePtr();
+        FileNodePtr currentParagraph = new FileNodePtr();
+        FileNodePtr historyParagraph = new FileNodePtr();
+        document.currentRevision = base;
+        document.putObject(title, baseTitle);
+        document.putObject(paragraph, baseParagraph);
+        document.currentRevision = current;
+        document.putObject(paragraph, currentParagraph);
+        // a page history snapshot written after the current revision
+        document.currentRevision = history;
+        document.putObject(paragraph, historyParagraph);
+
+        assertSame(historyParagraph, document.guidToObject.get(paragraph));
+        assertSame(currentParagraph, document.objectIn(current, paragraph));
+        assertSame(baseTitle, document.objectIn(current, title));
+        assertSame(baseParagraph, document.objectIn(base, paragraph));
+    }
+
+    @Test
+    public void testRevisionWithoutContentRootKeepsItsDependencys() throws Exception {
+        GUID guid = new GUID(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+        ExtendedGUID base = new ExtendedGUID(guid, 1);
+        ExtendedGUID edit = new ExtendedGUID(guid, 2);
+        ExtendedGUID root = new ExtendedGUID(guid, 10);
+        OneNoteDocument document = new OneNoteDocument();
+        Revision editRevision = new Revision();
+        editRevision.dependent = base;
+        document.revisionMap.put(edit, editRevision);
+        document.revisionMap.put(base, new Revision());
+        ParseContext context = new ParseContext();
+        OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                document, null, new XHTMLContentHandler(new ToTextContentHandler(),
+                new Metadata(), context), new Metadata(), context,
+                Pair.of(1L, ExtendedGUID.nil()));
+        Method contentRoots = OneNoteTreeWalker.class.getDeclaredMethod("contentRoots",
+                ExtendedGUID.class, Map.class);
+        contentRoots.setAccessible(true);
+        assertEquals(List.of(root), contentRoots.invoke(walker, edit, Map.of(base, List.of(root))));
+        assertEquals(List.of(), contentRoots.invoke(walker, edit, Map.of()));
     }
 
     /** The JCID read from an ObjectDeclarationWithRefCountBody with the given jci. */

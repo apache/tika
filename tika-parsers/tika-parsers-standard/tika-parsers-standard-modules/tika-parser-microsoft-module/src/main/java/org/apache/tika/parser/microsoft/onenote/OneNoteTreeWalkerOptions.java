@@ -26,24 +26,23 @@ import java.util.Set;
  * Options when walking the one note tree.
  */
 public class OneNoteTreeWalkerOptions implements Serializable {
-    private boolean crawlAllFileNodesFromRoot = true;
+    private boolean crawlAllFileNodesFromRoot = false;
     private boolean onlyLatestRevision = true;
     private Set<OneNotePropertyEnum> utf16PropertiesToPrint = new HashSet<>(
             Arrays.asList(OneNotePropertyEnum.ImageFilename, OneNotePropertyEnum.ImageAltText,
                     OneNotePropertyEnum.Author, OneNotePropertyEnum.FolderChildFilename));
 
     /**
-     * Do this to ignore revisions and just parse all file nodes from the root recursively.
+     * Whether text comes from every revision, page history included, rather than only each
+     * page's current revision. Metadata and attachments come from every revision either way.
      */
     public boolean isCrawlAllFileNodesFromRoot() {
         return crawlAllFileNodesFromRoot;
     }
 
     /**
-     * Do this to ignore revisions and just parse all file nodes from the root recursively.
-     *
-     * @param crawlAllFileNodesFromRoot
-     * @return
+     * @param crawlAllFileNodesFromRoot whether to emit text from every revision
+     * @return this
      */
     public OneNoteTreeWalkerOptions setCrawlAllFileNodesFromRoot(
             boolean crawlAllFileNodesFromRoot) {

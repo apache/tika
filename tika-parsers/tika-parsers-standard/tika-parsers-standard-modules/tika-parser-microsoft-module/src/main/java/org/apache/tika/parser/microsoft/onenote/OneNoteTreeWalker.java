@@ -129,6 +129,12 @@ class OneNoteTreeWalker {
     private long visitsRemaining;
     private int versionHistoryDepth;
     private boolean contentEmitted;
+    // the revision whose objects the walk resolves, or null for the last declared anywhere
+    private ExtendedGUID walkedRevision;
+    // walking for metadata and attachments only, after the current revision's text
+    private boolean collectOnly;
+    private final long initialVisits;
+    private final Set<Long> emittedEmbedded = new HashSet<>();
     private boolean visitBudgetWarningRecorded;
 
     /**
@@ -155,8 +161,9 @@ class OneNoteTreeWalker {
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
         this.guidCollector = new OneNoteGuidCollector(this::recordGuidCapWarning);
-        this.visitsRemaining = Math.max(MIN_VISIT_BUDGET,
+        this.initialVisits = Math.max(MIN_VISIT_BUDGET,
                 VISITS_PER_FILE_NODE * oneNoteDocument.fileNodeCount);
+        this.visitsRemaining = initialVisits;
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
@@ -199,6 +206,16 @@ class OneNoteTreeWalker {
                         oneNoteDocument.revisionManifestLists.get(revisionListGuid);
                 structure.put("fileNode", walkRevision(fileNodePtr));
                 res.add(structure);
+            }
+            // metadata and attachments still come from every revision; with no current
+            // content, so does the text
+            collectOnly = contentEmitted;
+            walkedContexts.clear();
+            visitsRemaining = initialVisits;
+            try {
+                res.add(walkFileNodeList(oneNoteDocument.root, null));
+            } finally {
+                collectOnly = false;
             }
         }
         return res;
@@ -247,21 +264,33 @@ class OneNoteTreeWalker {
                 }
             }
         }
-        List<Map<String, Object>> children = new ArrayList<>();
-        boolean okGroup = false;
+        Map<ExtendedGUID, List<ExtendedGUID>> contentRoots = new HashMap<>();
+        ExtendedGUID rid = null;
         for (FileNode child : revisionFileNode.childFileNodeList.children) {
             if (child.id == FndStructureConstants.RevisionManifestStart4FND ||
                     child.id == FndStructureConstants.RevisionManifestStart6FND ||
                     child.id == FndStructureConstants.RevisionManifestStart7FND) {
-                okGroup = validRevisions.contains(child.gosid);
+                rid = child.gosid;
+            } else if (rid != null &&
+                    (child.id == FndStructureConstants.RootObjectReference2FNDX ||
+                            child.id == FndStructureConstants.RootObjectReference3FND) &&
+                    child.subType.rootObjectReference.rootObjectReferenceBase.rootRole == 1) {
+                contentRoots.computeIfAbsent(rid, k -> new ArrayList<>()).add(child.gosid);
             }
-            if (okGroup) {
-                if ((child.id == FndStructureConstants.RootObjectReference2FNDX ||
-                        child.id == FndStructureConstants.RootObjectReference3FND) &&
-                        child.subType.rootObjectReference.rootObjectReferenceBase.rootRole == 1) {
-                    FileNodePtr childFileNodePointer =
-                            oneNoteDocument.guidToObject.get(child.gosid);
-                    children.add(walkFileNodePtr(childFileNodePointer, null));
+        }
+        List<Map<String, Object>> children = new ArrayList<>();
+        for (FileNode child : revisionFileNode.childFileNodeList.children) {
+            if ((child.id == FndStructureConstants.RevisionManifestStart4FND ||
+                    child.id == FndStructureConstants.RevisionManifestStart6FND ||
+                    child.id == FndStructureConstants.RevisionManifestStart7FND) &&
+                    validRevisions.contains(child.gosid)) {
+                walkedRevision = child.gosid;
+                try {
+                    for (ExtendedGUID root : contentRoots(child.gosid, contentRoots)) {
+                        children.add(walkFileNodePtr(object(root), null));
+                    }
+                } finally {
+                    walkedRevision = null;
                 }
             }
         }
@@ -273,6 +302,26 @@ class OneNoteTreeWalker {
             structure.put("revisionFileNodeList", childFileNodeListMap);
         }
         return structure;
+    }
+
+    private FileNodePtr object(ExtendedGUID oid) {
+        return walkedRevision == null ? oneNoteDocument.guidToObject.get(oid) :
+                oneNoteDocument.objectIn(walkedRevision, oid);
+    }
+
+    /** A revision that declares no content root keeps its dependency's. */
+    private List<ExtendedGUID> contentRoots(ExtendedGUID rid,
+                                            Map<ExtendedGUID, List<ExtendedGUID>> contentRoots) {
+        ExtendedGUID r = rid;
+        for (int i = 0; r != null && i <= oneNoteDocument.revisionMap.size(); i++) {
+            List<ExtendedGUID> roots = contentRoots.get(r);
+            if (roots != null) {
+                return roots;
+            }
+            Revision revision = oneNoteDocument.revisionMap.get(r);
+            r = revision == null ? null : revision.dependent;
+        }
+        return Collections.emptyList();
     }
 
     /**
@@ -505,6 +554,9 @@ class OneNoteTreeWalker {
 
     private void handleEmbedded(long stp, int length, ExtendedGUID gosid)
             throws TikaException, IOException, SAXException {
+        if (!emittedEmbedded.add(stp)) {
+            return;
+        }
         TikaInputStream tis = null;
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
@@ -601,7 +653,7 @@ class OneNoteTreeWalker {
                     value.compactIDs != null) {
                 hyperlink = new ArrayList<>();
                 for (CompactID compactID : value.compactIDs) {
-                    FileNodePtr ptr = oneNoteDocument.guidToObject.get(compactID.guid);
+                    FileNodePtr ptr = object(compactID.guid);
                     FileNode style = ptr == null ? null : ptr.dereference(oneNoteDocument);
                     hyperlink.add(style != null && style.propertySet != null &&
                             isHyperlink(style.propertySet));
@@ -644,7 +696,7 @@ class OneNoteTreeWalker {
             }
             words = new ArrayList<>();
             for (CompactID compactID : value.compactIDs) {
-                FileNodePtr ptr = oneNoteDocument.guidToObject.get(compactID.guid);
+                FileNodePtr ptr = object(compactID.guid);
                 FileNode word = ptr == null ? null : ptr.dereference(oneNoteDocument);
                 String alternates = word == null || word.propertySet == null ? null :
                         readAlternates(word.propertySet);
@@ -867,7 +919,7 @@ class OneNoteTreeWalker {
             try {
                 for (CompactID compactID : propertyValue.compactIDs) {
                     FileNodePtr childFileNodePointer =
-                            oneNoteDocument.guidToObject.get(compactID.guid);
+                            object(compactID.guid);
                     children.add(walkFileNodePtr(childFileNodePointer, propertyValue.propertyId));
                 }
             } finally {
@@ -916,6 +968,9 @@ class OneNoteTreeWalker {
      */
     private boolean shouldEmitText(int length)
             throws IOException {
+        if (collectOnly) {
+            return false;
+        }
         if (options.isOnlyLatestRevision() && versionHistoryDepth > 0) {
             return false;
         }

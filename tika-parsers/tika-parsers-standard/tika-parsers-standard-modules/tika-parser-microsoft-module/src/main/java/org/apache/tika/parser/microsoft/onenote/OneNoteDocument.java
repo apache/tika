@@ -30,6 +30,8 @@ class OneNoteDocument {
     Map<ExtendedGUID, FileNodePtr> revisionManifestLists = new HashMap<>();
     Map<ExtendedGUID, FileChunkReference> guidToRef = new HashMap<>();
     Map<ExtendedGUID, FileNodePtr> guidToObject = new HashMap<>();
+    // each revision's own declarations; guidToObject holds the last one in the file
+    Map<ExtendedGUID, Map<ExtendedGUID, FileNodePtr>> revisionObjects = new HashMap<>();
     // declared JCIDs, for object revisions that do not repeat them
     Map<ExtendedGUID, JCID> objectJcids = new HashMap<>();
 
@@ -55,6 +57,26 @@ class OneNoteDocument {
 
     void setAssocGuidToRef(ExtendedGUID guid, FileChunkReference ref) {
         guidToRef.put(guid, ref);
+    }
+
+    void putObject(ExtendedGUID oid, FileNodePtr ptr) {
+        guidToObject.put(oid, ptr);
+        revisionObjects.computeIfAbsent(currentRevision, k -> new HashMap<>()).put(oid, ptr);
+    }
+
+    /** @return the object as revision {@code rid} has it: declared there or in a dependency */
+    FileNodePtr objectIn(ExtendedGUID rid, ExtendedGUID oid) {
+        ExtendedGUID r = rid;
+        for (int i = 0; r != null && i <= revisionMap.size(); i++) {
+            Map<ExtendedGUID, FileNodePtr> objects = revisionObjects.get(r);
+            FileNodePtr ptr = objects == null ? null : objects.get(oid);
+            if (ptr != null) {
+                return ptr;
+            }
+            Revision revision = revisionMap.get(r);
+            r = revision == null ? null : revision.dependent;
+        }
+        return guidToObject.get(oid);
     }
 
     void registerRevisionManifestList(ExtendedGUID guid, FileNodePtr ptr) {

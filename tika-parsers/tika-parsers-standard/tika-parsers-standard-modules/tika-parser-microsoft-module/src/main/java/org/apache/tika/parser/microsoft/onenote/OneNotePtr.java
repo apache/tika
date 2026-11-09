@@ -513,6 +513,8 @@ class OneNotePtr {
             data.subType.revisionManifest.odcsDefault = deserializeLittleEndianShort();
 
             data.gctxid = ExtendedGUID.nil();
+            document.registerAdditionalRevisionRole(data.gosid,
+                    data.subType.revisionManifest.revisionRole, data.gctxid);
             document.registerRevisionManifest(data);
         } else if (data.id == FndStructureConstants.RevisionManifestStart6FND ||
                 data.id == FndStructureConstants.RevisionManifestStart7FND) {
@@ -623,10 +625,8 @@ class OneNotePtr {
 
             data.subType.revisionRoleDeclaration.revisionRole = deserializeLittleEndianInt();
 
-            if (data.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
-                data.gctxid = deserializeExtendedGUID();
-
-            }
+            data.gctxid = data.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND ?
+                    deserializeExtendedGUID() : ExtendedGUID.nil();
             document.registerAdditionalRevisionRole(data.gosid,
                     data.subType.revisionRoleDeclaration.revisionRole, data.gctxid);
             // FIXME: deal with ObjectDataEncryptionKey
@@ -1053,7 +1053,7 @@ class OneNotePtr {
     private void postprocessObjectDeclarationContents(FileNode data, FileNodePtr curPtr)
             throws IOException, TikaException {
         data.gosid = data.subType.objectDeclarationWithRefCount.body.oid.guid;
-        document.guidToObject.put(data.gosid, new FileNodePtr(curPtr));
+        document.putObject(data.gosid, new FileNodePtr(curPtr));
         document.objectJcids.put(data.gosid, data.subType.objectDeclarationWithRefCount.body.jcid);
         if (data.subType.objectDeclarationWithRefCount.body.jcid.isObjectSpaceObjectPropSet()) {
             OneNotePtr objectSpacePropSetPtr = new OneNotePtr(this);
@@ -1095,7 +1095,7 @@ class OneNotePtr {
                 objectSpacePropSetPtr.deserializeObjectSpaceObjectPropSet();
         data.propertySet = objectSpacePropSetPtr.deserializePropertySet(
                 new ObjectStreamCounters(), data.subType.objectRevisionWithRefCountFNDX.ref);
-        document.guidToObject.put(data.gosid, new FileNodePtr(curPtr));
+        document.putObject(data.gosid, new FileNodePtr(curPtr));
     }
 
     /**
