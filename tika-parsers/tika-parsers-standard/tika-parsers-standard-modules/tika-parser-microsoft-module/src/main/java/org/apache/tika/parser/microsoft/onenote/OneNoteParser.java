@@ -62,6 +62,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class OneNoteParser implements Parser {
 
     public static final String ONE_NOTE_PREFIX = "onenote:";
+    // MS-ONESTORE 2.3.1
+    private static final int HEADER_SIZE = 1024;
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final Map<MediaType, List<String>> TYPES_MAP = new HashMap<>();
     /**
@@ -356,7 +358,10 @@ public class OneNoteParser implements Parser {
             OneNoteDirectFileResource oneNoteDirectFileResource) throws IOException, TikaException {
         OneNoteDocument oneNoteDocument = new OneNoteDocument();
         OneNotePtr oneNotePtr = new OneNotePtr(oneNoteDocument, oneNoteDirectFileResource);
-        // First parse out the header.
+        if (oneNoteDirectFileResource.size() < HEADER_SIZE) {
+            throw new TikaException("Truncated OneNote file: " + oneNoteDirectFileResource.size() +
+                    " bytes, shorter than its " + HEADER_SIZE + "-byte header");
+        }
         oneNoteDocument.header = oneNotePtr.deserializeHeader();
 
         if (oneNoteDocument.header.isMsOneStoreFormat()) {

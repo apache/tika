@@ -463,6 +463,20 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testTruncatedHeader(@TempDir Path tempDir) throws Exception {
+        byte[] file;
+        try (InputStream input = getResourceAsStream("/test-documents/testOneNote1.one")) {
+            file = input.readNBytes(64);
+        }
+        Path truncated = Files.write(tempDir.resolve("truncated.one"), file);
+        try (TikaInputStream tis = TikaInputStream.get(truncated)) {
+            TikaException e = assertThrows(TikaException.class, () -> new OneNoteParser()
+                    .parse(tis, new ToTextContentHandler(), new Metadata(), new ParseContext()));
+            assertContains("Truncated OneNote file: 64 bytes", e.getMessage());
+        }
+    }
+
+    @Test
     public void testPageHistory() throws Exception {
         ParseContext context = new ParseContext();
         OneNoteParserConfig config = new OneNoteParserConfig();
