@@ -16,24 +16,18 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 class PropertyValue {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PropertyValue.class);
-
-    OneNotePropertyId propertyId = new OneNotePropertyId();
-    // a union: which field is set depends on propertyId's type
+    OneNotePropertyId propertyId;
+    // a union: which field is set depends on propertyId's type; the others stay null
     long scalar; // for type 0x2, the bool from the property id
     // ObjectID/ObjectSpaceID/ContextID (one element) or an array of them
-    List<CompactID> compactIDs = new ArrayList<>();
-    PropertySet propertySet = new PropertySet();
-    FileChunkReference rawData = new FileChunkReference(); // FourBytesOfLengthFollowedByData
+    List<CompactID> compactIDs;
+    PropertySet propertySet;
+    FileChunkReference rawData; // FourBytesOfLengthFollowedByData
 
     public long getScalar() {
         return scalar;

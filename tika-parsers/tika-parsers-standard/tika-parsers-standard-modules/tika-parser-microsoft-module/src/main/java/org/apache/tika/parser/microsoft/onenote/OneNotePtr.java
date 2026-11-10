@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.EndianUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -211,9 +210,7 @@ class OneNotePtr {
         if (dif.position() != offset) {
             dif.position(offset);
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-        dif.read(byteBuffer);
-        long res = EndianUtils.readSwappedUnsignedInteger(byteBuffer.array(), 0);
+        long res = dif.readLittleEndian(4);
         offset = dif.position();
         return res;
     }
@@ -222,9 +219,7 @@ class OneNotePtr {
         if (dif.position() != offset) {
             dif.position(offset);
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate(8);
-        dif.read(byteBuffer);
-        long res = EndianUtils.readSwappedLong(byteBuffer.array(), 0);
+        long res = dif.readLittleEndian(8);
         offset = dif.position();
         return res;
     }
@@ -409,9 +404,11 @@ class OneNotePtr {
         next.cb = nextChunkRef.cb;
         next.stp = nextChunkRef.stp;
         if (terminated) {
-            LOG.debug("{}Chunk terminator found NextChunkRef.cb={}, NextChunkRef.stp={}," +
-                            " Offset={}, End={}", getIndent(), nextChunkRef.cb, nextChunkRef.stp, offset,
-                    end);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{}Chunk terminator found NextChunkRef.cb={}, NextChunkRef.stp={}," +
+                                " Offset={}, End={}", getIndent(), nextChunkRef.cb,
+                        nextChunkRef.stp, offset, end);
+            }
             // TODO check that next is OK
         }
         long footer = deserializeLittleEndianLong();
@@ -433,8 +430,10 @@ class OneNotePtr {
         if (data.id == 0) {
             return data;
         }
-        LOG.debug("{}Start Node {} ({}) - Offset={}, End={}", getIndent(),
-                FndStructureConstants.nameOf(data.id), data.id, offset, end);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{}Start Node {} ({}) - Offset={}, End={}", getIndent(),
+                    FndStructureConstants.nameOf(data.id), data.id, offset, end);
+        }
 
         ++indentLevel;
 
@@ -756,12 +755,16 @@ class OneNotePtr {
         }
         --indentLevel;
         if (data.gosid.equals(ExtendedGUID.nil())) {
-            LOG.debug("{}End Node {} ({}) - Offset={}, End={}", getIndent(),
-                    FndStructureConstants.nameOf(data.id), (int) data.id, offset, end);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{}End Node {} ({}) - Offset={}, End={}", getIndent(),
+                        FndStructureConstants.nameOf(data.id), (int) data.id, offset, end);
+            }
         } else {
-            LOG.debug("{}End Node {} ({}) {}:[{}] - Offset={}, End={}", getIndent(),
-                    FndStructureConstants.nameOf(data.id), (int) data.id, data.idDesc, data.gosid,
-                    offset, end);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{}End Node {} ({}) {}:[{}] - Offset={}, End={}", getIndent(),
+                        FndStructureConstants.nameOf(data.id), (int) data.id, data.idDesc,
+                        data.gosid, offset, end);
+            }
         }
         return data;
     }
@@ -840,25 +843,16 @@ class OneNotePtr {
     private CompactID deserializeCompactID() throws IOException, TikaException {
         CompactID compactID = new CompactID();
         compactID.n = deserializeLittleEndianChar();
-        compactID.guidIndex = deserializeInt24();
-        compactID.guid = ExtendedGUID.nil();
-        compactID.guid.n = compactID.n;
-        long index = compactID.guidIndex;
-        GUID guid = globalIds(getCurrentRevision()).get(index);
-        if (guid != null) {
-            compactID.guid.guid = guid;
-        } else {
-            throw new TikaException("COMPACT ID MISSING");
-        }
-        return compactID;
-    }
-
-    private long deserializeInt24() throws IOException {
         int b1 = deserializeLittleEndianChar();
         int b2 = deserializeLittleEndianChar();
         int b3 = deserializeLittleEndianChar();
-
-        return new Int24(b1, b2, b3).value();
+        compactID.guidIndex = b1 | (b2 << 8) | (b3 << 16);
+        GUID guid = globalIds(getCurrentRevision()).get(compactID.guidIndex);
+        if (guid == null) {
+            throw new TikaException("COMPACT ID MISSING");
+        }
+        compactID.guid = new ExtendedGUID(guid, compactID.n);
+        return compactID;
     }
 
     private ExtendedGUID deserializeExtendedGUID() throws IOException {
@@ -1054,18 +1048,20 @@ class OneNotePtr {
         PropertySet data = new PropertySet();
         // Reserve the count before allocating any PropertyValue instances.
         int count = reservePropertyCount(deserializeLittleEndianShort(), "property");
-        data.rgPridsData = new ArrayList<>();
+        OneNotePropertyId[] ids = new OneNotePropertyId[count];
         for (int i = 0; i < count; ++i) {
-            PropertyValue propertyValue = new PropertyValue();
-            propertyValue.propertyId = deserializePropertyID();
-            data.rgPridsData.add(propertyValue);
-            LOG.debug("{}Property {}", getIndent(), propertyValue.propertyId);
+            ids[i] = deserializePropertyID();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("{}Property {}", getIndent(), ids[i]);
+            }
         }
-        LOG.debug("{}{} elements in property set:", getIndent(), count);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("{}{} elements in property set:", getIndent(), count);
+        }
+        data.rgPridsData = new ArrayList<>(count);
         for (int i = 0; i < count; ++i) {
-            data.rgPridsData.set(i,
-                    deserializePropertyValueFromPropertyID(data.rgPridsData.get(i).propertyId,
-                            streams, counters, depth));
+            data.rgPridsData.add(
+                    deserializePropertyValueFromPropertyID(ids[i], streams, counters, depth));
         }
         LOG.debug("");
         return data;
@@ -1099,41 +1095,50 @@ class OneNotePtr {
                     LOG.debug(" [] ");
                     return data;
                 case 0x2:
-                    LOG.debug(" PropertyID bool({})", propertyID.inlineBool);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" PropertyID bool({})", propertyID.inlineBool);
+                    }
                     data.scalar = propertyID.inlineBool ? 1 : 0;
                     return data;
                 case 0x3:
                     val8 = deserializeLittleEndianChar();
                     data.scalar = val8;
-                    LOG.debug(" PropertyID byte({})", data.scalar);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" PropertyID byte({})", data.scalar);
+                    }
                     break;
                 case 0x4:
                     val16 = deserializeLittleEndianShort();
                     data.scalar = val16;
-                    LOG.debug(" uint16 PropertyID short({})", data.scalar);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" uint16 PropertyID short({})", data.scalar);
+                    }
                     break;
                 case 0x5:
                     val32 = deserializeLittleEndianInt();
                     data.scalar = val32;
-                    LOG.debug(" PropertyID int({})", data.scalar);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" PropertyID int({})", data.scalar);
+                    }
                     break;
                 case 0x6:
                     val64 = deserializeLittleEndianLong();
                     data.scalar = val64;
-                    LOG.debug(" PropertyID long({})", data.scalar);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" PropertyID long({})", data.scalar);
+                    }
                     break;
                 case 0x7:
                     val32 = deserializeLittleEndianInt();
-                    LOG.debug(" raw data: ({})[", val32);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" raw data: ({})[", val32);
+                    }
 
-                    data.rawData.stp = offset;
-                    data.rawData.cb = 0;
                     if (offset + val32 > end) {
-                        data.rawData.cb = end - offset;
                         offset = end;
                         throw new TikaException("Offset is past end of file.");
                     }
-                    data.rawData.cb = val32;
+                    data.rawData = new FileChunkReference(offset, val32);
                     offset += val32;
                     LOG.debug("]");
                     break;
@@ -1161,15 +1166,15 @@ class OneNotePtr {
                         s_count = counters.osids_count;
                         xtype = "OSIDS";
                     }
-                    for (int i = 0; i < val32; ++i, ++s_count) {
-                        int index = (int) s_count;
-                        if (index < stream.size()) {
-                            data.compactIDs.add(stream.get(index));
-                            LOG.debug(" {}[{}]", xtype,
-                                    data.compactIDs.get(data.compactIDs.size() - 1));
-                        } else {
-                            throw new TikaException("SEGV");
-                        }
+                    if (s_count + val32 > stream.size()) {
+                        throw new TikaException("SEGV");
+                    }
+                    int first = (int) s_count;
+                    data.compactIDs = val32 == 1 ? List.of(stream.get(first)) :
+                            List.copyOf(stream.subList(first, first + (int) val32));
+                    s_count += val32;
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" {}{}", xtype, data.compactIDs);
                     }
                     // each reference property consumes the next entries of its stream
                     if (type == 0x8 || type == 0x9) {
@@ -1183,9 +1188,12 @@ class OneNotePtr {
                 case 0x10:
                     val32 = deserializeLittleEndianInt();
                     OneNotePropertyId propId = deserializePropertyID();
-                    LOG.debug(" UnifiedSubPropertySet {} {}", val32, propId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(" UnifiedSubPropertySet {} {}", val32, propId);
+                    }
                     int propertyCount = reservePropertyCount(val32, "unified property");
-                    data.propertySet.rgPridsData = new ArrayList<>();
+                    data.propertySet = new PropertySet();
+                    data.propertySet.rgPridsData = new ArrayList<>(propertyCount);
                     for (int i = 0; i < propertyCount; ++i) {
                         data.propertySet.rgPridsData.add(
                                 deserializePropertyValueFromPropertyID(propId, streams, counters,

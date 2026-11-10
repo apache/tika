@@ -82,6 +82,30 @@ class OneNoteDirectFileResource implements Closeable {
         return totalRead == 0 && len > 0 ? -1 : totalRead;
     }
 
+    /** Reads {@code n} (at most 8) bytes as a little-endian value. */
+    public long readLittleEndian(int n) throws IOException {
+        if (position + n > size) {
+            throw new IOException("End of stream reached earlier than expected");
+        }
+        if (position < windowStart || position + n > windowStart + windowLength) {
+            fill(position);
+        }
+        long res = 0;
+        if (windowLength >= n) {
+            int offset = (int) (position - windowStart);
+            for (int i = n - 1; i >= 0; i--) {
+                res = (res << 8) | (window[offset + i] & 0xFF);
+            }
+            position += n;
+        } else {
+            // short read from the file
+            for (int i = 0; i < n; i++) {
+                res |= ((long) read()) << (8 * i);
+            }
+        }
+        return res;
+    }
+
     private boolean inWindow(long pos) {
         return pos >= windowStart && pos < windowStart + windowLength;
     }

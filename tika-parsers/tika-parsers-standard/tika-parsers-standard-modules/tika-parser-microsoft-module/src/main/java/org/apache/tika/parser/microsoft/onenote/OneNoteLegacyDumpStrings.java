@@ -47,6 +47,8 @@ class OneNoteLegacyDumpStrings {
     private final OneNoteDirectFileResource oneNoteDirectFileResource;
     private final XHTMLContentHandler xhtml;
     private final int bufferSize;
+    // reused by both passes
+    private ByteBuffer byteBuffer;
     private final TextQualityDetector qualityDetector;
 
     public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource,
@@ -89,10 +91,10 @@ class OneNoteLegacyDumpStrings {
         UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
         try {
             oneNoteDirectFileResource.position(0);
-            ByteBuffer byteBuffer;
-            while ((byteBuffer = nextBuffer()) != null) {
-                while (byteBuffer.hasRemaining()) {
-                    int b = byteBuffer.get();
+            ByteBuffer buf;
+            while ((buf = nextBuffer()) != null) {
+                while (buf.hasRemaining()) {
+                    int b = buf.get();
                     if (b >= 0x20 && b < 0x7F) {
                         os.write(b);
                         if (os.size() >= MAX_RUN_LENGTH) {
@@ -115,10 +117,10 @@ class OneNoteLegacyDumpStrings {
             oneNoteDirectFileResource.position(0);
             // low byte of the current candidate pair, carried across buffers; -1 if none
             int low = -1;
-            ByteBuffer byteBuffer;
-            while ((byteBuffer = nextBuffer()) != null) {
-                while (byteBuffer.hasRemaining()) {
-                    int b = byteBuffer.get();
+            ByteBuffer buf;
+            while ((buf = nextBuffer()) != null) {
+                while (buf.hasRemaining()) {
+                    int b = buf.get();
                     if (low < 0) {
                         low = b & 0xff;
                     } else if (b == 0x00 && low >= 0x20) {
@@ -145,7 +147,12 @@ class OneNoteLegacyDumpStrings {
         if (remaining <= 0) {
             return null;
         }
-        ByteBuffer byteBuffer = ByteBuffer.allocate((int) Math.min(bufferSize, remaining));
+        if (byteBuffer == null) {
+            byteBuffer = ByteBuffer.allocate(
+                    (int) Math.min(bufferSize, oneNoteDirectFileResource.size()));
+        }
+        byteBuffer.clear();
+        byteBuffer.limit((int) Math.min(byteBuffer.capacity(), remaining));
         oneNoteDirectFileResource.read(byteBuffer);
         byteBuffer.flip();
         return byteBuffer;

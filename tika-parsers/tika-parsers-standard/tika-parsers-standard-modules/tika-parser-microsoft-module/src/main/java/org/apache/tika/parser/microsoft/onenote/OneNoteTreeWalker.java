@@ -572,6 +572,11 @@ class OneNoteTreeWalker {
 
     /** Positions {@code dif} at the property's data. @return the data's length */
     private int positionAt(PropertyValue value) throws IOException, TikaException {
+        if (value.rawData == null) {
+            // not a data property (type 0x7)
+            dif.position(0);
+            return 0;
+        }
         long cb = value.rawData.cb;
         if (cb < 0 || cb > dif.size()) {
             throw new TikaMemoryLimitException(

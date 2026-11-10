@@ -165,9 +165,10 @@ public class OneNoteTreeWalkerGuidTest {
 
     private static PropertyValue notebookGuidProperty(int length) {
         PropertyValue value = new PropertyValue();
+        value.propertyId = new OneNotePropertyId();
         value.propertyId.propertyEnum = OneNotePropertyEnum.NotebookManagementEntityGuid;
         value.propertyId.type = 7;
-        value.rawData.setStp(0).setCb(length);
+        value.rawData = new FileChunkReference(0, length);
         return value;
     }
 
