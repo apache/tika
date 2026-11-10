@@ -75,6 +75,8 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     // ODF 1.2+ sheet limits
     private static final int MAX_COLUMNS = 16384;
     private static final int MAX_ROWS = 1048576;
+    // with includeMissingRows: keeps a 1M-row gap below the zip-bomb guard's 1M-char threshold
+    private static final int MAX_EMPTY_ROWS_WRITTEN = 100_000;
     private static final Attributes ANNOTATION_ATTRIBUTES = buildAttributes(CLASS, "annotation");
     private static final Attributes NOTE_ATTRIBUTES = buildAttributes(CLASS, "note");
     private static final Attributes NOTES_ATTRIBUTES = buildAttributes(CLASS, "notes");
@@ -154,13 +156,19 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     // their formatting in the captured XHTML.
     private int anchorDepth = 0;
     OpenDocumentBodyHandler(ContentHandler handler, ParseContext parseContext, Metadata metadata) {
+        this(handler, parseContext, metadata, false);
+    }
+
+    OpenDocumentBodyHandler(ContentHandler handler, ParseContext parseContext, Metadata metadata,
+                            boolean includeMissingRows) {
         this(new RepeatedElementHandler(handler, "tr", "table", MAX_ROWS,
+                includeMissingRows ? MAX_EMPTY_ROWS_WRITTEN : 0, "td",
                 new RepeatedElementHandler.Budget(metadata)), parseContext);
     }
 
     private OpenDocumentBodyHandler(RepeatedElementHandler rows, ParseContext parseContext) {
-        this(new RepeatedElementHandler(rows, "td", "tr", MAX_COLUMNS, rows.budget()), rows,
-                parseContext);
+        this(new RepeatedElementHandler(rows, "td", "tr", MAX_COLUMNS, Long.MAX_VALUE, null,
+                rows.budget()), rows, parseContext);
     }
 
     private OpenDocumentBodyHandler(RepeatedElementHandler cells, RepeatedElementHandler rows,

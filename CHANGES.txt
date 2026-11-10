@@ -369,10 +369,16 @@ Release 4.3.0 - ???
 
    * The OpenDocument parser writes repeated cells and rows (table:number-columns-repeated,
      table:number-rows-repeated) once per repeat; a cell was written once with that
-     colspan and a row once, so values repeated across columns or rows were lost. Empty
-     cells and rows at the end of a row or table, such as the filler out to a sheet's
-     last column and row, are dropped. Past 10 million characters of repeated content
-     per document the rest are written once, with a tk:exception:warn entry (TIKA-5014).
+     colspan and a row once, so values repeated across columns or rows were lost. As in
+     the Excel parsers, empty rows are dropped and empty cells are written only to pad
+     out to the next value in their row. Past 10 million characters and elements of
+     padding and repeated content per document, the rest are written once and padding
+     is dropped, with a tk:exception:warn entry (TIKA-5014).
+
+   * The OpenDocument parsers (open-document-parser, flat-open-document-parser) take
+     includeMissingRows, as the Excel parsers do: when true, each empty spreadsheet row
+     before a row with content is written as an empty row, up to 100,000 per document.
+     The default is false (TIKA-5014).
 
    * VLM text recognizers keep superscripts and subscripts: inline <sup>/<sub> in model
      output (x<sup>2</sup>, H<sub>2</sub>O, footnote markers) reach the XHTML as sup/sub

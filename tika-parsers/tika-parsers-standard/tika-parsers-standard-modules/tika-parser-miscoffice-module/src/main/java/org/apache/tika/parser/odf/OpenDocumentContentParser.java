@@ -48,8 +48,15 @@ public class OpenDocumentContentParser implements Parser {
 
     void parseInternal(TikaInputStream tis, final ContentHandler handler, Metadata metadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
+        parseInternal(tis, handler, metadata, context, false);
+    }
 
-        OpenDocumentBodyHandler dh = new OpenDocumentBodyHandler(handler, context, metadata);
+    void parseInternal(TikaInputStream tis, final ContentHandler handler, Metadata metadata,
+                       ParseContext context, boolean includeMissingRows)
+            throws IOException, SAXException, TikaException {
+
+        OpenDocumentBodyHandler dh =
+                new OpenDocumentBodyHandler(handler, context, metadata, includeMissingRows);
 
         tis.setCloseShield();
         try {
