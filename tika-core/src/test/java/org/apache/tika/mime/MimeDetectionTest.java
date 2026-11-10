@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
@@ -27,6 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Random;
 
 import org.apache.commons.io.ByteOrderMark;
 import org.junit.jupiter.api.BeforeAll;
@@ -451,10 +457,6 @@ public class MimeDetectionTest {
     public void testBinaryContentRefusesTextGlob() throws IOException {
         // headers copied from real files that a text glob used to claim
         String[][] cases = {
-                // Terminal Reality POD archive
-                {"Bulldog.pod", "2f000000436f6d70696c65642062792042696e456469742056657273696f6e20"
-                        + "322e322e38207da62d2900000000000000000000000000000000000000000000"
-                        + "00000000000000000000000000000000000000004152545c4241545453352e41"},
                 // Mozilla startupCache XDR bytecode, named for its source
                 {"AccountManager.js",
                         "0000001c000000b9000000c5fcc6bf73b9000000000000000000000000000000"
@@ -480,6 +482,45 @@ public class MimeDetectionTest {
                         MIME_TYPES.detect(tis, metadata, new ParseContext()), c[0]);
             }
         }
+    }
+
+    @Test
+    public void testTerminalRealityPodIsBinary() throws IOException {
+        byte[] pod = terminalRealityPod();
+        assertEquals(MediaType.OCTET_STREAM, detect(pod, "Bulldog.pod"));
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        try (TikaInputStream tis = TikaInputStream.get(pod)) {
+            assertEquals(MediaType.OCTET_STREAM, MIME_TYPES.detect(tis, metadata, new ParseContext()));
+        }
+    }
+
+    // shaped like real BinEdit .pod archives: entry count, comment, 40-byte directory entries, indexed pixels
+    private static byte[] terminalRealityPod() {
+        ByteBuffer bb = ByteBuffer.allocate(16384).order(ByteOrder.LITTLE_ENDIAN);
+        int entries = 48;
+        bb.putInt(entries);
+        bb.put("Compiled by BinEdit Version 2.2.8 }".getBytes(ISO_8859_1));
+        bb.put(new byte[] {(byte) 0xA6, '-', ')'});
+        bb.position(0x54);
+        Random random = new Random(5029);
+        int offset = 0x54 + 40 * entries;
+        for (int i = 0; i < entries; i++) {
+            String name = String.format(Locale.ROOT, "ART\\%02dBF%02d.%s", random.nextInt(100), i / 2,
+                    i % 2 == 0 ? "ACT" : "RAW");
+            byte[] padded = Arrays.copyOf(name.getBytes(US_ASCII), 32);
+            int size = i % 2 == 0 ? 0x300 : 0x10000;
+            bb.put(padded).putInt(size).putInt(offset);
+            offset += size;
+        }
+        while (bb.hasRemaining()) {
+            byte value = (byte) random.nextInt(256);
+            int run = 1 + random.nextInt(24);
+            for (int k = 0; k < run && bb.hasRemaining(); k++) {
+                bb.put(value);
+            }
+        }
+        return bb.array();
     }
 
     @Test
