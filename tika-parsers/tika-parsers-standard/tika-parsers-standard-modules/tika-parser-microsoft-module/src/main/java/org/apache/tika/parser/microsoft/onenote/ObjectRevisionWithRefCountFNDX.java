@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 class ObjectRevisionWithRefCountFNDX {
-    ObjectSpaceObjectPropSet ref;
     CompactID oid;
     long hasOidReferences;
     long hasOsidReferences;

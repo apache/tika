@@ -16,10 +16,13 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.tika.exception.TikaException;
 
 
 class OneNoteDocument {
@@ -45,8 +48,20 @@ class OneNoteDocument {
     // are uncommitted leftovers. Empty when the log could not be read.
     Map<Long, Long> committedFileNodeCounts = new HashMap<>();
 
+    // reads deferred property sets; set by the pointer that parses the document
+    OneNotePtr propertySetReader;
+
     public OneNoteDocument() {
 
+    }
+
+    /** @return the node's property set, read from the file on first use */
+    PropertySet propertySet(FileNode node) throws IOException, TikaException {
+        if (node.propertySetStreams != null) {
+            node.propertySet = propertySetReader.readPropertySet(node);
+            node.propertySetStreams = null;
+        }
+        return node.propertySet;
     }
 
     FileChunkReference getAssocGuidToRef(ExtendedGUID guid) {

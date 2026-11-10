@@ -107,6 +107,7 @@ class OneNotePtr {
         offset = oneNoteDirectFileResource.position();
         end = oneNoteDirectFileResource.size();
         documentBudget = new DocumentBudget(end);
+        document.propertySetReader = new OneNotePtr(this);
     }
 
     public OneNotePtr(OneNotePtr oneNotePtr) {
@@ -933,13 +934,7 @@ class OneNotePtr {
         document.putObject(data.gosid, new FileNodePtr(curPtr));
         document.objectJcids.put(data.gosid, data.subType.objectDeclarationWithRefCount.body.jcid);
         if (data.subType.objectDeclarationWithRefCount.body.jcid.isObjectSpaceObjectPropSet()) {
-            OneNotePtr objectSpacePropSetPtr = new OneNotePtr(this);
-            objectSpacePropSetPtr.reposition(data.ref);
-            data.subType.objectDeclarationWithRefCount.objectRef =
-                    objectSpacePropSetPtr.deserializeObjectSpaceObjectPropSet();
-            ObjectStreamCounters streamCounters = new ObjectStreamCounters();
-            data.propertySet = objectSpacePropSetPtr.deserializePropertySet(streamCounters,
-                    data.subType.objectDeclarationWithRefCount.objectRef);
+            deferPropertySet(data);
         } else {
             if (!data.subType.objectDeclarationWithRefCount.body.jcid.isFileData) {
                 throw new TikaException("JCID must be file data when !isObjectSpaceObjectPropSet.");
@@ -958,13 +953,26 @@ class OneNotePtr {
             return;
         }
         data.subType.objectDeclarationWithRefCount.body.jcid = jcid;
-        OneNotePtr objectSpacePropSetPtr = new OneNotePtr(this);
-        objectSpacePropSetPtr.reposition(data.ref);
-        data.subType.objectRevisionWithRefCountFNDX.ref =
-                objectSpacePropSetPtr.deserializeObjectSpaceObjectPropSet();
-        data.propertySet = objectSpacePropSetPtr.deserializePropertySet(
-                new ObjectStreamCounters(), data.subType.objectRevisionWithRefCountFNDX.ref);
+        deferPropertySet(data);
         document.putObject(data.gosid, new FileNodePtr(curPtr));
+    }
+
+    /**
+     * Most declarations are never walked, so their property values are read on first use. The
+     * object ID streams are read now: their compact IDs resolve against the global ID table in
+     * effect at this point of the file.
+     */
+    private void deferPropertySet(FileNode data) throws IOException, TikaException {
+        OneNotePtr ptr = new OneNotePtr(this);
+        ptr.reposition(data.ref);
+        data.propertySetStreams = ptr.deserializeObjectSpaceObjectPropSet();
+        data.propertySetValues = ptr.offset;
+    }
+
+    PropertySet readPropertySet(FileNode node) throws IOException, TikaException {
+        OneNotePtr ptr = new OneNotePtr(this);
+        ptr.reposition(node.propertySetValues);
+        return ptr.deserializePropertySet(new ObjectStreamCounters(), node.propertySetStreams);
     }
 
     /**

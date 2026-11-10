@@ -49,7 +49,12 @@ class FileNode {
     ExtendedGUID gctxid;
     GUID fileDataStoreReference;
     FileChunkReference ref;
+    // read on first use through OneNoteDocument.propertySet
     PropertySet propertySet;
+    // an unread property set: its object ID streams, resolved while parsing, and where its
+    // values start; null once read
+    ObjectSpaceObjectPropSet propertySetStreams;
+    long propertySetValues;
     boolean isFileData;
 
     /** For ObjectGroupListReference, the children. */

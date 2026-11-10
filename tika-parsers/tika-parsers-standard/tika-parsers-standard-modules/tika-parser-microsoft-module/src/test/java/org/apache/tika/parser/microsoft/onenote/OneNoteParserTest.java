@@ -73,7 +73,7 @@ public class OneNoteParserTest extends TikaTest {
 
     private static final String[][] FUZZ_RESOURCES = {
             {"testOneNote-fuzz1.one", "Missing dependent revision"},
-            {"testOneNote-fuzz2.one", "unified property count"},
+            {"testOneNote-fuzz2.one", "unitMagic must always be"},
             {"testOneNote-fuzz3.one", "Invalid GUID string"}
     };
 
@@ -883,13 +883,13 @@ public class OneNoteParserTest extends TikaTest {
             FileNode revision = objectRevision(declared, buf.capacity());
             postprocess.invoke(ptr, revision, new FileNodePtr());
             assertEquals(OneNotePropertyEnum.RichEditTextUnicode,
-                    revision.propertySet.rgPridsData.get(0).propertyId.propertyEnum);
+                    document.propertySet(revision).rgPridsData.get(0).propertyId.propertyEnum);
             assertEquals(0x0E, OneNoteTreeWalker.jcidIndex(revision));
             assertNotNull(document.guidToObject.get(declared));
             // a revision of an object never declared has no JCID to take
             FileNode orphan = objectRevision(new ExtendedGUID(GUID.nil(), 12), buf.capacity());
             postprocess.invoke(ptr, orphan, new FileNodePtr());
-            assertNull(orphan.propertySet);
+            assertNull(document.propertySet(orphan));
         }
     }
 

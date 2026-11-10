@@ -250,6 +250,11 @@ class OneNoteTreeWalker {
         return true;
     }
 
+    private PropertySet propertySetOf(FileNodePtr ptr) throws IOException, TikaException {
+        FileNode node = ptr == null ? null : ptr.dereference(oneNoteDocument);
+        return node == null ? null : oneNoteDocument.propertySet(node);
+    }
+
     private FileNodePtr object(ExtendedGUID oid) {
         return walkedRevision == null ? oneNoteDocument.guidToObject.get(oid) :
                 oneNoteDocument.objectIn(walkedRevision, oid);
@@ -405,14 +410,15 @@ class OneNoteTreeWalker {
                 fileNode.childFileNodeList.fileNodeListHeader != null) {
             walkFileNodeList(fileNode.childFileNodeList, parentPropertyId);
         }
-        if (fileNode.propertySet != null) {
+        PropertySet propertySet = oneNoteDocument.propertySet(fileNode);
+        if (propertySet != null) {
             int jcid = jcidIndex(fileNode);
             boolean history = jcid == OneNoteJcid.VERSION_HISTORY_CONTENT;
             if (history) {
                 versionHistoryDepth++;
             }
             try {
-                processPropertySet(fileNode.propertySet, parentPropertyId, jcid);
+                processPropertySet(propertySet, parentPropertyId, jcid);
             } finally {
                 if (history) {
                     versionHistoryDepth--;
@@ -546,9 +552,8 @@ class OneNoteTreeWalker {
                 hyperlink = new ArrayList<>();
                 for (CompactID compactID : value.compactIDs) {
                     FileNodePtr ptr = object(compactID.guid);
-                    FileNode style = ptr == null ? null : ptr.dereference(oneNoteDocument);
-                    hyperlink.add(style != null && style.propertySet != null &&
-                            isHyperlink(style.propertySet));
+                    PropertySet style = propertySetOf(ptr);
+                    hyperlink.add(style != null && isHyperlink(style));
                 }
             }
         }
@@ -598,9 +603,8 @@ class OneNoteTreeWalker {
             words = new ArrayList<>();
             for (CompactID compactID : value.compactIDs) {
                 FileNodePtr ptr = object(compactID.guid);
-                FileNode word = ptr == null ? null : ptr.dereference(oneNoteDocument);
-                String alternates = word == null || word.propertySet == null ? null :
-                        readAlternates(word.propertySet);
+                PropertySet word = propertySetOf(ptr);
+                String alternates = word == null ? null : readAlternates(word);
                 String best = alternates == null ? null :
                         OneNoteText.bestInkAlternate(alternates);
                 // a null keeps later words on their own placeholders
