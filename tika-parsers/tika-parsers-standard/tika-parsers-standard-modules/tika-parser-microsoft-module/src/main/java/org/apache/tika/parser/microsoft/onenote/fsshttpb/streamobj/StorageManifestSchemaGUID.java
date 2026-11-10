@@ -40,11 +40,6 @@ public class StorageManifestSchemaGUID extends StreamObject {
         this.guid = UUID.nameUUIDFromBytes(temp);
         index.addAndGet(16);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "StorageManifestSchemaGUID", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "StorageManifestSchemaGUID");
     }
 }

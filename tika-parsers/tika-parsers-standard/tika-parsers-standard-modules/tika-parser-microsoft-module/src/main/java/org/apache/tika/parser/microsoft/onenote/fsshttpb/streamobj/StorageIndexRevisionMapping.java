@@ -42,11 +42,6 @@ public class StorageIndexRevisionMapping extends StreamObject {
         this.revisionMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.revisionMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "StorageIndexRevisionMapping", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "StorageIndexRevisionMapping");
     }
 }

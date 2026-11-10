@@ -40,11 +40,6 @@ public class StorageIndexManifestMapping extends StreamObject {
         this.manifestMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.manifestMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "StorageIndexManifestMapping", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "StorageIndexManifestMapping");
     }
 }

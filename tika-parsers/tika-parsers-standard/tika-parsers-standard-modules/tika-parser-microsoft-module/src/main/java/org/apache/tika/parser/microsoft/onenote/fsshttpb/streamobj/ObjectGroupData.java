@@ -40,7 +40,7 @@ public class ObjectGroupData extends StreamObject {
                                                  int lengthOfItems)
             throws TikaException, IOException {
         if (lengthOfItems != 0) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
+            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupData",
                     "Stream object over-parse error", null);
         }
 

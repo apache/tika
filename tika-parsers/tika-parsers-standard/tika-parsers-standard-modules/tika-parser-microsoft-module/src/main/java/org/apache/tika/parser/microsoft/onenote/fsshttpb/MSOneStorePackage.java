@@ -57,8 +57,7 @@ import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteText;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.EightBytesOfData;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FourBytesOfData;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FixedBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfPropertyValues;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
@@ -1058,8 +1057,8 @@ public class MSOneStorePackage {
                     && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
                 format = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
             } else if (action.oneNotePropertyEnum == OneNotePropertyEnum.ListRestart
-                    && action.property instanceof FourBytesOfData) {
-                restartValue = unsignedInt32(((FourBytesOfData) action.property).data);
+                    && action.property instanceof FixedBytesOfData) {
+                restartValue = unsignedInt32(((FixedBytesOfData) action.property).data);
             }
         }
         ParsedListFormat parsedFormat = parseListFormat(format);
@@ -1945,12 +1944,13 @@ public class MSOneStorePackage {
     }
 
     private long getScalar(IProperty property) throws TikaException, IOException {
-        if (property instanceof FourBytesOfData) {
-            FourBytesOfData fourBytesOfDataProp = (FourBytesOfData) property;
-            return BitConverter.toUInt32(fourBytesOfDataProp.data, 0);
-        } else if (property instanceof EightBytesOfData) {
-            EightBytesOfData fourBytesOfDataProp = (EightBytesOfData) property;
-            return BitConverter.toInt64(fourBytesOfDataProp.data, 0);
+        if (property instanceof FixedBytesOfData) {
+            byte[] data = ((FixedBytesOfData) property).data;
+            if (data.length == 4) {
+                return BitConverter.toUInt32(data, 0);
+            } else if (data.length == 8) {
+                return BitConverter.toInt64(data, 0);
+            }
         }
         throw new TikaException("Could not parse scalar of type " + property.getClass());
     }

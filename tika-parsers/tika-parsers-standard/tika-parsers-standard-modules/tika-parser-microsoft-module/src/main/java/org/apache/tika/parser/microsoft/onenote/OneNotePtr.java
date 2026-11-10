@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.EndianUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +39,9 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 class OneNotePtr {
 
     public static final long FOOTER_CONST = 0x8BC215C38233BA4BL;
-    public static final String UNKNOWN = "unknown";
     public static final int IFNDF_GUID_LENGTH = 38; // 36 char guid with a { and a } char.
     public static final int NUM_RESERVED_BYTES_AT_END_OF_HEADER = 728;
-    private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OneNotePtr.class);
     private static final byte[] IFNDF =
             new byte[]{60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
     private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID =
@@ -398,10 +396,6 @@ class OneNotePtr {
                             "OneNote file nodes exceed the document's limit");
                 }
                 document.fileNodeCount++;
-                FileNode dereference = curPath.dereference(document);
-                FileNode lastChild = data.children.get(data.children.size() - 1);
-                assert dereference.equals(lastChild); // is this correct? or should we be
-                // checking the pointer?
                 Integer curPathOffset =
                         curPath.nodeListPositions.get(curPath.nodeListPositions.size() - 1);
                 curPath.nodeListPositions.set(curPath.nodeListPositions.size() - 1,
@@ -723,12 +717,6 @@ class OneNotePtr {
             data.gosid = deserializeExtendedGUID(); // the object group id
 
             // the ref populates the FileNodeList children
-        } else if (data.id == FndStructureConstants.ObjectGroupStartFND) {
-            data.idDesc = "object_group_id";
-            data.gosid = deserializeExtendedGUID(); // the oid
-
-        } else if (data.id == FndStructureConstants.ObjectGroupEndFND) {
-            // nothing to see here
         } else if (data.id == FndStructureConstants.DataSignatureGroupDefinitionFND) {
             data.idDesc = "data_sig";
             data.gosid = deserializeExtendedGUID(); // the DataSignatureGroup
@@ -791,7 +779,7 @@ class OneNotePtr {
         ObjectDeclarationWithRefCountBody data = new ObjectDeclarationWithRefCountBody();
         data.oid = deserializeCompactID();
         long jci_odcs_etc = deserializeLittleEndianInt();
-        long reserved = deserializeLittleEndianShort();
+        deserializeLittleEndianShort(); // reserved
 
         data.jcid.index = jci_odcs_etc & 0x3ffL;
         // undocumented: OneNote 2007 declares picture (0x16), ink (0x17) and zlib-compressed
@@ -801,7 +789,6 @@ class OneNotePtr {
         }
 
         long must_be_zero = (jci_odcs_etc >> 10) & 0xf;
-        long must_be_zeroA = ((jci_odcs_etc >> 14) & 0x3);
         data.fHasOidReferences = ((jci_odcs_etc >> 16) & 0x1) != 0;
         data.hasOsidReferences = ((jci_odcs_etc >> 17) & 0x1) != 0;
         // MS-ONESTORE 2.6.15: the reserved fields MUST be ignored; some writers set the
@@ -964,13 +951,6 @@ class OneNotePtr {
                 throw new TikaException("JCID must be file data when !isObjectSpaceObjectPropSet.");
             }
             data.isFileData = true;
-            if (LOG.isDebugEnabled()) {
-                OneNotePtr content = new OneNotePtr(this);
-                content.reposition(data.ref);
-                LOG.debug("{}Raw:", getIndent());
-                content.dumpHex();
-                LOG.debug("");
-            }
         }
     }
 
@@ -1155,12 +1135,6 @@ class OneNotePtr {
                     }
                     data.rawData.cb = val32;
                     offset += val32;
-                    if (LOG.isDebugEnabled()) {
-                        OneNotePtr content = new OneNotePtr(this);
-                        content.reposition(data.rawData);
-                        content.dumpHex();
-                    }
-
                     LOG.debug("]");
                     break;
                 case 0x9:
@@ -1286,15 +1260,6 @@ class OneNotePtr {
         return end - offset;
     }
 
-    public void dumpHex() throws TikaMemoryLimitException, IOException {
-        if (end - offset > dif.size()) {
-            throw new TikaMemoryLimitException(
-                    "Exceeded memory limit when trying to dumpHex - " + "" + (end - offset) +
-                            " > " + dif.size());
-        }
-        ByteBuffer byteBuffer = ByteBuffer.allocate((int) (end - offset));
-        LOG.debug(Hex.encodeHexString(byteBuffer.array()));
-    }
 
     public int size() {
         return (int) (end - offset);

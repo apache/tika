@@ -47,11 +47,6 @@ public class ObjectDataBLOB extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.data = BasicObject.parse(byteArray, index, BinaryItem.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectDataBLOB",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "ObjectDataBLOB");
     }
 }

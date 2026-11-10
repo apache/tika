@@ -52,7 +52,7 @@ import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
 import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FourBytesOfData;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FixedBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.NoData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfPropertyValues;
@@ -2726,15 +2726,15 @@ public class MSOneStorePackageTest {
         return listItem;
     }
 
-    private static FourBytesOfData fourBytes(int value) {
-        FourBytesOfData data = new FourBytesOfData();
+    private static FixedBytesOfData fourBytes(int value) {
+        FixedBytesOfData data = new FixedBytesOfData(4);
         data.data = new byte[] {(byte) value, (byte) (value >>> 8), (byte) (value >>> 16),
                 (byte) (value >>> 24)};
         return data;
     }
 
-    private static FourBytesOfData fourBytes(byte[] value) {
-        FourBytesOfData data = new FourBytesOfData();
+    private static FixedBytesOfData fourBytes(byte[] value) {
+        FixedBytesOfData data = new FixedBytesOfData(4);
         data.data = value;
         return data;
     }

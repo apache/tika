@@ -40,11 +40,6 @@ public class DataElementHash extends StreamObject {
         this.dataElementHashScheme = BasicObject.parse(byteArray, index, Compact64bitInt.class);
         this.dataElementHashData = BasicObject.parse(byteArray, index, BinaryItem.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "DataElementHash",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "DataElementHash");
     }
 }

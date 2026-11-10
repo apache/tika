@@ -41,12 +41,6 @@ public class RevisionManifestObjectGroupReferences extends StreamObject {
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.objectGroupExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "RevisionManifestObjectGroupReferences", "Stream object over-parse error",
-                    null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "RevisionManifestObjectGroupReferences");
     }
 }

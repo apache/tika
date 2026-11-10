@@ -37,11 +37,6 @@ public class CellManifestCurrentRevision extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.cellManifestCurrentRevisionExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "CellManifestCurrentRevision", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "CellManifestCurrentRevision");
     }
 }

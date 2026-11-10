@@ -53,8 +53,7 @@ class JCID {
 
     @Override
     public String toString() {
-        return "JCID{" + "jcid=" + JCIDPropertySetTypeEnum.of(jcid) + " (0x" +
-                Long.toHexString(jcid) + ")" + ", index=" + index + ", isBinary=" + isBinary +
+        return "JCID{jcid=0x" + Long.toHexString(jcid) + ", index=" + index + ", isBinary=" + isBinary +
                 ", isPropertySet=" + isPropertySet + ", isGraphNode=" + isGraphNode +
                 ", isFileData=" + isFileData + ", isReadOnly=" + isReadOnly + '}';
     }

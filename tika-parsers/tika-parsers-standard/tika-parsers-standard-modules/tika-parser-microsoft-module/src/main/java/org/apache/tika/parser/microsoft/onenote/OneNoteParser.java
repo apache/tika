@@ -44,6 +44,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -111,39 +112,33 @@ public class OneNoteParser implements Parser {
             OneNoteHeader header = oneNoteDocument.header;
 
             if (header.isMsOneStoreFormat()) {
-                metadata.set(OneNote.BUILD_NUMBER_CREATED,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
-                metadata.set(OneNote.BUILD_NUMBER_LAST_WROTE_TO_FILE,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberLastWroteToFile));
-                metadata.set(OneNote.BUILD_NUMBER_NEWEST_WRITTEN,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberNewestWritten));
-                metadata.set(OneNote.BUILD_NUMBER_OLDEST_WRITTEN,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberOldestWritten));
-                metadata.set(OneNote.CB_EXPECTED_FILE_LENGTH,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cbExpectedFileLength));
-                metadata.set(OneNote.CB_FREE_SPACE_IN_FREE_CHUNK_LIST,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cbFreeSpaceInFreeChunkList));
-                metadata.set(OneNote.CB_LEGACY_EXPECTED_FILE_LENGTH,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cbLegacyExpectedFileLength));
-                metadata.set(OneNote.CB_LEGACY_FREE_SPACE_IN_FREE_CHUNK_LIST, "0x" +
-                        Long.toHexString(oneNoteDocument.header.cbLegacyFreeSpaceInFreeChunkList));
-                metadata.set(OneNote.CRC_NAME, "0x" + Long.toHexString(oneNoteDocument.header.crcName));
-                metadata.set(OneNote.C_TRANSACTIONS_IN_LOG,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cTransactionsInLog));
-                metadata.set(OneNote.FFV_LAST_CODE_THAT_WROTE_TO_THIS_FILE, "0x" +
-                        Long.toHexString(oneNoteDocument.header.ffvLastCodeThatWroteToThisFile));
-                metadata.set(OneNote.FFV_NEWEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE, "0x" + Long.toHexString(
-                        oneNoteDocument.header.ffvNewestCodeThatHasWrittenToThisFile));
-                metadata.set(OneNote.FFV_OLDEST_CODE_THAT_MAY_READ_THIS_FILE, "0x" +
-                        Long.toHexString(oneNoteDocument.header.ffvOldestCodeThatMayReadThisFile));
-                metadata.set(OneNote.FFV_OLDEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE, "0x" + Long.toHexString(
-                        oneNoteDocument.header.ffvOldestCodeThatHasWrittenToThisFile));
-                metadata.set(OneNote.GRF_DEBUG_LOG_FLAGS,
-                        "0x" + Long.toHexString(oneNoteDocument.header.grfDebugLogFlags));
-                metadata.set(OneNote.N_FILE_VERSION_GENERATION,
-                        "0x" + Long.toHexString(oneNoteDocument.header.nFileVersionGeneration));
-                metadata.set(OneNote.RGB_PLACEHOLDER,
-                        "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
+                setHex(metadata, OneNote.BUILD_NUMBER_CREATED, header.buildNumberCreated);
+                setHex(metadata, OneNote.BUILD_NUMBER_LAST_WROTE_TO_FILE,
+                        header.buildNumberLastWroteToFile);
+                setHex(metadata, OneNote.BUILD_NUMBER_NEWEST_WRITTEN,
+                        header.buildNumberNewestWritten);
+                setHex(metadata, OneNote.BUILD_NUMBER_OLDEST_WRITTEN,
+                        header.buildNumberOldestWritten);
+                setHex(metadata, OneNote.CB_EXPECTED_FILE_LENGTH, header.cbExpectedFileLength);
+                setHex(metadata, OneNote.CB_FREE_SPACE_IN_FREE_CHUNK_LIST,
+                        header.cbFreeSpaceInFreeChunkList);
+                setHex(metadata, OneNote.CB_LEGACY_EXPECTED_FILE_LENGTH,
+                        header.cbLegacyExpectedFileLength);
+                setHex(metadata, OneNote.CB_LEGACY_FREE_SPACE_IN_FREE_CHUNK_LIST,
+                        header.cbLegacyFreeSpaceInFreeChunkList);
+                setHex(metadata, OneNote.CRC_NAME, header.crcName);
+                setHex(metadata, OneNote.C_TRANSACTIONS_IN_LOG, header.cTransactionsInLog);
+                setHex(metadata, OneNote.FFV_LAST_CODE_THAT_WROTE_TO_THIS_FILE,
+                        header.ffvLastCodeThatWroteToThisFile);
+                setHex(metadata, OneNote.FFV_NEWEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE,
+                        header.ffvNewestCodeThatHasWrittenToThisFile);
+                setHex(metadata, OneNote.FFV_OLDEST_CODE_THAT_MAY_READ_THIS_FILE,
+                        header.ffvOldestCodeThatMayReadThisFile);
+                setHex(metadata, OneNote.FFV_OLDEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE,
+                        header.ffvOldestCodeThatHasWrittenToThisFile);
+                setHex(metadata, OneNote.GRF_DEBUG_LOG_FLAGS, header.grfDebugLogFlags);
+                setHex(metadata, OneNote.N_FILE_VERSION_GENERATION, header.nFileVersionGeneration);
+                setHex(metadata, OneNote.RGB_PLACEHOLDER, header.rgbPlaceholder);
                 emitSectionFileGuid(header, metadata);
 
                 Exception structureFailure = oneNoteDocument.structureParseException;
@@ -282,6 +277,10 @@ public class OneNoteParser implements Parser {
                             "falling back to legacy text dump", null, metadata, xhtml,
                     oneNoteDirectFileResource, context);
         }
+    }
+
+    private static void setHex(Metadata metadata, Property property, long value) {
+        metadata.set(property, "0x" + Long.toHexString(value));
     }
 
     static void setWalkMetadata(OneNoteTreeWalker walker, Metadata metadata) {

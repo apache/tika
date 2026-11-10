@@ -40,11 +40,6 @@ public class StorageManifestRootDeclare extends StreamObject {
         this.rootExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
         this.cellID = BasicObject.parse(byteArray, index, CellID.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "StorageManifestRootDeclare", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "StorageManifestRootDeclare");
     }
 }

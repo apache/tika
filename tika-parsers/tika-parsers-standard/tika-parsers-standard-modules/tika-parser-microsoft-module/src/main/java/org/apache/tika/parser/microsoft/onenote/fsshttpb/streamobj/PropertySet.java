@@ -21,14 +21,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.EightBytesOfData;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FourBytesOfData;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FixedBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.NoData;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.OneByteOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfPropertyValues;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.TwoBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
@@ -89,16 +86,16 @@ public class PropertySet implements IProperty {
                     property = new ArrayNumber();
                     break;
                 case OneByteOfData:
-                    property = new OneByteOfData();
+                    property = new FixedBytesOfData(1);
                     break;
                 case TwoBytesOfData:
-                    property = new TwoBytesOfData();
+                    property = new FixedBytesOfData(2);
                     break;
                 case FourBytesOfData:
-                    property = new FourBytesOfData();
+                    property = new FixedBytesOfData(4);
                     break;
                 case EightBytesOfData:
-                    property = new EightBytesOfData();
+                    property = new FixedBytesOfData(8);
                     break;
                 case FourBytesOfLengthFollowedByData:
                     property = new PrtFourBytesOfLengthFollowedByData();

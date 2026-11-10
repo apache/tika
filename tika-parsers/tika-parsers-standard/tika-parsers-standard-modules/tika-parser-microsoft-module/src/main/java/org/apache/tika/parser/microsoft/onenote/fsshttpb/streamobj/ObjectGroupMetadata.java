@@ -38,11 +38,6 @@ public class ObjectGroupMetadata extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectChangeFrequency = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupMetadata",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "ObjectGroupMetadata");
     }
 }

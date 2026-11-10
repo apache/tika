@@ -16,14 +16,24 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
+import java.io.IOException;
 import java.util.Arrays;
 
-
-public class FourBytesOfData implements IProperty {
+/** A property value of 1, 2, 4 or 8 bytes. */
+public class FixedBytesOfData implements IProperty {
     public byte[] data;
+    private final int size;
 
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
-        this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 4);
-        return 4;
+    public FixedBytesOfData(int size) {
+        this.size = size;
+    }
+
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
+        if (startIndex < 0 || startIndex > byteArray.length - size) {
+            throw new IOException(size + "-byte property at " + startIndex +
+                    " runs past the " + byteArray.length + "-byte object");
+        }
+        this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + size);
+        return size;
     }
 }

@@ -55,11 +55,6 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
         this.objectReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
         this.cellReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "ObjectGroupObjectBLOBDataDeclaration", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "ObjectGroupObjectBLOBDataDeclaration");
     }
 }

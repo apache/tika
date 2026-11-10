@@ -43,11 +43,6 @@ public class StorageIndexCellMapping extends StreamObject {
         this.cellMappingExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.cellMappingSerialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "StorageIndexCellMapping",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "StorageIndexCellMapping");
     }
 }

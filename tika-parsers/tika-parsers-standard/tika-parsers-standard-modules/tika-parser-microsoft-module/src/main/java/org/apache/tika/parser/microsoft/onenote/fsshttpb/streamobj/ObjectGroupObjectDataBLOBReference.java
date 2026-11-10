@@ -46,11 +46,6 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);
         this.blobExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "ObjectGroupObjectDataBLOBReference", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "ObjectGroupObjectDataBLOBReference");
     }
 }

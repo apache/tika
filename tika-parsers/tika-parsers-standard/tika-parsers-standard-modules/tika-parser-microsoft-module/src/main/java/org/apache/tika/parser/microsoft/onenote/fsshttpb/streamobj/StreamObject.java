@@ -218,6 +218,17 @@ public abstract class StreamObject {
         return index.get() - startIndex;
     }
 
+    /** Advances {@code currentIndex} to {@code index}, which must be the items' end. */
+    protected static void endItems(AtomicInteger currentIndex, AtomicInteger index,
+                                   int lengthOfItems, String name)
+            throws StreamObjectParseErrorException {
+        if (index.get() - currentIndex.get() != lengthOfItems) {
+            throw new StreamObjectParseErrorException(currentIndex.get(), name,
+                    "Stream object over-parse error", null);
+        }
+        currentIndex.set(index.get());
+    }
+
     protected abstract void deserializeItemsFromByteArray(byte[] byteArray,
                                                           AtomicInteger currentIndex,
                                                           int lengthOfItems)

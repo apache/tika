@@ -39,11 +39,6 @@ public class RevisionManifest extends StreamObject {
         this.revisionID = BasicObject.parse(byteArray, index, ExGuid.class);
         this.baseRevisionID = BasicObject.parse(byteArray, index, ExGuid.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "RevisionManifest",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "RevisionManifest");
     }
 }

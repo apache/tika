@@ -38,11 +38,6 @@ public class RevisionManifestRootDeclare extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.rootExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.objectExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "RevisionManifestRootDeclare", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
+        endItems(currentIndex, index, lengthOfItems, "RevisionManifestRootDeclare");
     }
 }
