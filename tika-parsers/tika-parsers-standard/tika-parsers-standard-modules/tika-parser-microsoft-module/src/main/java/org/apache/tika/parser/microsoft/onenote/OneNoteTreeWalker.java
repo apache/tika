@@ -114,6 +114,8 @@ class OneNoteTreeWalker {
     private int walkDepth;
     private boolean depthWarningRecorded;
     private long visitsRemaining;
+    // objects resolved in walkedRevision
+    private final Map<ExtendedGUID, FileNodePtr> resolvedObjects = new HashMap<>();
     private int versionHistoryDepth;
     private boolean contentEmitted;
     // the revision whose objects the walk resolves, or null for the last declared anywhere
@@ -240,6 +242,7 @@ class OneNoteTreeWalker {
             }
         }
         walkedRevision = current;
+        resolvedObjects.clear();
         try {
             for (long role : new long[]{1, 2, 4}) {
                 for (ExtendedGUID root : contentRoots(current,
@@ -259,8 +262,27 @@ class OneNoteTreeWalker {
     }
 
     private FileNodePtr object(ExtendedGUID oid) {
-        return walkedRevision == null ? oneNoteDocument.guidToObject.get(oid) :
-                oneNoteDocument.objectIn(walkedRevision, oid);
+        if (walkedRevision == null) {
+            return oneNoteDocument.guidToObject.get(oid);
+        }
+        if (resolvedObjects.containsKey(oid)) {
+            return resolvedObjects.get(oid);
+        }
+        // each step down the dependency chain counts as a visit, so long chains stay bounded
+        FileNodePtr ptr = oneNoteDocument.objectIn(walkedRevision, oid, this::takeVisit);
+        if (visitsRemaining > 0) {
+            resolvedObjects.put(oid, ptr);
+        }
+        return ptr;
+    }
+
+    private boolean takeVisit() {
+        if (visitsRemaining <= 0) {
+            recordVisitBudgetWarning();
+            return false;
+        }
+        visitsRemaining--;
+        return true;
     }
 
     /** A revision that declares no root of a role keeps its dependency's. */

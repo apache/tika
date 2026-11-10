@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 import org.apache.tika.exception.TikaException;
 
@@ -79,8 +80,16 @@ class OneNoteDocument {
 
     /** The object as revision {@code rid} has it: declared there or in a dependency. */
     FileNodePtr objectIn(ExtendedGUID rid, ExtendedGUID oid) {
+        return objectIn(rid, oid, () -> true);
+    }
+
+    /** As above; each revision checked takes a {@code step}, and none left gives null. */
+    FileNodePtr objectIn(ExtendedGUID rid, ExtendedGUID oid, BooleanSupplier step) {
         ExtendedGUID r = rid;
         for (int i = 0; r != null && i <= revisionMap.size(); i++) {
+            if (!step.getAsBoolean()) {
+                return null;
+            }
             Map<ExtendedGUID, FileNodePtr> objects = revisionObjects.get(r);
             FileNodePtr ptr = objects == null ? null : objects.get(oid);
             if (ptr != null) {

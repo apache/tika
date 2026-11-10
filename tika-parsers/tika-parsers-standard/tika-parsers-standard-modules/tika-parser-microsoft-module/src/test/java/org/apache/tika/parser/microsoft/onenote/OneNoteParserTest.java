@@ -1047,6 +1047,11 @@ public class OneNoteParserTest extends TikaTest {
         assertSame(currentParagraph, document.objectIn(current, paragraph));
         assertSame(baseTitle, document.objectIn(current, title));
         assertSame(baseParagraph, document.objectIn(base, paragraph));
+        // each revision on the dependency chain takes a step from the caller's budget
+        int[] steps = {1};
+        assertNull(document.objectIn(current, title, () -> steps[0]-- > 0));
+        steps[0] = 2;
+        assertSame(baseTitle, document.objectIn(current, title, () -> steps[0]-- > 0));
     }
 
     @Test
