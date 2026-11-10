@@ -33,9 +33,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
 public abstract class StreamObject {
 
-    /**
-     * Hash set contains the StreamObjectTypeHeaderStart type.
-     */
     private static final Set<StreamObjectTypeHeaderStart> compoundTypes = new HashSet<>(
             Arrays.asList(StreamObjectTypeHeaderStart.DataElement,
                     StreamObjectTypeHeaderStart.Knowledge,
@@ -60,9 +57,6 @@ public abstract class StreamObject {
                     StreamObjectTypeHeaderStart.IntermediateNodeObject,
                     StreamObjectTypeHeaderStart.TargetPartitionId));
 
-    /**
-     * The dictionary of StreamObjectTypeHeaderStart and type.
-     */
     private static final Map<StreamObjectTypeHeaderStart, Class> streamObjectTypeMapping;
 
     static {
@@ -73,52 +67,28 @@ public abstract class StreamObject {
                 streamObjectTypeMapping.put(value,
                         Class.forName(className, false, StreamObject.class.getClassLoader()));
             } catch (ClassNotFoundException e) {
-                // This is OK, we are not pulling over every single class
+                // not every type has a ported class
             }
         }
     }
 
     StreamObjectHeaderEnd streamObjectHeaderEnd;
-    /**
-     * Gets the StreamObjectTypeHeaderStart.
-     */
     private StreamObjectTypeHeaderStart streamObjectType;
-    /**
-     * Gets the length of items.
-     */
     private int lengthOfItems;
     private StreamObjectHeaderStart streamObjectHeaderStart;
 
-    /**
-     * Initializes a new instance of the StreamObject class.
-     *
-     * @param streamObjectType The instance of StreamObjectTypeHeaderStart.
-     */
     protected StreamObject(StreamObjectTypeHeaderStart streamObjectType) {
         this.streamObjectType = streamObjectType;
     }
 
-    /**
-     * Gets the StreamObjectTypeHeaderStart
-     */
     public static Set<StreamObjectTypeHeaderStart> getCompoundTypes() {
         return compoundTypes;
     }
 
-    /**
-     * Gets the StreamObjectTypeMapping
-     */
     public static Map<StreamObjectTypeHeaderStart, Class> getStreamObjectTypeMapping() {
         return streamObjectTypeMapping;
     }
 
-    /**
-     * Get current stream object.
-     *
-     * @param byteArray The byte array which contains message.
-     * @param index     The position where to start.
-     * @return The current object instance.
-     */
     public static <T extends StreamObject> T getCurrent(byte[] byteArray, AtomicInteger index,
                                                         Class<T> clazz)
             throws TikaException, IOException {
@@ -150,19 +120,10 @@ public abstract class StreamObject {
                             clazz.getName(), destClassName), null);
         }
 
-        // Store the current index to the ref parameter index.
         index.set(tmpIndex.get());
         return (T) streamObject;
     }
 
-    /**
-     * Parse stream object from byte array.
-     *
-     * @param header    The instance of StreamObjectHeaderStart.
-     * @param byteArray The byte array.
-     * @param index     The position where to start.
-     * @return The instance of StreamObject.
-     */
     public static StreamObject parseStreamObject(StreamObjectHeaderStart header, byte[] byteArray,
                                                  AtomicInteger index) throws IOException, TikaException {
         if (streamObjectTypeMapping.containsKey(header.type)) {
@@ -191,15 +152,6 @@ public abstract class StreamObject {
                 null);
     }
 
-    /**
-     * Try to get current object, true will returned if success.
-     *
-     * @param byteArray    The byte array.
-     * @param index        The position where to start.
-     * @param streamObject The instance that want to get.
-     * @return The result of whether get success.
-     */
-
     public static <T extends StreamObject> boolean tryGetCurrent(byte[] byteArray,
                                                                  AtomicInteger index,
                                                                  AtomicReference<T> streamObject,
@@ -227,14 +179,6 @@ public abstract class StreamObject {
         return true;
     }
 
-    /**
-     * Used to return the length of this element.
-     *
-     * @param header     Then instance of StreamObjectHeaderStart.
-     * @param byteArray  The byte list
-     * @param startIndex The position where to start.
-     * @return The element length
-     */
     public int deserializeFromByteArray(StreamObjectHeaderStart header, byte[] byteArray,
                                         int startIndex) throws IOException, TikaException {
         this.streamObjectType = header.type;
@@ -274,13 +218,6 @@ public abstract class StreamObject {
         return index.get() - startIndex;
     }
 
-    /**
-     * De-serialize items from byte array.
-     *
-     * @param byteArray     The byte array which contains response message.
-     * @param currentIndex  The index special where to start.
-     * @param lengthOfItems The length of items.
-     */
     protected abstract void deserializeItemsFromByteArray(byte[] byteArray,
                                                           AtomicInteger currentIndex,
                                                           int lengthOfItems)

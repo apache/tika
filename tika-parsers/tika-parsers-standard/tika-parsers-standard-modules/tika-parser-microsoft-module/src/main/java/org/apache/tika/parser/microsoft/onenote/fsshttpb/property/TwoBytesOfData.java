@@ -18,20 +18,10 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 
 
-/**
- * This class is used to represent the property contains 2 bytes of data in the PropertySet.rgData stream field.
- */
 public class TwoBytesOfData implements IProperty {
     public byte[] data;
 
 
-    /**
-     * This method is used to deserialize the TwoBytesOfData from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the TwoBytesOfData.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.data = new byte[]{byteArray[startIndex], byteArray[startIndex + 1]};
 

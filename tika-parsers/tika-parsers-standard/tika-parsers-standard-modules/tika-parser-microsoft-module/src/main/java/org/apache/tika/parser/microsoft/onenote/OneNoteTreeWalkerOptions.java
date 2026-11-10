@@ -22,9 +22,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Options when walking the one note tree.
- */
 public class OneNoteTreeWalkerOptions implements Serializable {
     private boolean crawlAllFileNodesFromRoot = false;
     private boolean includeDeletedContent = false;
@@ -41,10 +38,6 @@ public class OneNoteTreeWalkerOptions implements Serializable {
         return crawlAllFileNodesFromRoot;
     }
 
-    /**
-     * @param crawlAllFileNodesFromRoot whether to emit text from every revision
-     * @return this
-     */
     public OneNoteTreeWalkerOptions setCrawlAllFileNodesFromRoot(
             boolean crawlAllFileNodesFromRoot) {
         this.crawlAllFileNodesFromRoot = crawlAllFileNodesFromRoot;
@@ -61,38 +54,20 @@ public class OneNoteTreeWalkerOptions implements Serializable {
         return this;
     }
 
-    /**
-     * Only parse the latest revision.
-     */
     public boolean isOnlyLatestRevision() {
         return onlyLatestRevision;
     }
 
-    /**
-     * Only parse the latest revision.
-     *
-     * @param onlyLatestRevision
-     * @return Returns this, as per builder pattern.
-     */
     public OneNoteTreeWalkerOptions setOnlyLatestRevision(boolean onlyLatestRevision) {
         this.onlyLatestRevision = onlyLatestRevision;
         return this;
     }
 
-    /**
-     * Print file node data in UTF-16 format when they match these props.
-     */
+    /** Properties whose file node data is printed as UTF-16. */
     public Set<OneNotePropertyEnum> getUtf16PropertiesToPrint() {
         return utf16PropertiesToPrint;
     }
 
-    /**
-     * Print file node data in UTF-16 format when they match these props.
-     *
-     * @param utf16PropertiesToPrint The set of UTF properties you want to print UTF-16 for.
-     *                               Defaults are usually ok here.
-     * @return Returns this, as per builder pattern.
-     */
     public OneNoteTreeWalkerOptions setUtf16PropertiesToPrint(
             Set<OneNotePropertyEnum> utf16PropertiesToPrint) {
         this.utf16PropertiesToPrint = utf16PropertiesToPrint;

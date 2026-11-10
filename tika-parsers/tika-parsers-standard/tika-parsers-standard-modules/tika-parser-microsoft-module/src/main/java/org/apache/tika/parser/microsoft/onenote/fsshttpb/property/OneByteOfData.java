@@ -17,19 +17,9 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 
-/**
- * This class is used to represent the property contains 1 byte of data in the PropertySet.rgData stream field.
- */
 public class OneByteOfData implements IProperty {
     public byte data;
 
-    /**
-     * This method is used to deserialize the OneByteOfData from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.data = byteArray[startIndex];
         return 1;

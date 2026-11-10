@@ -27,12 +27,6 @@ public class HeaderCell {
     public ObjectGroupObjectDeclare objectDeclaration;
     public ObjectSpaceObjectPropSet objectData;
 
-    /**
-     * Create the instance of Header Cell.
-     *
-     * @param objectElement The instance of ObjectGroupDataElementData.
-     * @return Returns the instacne of HeaderCell.
-     */
     public static HeaderCell createInstance(ObjectGroupDataElementData objectElement)
             throws IOException {
         HeaderCell instance = new HeaderCell();

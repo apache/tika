@@ -25,22 +25,10 @@ public class CellID extends BasicObject {
     public ExGuid extendGUID1;
     public ExGuid extendGUID2;
 
-    /**
-     * Initializes a new instance of the CellID class with specified ExGuids.
-     *
-     * @param extendGuid1 Specify the first ExGuid.
-     * @param extendGuid2 Specify the second ExGuid.
-     */
     public CellID(ExGuid extendGuid1, ExGuid extendGuid2) {
         this.extendGUID1 = extendGuid1;
         this.extendGUID2 = extendGuid2;
     }
-
-    /**
-     * Initializes a new instance of the CellID class, this is the copy constructor.
-     *
-     * @param cellId Specify the CellID.
-     */
 
     public CellID(CellID cellId) {
         if (cellId.extendGUID1 != null) {
@@ -52,18 +40,9 @@ public class CellID extends BasicObject {
         }
     }
 
-    /**
-     * Initializes a new instance of the CellID class, this is default constructor.
-     */
     public CellID() {
     }
 
-    /**
-     * Override the Equals method.
-     *
-     * @param obj Specify the object.
-     * @return Return true if equals, otherwise return false.
-     */
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof CellID)) {
@@ -80,11 +59,6 @@ public class CellID extends BasicObject {
         return false;
     }
 
-    /**
-     * Override the GetHashCode.
-     *
-     * @return Return the hash value.
-     */
     @Override
     public int hashCode() {
         return this.extendGUID1.hashCode() + this.extendGUID2.hashCode();
@@ -98,13 +72,6 @@ public class CellID extends BasicObject {
                 '}';
     }
 
-    /**
-     * This method is used to deserialize the CellID basic object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the CellID basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

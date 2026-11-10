@@ -20,48 +20,19 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 
-/**
- * This class specifies the base class for 16-bit or 32-bit stream object header start
- */
 public abstract class StreamObjectHeaderStart extends BasicObject {
-    /**
-     * Specify for 16-bit stream object header start.
-     */
     public static final int STREAM_OBJECT_HEADER_START_16_BIT = 0x0;
 
-    /**
-     * Specify for 32-bit stream object header start.
-     */
     public static final int STREAM_OBJECT_HEADER_START_32_BIT = 0x02;
     public StreamObjectTypeHeaderStart type;
-    /**
-     * Gets or sets the type of the stream object.
-     * value 0 for 16-bit stream object header start,
-     * value 2 for 32-bit stream object header start.
-     */
     protected int headerType;
-    /**
-     * Gets or sets a value that specifies if set a compound parse type is needed and
-     * MUST be ended with either an 8-bit stream object header end or a 16-bit stream object header end.
-     * If the bit is zero, it specifies a single object. Otherwise it specifies a compound object.
-     */
+    /** Nonzero for a compound object, which MUST be ended by an 8- or 16-bit header end. */
     protected int compound;
     protected int length;
 
-    /**
-     * Initializes a new instance of the StreamObjectHeaderStart class.
-     */
     protected StreamObjectHeaderStart() {
     }
 
-    /**
-     * This method is used to parse the actual 16bit or 32bit stream header.
-     *
-     * @param byteArray          Specify the Byte array.
-     * @param startIndex         Specify the start position.
-     * @param streamObjectHeader Specify the out value for the parse result.
-     * @return Return true if success, otherwise returns false.
-     */
     public static int tryParse(byte[] byteArray, int startIndex,
                                AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
         int headerType = byteArray[startIndex] & 0x03;

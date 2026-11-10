@@ -20,19 +20,9 @@ import java.util.Arrays;
 
 
 
-/**
- * This class is used to represent the property contains 8 bytes of data in the PropertySet.rgData stream field.
- */
 public class EightBytesOfData implements IProperty {
     public byte[] data;
 
-    /**
-     * This method is used to deserialize the EightBytesOfData from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the EightBytesOfData.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 8);
         return 8;

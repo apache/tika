@@ -26,14 +26,6 @@ public class ObjectSpaceObjectStreamHeader {
     public int extendedStreamsPresent;
     public int osidStreamNotPresent;
 
-    /**
-     * This method is used to deserialize the ObjectSpaceObjectStreamHeader object from
-     * the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the ObjectSpaceObjectStreamHeader object.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         this.count = bitReader.readUInt32(24);

@@ -25,17 +25,11 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellIDA
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGUIDArray;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * object data BLOB reference
- */
 public class ObjectGroupObjectDataBLOBReference extends StreamObject {
     public ExGUIDArray objectExtendedGUIDArray;
     public CellIDArray cellIDArray;
     public ExGuid blobExtendedGUID;
 
-    /**
-     * Initializes a new instance of the ObjectGroupObjectDataBLOBReference class.
-     */
     public ObjectGroupObjectDataBLOBReference() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference);
         this.objectExtendedGUIDArray = new ExGUIDArray();
@@ -43,13 +37,6 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         this.blobExtendedGUID = new ExGuid();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

@@ -22,25 +22,11 @@ import java.util.Locale;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
-/**
- * An 16-bit header for a compound object would indicate the end of a stream object
- */
 public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
 
-    /**
-     * Initializes a new instance of the StreamObjectHeaderEnd16bit class, this is the default constructor.
-     */
     public StreamObjectHeaderEnd16bit() {
     }
 
-    /**
-     * This method is used to deserialize the StreamObjectHeaderEnd16bit basic object from the
-     * specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the StreamObjectHeaderEnd16bit basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
             throws IOException, TikaException {

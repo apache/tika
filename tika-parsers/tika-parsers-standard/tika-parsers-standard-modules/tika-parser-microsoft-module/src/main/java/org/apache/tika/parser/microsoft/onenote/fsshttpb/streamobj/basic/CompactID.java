@@ -20,20 +20,10 @@ import java.io.IOException;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
-/**
- * This class is used to represent the CompactID structrue.
- */
 public class CompactID {
     public long n;
     public long guidIndex;
 
-    /**
-     * This method is used to deserialize the CompactID object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the CompactID object.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         this.n = bitReader.readUInt32(8);

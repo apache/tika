@@ -26,20 +26,10 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 public class CellManifestCurrentRevision extends StreamObject {
     public ExGuid cellManifestCurrentRevisionExGuid;
 
-    /**
-     * Initializes a new instance of the CellManifestCurrentRevision class.
-     */
     public CellManifestCurrentRevision() {
         super(StreamObjectTypeHeaderStart.CellManifestCurrentRevision);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

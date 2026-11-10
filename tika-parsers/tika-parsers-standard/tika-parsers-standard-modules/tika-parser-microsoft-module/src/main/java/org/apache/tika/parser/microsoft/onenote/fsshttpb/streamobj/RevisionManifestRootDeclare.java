@@ -23,27 +23,14 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * Specifies a revision manifest root declare, each followed by root and object extended GUIDs
- */
 public class RevisionManifestRootDeclare extends StreamObject {
     public ExGuid rootExGuid;
     public ExGuid objectExGuid;
 
-    /**
-     * Initializes a new instance of the RevisionManifestRootDeclare class.
-     */
     public RevisionManifestRootDeclare() {
         super(StreamObjectTypeHeaderStart.RevisionManifestRootDeclare);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte list
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

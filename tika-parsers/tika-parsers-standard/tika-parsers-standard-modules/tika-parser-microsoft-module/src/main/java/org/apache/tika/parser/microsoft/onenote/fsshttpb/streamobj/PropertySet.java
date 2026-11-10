@@ -33,9 +33,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Propert
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
-/**
- * This class is used to represent a PropertySet.
- */
 public class PropertySet implements IProperty {
     // a nesting level costs ~14 file bytes, so unbounded depth lets a small
     // crafted file drive a StackOverflowError that escapes catch(Exception)
@@ -46,13 +43,6 @@ public class PropertySet implements IProperty {
     public PropertyID[] rgPrids;
     public List<IProperty> rgData;
 
-    /**
-     * This method is used to deserialize the PropertySet from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the PropertySet.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         return doDeserializeFromByteArray(byteArray, startIndex, 0);
     }

@@ -24,27 +24,14 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
 
-/**
- * Specifies an data element hash stream object
- */
 public class DataElementHash extends StreamObject {
     public Compact64bitInt dataElementHashScheme;
     public BinaryItem dataElementHashData;
 
-    /**
-     * Initializes a new instance of the DataElementHash class.
-     */
     public DataElementHash() {
         super(StreamObjectTypeHeaderStart.DataElementHash);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

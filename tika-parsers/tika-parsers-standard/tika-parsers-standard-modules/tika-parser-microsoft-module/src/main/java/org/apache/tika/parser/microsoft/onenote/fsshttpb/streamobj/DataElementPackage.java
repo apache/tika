@@ -29,20 +29,10 @@ public class DataElementPackage extends StreamObject {
     public List<DataElement> dataElements = new ArrayList<>();
     public byte reserved;
 
-    /**
-     * Initializes a new instance of the DataElementHash class.
-     */
     public DataElementPackage() {
         super(StreamObjectTypeHeaderStart.DataElementPackage);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

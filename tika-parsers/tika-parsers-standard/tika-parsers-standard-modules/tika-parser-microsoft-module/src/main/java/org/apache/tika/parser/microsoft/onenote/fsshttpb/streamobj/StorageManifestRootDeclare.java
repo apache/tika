@@ -24,27 +24,14 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * Specifies one or more storage manifest root declare.
- */
 public class StorageManifestRootDeclare extends StreamObject {
     public ExGuid rootExGUID;
     public CellID cellID;
 
-    /**
-     * Initializes a new instance of the StorageManifestRootDeclare class.
-     */
     public StorageManifestRootDeclare() {
         super(StreamObjectTypeHeaderStart.StorageManifestRootDeclare);
     }
 
-    /**
-     * Used to de-serialize the items.
-     *
-     * @param byteArray     Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

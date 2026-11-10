@@ -23,10 +23,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 
-/**
- * Specifies an object data BLOB stream object - the opaque binary data of an object,
- * e.g. an embedded image or file. See MS-FSSHTTPB section 2.2.1.12.8.
- */
+/** Opaque binary data of an object, e.g. an embedded image or file. MS-FSSHTTPB 2.2.1.12.8. */
 public class ObjectDataBLOB extends StreamObject {
     public BinaryItem data;
 
@@ -35,16 +32,10 @@ public class ObjectDataBLOB extends StreamObject {
         this.data = new BinaryItem();
     }
 
-    /**
-     * @return a copy of the opaque binary data, or null if not present.
-     */
     public byte[] getData() {
         return this.data == null ? null : this.data.copyContent();
     }
 
-    /**
-     * @return the length of the binary data, 0 if not present
-     */
     public int getDataLength() {
         return this.data == null ? 0 : this.data.getContentLength();
     }

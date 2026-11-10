@@ -19,36 +19,9 @@ package org.apache.tika.parser.microsoft.onenote;
 import org.apache.tika.exception.TikaException;
 
 /**
- * The JCID structure specifies the type of object and the type of data the object contains.
- * A JCID structure can be considered to be an unsigned integer of size four bytes as specified
- * by property set and
- * file data object.
- *
- * <pre>[0,15] - the index</pre>
- * <pre>16 - A</pre>
- * <pre>17 - B</pre>
- * <pre>18 - C</pre>
- * <pre>19 - D</pre>
- * <pre>20 - E</pre>
- * <pre>21 - 31 = reserved</pre>
- * <p>
- * index (2 bytes): An unsigned integer that specifies the type of object.
- * <p>
- * A - IsBinary (1 bit): Specifies whether the object contains encryption data  transmitted over
- * the File Synchronization via SOAP over HTTP Protocol, as specified in [MS-FSSHTTP].
- * <p>
- * B - IsPropertySet (1 bit): Specifies whether the object contains a property set.
- * <p>
- * C - IsGraphNode (1 bit): Undefined and MUST be ignored.
- * <p>
- * D - IsFileData (1 bit): Specifies whether the object is a file data object. If the value of
- * IsFileData is "true", then the values of the IsBinary, IsPropertySet, IsGraphNode, and
- * IsReadOnly fields MUST all be false.
- * <p>
- * E - IsReadOnly (1 bit): Specifies whether the object's data MUST NOT be changed when the
- * object is revised.
- * <p>
- * reserved (11 bits): MUST be zero, and MUST be ignored.
+ * Object type and data kind, as a 32-bit value: bits 0-15 index (object type), 16 IsBinary
+ * (encrypted data, [MS-FSSHTTP]), 17 IsPropertySet, 18 IsGraphNode (ignored), 19 IsFileData
+ * (if set, all other flags MUST be false), 20 IsReadOnly, 21-31 reserved.
  */
 class JCID {
     long jcid;
@@ -59,13 +32,7 @@ class JCID {
     boolean isFileData;
     boolean isReadOnly;
 
-    /**
-     * If the value of the JCID.IsPropertySet field is "true" or if only JCID.index is specified,
-     * then the data for the Object Space Object structure MUST be an ObjectSpaceObjectPropSet
-     * structure.
-     *
-     * @return true if is ObjectSpaceObjectPropSet. false otherwise.
-     */
+    /** The object data is an ObjectSpaceObjectPropSet if IsPropertySet or only index is set. */
     public boolean isObjectSpaceObjectPropSet() {
         return isPropertySet ||
                 !isBinary && !isGraphNode && !isFileData && !isReadOnly && index > 0;

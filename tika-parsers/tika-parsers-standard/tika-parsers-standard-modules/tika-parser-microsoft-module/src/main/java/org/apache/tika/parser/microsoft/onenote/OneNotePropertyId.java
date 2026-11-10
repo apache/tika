@@ -33,7 +33,7 @@ class OneNotePropertyId {
         type = pid >> 26 & 0x1f;
         inlineBool = false;
         if (type == 0x2) {
-            inlineBool = ((pid >> 31) & 0x1) > 0; // set the bool value from header
+            inlineBool = ((pid >> 31) & 0x1) > 0;
         } else {
             if (((pid >> 31) & 0x1) > 0) {
                 throw new TikaException("Reserved non-zero");

@@ -19,10 +19,7 @@ package org.apache.tika.parser.microsoft.onenote;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * The JCID property set type enum from section 2.1.13 of MS-ONE
- * specification.
- */
+/** JCID values from MS-ONE 2.1.13. */
 enum JCIDPropertySetTypeEnum {
     jcidReadOnlyPersistablePropertyContainerForAuthor(0x00120001),
     jcidPersistablePropertyContainerForTOC(0x00020001),

@@ -22,13 +22,6 @@ public class StreamObjectParseErrorException extends RuntimeException {
 
     public String streamObjectTypeName;
 
-    /**
-     * Initializes a new instance of the StreamObjectParseErrorException class
-     *
-     * @param index                Specify the index of object
-     * @param streamObjectTypeName Specify the stream type name
-     * @param innerException       Specify the inner exception
-     */
     public StreamObjectParseErrorException(int index, String streamObjectTypeName,
                                            Exception innerException) {
         super(innerException);
@@ -36,14 +29,6 @@ public class StreamObjectParseErrorException extends RuntimeException {
         this.streamObjectTypeName = streamObjectTypeName;
     }
 
-    /**
-     * Initializes a new instance of the StreamObjectParseErrorException class
-     *
-     * @param index                Specify the index of object
-     * @param streamObjectTypeName Specify the stream type name
-     * @param message              Specify the exception message
-     * @param innerException       Specify the inner exception
-     */
     public StreamObjectParseErrorException(int index, String streamObjectTypeName, String message,
                                            Exception innerException) {
         super(message, innerException);

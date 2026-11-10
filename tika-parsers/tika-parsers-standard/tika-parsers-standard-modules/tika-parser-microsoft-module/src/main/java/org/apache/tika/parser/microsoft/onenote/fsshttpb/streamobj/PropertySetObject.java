@@ -21,19 +21,10 @@ import java.io.IOException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
 
 
-/**
- * This class is used to represent the property set.
- */
 public class PropertySetObject {
     public ObjectGroupObjectDeclare objectDeclaration;
     public ObjectSpaceObjectPropSet objectSpaceObjectPropSet;
 
-    /**
-     * Construct the PropertySetObject instance.
-     *
-     * @param objectDeclaration The Object Declaration structure.
-     * @param objectData        The Object Data structure.
-     */
     public PropertySetObject(ObjectGroupObjectDeclare objectDeclaration,
                              ObjectGroupObjectData objectData) throws IOException {
         this.objectDeclaration = objectDeclaration;

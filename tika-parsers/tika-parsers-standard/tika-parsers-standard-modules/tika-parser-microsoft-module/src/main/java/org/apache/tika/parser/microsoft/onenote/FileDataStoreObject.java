@@ -17,8 +17,8 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 class FileDataStoreObject {
-    // uint64_t cbLength;implicit in the fileData FileChunkReference
-    FileChunkReference fileData = new FileChunkReference(); //points to raw data
+    // cbLength is implicit in fileData
+    FileChunkReference fileData = new FileChunkReference();
 
     public FileChunkReference getFileData() {
         return fileData;

@@ -25,69 +25,34 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class ExGuid extends BasicObject {
-    /**
-     * Specify the extended GUID null type value.
-     */
     public static final int ExtendedGUIDNullType = 0;
 
-    /**
-     * Specify the extended GUID 5 Bit int type value.
-     */
     public static final int ExtendedGUID5BitUintType = 4;
 
-    /**
-     * Specify the extended GUID 10 Bit int type value.
-     */
     public static final int ExtendedGUID10BitUintType = 32;
 
-    /**
-     * Specify the extended GUID 17 Bit int type value.
-     */
     public static final int ExtendedGUID17BitUintType = 64;
 
-    /**
-     * Specify the extended GUID 32 Bit int type value.
-     */
     public static final int ExtendedGUID32BitUintType = 128;
     public int type;
     public int value;
     public UUID guid;
 
-    /**
-     * Initializes a new instance of the ExGuid class with specified value.
-     *
-     * @param value      Specify the ExGUID Value.
-     * @param identifier Specify the ExGUID GUID value.
-     */
     public ExGuid(int value, UUID identifier) {
         this.value = value;
         this.guid = identifier;
     }
 
-    /**
-     * Initializes a new instance of the ExGuid class, this is the copy constructor.
-     *
-     * @param guid2 Specify the ExGuid instance where copies from.
-     */
     public ExGuid(ExGuid guid2) {
         this.value = guid2.value;
         this.guid = guid2.guid;
         this.type = guid2.type;
     }
 
-    /**
-     * Initializes a new instance of the ExGuid class, this is a default constructor.
-     */
     public ExGuid() {
         this.guid = GuidUtil.emptyGuid();
     }
 
-    /**
-     * Override the Equals method.
-     *
-     * @param obj Specify the object.
-     * @return Return true if equals, otherwise return false.
-     */
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ExGuid) {
@@ -100,11 +65,6 @@ public class ExGuid extends BasicObject {
         return false;
     }
 
-    /**
-     * Override the GetHashCode.
-     *
-     * @return Return the hash value.
-     */
     @Override
     public int hashCode() {
         return this.guid.hashCode() + Integer.valueOf(this.value).hashCode();
@@ -119,13 +79,6 @@ public class ExGuid extends BasicObject {
                 '}';
     }
 
-    /**
-     * This method is used to deserialize the ExGuid basic object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the ExGuid basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);

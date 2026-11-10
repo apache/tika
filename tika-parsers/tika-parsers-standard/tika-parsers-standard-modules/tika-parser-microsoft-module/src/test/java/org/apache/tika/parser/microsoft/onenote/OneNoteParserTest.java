@@ -71,8 +71,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class OneNoteParserTest extends TikaTest {
 
-    //test recursive parser wrapper for image files
-
     private static final String[][] FUZZ_RESOURCES = {
             {"testOneNote-fuzz1.one", "Missing dependent revision"},
             {"testOneNote-fuzz2.one", "unified property count"},
@@ -380,9 +378,7 @@ public class OneNoteParserTest extends TikaTest {
         return handler.toString();
     }
 
-    /**
-     * This is the sample document that is automatically created from onenote 2013.
-     */
+    /** The sample document OneNote 2013 creates automatically. */
     @Test
     public void testOneNote2013Doc1() throws Exception {
         Metadata metadata = new Metadata();
@@ -1230,8 +1226,7 @@ public class OneNoteParserTest extends TikaTest {
 
     @Test
     public void testFragmentChainCycleFailsCleanly(@TempDir Path tempDir) throws Exception {
-        // an empty fragment whose next-fragment reference points back at itself would
-        // previously loop forever
+        // an empty fragment whose next-fragment points back at itself: once an infinite loop
         ByteBuffer buf = ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
                 .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
                 .putLong(0).putInt(36)
@@ -1278,10 +1273,7 @@ public class OneNoteParserTest extends TikaTest {
         }
     }
 
-    /**
-     * Test a document pulled from Office 365 which stores the MS-ONESTORE document using the MS-FSSHTTPB
-     * protocol.
-     */
+    /** From Office 365: MS-ONESTORE carried in MS-FSSHTTPB. */
     @Test
     public void testOneNoteDocumentFromOffice365_1() throws Exception {
         Metadata metadata = new Metadata();
@@ -1308,10 +1300,7 @@ public class OneNoteParserTest extends TikaTest {
         assertTrue(txt.indexOf("Section1Page1Content") < txt.indexOf("Section1Page2Content"));
     }
 
-    /**
-     * Test a document pulled from Office 365 which stores the MS-ONESTORE document using the MS-FSSHTTPB
-     * protocol.
-     */
+    /** From Office 365: MS-ONESTORE carried in MS-FSSHTTPB. */
     @Test
     public void testOneNoteDocumentFromOffice365_2() throws Exception {
         Metadata metadata = new Metadata();
@@ -1337,9 +1326,9 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     private void assertNoJunk(String txt) {
-        //Should not include font names in the text
+        // font name
         assertNotContained("Calibri", txt);
-        //Should not include UTF-16 property values that are garbage
+        // garbage UTF-16 property values
         assertNotContained("\u5902", txt);
         assertNotContained("\u83F2", txt);
         assertNotContained("\u432F", txt);
@@ -1348,9 +1337,7 @@ public class OneNoteParserTest extends TikaTest {
         assertNotContained("\uFFFD", txt);
     }
 
-    /**
-     * TIKA-3970 - test duplicate text.
-     */
+    /** TIKA-3970: duplicate text. */
     @Test
     public void testDupeText() throws Exception {
         Metadata metadata = new Metadata();
@@ -1362,9 +1349,7 @@ public class OneNoteParserTest extends TikaTest {
         assertNoJunk(txt);
     }
 
-    /**
-     * TIKA-4303 - test extract Chinese
-     */
+    /** TIKA-4303: Chinese text. */
     @Test
     public void testExtractChinese() throws Exception {
         Metadata metadata = new Metadata();

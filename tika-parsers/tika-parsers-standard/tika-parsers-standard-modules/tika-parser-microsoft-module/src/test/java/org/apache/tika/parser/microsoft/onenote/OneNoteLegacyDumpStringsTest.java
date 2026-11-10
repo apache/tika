@@ -62,7 +62,7 @@ public class OneNoteLegacyDumpStringsTest {
 
     @Test
     public void testHeuristicKeepsShortCaption(@TempDir Path tmp) throws Exception {
-        // 5 of 8 non-space chars are letters; spaces no longer dilute the ratio
+        // 5 of 8 non-space chars are letters; spaces don't count toward the ratio
         assertKept(tmp, "Table 3-5", null);
     }
 

@@ -21,80 +21,37 @@ import java.io.IOException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
 /**
- * A 9-byte encoding of values in the range 0x0002000000000000 through 0xFFFFFFFFFFFFFFFF
+ * Compact unsigned 64-bit integer: 1-9 bytes; the low-order zero bits of byte 0 give the width.
  */
 public class Compact64bitInt extends BasicObject {
-    /**
-     * Specify the type value for compact uint zero type value.
-     */
     public static final int CompactUintNullType = 0;
 
-    /**
-     * Specify the type value for compact uint 7 bits type value.
-     */
     public static final int CompactUint7bitType = 1;
 
-    /**
-     * Specify the type value for compact uint 14 bits type value.
-     */
     public static final int CompactUint14bitType = 2;
 
-    /**
-     * Specify the type value for compact uint 21 bits type value.
-     */
     public static final int CompactUint21bitType = 4;
 
-    /**
-     * Specify the type value for compact uint 28 bits type value.
-     */
     public static final int CompactUint28bitType = 8;
 
-    /**
-     * Specify the type value for compact uint 35 bits type value.
-     */
     public static final int CompactUint35bitType = 16;
 
-    /**
-     * Specify the type value for compact uint 42 bits type value.
-     */
     public static final int CompactUint42bitType = 32;
 
-    /**
-     * Specify the type value for compact uint 49 bits type value.
-     */
     public static final int CompactUint49bitType = 64;
 
-    /**
-     * Specify the type value for compact uint 64 bits type value.
-     */
     public static final int CompactUint64bitType = 128;
     private int type;
     private long decodedValue;
 
-    /**
-     * Initializes a new instance of the Compact64bitInt class with specified value.
-     *
-     * @param decodedValue Decoded value
-     */
     public Compact64bitInt(long decodedValue) {
         this.decodedValue = decodedValue;
     }
 
-    /**
-     * Initializes a new instance of the Compact64bitInt class, this is the default constructor.
-     */
     public Compact64bitInt() {
         this.decodedValue = 0;
     }
 
-    /**
-     * This method is used to deserialize the Compact64bitInt basic object from the specified byte
-     * array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the Compact64bitInt basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex)

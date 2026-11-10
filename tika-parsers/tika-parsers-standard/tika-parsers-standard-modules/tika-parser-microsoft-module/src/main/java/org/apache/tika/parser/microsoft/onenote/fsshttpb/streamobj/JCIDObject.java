@@ -21,19 +21,10 @@ import java.io.IOException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.JCID;
 
 
-/**
- * This class is used to represent the JCID object.
- */
 public class JCIDObject {
     public ObjectGroupObjectDeclare objectDeclaration;
     public JCID jcid;
 
-    /**
-     * Construct the JCIDObject instance.
-     *
-     * @param objectDeclaration The Object Declaration structure.
-     * @param objectData        The Object Data structure.
-     */
     public JCIDObject(ObjectGroupObjectDeclare objectDeclaration,
                       ObjectGroupObjectData objectData) throws IOException {
         this.objectDeclaration = objectDeclaration;

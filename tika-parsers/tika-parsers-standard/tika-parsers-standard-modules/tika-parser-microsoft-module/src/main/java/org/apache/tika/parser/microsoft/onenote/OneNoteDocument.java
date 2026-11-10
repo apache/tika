@@ -64,7 +64,7 @@ class OneNoteDocument {
         revisionObjects.computeIfAbsent(currentRevision, k -> new HashMap<>()).put(oid, ptr);
     }
 
-    /** @return the object as revision {@code rid} has it: declared there or in a dependency */
+    /** The object as revision {@code rid} has it: declared there or in a dependency. */
     FileNodePtr objectIn(ExtendedGUID rid, ExtendedGUID oid) {
         ExtendedGUID r = rid;
         for (int i = 0; r != null && i <= revisionMap.size(); i++) {

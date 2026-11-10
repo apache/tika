@@ -30,22 +30,12 @@ public class RevisionManifestDataElementData extends DataElementData {
     public List<RevisionManifestRootDeclare> revisionManifestRootDeclareList;
     public List<RevisionManifestObjectGroupReferences> revisionManifestObjectGroupReferences;
 
-    /**
-     * Initializes a new instance of the RevisionManifestDataElementData class.
-     */
     public RevisionManifestDataElementData() {
         this.revisionManifest = new RevisionManifest();
         this.revisionManifestRootDeclareList = new ArrayList<>();
         this.revisionManifestObjectGroupReferences = new ArrayList<>();
     }
 
-    /**
-     * Used to return the length of this element.
-     *
-     * @param byteArray  A Byte list
-     * @param startIndex Start position
-     * @return The length of the element
-     */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

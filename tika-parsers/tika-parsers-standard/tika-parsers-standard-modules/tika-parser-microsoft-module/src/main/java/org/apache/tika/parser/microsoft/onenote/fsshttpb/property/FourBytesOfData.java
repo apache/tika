@@ -19,19 +19,9 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 import java.util.Arrays;
 
 
-/**
- * This class is used to represent the property contains 4 bytes of data in the PropertySet.rgData stream field.
- */
 public class FourBytesOfData implements IProperty {
     public byte[] data;
 
-    /**
-     * This method is used to deserialize the FourBytesOfData from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the FourBytesOfData.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + 4);
         return 4;

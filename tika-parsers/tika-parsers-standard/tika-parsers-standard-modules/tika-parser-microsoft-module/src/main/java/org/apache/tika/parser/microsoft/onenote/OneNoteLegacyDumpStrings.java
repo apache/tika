@@ -31,14 +31,8 @@ import org.apache.tika.quality.TextQualityScore;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
- * OneNote versions before OneNote 2010 do not have a published OpenSpec document, and the older
- * formats are drastically
- * incompatible with the later OpenSpecs.
- * Therefore, we resort to scraping out useful ASCII and UTF16LE strings using a similar
- * algorithm used by the GNU "strings"
- * program.
- * <p>
- * This is only needed for OneNote versions prior to 2010.
+ * Pre-2010 OneNote formats have no published spec and are incompatible with the later ones, so
+ * ASCII and UTF-16LE strings are scraped as GNU "strings" does.
  */
 class OneNoteLegacyDumpStrings {
 
@@ -86,21 +80,11 @@ class OneNoteLegacyDumpStrings {
         }
     }
 
-    /**
-     * Dump all "useful" Ascii and UTF16LE strings found in the file to the XHTMLContentHandler.
-     *
-     * @throws TikaException
-     * @throws SAXException
-     */
     public void dump() throws TikaException, SAXException {
         dumpAscii();
         dumpUtf16LE();
     }
 
-    /**
-     * Based on GNU "strings" implementation. Pulls out ascii text segments and writes them to
-     * the XHTMLContentHandler.
-     */
     private void dumpAscii() throws SAXException, TikaException {
         UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
         try {
@@ -125,10 +109,6 @@ class OneNoteLegacyDumpStrings {
         }
     }
 
-    /**
-     * Based on GNU "strings" implementation. Pulls out UTF16 LE text segments and writes them to
-     * the XHTMLContentHandler.
-     */
     private void dumpUtf16LE() throws SAXException, TikaException {
         UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
         try {
@@ -178,11 +158,7 @@ class OneNoteLegacyDumpStrings {
         os.reset();
     }
 
-    /**
-     * Writes a buffer of output characters if it holds more than one token and reads as text.
-     *
-     * @param os Byte array output stream containing the buffer.
-     */
+    /** Writes the buffer if it holds more than one token and reads as text. */
     private void writeIfUseful(UnsynchronizedByteArrayOutputStream os) throws SAXException {
         String str = os.toString(StandardCharsets.ISO_8859_1);
         if (!hasInnerSpace(str)) {

@@ -85,17 +85,9 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MSOneStorePackage {
-    /**
-     * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
-     */
+    /** MS-ONE 2.3.1 TIME32 epoch (1980-01-01 UTC), in seconds from Instant.EPOCH. */
     private static final long TIME32_EPOCH_DIFF_1980;
-    /**
-     * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
-     */
+    /** MS-DTYP 2.3.3 DATETIME epoch (1601-01-01 UTC), in seconds from Instant.EPOCH. */
     private static final long DATETIME_EPOCH_DIFF_1601;
     private static final Logger LOG = LoggerFactory.getLogger(MSOneStorePackage.class);
     private static final String P = "p";
@@ -160,10 +152,10 @@ public class MSOneStorePackage {
     private final Set<String> emittedFolderChildren = new HashSet<>();
     private final Map<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> depthSkippedObjects =
             new LinkedHashMap<>();
-    // flattened property actions per object; objects can be re-flattened many times during
-    // picture/resource-name resolution, which is quadratic without this cache
     private Map<ExGuid, RevisionStoreObject> containerReferencesIndexed;
     private Map<ExGuid, List<ContainerReference>> containerReferences;
+    // flattened property actions per object; objects can be re-flattened many times during
+    // picture/resource-name resolution, which is quadratic without this cache
     private final Map<RevisionStoreObject, List<PropertyAction>> objectActionsCache =
             new IdentityHashMap<>();
     private final Map<RevisionStoreObject, NumberListInfo> numberListInfoCache =
@@ -181,23 +173,11 @@ public class MSOneStorePackage {
         this.cells = new ArrayList<>();
     }
 
-    /**
-     * This method is used to find the Storage Index Cell Mapping matches the Cell ID.
-     *
-     * @param cellID Specify the Cell ID.
-     * @return the specific Storage Index Cell Mapping, or {@code null} if it is absent.
-     */
     public StorageIndexCellMapping findStorageIndexCellMapping(CellID cellID) {
         indexStorageMappings();
         return storageIndexCellMappingsById.get(cellID);
     }
 
-    /**
-     * This method is used to find the Storage Index Revision Mapping that matches the Revision Mapping Extended GUID.
-     *
-     * @param revisionExtendedGUID Specify the Revision Mapping Extended GUID.
-     * @return the instance of Storage Index Revision Mapping, or {@code null} if it is absent.
-     */
     public StorageIndexRevisionMapping findStorageIndexRevisionMapping(
             ExGuid revisionExtendedGUID) {
         indexStorageMappings();
@@ -217,12 +197,6 @@ public class MSOneStorePackage {
         }
     }
 
-    /**
-     * Is this property a binary property?
-     *
-     * @param property The property.
-     * @return Is it binary?
-     */
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
         return property == OneNotePropertyEnum.RgOutlineIndentDistance ||
                 property == OneNotePropertyEnum.NotebookManagementEntityGuid ||
@@ -377,7 +351,7 @@ public class MSOneStorePackage {
                             List<RevisionStoreCell> otherCells,
                             Map<RevisionStoreCell, PastPage> pastCells) {
         if (dataRootCell == null) {
-            // Without a data root there is no reliable page ordering information.
+            // no page ordering without a data root
             otherCells.addAll(cells);
             return;
         }
@@ -419,7 +393,7 @@ public class MSOneStorePackage {
         }
     }
 
-    /** @return the object spaces that any object of the section object space references */
+    /** Object spaces referenced by any object of the section object space. */
     private Set<ExGuid> sectionReferencedObjectSpaces() {
         Set<ExGuid> spaces = new HashSet<>();
         for (RevisionStoreObjectGroup group : dataRootCell.objectGroups) {
@@ -682,7 +656,6 @@ public class MSOneStorePackage {
             resourceInfo = resourceInfoFromReferencingObject(object, objectsById, depth);
         }
         if (object.fileDataObject != null) {
-            // the object carries opaque binary data, e.g. an embedded image or file
             handleEmbedded(object.fileDataObject, xhtml, resourceInfo, object.objectID);
         }
         if (object.propertySet == null ||
@@ -737,7 +710,7 @@ public class MSOneStorePackage {
         }
     }
 
-    /** @return the paragraph's text runs and which are hyperlink text, or null */
+    /** The paragraph's text runs, flagging hyperlink runs; null if absent. */
     private static List<OneNoteText.TextRun> textRuns(List<PropertyAction> actions,
                                                       Map<ExGuid, RevisionStoreObject> objectsById) {
         int[] ends = null;
@@ -1315,9 +1288,6 @@ public class MSOneStorePackage {
         return parentInfo;
     }
 
-    /**
-     * Metadata used when emitting an embedded resource.
-     */
     private static final class EmbeddedResourceInfo {
         private final String name;
         private final String type;
@@ -1581,8 +1551,6 @@ public class MSOneStorePackage {
             metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP,
                     String.valueOf(lastModifiedTimestamp.toEpochMilli()));
         } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
-            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
-            // 1970
             long scalar = getScalar(property);
             long creationTs = scalar + TIME32_EPOCH_DIFF_1980;
             if (creationTs < creationTimestamp) {
@@ -1590,8 +1558,6 @@ public class MSOneStorePackage {
             }
             metadata.set(OneNote.CREATION_TIMESTAMP, String.valueOf(creationTimestamp));
         } else if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTime) {
-            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
-            // 1970
             long scalar = getScalar(property);
             long lastMod = scalar + TIME32_EPOCH_DIFF_1980;
             if (lastMod > lastModified) {
@@ -1625,9 +1591,7 @@ public class MSOneStorePackage {
                 if (oneNotePropertyEnum == OneNotePropertyEnum.RichEditTextUnicode) {
                     handleRichEditTextUnicode(dataProperty.data, xhtml);
                 } else {
-                    //TODO -- these seem to be somewhat broken font files and other
-                    //odds and ends...what are they and how should we process them?
-                    //handleEmbedded(content.size());
+                    //TODO: identify and handle other binary properties (often broken font files)
                 }
             }
         }
@@ -1653,9 +1617,7 @@ public class MSOneStorePackage {
         }
     }
 
-    /**
-     * Records the Author properties of an already-visited object under the given role.
-     */
+    /** Records the Author properties of an already-visited object under the given role. */
     private void recordAuthors(RevisionStoreObject object, AuthorRole role) {
         // NONE also records (into authors) so the result is visit-order independent
         if (object.propertySet == null ||
@@ -1864,10 +1826,6 @@ public class MSOneStorePackage {
         return ".".equals(name) || "..".equals(name) ? "" : name;
     }
 
-    /**
-     * Hands the binary data of an embedded object (e.g. an image or an attached file) to the
-     * embedded document extractor.
-     */
     private void handleEmbedded(FileDataObject fileData, XHTMLContentHandler xhtml,
                                 EmbeddedResourceInfo resourceInfo, ExGuid objectID)
             throws SAXException, IOException {
@@ -1912,7 +1870,6 @@ public class MSOneStorePackage {
 
     private void handleRichEditTextUnicode(byte[] arr, XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
-        // look for the first null
         int firstNull = 0;
         for (int i = 0; i < arr.length - 1; i += 2) {
             if (arr[i] == 0 && arr[i + 1] == 0) {

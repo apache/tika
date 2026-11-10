@@ -21,22 +21,11 @@ import java.util.Arrays;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
-/**
- * This class is used to represent the prtFourBytesOfLengthFollowedByData.
- */
 public class PrtFourBytesOfLengthFollowedByData implements IProperty {
     public int cb;
 
     public byte[] data;
 
-    /**
-     * This method is used to deserialize the prtFourBytesOfLengthFollowedByData from
-     * the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the prtFourBytesOfLengthFollowedByData.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
         this.cb = (int) BitConverter.toUInt32(byteArray, startIndex);

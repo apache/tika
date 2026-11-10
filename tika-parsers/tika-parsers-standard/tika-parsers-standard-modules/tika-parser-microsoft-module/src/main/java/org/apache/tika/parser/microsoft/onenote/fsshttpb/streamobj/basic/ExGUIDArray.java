@@ -25,16 +25,8 @@ import org.apache.tika.exception.TikaException;
 
 public class ExGUIDArray extends BasicObject {
     public Compact64bitInt count;
-    /**
-     * Gets or sets an extended GUID array
-     */
     public List<ExGuid> content;
 
-    /**
-     * Initializes a new instance of the ExGUIDArray class with specified value.
-     *
-     * @param content Specify the list of ExGuid contents.
-     */
     public ExGUIDArray(List<ExGuid> content) {
         this();
         this.content = new ArrayList<>();
@@ -47,18 +39,10 @@ public class ExGUIDArray extends BasicObject {
         this.count.setDecodedValue(this.content.size());
     }
 
-    /**
-     * Initializes a new instance of the ExGUIDArray class, this is copy constructor.
-     *
-     * @param extendGuidArray Specify the ExGUIDArray where copies from.
-     */
     public ExGUIDArray(ExGUIDArray extendGuidArray) {
         this(extendGuidArray.content);
     }
 
-    /**
-     * Initializes a new instance of the ExGUIDArray class, this is the default constructor.
-     */
     public ExGUIDArray() {
         this.count = new Compact64bitInt();
         this.content = new ArrayList<>();
@@ -73,13 +57,6 @@ public class ExGUIDArray extends BasicObject {
         this.count.setDecodedValue(this.content.size());
     }
 
-    /**
-     * This method is used to deserialize the ExGUIDArray basic object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the ExGUIDArray basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex)

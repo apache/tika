@@ -30,9 +30,6 @@ public class ObjectGroupObjectData extends StreamObject {
     public CellIDArray cellIDArray;
     public BinaryItem data;
 
-    /**
-     * Initializes a new instance of the ObjectGroupObjectData class.
-     */
     public ObjectGroupObjectData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectData);
         this.objectExGUIDArray = new ExGUIDArray();
@@ -40,13 +37,6 @@ public class ObjectGroupObjectData extends StreamObject {
         this.data = new BinaryItem();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

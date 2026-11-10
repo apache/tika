@@ -21,27 +21,13 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-/**
- * Specifies a storage manifest schema GUID
- */
 public class StorageManifestSchemaGUID extends StreamObject {
     public UUID guid;
 
-    /**
-     * Initializes a new instance of the StorageManifestSchemaGUID class.
-     */
     public StorageManifestSchemaGUID() {
         super(StreamObjectTypeHeaderStart.StorageManifestSchemaGUID);
-        // this.GUID = DataElementExGuids.StorageManifestGUID;
     }
 
-    /**
-     * Used to de-serialize the items.
-     *
-     * @param byteArray     Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) {

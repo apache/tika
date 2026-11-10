@@ -21,22 +21,12 @@ import java.io.IOException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
-/**
- * This class is used to represent a PropertyID.
- */
 public class PropertyID {
     public int id;
     public int type;
     public int boolValue;
     public int value;
 
-    /**
-     * This method is used to deserialize the PropertyID object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the PropertyID object.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         this.id = bitReader.readUInt32(26);

@@ -28,20 +28,10 @@ public class StorageIndexManifestMapping extends StreamObject {
     public ExGuid manifestMappingExGuid;
     public SerialNumber manifestMappingSerialNumber;
 
-    /**
-     * Initializes a new instance of the StorageIndexManifestMapping class.
-     */
     public StorageIndexManifestMapping() {
         super(StreamObjectTypeHeaderStart.StorageIndexManifestMapping);
     }
 
-    /**
-     * Used to Deserialize the items.
-     *
-     * @param byteArray     Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

@@ -36,16 +36,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 
-/**
- * This is the main class used during parsing. This will contain an offset position and end
- * position for reading bytes from the byte stream.
- * <p>
- * It contains all the deserialize methods used to read the different data elements from a one
- * note file.
- * <p>
- * You can construct a new one note pointer and it will reposition the byte channel and will
- * read until
- */
+/** An offset and end bound in the file, with the deserializers for its MS-ONESTORE structures. */
 class OneNotePtr {
 
     public static final long FOOTER_CONST = 0x8BC215C38233BA4BL;
@@ -295,23 +286,7 @@ class OneNotePtr {
         dif.position(offset);
     }
 
-    /**
-     * Keep parsing file node list fragments until a nil file chunk reference is encountered.
-     * <p>
-     * A file node list can be divided into one or more FileNodeListFragment
-     * structures. Each fragment can specify whether there are more fragments in the list and
-     * the location of the next fragment. Each fragment specifies a sub-sequence
-     * of FileNode structures from the file node list.
-     * <p>
-     * When specifying the structure of a specific file node list in this document, the division
-     * of the list into fragments is ignored and FileNode structures with FileNode.FileNodeID
-     * field values equal to 0x0FF ("ChunkTerminatorFND") are not specified.
-     *
-     * @param ptr          The current OneNotePtr we are at currently.
-     * @param fileNodeList The file node list to populate as we parse.
-     * @param curPath      The current FileNodePtr.
-     * @return The resulting one note pointer after node lists are all parsed.
-     */
+    /** Parses a file node list's fragments, following each nextFragment until a nil reference. */
     public OneNotePtr internalDeserializeFileNodeList(OneNotePtr ptr, FileNodeList fileNodeList,
                                                       FileNodePtr curPath)
             throws IOException, TikaException {
@@ -366,20 +341,7 @@ class OneNotePtr {
         }
     }
 
-    /**
-     * Deserializes a FileNodeListFragment.
-     * <p>
-     * The FileNodeListFragment structure specifies a sequence of file nodes from a file node
-     * list. The size of the FileNodeListFragment structure is specified by the structure that
-     * references it.
-     * <p>
-     * All fragments in the same file node list MUST have the same FileNodeListFragment.header
-     * .FileNodeListID field.
-     *
-     * @param data    List of file nodes that we collect while deserializing.
-     * @param next    The next file chunk we are referencing.
-     * @param curPath The current FileNodePtr.
-     */
+    /** Deserializes a FileNodeListFragment; {@code next} receives its nextFragment reference. */
     void deserializeFileNodeListFragment(FileNodeList data, FileChunkReference next,
                                          FileNodePtr curPath) throws IOException, TikaException {
         data.fileNodeListHeader = deserializeFileNodeListHeader();
@@ -486,16 +448,11 @@ class OneNotePtr {
             } else {
                 data.idDesc = "gosid";
             }
-            // Specifies the identity of the object space being specified by this object
-            // space manifest list. MUST match the ObjectSpaceManifestListReferenceFND.gosid
-            // field of the FileNode structure that referenced
-            // this file node list.
+            // MUST match the gosid of the referencing ObjectSpaceManifestListReferenceFND
             data.gosid = deserializeExtendedGUID();
-            //LOG.debug("{}gosid {}", getIndent(), data.gosid.toString().c_str());
         } else if (data.id == FndStructureConstants.ObjectSpaceManifestListReferenceFND) {
             data.gosid = deserializeExtendedGUID();
             data.idDesc = "gosid";
-            //LOG.debug("{}gosid {}", getIndent(),data.gosid.toString().c_str());
             //children parsed in generic base_type 2 parser
         } else if (data.id == FndStructureConstants.RevisionManifestListStartFND) {
             data.gosid = deserializeExtendedGUID();
@@ -504,12 +461,10 @@ class OneNotePtr {
             parentPath.nodeListPositions.remove(parentPath.nodeListPositions.size() - 1);
             document.registerRevisionManifestList(data.gosid, parentPath);
 
-            //LOG.debug("{}gosid {}", getIndent(),data.gosid.toString().c_str());
             data.subType.revisionManifestListStart.nInstanceIgnored = deserializeLittleEndianInt();
         } else if (data.id == FndStructureConstants.RevisionManifestStart4FND) {
             data.gosid = deserializeExtendedGUID(); // the rid
             data.idDesc = "rid";
-            //LOG.debug("{}gosid {}", getIndent(), data.gosid.toString().c_str());
             data.subType.revisionManifest.ridDependent = deserializeExtendedGUID(); // the rid
             LOG.debug("{}dependent gosid {}", getIndent(),
                     data.subType.revisionManifest.ridDependent);
@@ -525,7 +480,6 @@ class OneNotePtr {
                 data.id == FndStructureConstants.RevisionManifestStart7FND) {
             data.gosid = deserializeExtendedGUID(); // the rid
             data.idDesc = "rid";
-            //LOG.debug("{}gosid {}", getIndent(), data.gosid.toString().c_str());
             data.subType.revisionManifest.ridDependent = deserializeExtendedGUID(); // the rid
             LOG.debug("{}dependent gosid {}", getIndent(),
                     data.subType.revisionManifest.ridDependent);
@@ -773,9 +727,7 @@ class OneNotePtr {
         }
         // an empty reference (fcrNil or fcrZero) is a child list OneNote never wrote
         if (data.baseType == 2 && data.ref.cb != 0) {
-            // Generic baseType == 2 parser - means we have children to parse.
             OneNotePtr subList = new OneNotePtr(this);
-            // position the subList pointer to the data.ref and deserialize recursively.
             subList.reposition(data.ref);
             subList.deserializeFileNodeList(data.childFileNodeList, curPath);
         }
@@ -855,19 +807,10 @@ class OneNotePtr {
         return data;
     }
 
-    /**
-     * The FileDataStoreObject structure specifies the data for a file data object.
-     *
-     * @return
-     * @throws IOException
-     */
     private FileDataStoreObject deserializeFileDataStoreObject() throws IOException, TikaException {
         FileDataStoreObject data = new FileDataStoreObject();
         GUID header = deserializeGUID();
-        // TODO - the expected header is different per version of one note.
-//    if (!header.equals(FILE_DATA_STORE_OBJ_HEADER)) {
-//      throw new TikaException("Unexpected file data store object header: " + header);
-//    }
+        // TODO: validate the header; its expected value differs per OneNote version
         long len = deserializeLittleEndianLong();
         long unused = deserializeLittleEndianInt();
         long reserved = deserializeLittleEndianLong();
@@ -886,10 +829,7 @@ class OneNotePtr {
             ++offset;
         }
         GUID footer = deserializeGUID();
-        // TODO - the expected footer is per version of one note.
-//    if (!footer.equals(FILE_DATA_STORE_OBJ_FOOTER)) {
-//      throw new TikaException("Unexpected file data store object footer: " + footer);
-//    }
+        // TODO: validate the footer; its expected value differs per OneNote version
         return data;
     }
 
@@ -948,42 +888,8 @@ class OneNotePtr {
     }
 
     /**
-     * Depending on stpFormat and cbFormat, will deserialize a FileChunkReference.
-     *
-     * @param stpFormat An unsigned integer that specifies the size and format of the
-     *                  FileNodeChunkReference.stp field specified by the fnd field if this
-     *                  FileNode structure has a
-     *                  value of the BaseType field equal to 1 or 2. MUST be ignored if the
-     *                  value of the BaseType field
-     *                  of this FileNode structure is equal to 0. The meaning of the StpFormat
-     *                  field is given by the
-     *                  following table.
-     *                  Value Meaning
-     *                  0 8 bytes, uncompressed.
-     *                  1 4 bytes, uncompressed.
-     *                  2 2 bytes, compressed.
-     *                  3 4 bytes, compressed.
-     *                  The value of an uncompressed file pointer specifies a location in the
-     *                  file. To uncompress a
-     *                  compressed file pointer, multiply the value by 8.
-     * @param cbFormat  An unsigned integer that specifies the size and format of the
-     *                  FileNodeChunkReference.cb field specified by the fnd field if this
-     *                  FileNode structure has a
-     *                  BaseType field value equal to 1 or 2. MUST be 0 and MUST be ignored if
-     *                  BaseType of this
-     *                  FileNode structure is equal to 0. The meaning of CbFormat is given by
-     *                  the following table.
-     *                  Value Meaning
-     *                  0 4 bytes, uncompressed.
-     *                  1 8 bytes, uncompressed.
-     *                  2 1 byte, compressed.
-     *                  3 2 bytes, compressed.
-     *                  The value of an uncompressed byte count specifies the size, in bytes, of
-     *                  the data referenced by a
-     *                  FileNodeChunkReference structure. To uncompress a compressed byte count,
-     *                  multiply the value by 8.
-     * @return
-     * @throws IOException
+     * Reads a FileNodeChunkReference. stpFormat 0-3: 8, 4, 2 or 4 bytes; cbFormat 0-3: 4, 8, 1 or 2
+     * bytes. Formats 2 and 3 are compressed: the value is multiplied by 8.
      */
     FileChunkReference deserializeVarFileChunkReference(long stpFormat, long cbFormat)
             throws IOException, TikaException {
@@ -1047,14 +953,6 @@ class OneNotePtr {
                 nFragmentSequence);
     }
 
-    /**
-     * For an object declaration file node, after parsing all the fnd variables, now we will process
-     * the object declaration's contents.
-     *
-     * @param data   The FileNode containing all the fnd variable's data.
-     * @param curPtr The current pointer.
-     * @throws IOException
-     */
     private void postprocessObjectDeclarationContents(FileNode data, FileNodePtr curPtr)
             throws IOException, TikaException {
         data.gosid = data.subType.objectDeclarationWithRefCount.body.oid.guid;
@@ -1072,7 +970,6 @@ class OneNotePtr {
             if (!data.subType.objectDeclarationWithRefCount.body.jcid.isFileData) {
                 throw new TikaException("JCID must be file data when !isObjectSpaceObjectPropSet.");
             }
-            // this is FileData
             data.isFileData = true;
             if (LOG.isDebugEnabled()) {
                 OneNotePtr content = new OneNotePtr(this);
@@ -1253,22 +1150,6 @@ class OneNotePtr {
                     LOG.debug(" PropertyID long({})", data.scalar);
                     break;
                 case 0x7:
-                    // If the value of the PropertyID.type element is "0x7" and the property
-                    // specifies an array of elements, the value of
-                    // the
-                    // prtFourBytesOfLengthFollowedByData.cb element MUST be the sum of the
-                    // sizes, in bytes, of each element in the array.
-                    // Exceptions include:
-                    // * The RgOutlineIndentDistance element, where the value of the
-                    // prtFourBytesOfLengthFollowedByData.cb element
-                    // MUST be: 4 + (4 × RgOutlineIndentDistance.count).
-                    // * The TableColumnsLocked element, where the value of the
-                    // prtFourBytesOfLengthFollowedByData.cb
-                    // element MUST be: 1 + (TableColumnsLocked.cColumns + 7) / 8.
-                    // * The TableColumnWidths element, where the value of the
-                    // prtFourBytesOfLengthFollowedByData.cb
-                    // element MUST be: 1 + (4 × TableColumnWidths.cColumns).
-
                     val32 = deserializeLittleEndianInt();
                     LOG.debug(" raw data: ({})[", val32);
 
@@ -1371,14 +1252,10 @@ class OneNotePtr {
         data.osids.osidsStreamNotPresent = 1;
         data.contextIDs.extendedStreamsPresent = 0;
         data.contextIDs.osidsStreamNotPresent = 0;
-        //uint64_t cur_offset = offset;
-        //LOG.debug("starting deserialization %lx(%lx) / %lx", offset, offset - cur_offset, end);
         data.oids = deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
-        //LOG.debug("mid deserialization %lx(%lx) / %lx", offset, offset - cur_offset, end);
         if (data.oids.osidsStreamNotPresent == 0) {
             data.osids = deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
         }
-        //LOG.debug("lat deserialization %lx(%lx) / %lx", offset, offset - cur_offset, end);
         if (data.oids.extendedStreamsPresent != 0) {
             data.contextIDs = deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
         }

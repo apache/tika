@@ -51,10 +51,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-/**
- * Walk the one note tree and create a Map while it goes.
- * Also writes user input text to a print writer as it parses.
- */
 class OneNoteTreeWalker {
 
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteTreeWalker.class);
@@ -66,17 +62,9 @@ class OneNoteTreeWalker {
     private static final long VISITS_PER_FILE_NODE = 64;
     private static final long MIN_VISIT_BUDGET = 100_000;
     private static final String P = "p";
-    /**
-     * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
-     */
+    /** MS-ONE 2.3.1 TIME32 counts seconds from 1980-01-01 UTC; that epoch in Unix seconds. */
     private static final long TIME32_EPOCH_DIFF_1980;
-    /**
-     * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
-     */
+    /** MS-DTYP 2.3.3 DATETIME counts from 1601-01-01 UTC; that epoch in Unix seconds. */
     private static final long DATETIME_EPOCH_DIFF_1601;
 
     static {
@@ -107,9 +95,7 @@ class OneNoteTreeWalker {
     private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;
 
-    /**
-     * Contains pairs of {Offset,Length} that we have added to the text stream already.
-     */
+    /** {Offset,Length} pairs already written to the text stream. */
     private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
     private final Set<FileNode> activeFileNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
@@ -138,18 +124,7 @@ class OneNoteTreeWalker {
     private final Set<Long> emittedEmbedded = new HashSet<>();
     private boolean visitBudgetWarningRecorded;
 
-    /**
-     * Create a one tree walker.
-     *
-     * @param options         The options for how to walk this tree.
-     * @param oneNoteDocument The one note document we want to walk.
-     * @param dif             The rando  file access structure we read and reposition while
-     *                        extracting the content.
-     * @param xhtml           The XHTMLContentHandler to populate as you walk the tree.
-     * @param roleAndContext  The role  nd context value we want to use when crawling. Set this
-     *                        to null if you are
-     *                        crawling all root file nodes, and don't care about revisions.
-     */
+    /** {@code roleAndContext} is null to crawl all root file nodes, ignoring revisions. */
     public OneNoteTreeWalker(OneNoteTreeWalkerOptions options, OneNoteDocument oneNoteDocument,
                              OneNoteDirectFileResource dif, XHTMLContentHandler xhtml,
                              Metadata parentMetadata, ParseContext parseContext,
@@ -169,11 +144,7 @@ class OneNoteTreeWalker {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
 
-    /**
-     * Walks the tree, writing text, metadata and embedded documents as it goes.
-     *
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
+    /** Walks the tree, writing text, metadata and embedded documents as it goes. */
     public void walkTree() throws IOException, TikaException, SAXException {
         try {
             walkRootFileNodes();
@@ -182,12 +153,6 @@ class OneNoteTreeWalker {
         }
     }
 
-    /**
-     * Walk the root file nodes, depending on the options will crawl revisions or the entire
-     * revision tree.
-     *
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
     public void walkRootFileNodes() throws IOException, TikaException, SAXException {
         if (options.isCrawlAllFileNodesFromRoot()) {
             walkFileNodeList(oneNoteDocument.root, null);
@@ -208,24 +173,11 @@ class OneNoteTreeWalker {
         }
     }
 
-    /**
-     * Does the revision role map have this revision role id.
-     *
-     * @param rid          The revision id.
-     * @param revisionRole The revision role Long,GUID pair.
-     * @return True if exists, false if not.
-     */
     private boolean hasRevisionRole(ExtendedGUID rid, Pair<Long, ExtendedGUID> revisionRole) {
         Pair<Long, ExtendedGUID> where = oneNoteDocument.revisionRoleMap.get(rid);
         return where != null && where.equals(revisionRole);
     }
 
-    /**
-     * Walk revisions.
-     *
-     * @param fileNodePtr The file node pointer to start with.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
     private void walkRevision(FileNodePtr fileNodePtr)
             throws IOException, TikaException, SAXException {
         FileNode revisionFileNode = fileNodePtr.dereference(oneNoteDocument);
@@ -291,13 +243,6 @@ class OneNoteTreeWalker {
         return Collections.emptyList();
     }
 
-    /**
-     * Walk the file node pointer.
-     *
-     * @param fileNodePtr The file node pointer.
-     * @param parentPropertyId The PropertyId of the parent.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
     public void walkFileNodePtr(FileNodePtr fileNodePtr, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNodePtr != null) {
@@ -305,12 +250,6 @@ class OneNoteTreeWalker {
         }
     }
 
-    /**
-     * Walk the file node list.
-     *
-     * @param fileNodeList The file node list to parse.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
     public void walkFileNodeList(FileNodeList fileNodeList, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         for (FileNode child : fileNodeList.children) {
@@ -318,13 +257,6 @@ class OneNoteTreeWalker {
         }
     }
 
-    /**
-     * Walk a single file node.
-     *
-     * @param fileNode The file node.
-     * @param parentPropertyId
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
     public void walkFileNode(FileNode fileNode, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNode == null) {
@@ -467,12 +399,6 @@ class OneNoteTreeWalker {
         }
     }
 
-    /**
-     * Walk a file data store object reference.
-     *
-     * @param fileDataStoreObjectReference The file data store object reference we are parsing.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
     private void walkFileDataStoreObjectReference(
             FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
@@ -524,12 +450,6 @@ class OneNoteTreeWalker {
 
     }
 
-    /**
-     * @param propertySet
-     * @param parentPropertyId
-     * @return
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
     private void processPropertySet(PropertySet propertySet, OneNotePropertyId parentPropertyId,
                                     int objectType)
             throws IOException, TikaException, SAXException {
@@ -676,12 +596,6 @@ class OneNoteTreeWalker {
         return new String(buf.array(), StandardCharsets.UTF_16LE);
     }
 
-    /**
-     * Is this property a binary property?
-     *
-     * @param property The property.
-     * @return Is it binary?
-     */
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
         return property == OneNotePropertyEnum.RgOutlineIndentDistance ||
                 property == OneNotePropertyEnum.NotebookManagementEntityGuid ||
@@ -692,10 +606,6 @@ class OneNoteTreeWalker {
     /**
      * Processes a property value: records its metadata, writes its text and walks the
      * objects it references.
-     *
-     * @param propertyValue The property value we are parsing.
-     * @param parentPropertyId
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
     void processPropertyValue(PropertyValue propertyValue, OneNotePropertyId parentPropertyId,
                               int objectType)
@@ -707,15 +617,11 @@ class OneNoteTreeWalker {
                 lastModifiedTimestamp = instant;
             }
         } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
-            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
-            // 1970
             long creationTs = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
             if (creationTs < creationTimestamp) {
                 creationTimestamp = creationTs;
             }
         } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTime) {
-            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
-            // 1970
             long lastMod = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
             if (lastMod > lastModified) {
                 lastModified = lastMod;
@@ -809,9 +715,7 @@ class OneNoteTreeWalker {
                         addClassicEntityGuid(objectType, guid);
                     }
                 } else {
-                    //TODO -- these seem to be somewhat broken font files and other
-                    //odds and ends...what are they and how should we process them?
-                    //handleEmbedded(content.size());
+                    // TODO: identify these (apparently broken font files and other odds and ends)
                 }
             }
         }
@@ -846,12 +750,7 @@ class OneNoteTreeWalker {
         return new String(buf.array(), charset);
     }
 
-    /**
-     * returns a UTF-16LE author string.
-     *
-     * @param propertyValue The property value of an author.
-     * @return the author, without its NUL terminator
-     */
+    /** Reads a UTF-16LE author string, without its NUL terminator. */
     private String getAuthor(PropertyValue propertyValue)
             throws IOException, TikaMemoryLimitException {
         OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
@@ -888,7 +787,6 @@ class OneNoteTreeWalker {
         ByteBuffer buf = ByteBuffer.allocate(length);
         dif.read(buf);
         byte[] arr = buf.array();
-        //look for the first null
         int firstNull = 0;
         for (int i = 0; i < arr.length - 1; i += 2) {
             if (arr[i] == 0 && arr[i + 1] == 0) {

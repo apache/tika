@@ -21,26 +21,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * Cell manifest data element
- */
 public class CellManifestDataElementData extends DataElementData {
     public CellManifestCurrentRevision cellManifestCurrentRevision;
 
-    /**
-     * Initializes a new instance of the CellManifestDataElementData class.
-     */
     public CellManifestDataElementData() {
         this.cellManifestCurrentRevision = new CellManifestCurrentRevision();
     }
 
-    /**
-     * Used to return the length of this element.
-     *
-     * @param byteArray  A Byte array
-     * @param startIndex Start position
-     * @return The element length
-     */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

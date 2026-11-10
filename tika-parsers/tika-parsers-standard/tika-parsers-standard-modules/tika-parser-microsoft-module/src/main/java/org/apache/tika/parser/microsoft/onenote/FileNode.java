@@ -23,73 +23,36 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * A FileNode structure is the basic unit for holding and referencing data in the file.
- * FileNode structures are organized into file node lists
- * <p>
- * A FileNode structure is divided into header fields and a data field, fnd. The header fields
- * specify what type of FileNode structure it
- * is,
- * and what format the fnd field is in.
- * <p>
- * The fnd field can be empty, or it can contain data directly, or it can contain a reference to
- * another block of the file by
- * byte position and byte count, or it can contain both data and a reference.
+ * Basic unit of data in a file node list: header fields plus a data field (fnd) that may be
+ * empty, hold data, reference another block of the file, or both.
  */
 class FileNode {
     private static final Logger LOG = LoggerFactory.getLogger(FileNode.class);
 
-    /**
-     * An unsigned integer that specifies the type of this FileNode structure. The meaning of
-     * this value is specified by the fnd field.
-     */
     long id;
     long size;
 
     /**
-     * An unsigned integer that specifies whether the structure specified by fnd contains a
-     * FileNodeChunkReference structure.
-     * 0 - This FileNode structure does not reference other data. The data structure specified
-     * by fnd MUST NOT contain a
-     * FileNodeChunkReference structure. The StpFormat and CbFormat fields MUST be ignored.
-     * 1 - This FileNode structure contains a reference to data. The first field in the data
-     * structure specified by an fnd field MUST be a
-     * FileNodeChunkReference structure that specifies the location and size of the referenced
-     * data.
-     * The type of the FileNodeChunkReference structure is specified by the StpFormat and
-     * CbFormat fields.
-     * 2 - This FileNode structure contains a reference to a file node list.
-     * The first field in the data structure specified by the fnd field MUST be a
-     * FileNodeChunkReference structure that specifies the
-     * location and size of a file node list. The type of the FileNodeChunkReference is
-     * specified by the StpFormat and CbFormat fields.
+     * 0: no reference; 1: fnd starts with a FileNodeChunkReference to data; 2: fnd starts with
+     * a FileNodeChunkReference to a file node list.
      */
     long baseType;
 
     /**
-     * The ExtendedGUID for this FileNode.
-     * Specified for ObjectSpaceManifestRoot
-     * ObjectSpaceManifestStart
-     * ObjectSpaceManifestList
-     * RevisionManifestListStart
-     * ObjectGroupStartFND
-     * ObjectGroupID
-     * ObjectGroupListReferenceFND
-     * <p>
-     * RID for RevisionManifestStart4FND
-     * DataSignatureGroup for RevisionManifestEndFND
+     * The gosid for ObjectSpaceManifestRoot/Start/List, RevisionManifestListStart and the
+     * ObjectGroup nodes; the rid for RevisionManifestStart4FND; DataSignatureGroup for
+     * RevisionManifestEndFND.
      */
     ExtendedGUID gosid;
 
-    // only present for RevisionManfiest7FND and RevisionRoleAndContextDeclaration
+    // only present for RevisionManifestStart7FND and RevisionRoleAndContextDeclarationFND
     ExtendedGUID gctxid;
     GUID fileDataStoreReference;
     FileChunkReference ref;
     PropertySet propertySet;
     boolean isFileData;
 
-    /**
-     * For ObjectGroupListReference, the children.
-     */
+    /** For ObjectGroupListReference, the children. */
     FileNodeList childFileNodeList = new FileNodeList();
 
     FileNodeUnion subType = new FileNodeUnion();
@@ -225,11 +188,7 @@ class FileNode {
         return this;
     }
 
-    /**
-     * A description of what this GUID id means in this context.
-     *
-     * @return A description of what this GUID id means in this context.
-     */
+    /** What this node's GUID means in this context. */
     public String getIdDesc() {
         return idDesc;
     }

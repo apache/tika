@@ -24,16 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * The ObjectGroupData class.
- */
 public class ObjectGroupData extends StreamObject {
     public List<ObjectGroupObjectData> objectGroupObjectDataList;
     public List<ObjectGroupObjectDataBLOBReference> objectGroupObjectDataBLOBReferenceList;
 
-    /**
-     * Initializes a new instance of the ObjectGroupData class.
-     */
     public ObjectGroupData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupData);
         this.objectGroupObjectDataList = new ArrayList<ObjectGroupObjectData>();
@@ -41,13 +35,6 @@ public class ObjectGroupData extends StreamObject {
                 new ArrayList<ObjectGroupObjectDataBLOBReference>();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

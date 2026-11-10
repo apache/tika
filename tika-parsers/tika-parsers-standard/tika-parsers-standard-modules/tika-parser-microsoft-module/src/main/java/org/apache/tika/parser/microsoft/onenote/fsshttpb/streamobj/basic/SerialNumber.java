@@ -27,40 +27,19 @@ public class SerialNumber extends BasicObject {
     public UUID guid;
     public long value;
 
-    /**
-     * Initializes a new instance of the SerialNumber class with specified values.
-     *
-     * @param identifier Specify the Guid value of the serialNumber.
-     * @param value      Specify the value of the serialNumber.
-     */
     public SerialNumber(UUID identifier, long value) {
         this.guid = identifier;
         this.value = value;
     }
 
-    /**
-     * Initializes a new instance of the SerialNumber class, this is the copy constructor.
-     *
-     * @param sn Specify the serial number where copy from.
-     */
     public SerialNumber(SerialNumber sn) {
         this.guid = sn.guid;
         this.value = sn.value;
     }
 
-    /**
-     * Initializes a new instance of the SerialNumber class, this is default contractor
-     */
     public SerialNumber() {
     }
 
-    /**
-     * This method is used to deserialize the SerialNumber basic object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the SerialNumber basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex)

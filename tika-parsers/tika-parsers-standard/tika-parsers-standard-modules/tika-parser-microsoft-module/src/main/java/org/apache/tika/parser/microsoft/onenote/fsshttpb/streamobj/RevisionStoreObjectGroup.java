@@ -135,8 +135,6 @@ public class RevisionStoreObjectGroup {
     /**
      * Creates a cell-local wrapper around this parsed group. The object lists are copied so
      * revision supersession filtering cannot mutate a cached group used by another cell.
-     *
-     * @return a shallow copy with independent mutable lists
      */
     public RevisionStoreObjectGroup copy() {
         RevisionStoreObjectGroup copy = new RevisionStoreObjectGroup(objectGroupID);

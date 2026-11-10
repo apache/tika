@@ -26,21 +26,8 @@ class FileNodeListHeader {
     long nFragmentSequence;
 
     /**
-     * The FileNodeListHeader structure specifies the beginning of a FileNodeListFragment structure.
-     *
-     * @param position          Position of the file where this header starts.
-     * @param uintMagic         An unsigned integer; MUST be "0xA4567AB1F5F7F4C4"
-     * @param fileNodeListId    An unsigned integer that specifies the identity of
-     *                          the file node list this fragment belongs to. The spec requires at
-     *                          least 0x00000010; real files (OneNote's own .onetoc2, Aspose)
-     *                          use smaller IDs, so it is not enforced. The pair of
-     *                          FileNodeListID and nFragmentSequence fields MUST be unique
-     *                          relative to other FileNodeListFragment structures in the file.
-     * @param nFragmentSequence An unsigned integer that specifies the index of the fragment in the
-     *                          file node list containing the fragment. The nFragmentSequence
-     *                          field of the first fragment in a given file node list MUST be 0
-     *                          and the nFragmentSequence fields of all subsequent fragments in
-     *                          this list MUST be sequential.
+     * Header of a FileNodeListFragment. The spec requires fileNodeListId &gt;= 0x10, but real
+     * files (OneNote's own .onetoc2, Aspose) use smaller IDs, so it is not enforced.
      */
     public FileNodeListHeader(long position, long uintMagic, long fileNodeListId,
                               long nFragmentSequence) throws TikaException {

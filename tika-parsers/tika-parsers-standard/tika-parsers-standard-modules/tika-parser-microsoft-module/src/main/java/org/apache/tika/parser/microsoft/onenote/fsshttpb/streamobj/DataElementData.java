@@ -20,17 +20,7 @@ import java.io.IOException;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * Base class of data element
- */
 public abstract class DataElementData {
-    /**
-     * De-serialize data element data from byte array.
-     *
-     * @param byteArray  The byte array.
-     * @param startIndex The position where to start.
-     * @return The length of the item.
-     */
     public abstract int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException;
 }

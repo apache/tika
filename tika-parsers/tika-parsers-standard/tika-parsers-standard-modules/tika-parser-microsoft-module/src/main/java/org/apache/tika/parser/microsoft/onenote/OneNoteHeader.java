@@ -60,11 +60,7 @@ class OneNoteHeader implements Serializable {
     long buildNumberNewestWritten;
     private boolean legacyOrAlternativePackaging;
 
-    /**
-     * Determine if this file is saved in the OnPrem OneNote 2013 or greater spec.
-     *
-     * @return True if file is based on the MS-ONE and MS-ONESTORE specs. False otherwise.
-     */
+    /** True for MS-ONE/MS-ONESTORE files, false for legacy formats. */
     public boolean isMsOneStoreFormat() {
         return GUID.nil().equals(guidLegacyFileVersion);
     }

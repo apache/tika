@@ -18,11 +18,10 @@ package org.apache.tika.parser.microsoft.onenote;
 
 class ObjectDeclarationWithRefCountBody {
     CompactID oid;
-    JCID jcid = new JCID(); // if this is a ObjectDeclarationWithRefCountBody, jci = 0x01
+    JCID jcid = new JCID(); // spec: jci MUST be 0x01
     boolean fHasOidReferences;
     boolean hasOsidReferences;
-    // the obj is a GUID in the file_data_store_reference
-    // for a ObjectDeclarationFileData3RefCountFND
+    // the object is a file data store GUID (ObjectDeclarationFileData3RefCountFND)
     boolean file_data_store_reference;
 
     public CompactID getOid() {

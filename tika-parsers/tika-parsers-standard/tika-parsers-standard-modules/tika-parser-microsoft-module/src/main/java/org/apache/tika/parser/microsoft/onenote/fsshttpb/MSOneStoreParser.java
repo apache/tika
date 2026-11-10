@@ -51,29 +51,20 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderC
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class MSOneStoreParser {
-    /**
-     * The root role declaration used for the encryption key of encrypted sections.
-     */
+    /** Root role declaring the encryption key of encrypted sections. */
     private static final ExGuid ENCRYPTION_KEY_ROOT_EXGUID =
             new ExGuid(3, UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"));
     private final Set<CellID> storageIndexHashTab = new HashSet<>();
-    // The DataElements of Storage Index
     private List<DataElement> storageIndexDataElements;
-    // The DataElements of Storage Manifest
     private List<DataElement> storageManifestDataElements;
-    // The DataElements of Cell Manifest
     private List<DataElement> cellManifestDataElements;
     private Map<ExGuid, DataElement> cellManifestDataElementsById = new HashMap<>();
-    // The DataElements of Revision Manifest
     private List<DataElement> revisionManifestDataElements;
     private Map<ExGuid, DataElement> revisionManifestDataElementsById = new HashMap<>();
-    // The DataElements of Object Group Data
     private List<DataElement> objectGroupDataElements;
-    // The DataElements of Object Group Data, keyed by their data element extended GUID
     private Map<ExGuid, DataElement> objectGroupDataElementsById;
     private final Map<ObjectGroupCacheKey, RevisionStoreObjectGroup> objectGroupsByDataElementId =
             new HashMap<>();
-    // The DataElements of Object BLOB, keyed by their data element extended GUID
     private Map<ExGuid, DataElement> objectBlobElementsById;
 
     private static final class ObjectGroupCacheKey {
@@ -157,7 +148,6 @@ public class MSOneStoreParser {
             throw new IOException("Missing OneNote header or data-root declaration");
         }
 
-        // Parse Header Cell
         CellID headerCellID =
                 msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(0).cellID;
         StorageIndexCellMapping headerCellStorageIndexCellMapping =
@@ -185,8 +175,7 @@ public class MSOneStoreParser {
             }
         }
 
-        // Parse Data root independently of the header-cell metadata. A malformed header cell
-        // should not prevent valid section cells from being parsed.
+        // independent of the header cell, so a malformed one cannot block valid section cells
         CellID dataRootCellID =
                 msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(1).cellID;
         storageIndexHashTab.add(dataRootCellID);
@@ -195,15 +184,13 @@ public class MSOneStoreParser {
             throw new IOException("Could not parse the OneNote data root cell");
         }
         msOneStorePackage.dataRootCell = dataRootCell;
-        // Parse other data
         for (StorageIndexCellMapping storageIndexCellMapping : msOneStorePackage.storageIndex
                 .storageIndexCellMappingList) {
             if (!storageIndexHashTab.contains(storageIndexCellMapping.cellID)) {
                 RevisionStoreCell cell =
                         this.parseCell(storageIndexCellMapping.cellID, msOneStorePackage);
-                // The storage index can retain a mapping for a deleted version context.
-                // Such an entry has no CellManifestDataElementData (often its mapping GUID
-                // is all zero) and therefore cannot contain current document content.
+                // null for a deleted version context the storage index still maps (no cell
+                // manifest, often an all-zero mapping GUID): no current content
                 if (cell != null) {
                     msOneStorePackage.OtherFileNodeList.addAll(cell.objectGroups);
                     msOneStorePackage.cells.add(cell);
@@ -214,23 +201,11 @@ public class MSOneStoreParser {
         return msOneStorePackage;
     }
 
-    /**
-     * Find the CellManifestDataElementData
-     *
-     * @param cellMappingExtendedGUID The ExGuid of Cell Mapping Extended GUID.
-     * @return The CellManifestDataElementData instance, or {@code null} if it is absent.
-     */
     private CellManifestDataElementData findCellManifest(ExGuid cellMappingExtendedGUID) {
         DataElement element = cellManifestDataElementsById.get(cellMappingExtendedGUID);
         return element == null ? null : (CellManifestDataElementData) element.data;
     }
 
-    /**
-     * Find the Revision Manifest from Data Elements.
-     *
-     * @param revisionMappingExtendedGUID The Revision Mapping Extended GUID.
-     * @return The RevisionManifestDataElementData instance, or {@code null} if it is absent.
-     */
     private RevisionManifestDataElementData findRevisionManifestDataElement(
             ExGuid revisionMappingExtendedGUID) {
         DataElement element = revisionManifestDataElementsById.get(revisionMappingExtendedGUID);
@@ -308,7 +283,7 @@ public class MSOneStoreParser {
         while (revisionManifest != null) {
             ExGuid revisionId = revisionManifest.revisionManifest.revisionID;
             if (revisionId != null && !seenRevisionIds.add(revisionId)) {
-                // cycle guard - stop if we have already visited this revision
+                // cycle guard
                 break;
             }
             revisionChain.addFirst(revisionManifest);
@@ -378,11 +353,9 @@ public class MSOneStoreParser {
     }
 
     /**
-     * An object that is modified in a later revision appears again, with the same object ID,
-     * in that revision's object group. Keep only the newest version of each object, replacing
-     * the older version in place so the original object ordering is preserved.
-     *
-     * @param objectGroups The object groups ordered from the oldest revision to the newest.
+     * An object modified in a later revision reappears, with the same object ID, in that
+     * revision's object group. Keeps only the newest version, replacing the older one in place
+     * to preserve ordering. objectGroups must be ordered oldest revision first.
      */
     private void removeSupersededObjects(List<RevisionStoreObjectGroup> objectGroups) {
         Map<ExGuid, List<RevisionStoreObject>> containingList = new HashMap<>();
@@ -394,7 +367,6 @@ public class MSOneStoreParser {
             for (RevisionStoreObject object : objectGroup.objects) {
                 ExGuid objectId = object.objectID;
                 if (objectId != null && containingList.containsKey(objectId)) {
-                    // newer version of an already seen object - replace the older one in place
                     containingList.get(objectId).set(indexInList.get(objectId), object);
                 } else {
                     if (objectId != null) {

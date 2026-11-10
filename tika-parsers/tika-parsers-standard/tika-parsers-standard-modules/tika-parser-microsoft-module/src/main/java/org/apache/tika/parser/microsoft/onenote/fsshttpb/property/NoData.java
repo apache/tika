@@ -17,17 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 
-/**
- * This class is used to represent the property contains no data.
- */
 public class NoData implements IProperty {
-    /**
-     * This method is used to deserialize the NoData from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) {
         return 0;
     }

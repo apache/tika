@@ -53,11 +53,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStoreParser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.AlternativePackaging;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-/**
- * OneNote tika parser capable of parsing Microsoft OneNote files.
- * <p>
- * Based on the Microsoft specs MS-ONE and MS-ONESTORE.
- */
+/** Microsoft OneNote parser, based on the MS-ONE and MS-ONESTORE specs. */
 @TikaComponent
 public class OneNoteParser implements Parser {
 
@@ -66,9 +62,6 @@ public class OneNoteParser implements Parser {
     private static final int HEADER_SIZE = 1024;
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final Map<MediaType, List<String>> TYPES_MAP = new HashMap<>();
-    /**
-     * Serial version UID
-     */
     private static final long serialVersionUID = -5504243905998074168L;
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(TYPES_MAP.keySet());
@@ -223,7 +216,6 @@ public class OneNoteParser implements Parser {
                     try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
                         bytes = is.readAllBytes();
                     }
-                    //enable streaming deserialization
                     alternatePackageOneStoreFile.doDeserializeFromByteArray(bytes, 0);
 
                     MSOneStoreParser onenoteParser = new MSOneStoreParser();
@@ -319,41 +311,9 @@ public class OneNoteParser implements Parser {
     }
 
     /**
-     * Create a OneNoteDocument object.
-     * <p>
-     * This won't actually have the binary data of the sections, but it's more of a
-     * metadata structure that contains
-     * the general structure of the container and contains offset positions of where to find the
-     * binary data we care about.
-     * <p>
-     * OneNote files are of format:
-     * <p>
-     * The header (section 2.3.1 in MS-ONESTORE) is the first 1024 bytes of the file. It contains
-     * references to the other structures in the
-     * file as well as metadata about the file.
-     * The free chunk list (section 2.3.2 in MS-ONESTORE) defines where there are free spaces in
-     * the file where data can be written.
-     * The transaction log (section 2.3.3 in MS-ONESTORE) stores the state and length of each
-     * file node list (section 2.4 in MS-ONESTORE)
-     * in the file.
-     * The hashed chunk list (section 2.3.4 in MS-ONESTORE) stores read-only objects in the file
-     * that can be referenced by multiple
-     * revisions (section 2.1.8 in MS-ONESTORE).
-     * The root file node list (section 2.1.14 in MS-ONESTORE) is the file node list that is the
-     * root of the tree of all file node lists in
-     * the file.
-     * <p>
-     * In this method we first parse the header.
-     * <p>
-     * After parsing the header, this results in header.fcrFileNodeListRoot that points to the first
-     *
-     * @param oneNoteDirectFileResource A random access file resource used as the source of the
-     *                                  content.
-     * @return A parsed one note document. This document does not contain any of the binary data,
-     * rather it just contains
-     * the data pointers and metadata. A failure while parsing the root file node list is not
-     * thrown; it is recorded in the returned document's {@code structureParseException}.
-     * @throws IOException Will throw IOException in typical IO issue situations.
+     * Reads the header (MS-ONESTORE 2.3.1), transaction log (2.3.3) and root file node list
+     * (2.1.14) into offsets and metadata; section binary data is not read. A failure in the root
+     * file node list is not thrown but recorded in the document's {@code structureParseException}.
      */
     public OneNoteDocument createOneNoteDocumentFromDirectFileResource(
             OneNoteDirectFileResource oneNoteDirectFileResource) throws IOException, TikaException {
@@ -374,7 +334,6 @@ public class OneNoteParser implements Parser {
                 // without the log, lists end at a terminator or the end of their fragments
                 LOG.debug("Could not read the OneNote transaction log", e);
             }
-            // Now that we parsed the header, the "root file node list"
             try {
                 oneNotePtr.reposition(oneNoteDocument.header.fcrFileNodeListRoot);
                 FileNodePtr curPath = new FileNodePtr();

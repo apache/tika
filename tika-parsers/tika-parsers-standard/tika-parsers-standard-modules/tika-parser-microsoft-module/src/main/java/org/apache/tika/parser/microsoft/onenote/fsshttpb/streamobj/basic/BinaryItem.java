@@ -48,20 +48,12 @@ public class BinaryItem extends BasicObject {
     private int offset;
     private int count;
 
-    /**
-     * Initializes a new instance of the BinaryItem class.
-     */
     public BinaryItem() {
         this.length = new Compact64bitInt();
         this.source = EMPTY;
     }
 
-    /**
-     * Initializes a new instance of the BinaryItem class with the specified content. The
-     * array is used as-is, not copied.
-     *
-     * @param content Specify the binary content, or null for none.
-     */
+    /** Uses {@code content} as-is, not copied; null for none. */
     public BinaryItem(byte[] content) {
         this.length = new Compact64bitInt();
         setContent(content);
@@ -105,13 +97,6 @@ public class BinaryItem extends BasicObject {
         this.length.setDecodedValue(this.count);
     }
 
-    /**
-     * This method is used to de-serialize the BinaryItem basic object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the BinaryItem basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

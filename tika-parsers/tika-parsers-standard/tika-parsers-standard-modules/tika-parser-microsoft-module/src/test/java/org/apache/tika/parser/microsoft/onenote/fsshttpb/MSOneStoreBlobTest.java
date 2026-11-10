@@ -85,11 +85,8 @@ public class MSOneStoreBlobTest {
                     "000000000000001510525174686573652061726520746865206279746573206f6620616e" +
                     "20656d62656464656420696d61676505");
 
-    /**
-     * An object data BLOB data element must survive a serialization round trip. Before
-     * ObjectDataBLOBDataElementData existed, deserializing a data element of this type threw,
-     * so any OneNote file with an embedded image or file lost its structure entirely.
-     */
+    // deserializing this element type once threw, losing all structure of any file with an
+    // embedded image or file
     @Test
     public void testObjectDataBLOBDataElementRoundTrip() throws Exception {
         DataElement reparsed = roundTripBlobElement();
@@ -98,11 +95,6 @@ public class MSOneStoreBlobTest {
                 ((ObjectDataBLOBDataElementData) reparsed.data).objectDataBLOB.getData());
     }
 
-    /**
-     * A revision store object whose BLOB reference resolves to an object data BLOB element
-     * must expose the BLOB bytes and hand them to the embedded document extractor during the
-     * tree walk.
-     */
     @Test
     public void testBlobIsEmittedAsEmbeddedDocument() throws Exception {
         DataElement blobElement = roundTripBlobElement();

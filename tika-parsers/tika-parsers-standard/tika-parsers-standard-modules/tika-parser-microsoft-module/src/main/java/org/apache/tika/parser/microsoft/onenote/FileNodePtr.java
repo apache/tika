@@ -21,9 +21,7 @@ import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * Stores a list that represents how to get to the file node in the data structure.
- */
+/** Path of child indexes from document.root to a FileNode. */
 class FileNodePtr {
     List<Integer> nodeListPositions = new ArrayList<>();
 
@@ -36,21 +34,8 @@ class FileNodePtr {
     }
 
     /**
-     * Uses the nodeListPositions to get the FileNode from the document.root hierarchy.
-     * <p>
-     * It works like this:
-     * <p>
-     * The first element of the nodeListPositions is the index of the FileNode at the root.
-     * The next element of the nodeListPosition is the index at the child of the first element.
-     * And so on...
-     * <p>
-     * For example 0, 4, 15 would mean
-     * <p>
-     * document.root.children.get(0).childFileNodeList.children.get(4).
-     * childFileNodeList.children.get(15)
-     *
-     * @param document
-     * @return
+     * E.g. 0, 4, 15 is root.children[0].childFileNodeList.children[4]
+     * .childFileNodeList.children[15].
      */
     public FileNode dereference(OneNoteDocument document) throws TikaException {
         if (nodeListPositions.isEmpty()) {

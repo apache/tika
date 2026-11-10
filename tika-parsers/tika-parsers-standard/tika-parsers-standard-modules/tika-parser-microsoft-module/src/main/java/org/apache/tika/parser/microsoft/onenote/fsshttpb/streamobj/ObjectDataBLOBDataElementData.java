@@ -21,10 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * Object data BLOB data element - carries the opaque binary data of an object, e.g. an
- * embedded image or file. See MS-FSSHTTPB section 2.2.1.12.8.
- */
+/** Opaque binary data of an object, e.g. an embedded image or file. MS-FSSHTTPB 2.2.1.12.8. */
 public class ObjectDataBLOBDataElementData extends DataElementData {
     public ObjectDataBLOB objectDataBLOB;
 

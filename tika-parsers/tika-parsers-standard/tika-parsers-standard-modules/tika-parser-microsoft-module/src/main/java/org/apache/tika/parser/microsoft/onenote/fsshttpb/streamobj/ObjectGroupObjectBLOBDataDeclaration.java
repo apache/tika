@@ -24,26 +24,15 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * object data BLOB declaration
- */
 public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
     public ExGuid objectExGUID;
     public ExGuid objectDataBLOBExGUID;
     public Compact64bitInt objectPartitionID;
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the size in bytes of the
-     * object.opaque binary data  for the declared object.
-     * This MUST match the size of the binary item in the corresponding object data BLOB
-     * referenced by the Object Data BLOB reference for this object.
-     */
+    /** MUST match the size of the binary item in the referenced object data BLOB. */
     public Compact64bitInt objectDataSize;
     public Compact64bitInt objectReferencesCount;
     public Compact64bitInt cellReferencesCount;
 
-    /**
-     * Initializes a new instance of the ObjectGroupObjectBLOBDataDeclaration class.
-     */
     public ObjectGroupObjectBLOBDataDeclaration() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration);
         this.objectExGUID = new ExGuid();
@@ -54,13 +43,6 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
         this.cellReferencesCount = new Compact64bitInt();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

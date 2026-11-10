@@ -119,7 +119,7 @@ public enum OneNotePropertyEnum {
         long type = pid >> 26 & 0x1f;
         boolean inlineBool = false;
         if (type == 0x2) {
-            inlineBool = ((pid >> 31) & 0x1) > 0; // set the bool value from header
+            inlineBool = ((pid >> 31) & 0x1) > 0;
         } else {
             if (((pid >> 31) & 0x1) > 0) {
                 throw new IllegalArgumentException("Reserved non-zero");

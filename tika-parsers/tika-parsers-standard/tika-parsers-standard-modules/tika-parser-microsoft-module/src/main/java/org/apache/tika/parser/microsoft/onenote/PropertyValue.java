@@ -28,12 +28,11 @@ class PropertyValue {
     private static final Logger LOG = LoggerFactory.getLogger(PropertyValue.class);
 
     OneNotePropertyId propertyId = new OneNotePropertyId();
-    // union of one of these things based on the type of the corresponding PropertyID
-    long scalar; // holds a boolean value if type = 0x2, retrieved from header
-    // either ObjectID or ObjectSpaceID or ContextID (single value in array)
-    // either ArrayOfObjectIDs or ArrayOfObjectSpaceIDs or ArrayOfContextID
+    // a union: which field is set depends on propertyId's type
+    long scalar; // for type 0x2, the bool from the property id
+    // ObjectID/ObjectSpaceID/ContextID (one element) or an array of them
     List<CompactID> compactIDs = new ArrayList<>();
-    PropertySet propertySet = new PropertySet(); // or used to house a single value
+    PropertySet propertySet = new PropertySet();
     FileChunkReference rawData = new FileChunkReference(); // FourBytesOfLengthFollowedByData
 
     public OneNotePropertyId getPropertyId() {

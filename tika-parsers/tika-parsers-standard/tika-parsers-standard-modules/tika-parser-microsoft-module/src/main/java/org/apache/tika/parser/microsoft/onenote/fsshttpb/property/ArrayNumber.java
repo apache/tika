@@ -20,19 +20,9 @@ import java.io.IOException;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
-/**
- * The class is used to represent the number of the array.
- */
 public class ArrayNumber implements IProperty {
     public int number;
 
-    /**
-     * This method is used to deserialize the number of array from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the number of array.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         this.number = BitConverter.toInt32(byteArray, startIndex);
         return 4;

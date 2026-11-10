@@ -27,20 +27,10 @@ public class RevisionManifest extends StreamObject {
     public ExGuid revisionID;
     public ExGuid baseRevisionID;
 
-    /**
-     * Initializes a new instance of the RevisionManifest class.
-     */
     public RevisionManifest() {
         super(StreamObjectTypeHeaderStart.RevisionManifest);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

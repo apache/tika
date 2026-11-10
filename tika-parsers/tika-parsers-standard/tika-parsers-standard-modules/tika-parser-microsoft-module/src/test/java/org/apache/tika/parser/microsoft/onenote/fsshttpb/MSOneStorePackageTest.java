@@ -1159,10 +1159,8 @@ public class MSOneStorePackageTest {
                 (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
                 (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
         };
-        // the winning identity is NOT the cap-filling value, so every stop below is
-        // attributable to the sectionCollected short-circuit alone: removing the property
-        // loop or nested-array operand sends the scan into the deep chain, removing the
-        // group-loop operand enters the second group - either way the entry count grows
+        // the winner is not the cap-filling value, so only sectionCollected can stop the scan;
+        // dropping any of its operands lets the scan go further and grows the entry count
         PrtArrayOfPropertyValues array = new PrtArrayOfPropertyValues();
         array.data = new PropertySet[] {
                 fileIdentitySet(sectionGuidBytes()), propertySet()
@@ -1236,11 +1234,9 @@ public class MSOneStorePackageTest {
                 (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
                 (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
         };
-        // a nested property-set chain deeper than MAX_PROPERTY_NESTING: isFull and
-        // sectionCollected both fire at the winning identity here, so the chain is reached
-        // only when BOTH stop conditions are removed (removing one leaves the other
-        // stopping the scan); single-operand attribution is covered by
-        // testSectionShortCircuitStopsWithBudgetToSpare
+        // a property-set chain deeper than MAX_PROPERTY_NESTING, reached only if both isFull
+        // and sectionCollected are removed; testSectionShortCircuitStopsWithBudgetToSpare
+        // covers each alone
         PropertySet deep = propertySet();
         for (int i = 0; i <= PropertySet.MAX_PROPERTY_NESTING; i++) {
             deep = propertySet(new PropertySpec(PropertyType.PropertySet, 0x24000006, deep));
@@ -1311,10 +1307,8 @@ public class MSOneStorePackageTest {
         assertEquals("{10213243-5465-7687-98A9-BACBDCEDFE0F}",
                 fallbackMetadata.get(OneNote.SECTION_GUID));
 
-        // a scan entered after the section GUID was found must stop at the group check
-        // (budget not full, so the short-circuit is the sectionCollected operand): the
-        // assertion pins the collector at exactly one SECTION value, so collecting the
-        // fallback GUID here would fail
+        // entered after the section GUID was found (budget not full): sectionCollected must
+        // stop it at the group check, else the fallback GUID becomes a second SECTION value
         withHeader.collectFileIdentityGuidsFromGroups(withHeader.OtherFileNodeList);
         assertEquals(Collections.singleton("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
                 sectionGuidValues(withHeader));
@@ -1389,8 +1383,7 @@ public class MSOneStorePackageTest {
     @Test
     public void testCellRootsDeduplicatesRootDeclares() throws Exception {
         // two declares of the same object plus MAX_CELL_ROOTS - 1 distinct roots fit the cap
-        // exactly when deduplicated; without dedupe the duplicate consumes a slot and the
-        // last distinct root is truncated, so the absent-truncation assertion fails
+        // exactly when deduplicated; without dedupe the last distinct root is truncated
         RevisionStoreCell cell = new RevisionStoreCell();
         RevisionStoreObject textRoot = object(id(2300), propertySet(
                 new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,

@@ -25,29 +25,15 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
 
-/**
- * Specifies the storage index cell mappings (with cell identifier, cell mapping extended GUID,
- * and cell mapping serial number)
- */
 public class StorageIndexCellMapping extends StreamObject {
     public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID cellID;
     public ExGuid cellMappingExGuid;
     public SerialNumber cellMappingSerialNumber;
 
-    /**
-     * Initializes a new instance of the StorageIndexCellMapping class.
-     */
     public StorageIndexCellMapping() {
         super(StreamObjectTypeHeaderStart.StorageIndexCellMapping);
     }
 
-    /**
-     * Used to de-serialize the items.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

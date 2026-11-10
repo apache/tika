@@ -29,22 +29,11 @@ public class StorageManifestDataElementData extends DataElementData {
     public StorageManifestSchemaGUID storageManifestSchemaGUID;
     public List<StorageManifestRootDeclare> storageManifestRootDeclareList;
 
-    /**
-     * Initializes a new instance of the StorageManifestDataElementData class.
-     */
     public StorageManifestDataElementData() {
-        // Storage Manifest
         this.storageManifestSchemaGUID = new StorageManifestSchemaGUID();
         this.storageManifestRootDeclareList = new ArrayList<>();
     }
 
-    /**
-     * Used to de-serialize data element.
-     *
-     * @param byteArray  Byte array
-     * @param startIndex Start position
-     * @return The length of the array
-     */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

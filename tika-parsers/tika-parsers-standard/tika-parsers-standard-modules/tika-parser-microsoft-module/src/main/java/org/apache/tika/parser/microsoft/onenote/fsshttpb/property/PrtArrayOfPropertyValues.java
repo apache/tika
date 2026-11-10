@@ -23,21 +23,11 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Propert
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 
 
-/**
- * The class is used to represent the prtArrayOfPropertyValues .
- */
 public class PrtArrayOfPropertyValues implements IProperty {
     public int cProperties;
     public PropertyID propertyID;
     public PropertySet[] data;
 
-    /**
-     * This method is used to deserialize the prtArrayOfPropertyValues from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         return doDeserializeFromByteArray(byteArray, startIndex, 0);
     }

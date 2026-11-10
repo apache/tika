@@ -24,29 +24,15 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
 
-/**
- * Specifies the storage index revision mappings (with revision and revision mapping
- * extended GUIDs, and revision mapping serial number)
- */
 public class StorageIndexRevisionMapping extends StreamObject {
     public ExGuid revisionExGuid;
     public ExGuid revisionMappingExGuid;
     public SerialNumber revisionMappingSerialNumber;
 
-    /**
-     * Initializes a new instance of the StorageIndexRevisionMapping class.
-     */
     public StorageIndexRevisionMapping() {
         super(StreamObjectTypeHeaderStart.StorageIndexRevisionMapping);
     }
 
-    /**
-     * Used to de-serialize the items
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

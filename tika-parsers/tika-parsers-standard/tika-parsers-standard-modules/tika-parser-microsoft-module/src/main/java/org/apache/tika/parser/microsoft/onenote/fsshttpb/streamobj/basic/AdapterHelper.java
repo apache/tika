@@ -22,13 +22,6 @@ import java.util.UUID;
 
 public class AdapterHelper {
 
-    /**
-     * This method is used to read the Guid for byte array.
-     *
-     * @param byteArray  The byte array.
-     * @param startIndex The offset of the Guid value.
-     * @return Return the value of Guid.
-     */
     public static UUID readGuid(byte[] byteArray, int startIndex) {
         byte[] bytes = Arrays.copyOfRange(byteArray, startIndex, startIndex + 16);
         return UUID.nameUUIDFromBytes(bytes);

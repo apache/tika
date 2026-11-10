@@ -20,9 +20,6 @@ import java.io.IOException;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySet;
 
-/**
- * This class is used to represent a ObjectSpaceObjectPropSet.
- */
 public class ObjectSpaceObjectPropSet {
     public ObjectSpaceObjectStreamOfOIDs oids;
     public ObjectSpaceObjectStreamOfOSIDs osids;
@@ -30,13 +27,6 @@ public class ObjectSpaceObjectPropSet {
     public PropertySet body;
     public byte[] padding;
 
-    /**
-     * This method is used to deserialize the ObjectSpaceObjectPropSet from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the ObjectSpaceObjectPropSet.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
         this.oids = new ObjectSpaceObjectStreamOfOIDs();

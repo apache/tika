@@ -29,27 +29,17 @@ public class ObjectGroupDataElementData extends DataElementData {
     public ObjectGroupMetadataDeclarations objectMetadataDeclaration;
     public ObjectGroupData objectGroupData;
 
-    /**
-     * Initializes a new instance of the ObjectGroupDataElementData class.
-     */
     public ObjectGroupDataElementData() {
         this.objectGroupDeclarations = new ObjectGroupDeclarations();
 
-        // The ObjectMetadataDeclaration is only present for MOSS2013, so leave null for default value.
+        // only present for MOSS2013
         this.objectMetadataDeclaration = null;
 
-        // The DataElementHash is only present for MOSS2013, so leave null for default value.
+        // only present for MOSS2013
         this.dataElementHash = null;
         this.objectGroupData = new ObjectGroupData();
     }
 
-    /**
-     * Used to return the length of this element.
-     *
-     * @param byteArray  A Byte array
-     * @param startIndex Start position
-     * @return The length of the element
-     */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

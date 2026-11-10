@@ -25,31 +25,13 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
-/**
- * An 32-bit header for a compound object would indicate the start of a stream object
- */
 public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
-    /**
-     * Gets or sets an optional compact uint64 that specifies the length in bytes for additional data (if any).
-     * This field MUST be specified if the Length field contains 32767 and MUST NOT be specified if the Length field
-     * contains any other value than 32767.
-     */
+    /** Present if and only if the Length field is 32767. */
     public Compact64bitInt largeLength;
 
-    /**
-     * Initializes a new instance of the StreamObjectHeaderStart32bit class, this is the default constructor.
-     */
     public StreamObjectHeaderStart32bit() {
     }
 
-    /**
-     * This method is used to deserialize the StreamObjectHeaderStart32bit basic object
-     * from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the StreamObjectHeaderStart32bit basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
             throws IOException, TikaException {

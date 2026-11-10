@@ -23,36 +23,18 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * Specifies a revision manifest object group references, each followed by object group extended GUIDs
- */
 public class RevisionManifestObjectGroupReferences extends StreamObject {
     public ExGuid objectGroupExtendedGUID;
 
-    /**
-     * Initializes a new instance of the RevisionManifestObjectGroupReferences class.
-     */
     public RevisionManifestObjectGroupReferences() {
         super(StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences);
     }
 
-    /**
-     * Initializes a new instance of the RevisionManifestObjectGroupReferences class.
-     *
-     * @param objectGroupExtendedGUID Extended GUID
-     */
     public RevisionManifestObjectGroupReferences(ExGuid objectGroupExtendedGUID) {
         super(StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences);
         this.objectGroupExtendedGUID = objectGroupExtendedGUID;
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
