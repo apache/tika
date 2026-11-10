@@ -495,6 +495,19 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testOriginalAuthorsAreCreators() {
+        OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
+                new OneNoteDocument(), null, null, null, new ParseContext(), null);
+        walker.getAuthors().add("Editor");
+        walker.getOriginalAuthors().add("Writer");
+        Metadata metadata = new Metadata();
+        OneNoteParser.setWalkMetadata(walker, metadata);
+        assertArrayEquals(new String[]{"Editor", "Writer"},
+                metadata.getValues(TikaCoreProperties.CREATOR));
+        assertEquals("Writer", metadata.get(OneNote.ORIGINAL_AUTHORS));
+    }
+
+    @Test
     public void testPageHistory() throws Exception {
         ParseContext context = new ParseContext();
         OneNoteParserConfig config = new OneNoteParserConfig();

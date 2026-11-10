@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -284,8 +285,11 @@ public class OneNoteParser implements Parser {
     }
 
     static void setWalkMetadata(OneNoteTreeWalker walker, Metadata metadata) {
-        if (!walker.getAuthors().isEmpty()) {
-            metadata.set(TikaCoreProperties.CREATOR, sortedValues(walker.getAuthors()));
+        // the original authors are the creators of the content, as in FSSHTTPB sections
+        Set<String> creators = new HashSet<>(walker.getAuthors());
+        creators.addAll(walker.getOriginalAuthors());
+        if (!creators.isEmpty()) {
+            metadata.set(TikaCoreProperties.CREATOR, sortedValues(creators));
         }
         if (!walker.getMostRecentAuthors().isEmpty()) {
             metadata.set(OneNote.MOST_RECENT_AUTHORS, sortedValues(walker.getMostRecentAuthors()));
