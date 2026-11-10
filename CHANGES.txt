@@ -113,6 +113,12 @@ Release 4.3.0 - ???
    * ASX playlists (application/x-ms-asx) are parsed by JSoupParser; XMLParser failed on
      many real ones (mixed-case or unclosed tags, raw '&', non-UTF-8 without a declaration).
      Texinfo files are parsed as text; they produced no content (TIKA-5029).
+
+   * Bare RPM headers (yum *.hdr files), pdf.js binary CMaps, Across Lite crosswords
+     (application/x-crossword), Commodore 64 tape images (application/x-commodore-tape),
+     OpenOffice.org 2.x/3.x registry cache files and LibreOffice user-profile backup
+     (user/pack) files are detected by content; they were application/octet-stream, or
+     application/x-git-pack for a pack file with two or three entries (TIKA-5029).
      
    * ISO-2022-JP is decoded as x-windows-50221, so NEC/IBM extension characters (circled
      numbers, Roman numerals) no longer become U+FFFD. ISO-8859-1, ISO-8859-9, TIS-620 and

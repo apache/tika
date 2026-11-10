@@ -4398,6 +4398,34 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/x-commodore-tape">
+    <_comment>Commodore 64 tape image</_comment>
+    <magic priority="50">
+      <match value="C64-TAPE-RAW" type="string" offset="0"/>
+      <!-- T64: then the version, 0x0100, 0x0101 or 0x0200 little-endian -->
+      <match value="C64 tape image file" type="string" offset="0">
+        <match value="0x0001" type="string" offset="32"/>
+        <match value="0x0101" type="string" offset="32"/>
+        <match value="0x0002" type="string" offset="32"/>
+      </match>
+      <match value="C64S tape" type="string" offset="0">
+        <match value="0x0001" type="string" offset="32"/>
+        <match value="0x0101" type="string" offset="32"/>
+        <match value="0x0002" type="string" offset="32"/>
+      </match>
+    </magic>
+    <glob pattern="*.t64"/>
+  </mime-type>
+
+  <mime-type type="application/x-crossword">
+    <_comment>Across Lite crossword puzzle</_comment>
+    <magic priority="50">
+      <!-- after a 2-byte checksum -->
+      <match value="ACROSS&amp;DOWN\x00" type="string" offset="2"/>
+    </magic>
+    <glob pattern="*.puz"/>
+  </mime-type>
+
   <mime-type type="application/x-cpio">
     <_comment>UNIX CPIO Archive</_comment>
     <magic priority="50">
@@ -4588,6 +4616,15 @@
       <match value="\177ELF" type="string" offset="0">
         <match value="0x0100" type="string" offset="16"/>
         <match value="0x0001" type="string" offset="16"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-openoffice-registry-cache">
+    <_comment>OpenOffice.org 2.x/3.x configuration registry binary cache (user/registry/cache)</_comment>
+    <magic priority="50">
+      <!-- then the length-prefixed build id, as in 320m12(Build:9483) -->
+      <match value="\x27\x11\x00\x03\x80\x00\x00" type="string" offset="0">
+        <match value="(Build:" type="string" offset="8:40"/>
       </match>
     </magic>
   </mime-type>
@@ -5073,6 +5110,29 @@
       <match value="-lh1-" type="string" offset="2"/>
       <match value="-lz4-" type="string" offset="2"/>
       <match value="-lz5-" type="string" offset="2"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-libreoffice-pack">
+    <_comment>LibreOffice user profile backup (user/pack)</_comment>
+    <magic priority="50">
+      <!-- entry count, then a full size, CRC-32 and packed size per entry; git packs have version 2 or 3 here -->
+      <match value="PACK\x00\x00\x00\x01" type="string" offset="0"/>
+    </magic>
+    <magic priority="60">
+      <!-- 2 or 3 entries: the first entry's zlib stream follows the entry table -->
+      <match value="PACK\x00\x00\x00\x02" type="string" offset="0">
+        <match value="0x7801" type="string" offset="32"/>
+        <match value="0x785e" type="string" offset="32"/>
+        <match value="0x789c" type="string" offset="32"/>
+        <match value="0x78da" type="string" offset="32"/>
+      </match>
+      <match value="PACK\x00\x00\x00\x03" type="string" offset="0">
+        <match value="0x7801" type="string" offset="44"/>
+        <match value="0x785e" type="string" offset="44"/>
+        <match value="0x789c" type="string" offset="44"/>
+        <match value="0x78da" type="string" offset="44"/>
+      </match>
     </magic>
   </mime-type>
 
@@ -5683,6 +5743,15 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-pdfjs-bcmap">
+    <_comment>pdf.js binary CMap</_comment>
+    <magic priority="50">
+      <!-- after the flags byte: a comment record and the Adobe cmap-resources copyright -->
+      <match value="\xe0RCopyright 1990-2009 Adobe Systems" type="string" offset="1"/>
+    </magic>
+    <glob pattern="*.bcmap"/>
+  </mime-type>
+
   <mime-type type="application/x-pds">
     <_comment>Planetary Data System Version 3 format</_comment>
     <tika:link>http://fileformats.archiveteam.org/wiki/PDS</tika:link>
@@ -5913,6 +5982,13 @@
     <glob pattern="*.rpm"/>
     <magic priority="50">
       <match value="\xed\xab\xee\xdb" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-rpm-header">
+    <_comment>RPM header without the lead (yum headers/*.hdr, rpmdb entries)</_comment>
+    <magic priority="50">
+      <!-- header magic, version 1, then 4 reserved zero bytes -->
+      <match value="\x8e\xad\xe8\x01\x00\x00\x00\x00" type="string" offset="0"/>
     </magic>
   </mime-type>
 
