@@ -30,8 +30,13 @@ public class OneNoteParserConfig implements Serializable {
     private boolean includeDeletedContent = false;
 
     /**
-     * Whether text includes every earlier revision and saved page version, not only each page's
-     * current one.
+     * Whether text and metadata (authors, timestamps, page GUIDs) include every earlier revision
+     * and saved page version, not only each page's current one. Off, the output describes the
+     * section as it is now, like the final state of an incrementally updated PDF.
+     * <p>
+     * Exception: .one (2010-2016) sections keep attachments in one store shared by all
+     * versions, so every stored attachment is extracted either way, including files that only
+     * earlier page versions used.
      */
     public boolean isIncludePageHistory() {
         return includePageHistory;

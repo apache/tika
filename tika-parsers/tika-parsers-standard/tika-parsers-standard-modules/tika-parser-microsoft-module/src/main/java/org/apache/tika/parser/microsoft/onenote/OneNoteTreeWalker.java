@@ -118,9 +118,6 @@ class OneNoteTreeWalker {
     private boolean contentEmitted;
     // the revision whose objects the walk resolves, or null for the last declared anywhere
     private ExtendedGUID walkedRevision;
-    // walking for metadata and attachments only, after the current revision's text
-    private boolean collectOnly;
-    private final long initialVisits;
     private final Set<Long> emittedEmbedded = new HashSet<>();
     private boolean visitBudgetWarningRecorded;
     // text read is bounded by the file size; set on first use
@@ -140,9 +137,8 @@ class OneNoteTreeWalker {
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
         this.guidCollector = new OneNoteGuidCollector(this::recordGuidCapWarning);
-        this.initialVisits = Math.max(MIN_VISIT_BUDGET,
+        this.visitsRemaining = Math.max(MIN_VISIT_BUDGET,
                 VISITS_PER_FILE_NODE * oneNoteDocument.fileNodeCount);
-        this.visitsRemaining = initialVisits;
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
@@ -177,14 +173,11 @@ class OneNoteTreeWalker {
         for (FileNode list : unlabeledLists) {
             walkFileNode(list, null);
         }
-        // metadata and attachments come from every revision
-        collectOnly = true;
-        walkedContexts.clear();
-        visitsRemaining = initialVisits;
-        try {
-            walkFileNodeList(oneNoteDocument.root, null);
-        } finally {
-            collectOnly = false;
+        // attachments are in a file-wide store, not linked to the revisions that use them
+        for (FileNode node : oneNoteDocument.root.children) {
+            if (node.id == FndStructureConstants.FileDataStoreListReferenceFND) {
+                walkFileNode(node, null);
+            }
         }
     }
 
@@ -227,22 +220,29 @@ class OneNoteTreeWalker {
         if (current == null) {
             return false;
         }
-        Map<ExtendedGUID, List<ExtendedGUID>> contentRoots = new HashMap<>();
+        // per root role: 1 content, 2 page metadata, 4 revision metadata (author, times)
+        Map<Long, Map<ExtendedGUID, List<ExtendedGUID>>> rootsByRole = new HashMap<>();
         ExtendedGUID rid = null;
         for (FileNode child : children) {
             if (isRevisionStart(child)) {
                 rid = child.gosid;
             } else if (rid != null &&
                     (child.id == FndStructureConstants.RootObjectReference2FNDX ||
-                            child.id == FndStructureConstants.RootObjectReference3FND) &&
-                    child.subType.rootObjectReference.rootObjectReferenceBase.rootRole == 1) {
-                contentRoots.computeIfAbsent(rid, k -> new ArrayList<>()).add(child.gosid);
+                            child.id == FndStructureConstants.RootObjectReference3FND)) {
+                long role = child.subType.rootObjectReference.rootObjectReferenceBase.rootRole;
+                if (role == 1 || role == 2 || role == 4) {
+                    rootsByRole.computeIfAbsent(role, k -> new HashMap<>())
+                            .computeIfAbsent(rid, k -> new ArrayList<>()).add(child.gosid);
+                }
             }
         }
         walkedRevision = current;
         try {
-            for (ExtendedGUID root : contentRoots(current, contentRoots)) {
-                walkFileNodePtr(object(root), null);
+            for (long role : new long[]{1, 2, 4}) {
+                for (ExtendedGUID root : contentRoots(current,
+                        rootsByRole.getOrDefault(role, Collections.emptyMap()))) {
+                    walkFileNodePtr(object(root), null);
+                }
             }
         } finally {
             walkedRevision = null;
@@ -255,7 +255,7 @@ class OneNoteTreeWalker {
                 oneNoteDocument.objectIn(walkedRevision, oid);
     }
 
-    /** A revision that declares no content root keeps its dependency's. */
+    /** A revision that declares no root of a role keeps its dependency's. */
     private List<ExtendedGUID> contentRoots(ExtendedGUID rid,
                                             Map<ExtendedGUID, List<ExtendedGUID>> contentRoots) {
         ExtendedGUID r = rid;
@@ -756,9 +756,6 @@ class OneNoteTreeWalker {
      */
     private boolean shouldEmitText(int length)
             throws IOException {
-        if (collectOnly) {
-            return false;
-        }
         if (!options.isIncludePageHistory() && versionHistoryDepth > 0) {
             return false;
         }

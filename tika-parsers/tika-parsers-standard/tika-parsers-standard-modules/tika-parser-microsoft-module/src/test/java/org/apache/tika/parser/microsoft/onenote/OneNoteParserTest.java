@@ -441,12 +441,9 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Section1TextArea2", txt);
         assertNoJunk(txt);
 
-        List<String> authors = Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR));
-        assertContains("Olya Veselova", authors);
-        assertContains("Microsoft", authors);
-        assertContains("Scott", authors);
-        assertContains("Scott H. W. Snyder", authors);
-        assertContains("ndipiazza", authors);
+        // metadata describes the current revisions; earlier authors need includePageHistory
+        assertArrayEquals(new String[]{"Microsoft", "ndipiazza"},
+                metadata.getValues(TikaCoreProperties.CREATOR));
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
         assertContains("ndipiazza", mostRecentAuthors);
@@ -456,7 +453,7 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Microsoft", originalAuthors);
         assertContains("ndipiazza", mostRecentAuthors);
 
-        assertEquals(Instant.ofEpochSecond(1336059427),
+        assertEquals(Instant.ofEpochSecond(1343257661),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
         assertEquals(Instant.ofEpochMilli(1574426629000L),
                 Instant.ofEpochMilli(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "lastModifiedTimestamp"))));
@@ -513,9 +510,14 @@ public class OneNoteParserTest extends TikaTest {
         OneNoteParserConfig config = new OneNoteParserConfig();
         config.setIncludePageHistory(true);
         context.set(OneNoteParserConfig.class, config);
-        String txt = getText("testOneNote2.one", new Metadata(), context);
+        Metadata metadata = new Metadata();
+        String txt = getText("testOneNote2.one", metadata, context);
         assertContains("tubular", txt);
         assertContains("neat info about totally killin it bro", txt);
+        // and the earlier revisions' metadata
+        assertArrayEquals(new String[]{"Microsoft", "Olya Veselova", "Scott",
+                "Scott H. W. Snyder", "ndipiazza"}, metadata.getValues(TikaCoreProperties.CREATOR));
+        assertEquals("1336059427", metadata.get(OneNote.CREATION_TIMESTAMP));
         // only in a saved page version (under a version-history reference)
         assertNotContained("There are", getText("testOneNote3.one"));
         assertContains("There are", getText("testOneNote3.one", new Metadata(), context));

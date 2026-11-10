@@ -212,9 +212,12 @@ The full switch list:
   embedded entries), `includeDeletedContent` and `includeMoveFromContent`
   (tracked-change deletions and moved-away text in the output),
   `includeMissingRows` (spreadsheet row gaps)
-- `one-note-parser.includePageHistory` — OneNote text includes every
-  earlier revision and saved page version, not only each page's current
-  content. In `.one` files saved by OneNote 2010–2016, history is not marked
+- `one-note-parser.includePageHistory` — OneNote text and metadata
+  (authors, timestamps, page GUIDs) include every earlier revision and saved
+  page version, not only each page's current content. Off, earlier authors
+  and dates are absent, as for the final state of an incrementally updated
+  PDF. Exception: `.one` (2010–2016) attachments come out either way,
+  including files only an earlier page version used. In `.one` files saved by OneNote 2010–2016, history is not marked
   as such; it is mixed in with the current text. In newer (FSSHTTPB)
   sections each old version is its own `<div class="page history">`.
 - `one-note-parser.includeDeletedContent` — newer (FSSHTTPB) OneNote
