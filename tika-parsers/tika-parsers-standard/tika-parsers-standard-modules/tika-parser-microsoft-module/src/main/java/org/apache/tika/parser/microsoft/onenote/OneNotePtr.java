@@ -483,10 +483,12 @@ class OneNotePtr {
             parentPath.nodeListPositions.remove(parentPath.nodeListPositions.size() - 1);
             document.registerRevisionManifestList(data.gosid, parentPath);
 
+            data.subType.revisionManifestListStart = new RevisionManifestListStart();
             data.subType.revisionManifestListStart.nInstanceIgnored = deserializeLittleEndianInt();
         } else if (data.id == FndStructureConstants.RevisionManifestStart4FND) {
             data.gosid = deserializeExtendedGUID(); // the rid
             data.idDesc = "rid";
+            data.subType.revisionManifest = new RevisionManifest();
             data.subType.revisionManifest.ridDependent = deserializeExtendedGUID(); // the rid
             LOG.debug("{}dependent gosid {}", getIndent(),
                     data.subType.revisionManifest.ridDependent);
@@ -500,6 +502,7 @@ class OneNotePtr {
                 data.id == FndStructureConstants.RevisionManifestStart7FND) {
             data.gosid = deserializeExtendedGUID(); // the rid
             data.idDesc = "rid";
+            data.subType.revisionManifest = new RevisionManifest();
             data.subType.revisionManifest.ridDependent = deserializeExtendedGUID(); // the rid
             LOG.debug("{}dependent gosid {}", getIndent(),
                     data.subType.revisionManifest.ridDependent);
@@ -512,9 +515,11 @@ class OneNotePtr {
             }
             document.registerRevisionManifest(data);
         } else if (data.id == FndStructureConstants.GlobalIdTableStartFNDX) {
+            data.subType.globalIdTableStartFNDX = new GlobalIdTableStartFNDX();
             data.subType.globalIdTableStartFNDX.reserved = deserializeLittleEndianChar();
 
         } else if (data.id == FndStructureConstants.GlobalIdTableEntryFNDX) {
+            data.subType.globalIdTableEntryFNDX = new GlobalIdTableEntryFNDX();
             data.subType.globalIdTableEntryFNDX.index = deserializeLittleEndianInt();
 
             data.subType.globalIdTableEntryFNDX.guid = deserializeGUID();
@@ -523,6 +528,7 @@ class OneNotePtr {
             currentRevision.globalId.put(data.subType.globalIdTableEntryFNDX.index,
                     data.subType.globalIdTableEntryFNDX.guid);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry2FNDX) {
+            data.subType.globalIdTableEntry2FNDX = new GlobalIdTableEntry2FNDX();
             data.subType.globalIdTableEntry2FNDX.indexMapFrom = deserializeLittleEndianInt();
             data.subType.globalIdTableEntry2FNDX.indexMapTo = deserializeLittleEndianInt();
 
@@ -536,6 +542,7 @@ class OneNotePtr {
             currentRevision.globalId.put(data.subType.globalIdTableEntry2FNDX.indexMapTo,
                     compactId);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry3FNDX) {
+            data.subType.globalIdTableEntry3FNDX = new GlobalIdTableEntry3FNDX();
             data.subType.globalIdTableEntry3FNDX.indexCopyFromStart = deserializeLittleEndianInt();
 
             data.subType.globalIdTableEntry3FNDX.entriesToCopy = deserializeLittleEndianInt();
@@ -558,6 +565,7 @@ class OneNotePtr {
             }
         } else if (data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCountFNDX ||
                 data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCount2FNDX) {
+            data.subType.objectRevisionWithRefCountFNDX = new ObjectRevisionWithRefCountFNDX();
             data.subType.objectRevisionWithRefCountFNDX.oid = deserializeCompactID(); // the oid
 
             if (data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCountFNDX) {
@@ -578,6 +586,7 @@ class OneNotePtr {
             }
             postprocessObjectRevision(data, curPath);
         } else if (data.id == FndStructureConstants.RootObjectReference2FNDX) {
+            data.subType.rootObjectReference = new RootObjectReference();
             data.subType.rootObjectReference.oidRoot = deserializeCompactID();
 
             data.idDesc = "oidRoot";
@@ -591,6 +600,7 @@ class OneNotePtr {
             data.idDesc = "oidRoot";
             data.gosid = deserializeExtendedGUID();
 
+            data.subType.rootObjectReference = new RootObjectReference();
             data.subType.rootObjectReference.rootObjectReferenceBase.rootRole =
                     deserializeLittleEndianInt();
 
@@ -600,6 +610,7 @@ class OneNotePtr {
                 data.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
             data.gosid = deserializeExtendedGUID();
 
+            data.subType.revisionRoleDeclaration = new RevisionRoleDeclaration();
             data.subType.revisionRoleDeclaration.revisionRole = deserializeLittleEndianInt();
 
             data.gctxid = data.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND ?
@@ -620,6 +631,7 @@ class OneNotePtr {
                 OneNotePtr fileDataStorePtr = new OneNotePtr(this);
                 fileDataStorePtr.reposition(data.ref);
 
+                data.subType.fileDataStoreObjectReference = new FileDataStoreObjectReference();
                 data.subType.fileDataStoreObjectReference.ref =
                         fileDataStorePtr.deserializeFileDataStoreObject();
             }
@@ -631,7 +643,7 @@ class OneNotePtr {
                 data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND ||
                 data.id ==
                         FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
-            data.subType.objectDeclarationWithRefCount.body.file_data_store_reference = false;
+            data.subType.objectDeclarationWithRefCount = new ObjectDeclarationWithRefCount();
             if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCountFNDX ||
                     data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCount2FNDX) {
                 data.subType.objectDeclarationWithRefCount.body =
@@ -654,6 +666,8 @@ class OneNotePtr {
                             FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
                 ByteBuffer md5Buffer = ByteBuffer.allocate(16);
                 deserializeBytes(md5Buffer);
+                data.subType.objectDeclarationWithRefCount.readOnly =
+                        new ObjectDeclarationWithRefCount.ReadOnly();
                 data.subType.objectDeclarationWithRefCount.readOnly.md5 = md5Buffer.array();
             }
             data.idDesc = "oid";
@@ -665,6 +679,8 @@ class OneNotePtr {
                 data.id == FndStructureConstants.CanRevise.ObjectDeclarationFileData3RefCountFND ||
                         data.id ==
                                 FndStructureConstants.CanRevise.ObjectDeclarationFileData3LargeRefCountFND) {
+            data.subType.objectDeclarationWithRefCount = new ObjectDeclarationWithRefCount();
+            data.subType.objectDeclarationWithRefCount.body = new ObjectDeclarationWithRefCountBody();
             data.subType.objectDeclarationWithRefCount.body.oid = deserializeCompactID();
 
             long jcid = deserializeLittleEndianInt();
@@ -734,6 +750,7 @@ class OneNotePtr {
         if (data.baseType == 2 && data.ref.cb != 0) {
             OneNotePtr subList = new OneNotePtr(this);
             subList.reposition(data.ref);
+            data.childFileNodeList = new FileNodeList();
             subList.deserializeFileNodeList(data.childFileNodeList, curPath);
         }
 
@@ -952,7 +969,9 @@ class OneNotePtr {
         if (jcid == null || !jcid.isObjectSpaceObjectPropSet() || data.ref.cb == 0) {
             return;
         }
-        data.subType.objectDeclarationWithRefCount.body.jcid = jcid;
+        data.subType.objectDeclarationWithRefCount = new ObjectDeclarationWithRefCount();
+        data.subType.objectDeclarationWithRefCount.body =
+                new ObjectDeclarationWithRefCountBody().setJcid(jcid);
         deferPropertySet(data);
         document.putObject(data.gosid, new FileNodePtr(curPtr));
     }

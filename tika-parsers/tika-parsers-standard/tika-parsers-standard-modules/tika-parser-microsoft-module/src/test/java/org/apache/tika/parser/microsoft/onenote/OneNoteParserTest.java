@@ -770,7 +770,7 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testFileNodeCycleIsReportedAndStopsTraversal(@TempDir Path tempDir) throws Exception {
         FileNode fileNode = new FileNode().setGosid(ExtendedGUID.nil());
-        fileNode.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+        fileNode.childFileNodeList = new FileNodeList().setFileNodeListHeader(new FileNodeListHeader(0,
                 FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
         fileNode.childFileNodeList.children.add(fileNode);
         Metadata metadata = new Metadata();
@@ -797,7 +797,7 @@ public class OneNoteParserTest extends TikaTest {
         FileNode current = root;
         for (int i = 0; i < 600; i++) {
             FileNode child = new FileNode().setGosid(ExtendedGUID.nil());
-            current.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+            current.childFileNodeList = new FileNodeList().setFileNodeListHeader(new FileNodeListHeader(0,
                     FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
             current.childFileNodeList.children.add(child);
             current = child;
@@ -895,6 +895,7 @@ public class OneNoteParserTest extends TikaTest {
 
     private static FileNode objectRevision(ExtendedGUID oid, int length) {
         FileNode node = new FileNode();
+        node.subType.objectRevisionWithRefCountFNDX = new ObjectRevisionWithRefCountFNDX();
         node.subType.objectRevisionWithRefCountFNDX.oid = new CompactID();
         node.subType.objectRevisionWithRefCountFNDX.oid.guid = oid;
         node.ref = new FileChunkReference(0, length);
@@ -989,6 +990,7 @@ public class OneNoteParserTest extends TikaTest {
         node.id = FndStructureConstants.RevisionManifestStart7FND;
         node.gosid = rid;
         node.gctxid = context;
+        node.subType.revisionManifest = new RevisionManifest();
         node.subType.revisionManifest.revisionRole = role;
         return node;
     }
@@ -998,6 +1000,7 @@ public class OneNoteParserTest extends TikaTest {
         node.id = FndStructureConstants.RevisionRoleAndContextDeclarationFND;
         node.gosid = rid;
         node.gctxid = context;
+        node.subType.revisionRoleDeclaration = new RevisionRoleDeclaration();
         node.subType.revisionRoleDeclaration.revisionRole = role;
         return node;
     }
@@ -1207,7 +1210,7 @@ public class OneNoteParserTest extends TikaTest {
         FileNode current = root;
         for (int i = 0; i < 60; i++) {
             FileNode child = new FileNode().setGosid(ExtendedGUID.nil());
-            current.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+            current.childFileNodeList = new FileNodeList().setFileNodeListHeader(new FileNodeListHeader(0,
                     FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
             current.childFileNodeList.children.add(child);
             current.childFileNodeList.children.add(child);
@@ -1221,7 +1224,7 @@ public class OneNoteParserTest extends TikaTest {
     public void testDistinctFileNodesAreBoundedByVisitBudget(@TempDir Path tempDir)
             throws Exception {
         FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
-        root.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+        root.childFileNodeList = new FileNodeList().setFileNodeListHeader(new FileNodeListHeader(0,
                 FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
         // more distinct nodes than the minimum visit budget of an empty document
         for (int i = 0; i < 100_001; i++) {

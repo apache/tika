@@ -17,9 +17,9 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 class ObjectDeclarationWithRefCount {
-    ObjectDeclarationWithRefCountBody body = new ObjectDeclarationWithRefCountBody();
+    ObjectDeclarationWithRefCountBody body;
     long cRef;
-    ReadOnly readOnly = new ReadOnly();
+    ReadOnly readOnly;
 
     public ObjectDeclarationWithRefCountBody getBody() {
         return body;

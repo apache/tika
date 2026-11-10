@@ -16,18 +16,17 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+/** The node's type-specific fields: only the one for its node type is set. */
 class FileNodeUnion {
-    RevisionManifestListStart revisionManifestListStart = new RevisionManifestListStart();
-    RevisionManifest revisionManifest = new RevisionManifest();
-    RevisionRoleDeclaration revisionRoleDeclaration = new RevisionRoleDeclaration();
-    GlobalIdTableStartFNDX globalIdTableStartFNDX = new GlobalIdTableStartFNDX();
-    GlobalIdTableEntryFNDX globalIdTableEntryFNDX = new GlobalIdTableEntryFNDX();
-    GlobalIdTableEntry2FNDX globalIdTableEntry2FNDX = new GlobalIdTableEntry2FNDX();
-    GlobalIdTableEntry3FNDX globalIdTableEntry3FNDX = new GlobalIdTableEntry3FNDX();
-    ObjectRevisionWithRefCountFNDX objectRevisionWithRefCountFNDX =
-            new ObjectRevisionWithRefCountFNDX();
-    ObjectDeclarationWithRefCount objectDeclarationWithRefCount =
-            new ObjectDeclarationWithRefCount();
-    RootObjectReference rootObjectReference = new RootObjectReference();
-    FileDataStoreObjectReference fileDataStoreObjectReference = new FileDataStoreObjectReference();
+    RevisionManifestListStart revisionManifestListStart;
+    RevisionManifest revisionManifest;
+    RevisionRoleDeclaration revisionRoleDeclaration;
+    GlobalIdTableStartFNDX globalIdTableStartFNDX;
+    GlobalIdTableEntryFNDX globalIdTableEntryFNDX;
+    GlobalIdTableEntry2FNDX globalIdTableEntry2FNDX;
+    GlobalIdTableEntry3FNDX globalIdTableEntry3FNDX;
+    ObjectRevisionWithRefCountFNDX objectRevisionWithRefCountFNDX;
+    ObjectDeclarationWithRefCount objectDeclarationWithRefCount;
+    RootObjectReference rootObjectReference;
+    FileDataStoreObjectReference fileDataStoreObjectReference;
 }

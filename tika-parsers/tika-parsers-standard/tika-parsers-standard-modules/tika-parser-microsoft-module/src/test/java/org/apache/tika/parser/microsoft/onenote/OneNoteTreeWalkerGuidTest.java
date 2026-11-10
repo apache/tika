@@ -88,7 +88,8 @@ public class OneNoteTreeWalkerGuidTest {
     public void testJcidIndexRequiresCompleteJcid() {
         assertEquals(-1, OneNoteTreeWalker.jcidIndex(null));
         FileNode fileNode = new FileNode();
-        assertEquals(0, OneNoteTreeWalker.jcidIndex(fileNode));
+        // not an object declaration
+        assertEquals(-1, OneNoteTreeWalker.jcidIndex(fileNode));
         fileNode.subType = null;
         assertEquals(-1, OneNoteTreeWalker.jcidIndex(fileNode));
         fileNode.subType = new FileNodeUnion();

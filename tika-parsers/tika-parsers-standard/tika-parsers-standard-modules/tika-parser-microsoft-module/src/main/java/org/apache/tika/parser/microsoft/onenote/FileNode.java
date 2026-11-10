@@ -57,8 +57,8 @@ class FileNode {
     long propertySetValues;
     boolean isFileData;
 
-    /** For ObjectGroupListReference, the children. */
-    FileNodeList childFileNodeList = new FileNodeList();
+    /** For ObjectGroupListReference, the children; null for nodes that reference no list. */
+    FileNodeList childFileNodeList;
 
     FileNodeUnion subType = new FileNodeUnion();
 

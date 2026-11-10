@@ -17,6 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 class RootObjectReference {
-    CompactID oidRoot = new CompactID();
+    CompactID oidRoot;
     RootObjectReferenceBase rootObjectReferenceBase = new RootObjectReferenceBase();
 }

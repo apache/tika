@@ -214,6 +214,9 @@ class OneNoteTreeWalker {
     /** @return false when no revision in the list holds {@code roleAndContext} */
     private boolean walkRevision(FileNode revisionFileNode)
             throws IOException, TikaException, SAXException {
+        if (revisionFileNode.childFileNodeList == null) {
+            return false;
+        }
         List<FileNode> children = revisionFileNode.childFileNodeList.children;
         ExtendedGUID current =
                 roleAndContext == null ? null : labeledRevision(children, roleAndContext);
@@ -425,10 +428,10 @@ class OneNoteTreeWalker {
                 }
             }
         }
-        if (fileNode.subType.fileDataStoreObjectReference.ref != null && !FileChunkReference.nil()
-                .equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
-            walkFileDataStoreObjectReference(fileNode.subType.fileDataStoreObjectReference,
-                    fileNode.gosid);
+        FileDataStoreObjectReference fileData = fileNode.subType.fileDataStoreObjectReference;
+        if (fileData != null && fileData.ref != null &&
+                !FileChunkReference.nil().equals(fileData.ref.fileData)) {
+            walkFileDataStoreObjectReference(fileData, fileNode.gosid);
         }
     }
 
