@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,6 +70,19 @@ public class OneNoteDirectFileResourceTest {
             dif.position(SIZE - 4);
             assertThrows(IOException.class, () -> read(dif, 8));
             assertThrows(IOException.class, () -> dif.position(SIZE + 1));
+        }
+    }
+
+    @Test
+    public void testFileShrinkingDuringParseThrows() throws IOException {
+        try (OneNoteDirectFileResource dif = resource(data());
+                RandomAccessFile raf = new RandomAccessFile(tmp.resolve("data.bin").toFile(),
+                        "rw")) {
+            raf.setLength(1000);
+            dif.position(2000);
+            assertThrows(IOException.class, () -> read(dif, 8));
+            assertThrows(IOException.class, () -> read(dif, 100_000));
+            assertThrows(IOException.class, dif::read);
         }
     }
 

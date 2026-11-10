@@ -61,8 +61,8 @@ class OneNoteDirectFileResource implements Closeable {
                 if (len - totalRead >= WINDOW_SIZE) {
                     // large reads bypass the window
                     int n = raf.getChannel().read(byteBuffer, position);
-                    if (n < 0) {
-                        break;
+                    if (n <= 0) {
+                        throw new IOException("File ended before its recorded size");
                     }
                     position += n;
                     totalRead += n;
@@ -89,8 +89,12 @@ class OneNoteDirectFileResource implements Closeable {
     private void fill(long pos) throws IOException {
         raf.seek(pos);
         int n = raf.read(window, 0, (int) Math.min(WINDOW_SIZE, size - pos));
+        if (n <= 0) {
+            // the file shrank after it was opened
+            throw new IOException("File ended before its recorded size");
+        }
         windowStart = pos;
-        windowLength = Math.max(n, 0);
+        windowLength = n;
     }
 
     public long size() throws IOException {
