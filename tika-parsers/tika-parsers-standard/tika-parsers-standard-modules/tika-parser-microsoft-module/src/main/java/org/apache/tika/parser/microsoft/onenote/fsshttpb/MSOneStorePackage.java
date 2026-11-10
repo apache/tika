@@ -126,6 +126,8 @@ public class MSOneStorePackage {
     public CellManifestDataElementData headerCellCellManifest;
     public RevisionManifestDataElementData headerCellRevisionManifest;
     public List<RevisionManifestDataElementData> revisionManifests;
+    // a revision declares the encryption key root: the section is password protected
+    boolean encrypted;
     public List<CellManifestDataElementData> cellManifests;
     public HeaderCell headerCell;
     public RevisionStoreCell dataRootCell;
@@ -1870,18 +1872,10 @@ public class MSOneStorePackage {
 
     private void handleRichEditTextUnicode(byte[] arr, XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
-        int firstNull = 0;
-        for (int i = 0; i < arr.length - 1; i += 2) {
-            if (arr[i] == 0 && arr[i + 1] == 0) {
-                firstNull = Math.max(i, 0);
-                break;
-            }
-        }
-
-        if (firstNull == 0) {
+        String txt = OneNoteText.richEditText(arr);
+        if (txt.isEmpty()) {
             return;
         }
-        String txt = new String(arr, 0, firstNull, StandardCharsets.UTF_16LE);
         if (OneNoteText.isRichText(txt, Collections.emptyList())) {
             if (OneNoteText.emitRichText(xhtml, txt, textRuns, Collections.emptyList())) {
                 contentEmitted = true;
@@ -1943,6 +1937,10 @@ public class MSOneStorePackage {
      * not, the caller can fall back to the legacy string dump so a degraded file still
      * yields its text.
      */
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+
     public boolean hasEmittedContent() {
         return contentEmitted;
     }

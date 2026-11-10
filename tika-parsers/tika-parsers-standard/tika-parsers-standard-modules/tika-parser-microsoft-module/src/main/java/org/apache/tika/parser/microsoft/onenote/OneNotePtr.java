@@ -120,7 +120,7 @@ class OneNotePtr {
                 .setFcrLegacyFreeChunkList(deserializeFileChunkReference64())
                 .setFcrLegacyTransactionLog(deserializeFileChunkReference64())
                 .setcTransactionsInLog(deserializeLittleEndianInt())
-                .setCbExpectedFileLength(deserializeLittleEndianInt())
+                .setCbLegacyExpectedFileLength(deserializeLittleEndianInt())
                 .setRgbPlaceholder(deserializeLittleEndianLong())
                 .setFcrLegacyFileNodeListRoot(deserializeFileChunkReference64())
                 .setCbLegacyFreeSpaceInFreeChunkList(deserializeLittleEndianInt())

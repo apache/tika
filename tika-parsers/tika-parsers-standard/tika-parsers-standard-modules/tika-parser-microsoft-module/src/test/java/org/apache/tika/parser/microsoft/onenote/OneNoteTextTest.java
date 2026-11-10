@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,26 @@ public class OneNoteTextTest {
         // unrecognized ink leaves nothing to emit
         assertEquals("", body(x -> assertFalse(
                 OneNoteText.emitRichText(x, "\uFFFC\uFFFC", null, List.of()))));
+        // an unrecognized word keeps the later ones on their own placeholders
+        assertEquals("<p><span class=\"handwriting\">one</span> and " +
+                        "<span class=\"handwriting\">three</span></p>",
+                body(x -> OneNoteText.emitRichText(x, "\uFFFC\uFFFC and \uFFFC", null,
+                        Arrays.asList("one", null, "three"))));
+        // ink inside a link takes its word
+        assertEquals("<p>See <a href=\"http://x\">here</a><span class=\"handwriting\">" +
+                        "now</span></p>",
+                body(x -> OneNoteText.emitRichText(x,
+                        "See \uFDDFHYPERLINK \"http://x\"here\uFFFC", null,
+                        List.of("now"))));
+    }
+
+    @Test
+    public void testRichEditText() {
+        byte[] terminated = {'a', 0, 'b', 0, 0, 0, 'c', 0};
+        assertEquals("ab", OneNoteText.richEditText(terminated));
+        // no terminator: all of it, an odd trailing byte dropped
+        assertEquals("abc", OneNoteText.richEditText(new byte[]{'a', 0, 'b', 0, 'c', 0, 'x'}));
+        assertEquals("", OneNoteText.richEditText(new byte[]{0, 0, 'a', 0}));
     }
 
     @Test

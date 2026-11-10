@@ -28,9 +28,9 @@ public class LittleEndianBitConverter {
         return (short) convertFromBytes(array, index, 2);
     }
 
-    public static int toUInt32(byte[] array, int index) throws IOException {
+    public static long toUInt32(byte[] array, int index) throws IOException {
         checkByteArgument(array, index, 4);
-        return (int) convertFromBytes(array, index, 4);
+        return convertFromBytes(array, index, 4);
     }
 
     public static int toInt32(byte[] array, int index) throws IOException {
@@ -39,7 +39,7 @@ public class LittleEndianBitConverter {
     }
 
     public static short toInt16(byte[] array, int index) throws IOException {
-        checkByteArgument(array, index, 4);
+        checkByteArgument(array, index, 2);
         return (short) convertFromBytes(array, index, 2);
     }
 

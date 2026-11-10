@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,6 +42,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionManifestObjectGroupReferences;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionManifestRootDeclare;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreCell;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexCellMapping;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexDataElementData;
@@ -213,6 +215,15 @@ public class MSOneStoreParserTest {
         old.revisionManifest.baseRevisionID = id(1001);
         RevisionStoreCell missingBaseResult = parseCell(parser, cellID, pkg);
         assertEquals(2, missingBaseResult.objectGroups.size());
+        assertFalse(pkg.isEncrypted());
+
+        RevisionManifestRootDeclare keyRoot = new RevisionManifestRootDeclare();
+        keyRoot.rootExGuid =
+                new ExGuid(3, UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"));
+        keyRoot.objectExGuid = id(1002);
+        current.revisionManifestRootDeclareList.add(keyRoot);
+        parseCell(parser, cellID, pkg);
+        assertTrue(pkg.isEncrypted());
     }
 
     private static MSOneStoreParser parserWithEmptyIndexes() throws Exception {

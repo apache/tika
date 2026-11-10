@@ -308,6 +308,7 @@ public class MSOneStoreParser {
                             .filter(r -> r.rootExGuid.equals(ENCRYPTION_KEY_ROOT_EXGUID))
                             .findFirst().orElse(null);
             boolean isEncryption = encryptionKeyRoot != null;
+            msOneStorePackage.encrypted |= isEncryption;
             for (RevisionManifestRootDeclare rootDeclare :
                     manifest.revisionManifestRootDeclareList) {
                 if (!rootDeclare.rootExGuid.equals(ENCRYPTION_KEY_ROOT_EXGUID)) {

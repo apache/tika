@@ -38,6 +38,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectS
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOSIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.LittleEndianBitConverter;
 
 /**
  * File-derived counts and nesting in the fsshttpb property deserializers must be bounded -
@@ -87,6 +88,14 @@ public class PropertyDeserializationBoundsTest {
         assertThrows(IOException.class, () -> BitConverter.toInt32(bytes, 4));
         assertThrows(IOException.class, () -> BitConverter.toInt64(bytes, 0));
         assertThrows(IOException.class, () -> BitConverter.toInt16(bytes, -1));
+    }
+
+    @Test
+    public void testUnsignedReads() throws IOException {
+        byte[] bytes = {(byte) 0xFE, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
+        assertEquals(0xFFFFFFFEL, BitConverter.toUInt32(bytes, 0));
+        // a two-byte read at the last two bytes
+        assertEquals((short) 0xFFFF, LittleEndianBitConverter.toInt16(bytes, 2));
     }
 
     @Test

@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +38,7 @@ public final class OneNoteText {
      * holds nothing that windows-1250/1251 would read differently), so the code page is not
      * taken from the LCID.
      */
+    private static final Pattern INK_PUNCTUATION = Pattern.compile("[.,;:!?)\\]}]+");
     public static final Charset EXTENDED_ASCII = Charset.forName("windows-1252");
 
     /**
@@ -93,6 +95,18 @@ public final class OneNoteText {
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]*)\"");
 
     /** @return whether the paragraph needs {@link #emitRichText} rather than plain text */
+    /** @return UTF-16LE text up to its first NUL, or all of it when it has none */
+    public static String richEditText(byte[] utf16) {
+        int end = utf16.length & ~1;
+        for (int i = 0; i < end; i += 2) {
+            if (utf16[i] == 0 && utf16[i + 1] == 0) {
+                end = i;
+                break;
+            }
+        }
+        return new String(utf16, 0, end, StandardCharsets.UTF_16LE);
+    }
+
     public static boolean isRichText(String text, List<String> inkWords) {
         return !inkWords.isEmpty() || text.indexOf('\uFDDF') >= 0;
     }
@@ -113,7 +127,13 @@ public final class OneNoteText {
         int next = 0;
         for (Segment segment : linked) {
             if (segment.url != null) {
-                add(segments, Segment.LINK, segment.text.toString(), segment.url);
+                String link = segment.text.toString();
+                add(segments, Segment.LINK, link, segment.url);
+                // ink inside a link still takes its word, written after the link
+                for (int i = link.indexOf('\uFFFC'); i >= 0 && next < inkWords.size();
+                        i = link.indexOf('\uFFFC', i + 1)) {
+                    appendInk(segments, inkWords.get(next++));
+                }
                 continue;
             }
             StringBuilder typed = new StringBuilder();
@@ -216,13 +236,17 @@ public final class OneNoteText {
         }
     }
 
+    /** {@code word} is null for ink with no recognized text. */
     private static void appendInk(List<Segment> segments, String word) {
+        if (word == null) {
+            return;
+        }
         Segment last = segments.isEmpty() ? null : segments.get(segments.size() - 1);
         if (last == null || last.kind != Segment.INK) {
             segments.add(new Segment(Segment.INK, word, null));
         } else {
             // recognized punctuation is its own word; keep it against the previous one
-            if (!word.matches("[.,;:!?)\\]}]+")) {
+            if (!INK_PUNCTUATION.matcher(word).matches()) {
                 last.text.append(' ');
             }
             last.text.append(word);

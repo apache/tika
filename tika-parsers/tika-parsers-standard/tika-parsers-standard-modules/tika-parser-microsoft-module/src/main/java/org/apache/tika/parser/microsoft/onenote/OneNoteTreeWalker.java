@@ -576,9 +576,8 @@ class OneNoteTreeWalker {
                         readAlternates(word.propertySet);
                 String best = alternates == null ? null :
                         OneNoteText.bestInkAlternate(alternates);
-                if (best != null) {
-                    words.add(best);
-                }
+                // a null keeps later words on their own placeholders
+                words.add(best);
             }
         }
         return words;
@@ -807,22 +806,12 @@ class OneNoteTreeWalker {
 
     private void handleRichEditTextUnicode(int length)
             throws SAXException, IOException {
-        //this is a null-ended UTF-16LE string
         ByteBuffer buf = ByteBuffer.allocate(length);
         dif.read(buf);
-        byte[] arr = buf.array();
-        int firstNull = 0;
-        for (int i = 0; i < arr.length - 1; i += 2) {
-            if (arr[i] == 0 && arr[i + 1] == 0) {
-                firstNull = (i > 0) ? i : 0;
-                break;
-            }
-        }
-
-        if (firstNull == 0) {
+        String txt = OneNoteText.richEditText(buf.array());
+        if (txt.isEmpty()) {
             return;
         }
-        String txt = new String(arr, 0, firstNull, StandardCharsets.UTF_16LE);
         if (OneNoteText.isRichText(txt, inkWords)) {
             if (OneNoteText.emitRichText(xhtml, txt, textRuns, inkWords)) {
                 contentEmitted = true;

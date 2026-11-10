@@ -480,6 +480,15 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testNoTimestampsWithoutDates() {
+        OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                new OneNoteDocument(), null, null, null, new ParseContext(), null);
+        Metadata metadata = new Metadata();
+        OneNoteParser.setWalkMetadata(walker, metadata);
+        assertEquals(0, metadata.size());
+    }
+
+    @Test
     public void testPageHistory() throws Exception {
         ParseContext context = new ParseContext();
         OneNoteParserConfig config = new OneNoteParserConfig();

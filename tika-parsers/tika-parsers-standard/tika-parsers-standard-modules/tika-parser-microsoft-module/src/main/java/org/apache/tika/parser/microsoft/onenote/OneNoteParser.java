@@ -157,45 +157,27 @@ public class OneNoteParser implements Parser {
                 boolean walked = false;
                 boolean emittedContent = false;
                 if (structureFailure == null) {
+                    OneNoteTreeWalker oneNoteTreeWalker = new OneNoteTreeWalker(options,
+                            oneNoteDocument, oneNoteDirectFileResource, xhtml, metadata, context,
+                            Pair.of(1L, ExtendedGUID.nil()));
                     try {
-                        Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
-                        OneNoteTreeWalker oneNoteTreeWalker =
-                                new OneNoteTreeWalker(options, oneNoteDocument,
-                                        oneNoteDirectFileResource, xhtml, metadata, context,
-                                        roleAndContext);
-
                         oneNoteTreeWalker.walkTree();
-
-                        if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
-                            metadata.set(TikaCoreProperties.CREATOR,
-                                    sortedValues(oneNoteTreeWalker.getAuthors()));
-                        }
-                        if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
-                            metadata.set(OneNote.MOST_RECENT_AUTHORS,
-                                    sortedValues(oneNoteTreeWalker.getMostRecentAuthors()));
-                        }
-                        if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
-                            metadata.set(OneNote.ORIGINAL_AUTHORS,
-                                    sortedValues(oneNoteTreeWalker.getOriginalAuthors()));
-                        }
-                        if (!Instant.MAX.equals(
-                                Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
-                            metadata.set(OneNote.CREATION_TIMESTAMP,
-                                    String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
-                        }
-                        if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
-                            metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP, String.valueOf(
-                                    oneNoteTreeWalker.getLastModifiedTimestamp().toEpochMilli()));
-                        }
-                        if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {
-                            metadata.set(TikaCoreProperties.MODIFIED,
-                                    String.valueOf(oneNoteTreeWalker.getLastModified()));
-                        }
                         walked = true;
-                        emittedContent = oneNoteTreeWalker.hasEmittedContent();
+                    } catch (SAXException e) {
+                        throw e;
                     } catch (Exception e) {
                         rethrowIfLimitReached(e);
-                        structureFailure = e;
+                        if (oneNoteTreeWalker.hasEmittedContent()) {
+                            // keep what was written; a dump would repeat it
+                            recordWalkFailure(e, metadata, context);
+                            walked = true;
+                        } else {
+                            structureFailure = e;
+                        }
+                    }
+                    if (walked) {
+                        setWalkMetadata(oneNoteTreeWalker, metadata);
+                        emittedContent = oneNoteTreeWalker.hasEmittedContent();
                     }
                 }
                 if (!walked) {
@@ -221,10 +203,20 @@ public class OneNoteParser implements Parser {
 
                     MSOneStoreParser onenoteParser = new MSOneStoreParser();
                     pkg = onenoteParser.parse(alternatePackageOneStoreFile.dataElementPackage);
-
+                    if (pkg.isEncrypted()) {
+                        throw new EncryptedDocumentException(
+                                "OneNote section is password protected");
+                    }
                     pkg.walkTree(options, metadata, xhtml, context);
+                } catch (EncryptedDocumentException | SAXException e) {
+                    throw e;
                 } catch (Exception e) {
                     rethrowIfLimitReached(e);
+                    if (pkg != null && pkg.hasEmittedContent()) {
+                        recordWalkFailure(e, metadata, context);
+                        xhtml.endDocument();
+                        return;
+                    }
                     legacyFallbackDump(
                             "OneNote FSSHTTPB parse failed; falling back to legacy text dump",
                             e, metadata, xhtml, oneNoteDirectFileResource, context);
@@ -294,6 +286,35 @@ public class OneNoteParser implements Parser {
                             "falling back to legacy text dump", null, metadata, xhtml,
                     oneNoteDirectFileResource, context);
         }
+    }
+
+    static void setWalkMetadata(OneNoteTreeWalker walker, Metadata metadata) {
+        if (!walker.getAuthors().isEmpty()) {
+            metadata.set(TikaCoreProperties.CREATOR, sortedValues(walker.getAuthors()));
+        }
+        if (!walker.getMostRecentAuthors().isEmpty()) {
+            metadata.set(OneNote.MOST_RECENT_AUTHORS, sortedValues(walker.getMostRecentAuthors()));
+        }
+        if (!walker.getOriginalAuthors().isEmpty()) {
+            metadata.set(OneNote.ORIGINAL_AUTHORS, sortedValues(walker.getOriginalAuthors()));
+        }
+        if (walker.getCreationTimestamp() != Long.MAX_VALUE) {
+            metadata.set(OneNote.CREATION_TIMESTAMP, String.valueOf(walker.getCreationTimestamp()));
+        }
+        if (!Instant.MIN.equals(walker.getLastModifiedTimestamp())) {
+            metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP,
+                    String.valueOf(walker.getLastModifiedTimestamp().toEpochMilli()));
+        }
+        if (walker.getLastModified() > Long.MIN_VALUE) {
+            metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(walker.getLastModified()));
+        }
+    }
+
+    static void recordWalkFailure(Exception e, Metadata metadata, ParseContext context) {
+        String warning = "OneNote parse stopped early; output is partial";
+        LOG.warn(warning, e);
+        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        EmbeddedDocumentUtil.recordException(e, metadata, context);
     }
 
     private static void legacyFallbackDump(String warning, Exception cause, Metadata metadata,

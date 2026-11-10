@@ -55,7 +55,7 @@ public class BitReader {
 
     public int readUInt32(int readingLength) throws IOException {
         byte[] uint32Bytes = this.getBytes(readingLength, 4);
-        return LittleEndianBitConverter.toUInt32(uint32Bytes, 0);
+        return (int) LittleEndianBitConverter.toUInt32(uint32Bytes, 0);
     }
 
     public int readUInt16(int readingLength) throws IOException {
