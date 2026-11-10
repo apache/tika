@@ -26,8 +26,6 @@ class FileNodeUnion {
     GlobalIdTableEntry3FNDX globalIdTableEntry3FNDX = new GlobalIdTableEntry3FNDX();
     ObjectRevisionWithRefCountFNDX objectRevisionWithRefCountFNDX =
             new ObjectRevisionWithRefCountFNDX();
-    ObjectInfoDependencyOverrides objectInfoDependencyOverrides =
-            new ObjectInfoDependencyOverrides();
     ObjectDeclarationWithRefCount objectDeclarationWithRefCount =
             new ObjectDeclarationWithRefCount();
     RootObjectReference rootObjectReference = new RootObjectReference();
@@ -107,16 +105,6 @@ class FileNodeUnion {
     public FileNodeUnion setObjectRevisionWithRefCountFNDX(
             ObjectRevisionWithRefCountFNDX objectRevisionWithRefCountFNDX) {
         this.objectRevisionWithRefCountFNDX = objectRevisionWithRefCountFNDX;
-        return this;
-    }
-
-    public ObjectInfoDependencyOverrides getObjectInfoDependencyOverrides() {
-        return objectInfoDependencyOverrides;
-    }
-
-    public FileNodeUnion setObjectInfoDependencyOverrides(
-            ObjectInfoDependencyOverrides objectInfoDependencyOverrides) {
-        this.objectInfoDependencyOverrides = objectInfoDependencyOverrides;
         return this;
     }
 

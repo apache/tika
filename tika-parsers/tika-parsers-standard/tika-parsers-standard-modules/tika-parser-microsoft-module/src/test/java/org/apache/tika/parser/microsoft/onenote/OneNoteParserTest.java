@@ -1048,6 +1048,68 @@ public class OneNoteParserTest extends TikaTest {
         assertEquals(List.of(), contentRoots.invoke(walker, edit, Map.of()));
     }
 
+    @Test
+    public void testDeepPropertySetNestingIsDepthCapped(@TempDir Path tempDir) throws Exception {
+        // property sets nested inside one node recurse like file nodes do
+        FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
+        root.propertySet = new PropertySet();
+        PropertySet current = root.propertySet;
+        for (int i = 0; i < 600; i++) {
+            PropertyValue value = new PropertyValue();
+            value.propertyId = new OneNotePropertyId(0x11L << 26);
+            value.propertySet = new PropertySet();
+            value.propertySet.rgPridsData = new ArrayList<>();
+            current.rgPridsData = new ArrayList<>(List.of(value));
+            current = value.propertySet;
+        }
+        Metadata metadata = walkWithEmptyFile(tempDir, root);
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("exceeded depth limit"))
+                .count());
+    }
+
+    @Test
+    public void testObjectStreamEntriesAreChargedPerRead(@TempDir Path tempDir)
+            throws Exception {
+        // declarations sharing one large stream would each copy it
+        int count = 60_000;
+        ByteBuffer buf = ByteBuffer.allocate(4 + 4 * count).order(ByteOrder.LITTLE_ENDIAN);
+        buf.putInt(count);
+        Path file = Files.write(tempDir.resolve("stream"), buf.array());
+        OneNoteDocument document = new OneNoteDocument();
+        Revision revision = new Revision();
+        revision.globalId.put(0L, GUID.nil());
+        document.revisionMap.put(document.currentRevision, revision);
+        Method read = OneNotePtr.class.getDeclaredMethod(
+                "deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs");
+        read.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(document, dif);
+            ptr.reposition(new FileChunkReference(0, buf.capacity()));
+            read.invoke(ptr);
+            ptr.reposition(new FileChunkReference(0, buf.capacity()));
+            InvocationTargetException e =
+                    assertThrows(InvocationTargetException.class, () -> read.invoke(ptr));
+            assertTrue(e.getCause() instanceof TikaMemoryLimitException, e.getCause().toString());
+        }
+    }
+
+    @Test
+    public void testOverlappingTransactionLogFragmentsFail(@TempDir Path tempDir)
+            throws Exception {
+        // fragment 1 (0, 60) holds 6 entries, then points into itself at (8, 52)
+        ByteBuffer buf = ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN);
+        buf.position(48);
+        buf.putLong(8).putInt(52);
+        Path log = Files.write(tempDir.resolve("log"), buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(log.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            assertThrows(TikaException.class,
+                    () -> ptr.deserializeTransactionLog(new FileChunkReference(0, 60), 100));
+        }
+    }
+
     /** The JCID read from an ObjectDeclarationWithRefCountBody with the given jci. */
     private static JCID declaredJcid(Path tempDir, int jci) throws Exception {
         // CompactID (n=1, guidIndex=0), jci/odcs/flags, reserved
@@ -1167,26 +1229,6 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
-    public void testDependencyOverrideCountsAreBoundedByTheNode(@TempDir Path tempDir)
-            throws Exception {
-        // a 12-byte node declaring 500 one-byte overrides inside a larger file: the counts
-        // must be checked against the node, not left to read the bytes that follow it
-        Path file = tempDir.resolve("overrides");
-        Files.write(file, ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN)
-                .putInt(500).putInt(0).putInt(0).array());
-        Method deserialize = OneNotePtr.class.getDeclaredMethod(
-                "deserializeObjectInfoDependencyOverrideData");
-        deserialize.setAccessible(true);
-        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
-            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
-            ptr.reposition(new FileChunkReference(0, 12));
-            InvocationTargetException e = assertThrows(InvocationTargetException.class,
-                    () -> deserialize.invoke(ptr));
-            assertTrue(e.getCause() instanceof TikaException, e.getCause().toString());
-        }
-    }
-
-    @Test
     public void testNegativeFileDataStoreLengthIsRejected(@TempDir Path tempDir)
             throws Exception {
         // header GUID, cb = -16, unused, reserved, then room for a footer
@@ -1212,8 +1254,9 @@ public class OneNoteParserTest extends TikaTest {
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
             OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
             OneNotePtr copy = new OneNotePtr(ptr);
+            // an empty file gets the 100,000 floor
             for (int i = 0; i < 100; i++) {
-                reserve.invoke(i % 2 == 0 ? ptr : copy, 100_000);
+                reserve.invoke(i % 2 == 0 ? ptr : copy, 1_000);
             }
             InvocationTargetException e = assertThrows(InvocationTargetException.class,
                     () -> reserve.invoke(copy, 1));

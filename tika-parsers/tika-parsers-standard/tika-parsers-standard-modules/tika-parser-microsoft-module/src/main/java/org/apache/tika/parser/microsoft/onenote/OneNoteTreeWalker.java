@@ -123,6 +123,9 @@ class OneNoteTreeWalker {
     private final long initialVisits;
     private final Set<Long> emittedEmbedded = new HashSet<>();
     private boolean visitBudgetWarningRecorded;
+    // text read is bounded by the file size; set on first use
+    private long textBytesRemaining = Long.MIN_VALUE;
+    private boolean textBudgetWarningRecorded;
 
     /** {@code roleAndContext} is null to crawl all root file nodes, ignoring revisions. */
     public OneNoteTreeWalker(OneNoteTreeWalkerOptions options, OneNoteDocument oneNoteDocument,
@@ -477,6 +480,22 @@ class OneNoteTreeWalker {
     private void processPropertySet(PropertySet propertySet, OneNotePropertyId parentPropertyId,
                                     int objectType)
             throws IOException, TikaException, SAXException {
+        // nested property sets recurse too
+        if (walkDepth >= MAX_WALK_DEPTH) {
+            recordDepthWarning();
+            return;
+        }
+        walkDepth++;
+        try {
+            processPropertySetInternal(propertySet, parentPropertyId, objectType);
+        } finally {
+            walkDepth--;
+        }
+    }
+
+    private void processPropertySetInternal(PropertySet propertySet,
+                                            OneNotePropertyId parentPropertyId, int objectType)
+            throws IOException, TikaException, SAXException {
         emitImage(propertySet);
         List<String> outerInkWords = inkWords;
         List<OneNoteText.TextRun> outerTextRuns = textRuns;
@@ -654,7 +673,9 @@ class OneNoteTreeWalker {
             // the role is the reference the author object was reached through
             OneNotePropertyEnum role =
                     parentPropertyId == null ? null : parentPropertyId.propertyEnum;
-            if (!author.isBlank()) {
+            if (!author.isBlank() && author.length() <= OneNoteText.MAX_AUTHOR_CHARS &&
+                    authors.size() + mostRecentAuthors.size() + originalAuthors.size() <
+                            OneNoteText.MAX_AUTHORS) {
                 if (role == OneNotePropertyEnum.AuthorMostRecent) {
                     mostRecentAuthors.add(author);
                 } else if (role == OneNotePropertyEnum.AuthorOriginal) {
@@ -783,6 +804,9 @@ class OneNoteTreeWalker {
                     "File data store cb " + content.size() + " exceeds document size: " +
                             dif.size());
         }
+        if (content.size() > 2 * (OneNoteText.MAX_AUTHOR_CHARS + 1)) {
+            return "";
+        }
         ByteBuffer buf = ByteBuffer.allocate(content.size());
         dif.read(buf);
         return new String(buf.array(), StandardCharsets.UTF_16LE).replace("\u0000", "");
@@ -801,7 +825,31 @@ class OneNoteTreeWalker {
         if (options.isOnlyLatestRevision() && versionHistoryDepth > 0) {
             return false;
         }
-        return textAlreadyFetched.add(Pair.of(dif.position(), length));
+        if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
+            return false;
+        }
+        if (textBytesRemaining == Long.MIN_VALUE) {
+            textBytesRemaining = 2 * dif.size();
+        }
+        textBytesRemaining -= length;
+        if (textBytesRemaining < 0) {
+            // overlapping text regions in a crafted file
+            recordTextBudgetWarning();
+            return false;
+        }
+        return true;
+    }
+
+    private void recordTextBudgetWarning() {
+        if (textBudgetWarningRecorded) {
+            return;
+        }
+        textBudgetWarningRecorded = true;
+        String warning = "OneNote text exceeds twice the file size; the rest is skipped";
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
     }
 
     private void handleRichEditTextUnicode(int length)

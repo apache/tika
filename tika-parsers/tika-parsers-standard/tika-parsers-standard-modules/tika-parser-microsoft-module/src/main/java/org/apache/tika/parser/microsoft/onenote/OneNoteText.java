@@ -39,6 +39,9 @@ public final class OneNoteText {
      * taken from the LCID.
      */
     private static final Pattern INK_PUNCTUATION = Pattern.compile("[.,;:!?)\\]}]+");
+    /** Longer author names and more distinct authors are dropped. */
+    public static final int MAX_AUTHOR_CHARS = 1000;
+    public static final int MAX_AUTHORS = 1000;
     public static final Charset EXTENDED_ASCII = Charset.forName("windows-1252");
 
     /**

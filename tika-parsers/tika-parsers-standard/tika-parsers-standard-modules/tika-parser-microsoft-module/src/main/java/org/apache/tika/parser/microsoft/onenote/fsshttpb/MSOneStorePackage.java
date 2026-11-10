@@ -1605,7 +1605,9 @@ public class MSOneStorePackage {
     }
 
     private void recordAuthor(String author, AuthorRole role) {
-        if (author.isBlank()) {
+        if (author.isBlank() || author.length() > OneNoteText.MAX_AUTHOR_CHARS ||
+                authors.size() + mostRecentAuthors.size() + originalAuthors.size() >=
+                        OneNoteText.MAX_AUTHORS) {
             return;
         }
         if (role == AuthorRole.MOST_RECENT) {

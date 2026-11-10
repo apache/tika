@@ -51,21 +51,34 @@ class OneNotePtr {
     private static final int MAX_PROPERTY_VALUES = 100_000;
     // real files spend at least 12.9 bytes per property value
     private static final int MIN_BYTES_PER_PROPERTY_VALUE = 8;
-    private static final int MAX_PROPERTY_SET_DEPTH = 1000;
+    private static final int MAX_PROPERTY_SET_DEPTH = 100;
     // the format nests file node lists only a handful of levels deep; 100 leaves wide
     // margin while keeping the recursion far from any stack limit
     private static final int MAX_FILE_NODE_LIST_DEPTH = 100;
 
     // the per-node cap still lets many GlobalIdTableEntry3 nodes copy entries without bound
     private static final long MAX_GLOBAL_ID_COPIES = 10_000_000;
+    // floor for the limits below that scale with file size
+    private static final long MIN_DOCUMENT_LIMIT = 100_000;
 
-    /** Limits shared by every pointer copied while parsing one document. */
+    /**
+     * Limits shared by every pointer copied while parsing one document. Each scales with file
+     * size, so structures that point at the same bytes many times cannot multiply them.
+     */
     private static final class DocumentBudget {
-        private long globalIdCopiesRemaining = MAX_GLOBAL_ID_COPIES;
+        private long globalIdCopiesRemaining;
         private long propertyValuesRemaining;
+        // object stream entries are 4 bytes each
+        private long streamEntriesRemaining;
+        // file nodes are at least 4 bytes each
+        private long fileNodesRemaining;
 
         DocumentBudget(long fileSize) {
             propertyValuesRemaining = propertyValueLimit(fileSize);
+            globalIdCopiesRemaining =
+                    Math.min(MAX_GLOBAL_ID_COPIES, Math.max(MIN_DOCUMENT_LIMIT, fileSize));
+            streamEntriesRemaining = Math.max(MIN_DOCUMENT_LIMIT, fileSize / 4);
+            fileNodesRemaining = Math.max(MIN_DOCUMENT_LIMIT, fileSize / 4);
         }
     }
 
@@ -249,6 +262,8 @@ class OneNotePtr {
         Set<Long> seenFragments = new HashSet<>();
         FileChunkReference fragment = first;
         long transactions = 0;
+        // entries are 8 bytes; overlapping fragments would otherwise re-read them
+        long entriesRemaining = dif.size() / 8;
         while (transactions < cTransactions && !FileChunkReference.nil().equals(fragment)) {
             if (!seenFragments.add(fragment.stp) || fragment.cb < 12 ||
                     fragment.stp + fragment.cb > dif.size()) {
@@ -257,6 +272,10 @@ class OneNotePtr {
             }
             reposition(fragment);
             long entries = (fragment.cb - 12) / 8;
+            entriesRemaining -= entries;
+            if (entriesRemaining < 0) {
+                throw new TikaException("OneNote transaction log is longer than the file");
+            }
             for (long i = 0; i < entries && transactions < cTransactions; i++) {
                 long srcId = deserializeLittleEndianInt();
                 long value = deserializeLittleEndianInt();
@@ -369,6 +388,11 @@ class OneNotePtr {
                     break;
                 }
                 pushBack.commit();
+                if (--documentBudget.fileNodesRemaining < 0) {
+                    // lists that overlap or share fragments re-read the same bytes
+                    throw new TikaMemoryLimitException(
+                            "OneNote file nodes exceed the document's limit");
+                }
                 document.fileNodeCount++;
                 FileNode dereference = curPath.dereference(document);
                 FileNode lastChild = data.children.get(data.children.size() - 1);
@@ -584,12 +608,7 @@ class OneNotePtr {
                     deserializeExtendedGUID() : ExtendedGUID.nil();
             // FIXME: deal with ObjectDataEncryptionKey
         } else if (data.id == FndStructureConstants.ObjectInfoDependencyOverridesFND) {
-            OneNotePtr content = new OneNotePtr(this);
-            if (!data.ref.equals(FileChunkReference.nil())) {
-                content.reposition(data.ref); // otherwise it's positioned right at this node
-            }
-            data.subType.objectInfoDependencyOverrides.data =
-                    content.deserializeObjectInfoDependencyOverrideData();
+            // reference count overrides: nothing for text or metadata
         } else if (data.id == FndStructureConstants.FileDataStoreListReferenceFND) {
             // already processed this
         } else if (data.id == FndStructureConstants.FileDataStoreObjectReferenceFND) {
@@ -827,30 +846,6 @@ class OneNotePtr {
         return data;
     }
 
-    private ObjectInfoDependencyOverrideData deserializeObjectInfoDependencyOverrideData()
-            throws IOException, TikaException {
-        ObjectInfoDependencyOverrideData objectInfoDependencyOverrideData =
-                new ObjectInfoDependencyOverrideData();
-        long num_8bit_overrides = deserializeLittleEndianInt();
-        long num_32bit_overrides = deserializeLittleEndianInt();
-        long crc = deserializeLittleEndianInt();
-        // the reads would otherwise run past this node into whatever follows it
-        if (num_8bit_overrides + 4 * num_32bit_overrides > end - offset) {
-            throw new TikaException("ObjectInfoDependencyOverrideData counts " +
-                    num_8bit_overrides + "/" + num_32bit_overrides + " exceed the " +
-                    (end - offset) + " bytes remaining");
-        }
-        for (int i = 0; i < num_8bit_overrides; ++i) {
-            int local = deserializeLittleEndianChar();
-            objectInfoDependencyOverrideData.overrides1.add(local);
-        }
-        for (int i = 0; i < num_32bit_overrides; ++i) {
-            long local = deserializeLittleEndianInt();
-            objectInfoDependencyOverrideData.overrides2.add(local);
-        }
-        return objectInfoDependencyOverrideData;
-    }
-
     private CompactID deserializeCompactID() throws IOException, TikaException {
         CompactID compactID = new CompactID();
         compactID.n = deserializeLittleEndianChar();
@@ -1028,8 +1023,8 @@ class OneNotePtr {
 
     private void reserveGlobalIdCopies(int count) throws TikaException {
         if (count > documentBudget.globalIdCopiesRemaining) {
-            throw new TikaMemoryLimitException("OneNote global ID table copies exceed limit " +
-                    MAX_GLOBAL_ID_COPIES);
+            throw new TikaMemoryLimitException(
+                    "OneNote global ID table copies exceed the document's limit");
         }
         documentBudget.globalIdCopiesRemaining -= count;
     }
@@ -1270,6 +1265,11 @@ class OneNotePtr {
                     data.extendedStreamsPresent);
         }
         int count = checkedCount(data.count, "object stream");
+        if (count > documentBudget.streamEntriesRemaining) {
+            throw new TikaMemoryLimitException(
+                    "OneNote object stream entries exceed the document's limit");
+        }
+        documentBudget.streamEntriesRemaining -= count;
         for (int i = 0; i < count; ++i) {
             CompactID cid;
             cid = deserializeCompactID();

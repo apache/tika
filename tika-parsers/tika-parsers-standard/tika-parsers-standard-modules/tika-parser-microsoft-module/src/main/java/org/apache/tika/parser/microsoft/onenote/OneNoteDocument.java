@@ -86,7 +86,9 @@ class OneNoteDocument {
         revisionMap.putIfAbsent(fn.gosid, new Revision());
         Revision toModify = revisionMap.get(fn.gosid);
         toModify.gosid = fn.gosid;
-        toModify.dependent = fn.subType.revisionManifest.ridDependent;
+        // a revision cannot depend on itself
+        toModify.dependent = fn.gosid.equals(fn.subType.revisionManifest.ridDependent) ?
+                ExtendedGUID.nil() : fn.subType.revisionManifest.ridDependent;
         currentRevision = fn.gosid;
     }
 
