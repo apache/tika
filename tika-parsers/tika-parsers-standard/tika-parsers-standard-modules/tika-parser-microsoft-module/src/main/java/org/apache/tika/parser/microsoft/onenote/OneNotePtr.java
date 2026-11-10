@@ -473,8 +473,6 @@ class OneNotePtr {
             data.subType.revisionManifest.odcsDefault = deserializeLittleEndianShort();
 
             data.gctxid = ExtendedGUID.nil();
-            document.registerAdditionalRevisionRole(data.gosid,
-                    data.subType.revisionManifest.revisionRole, data.gctxid);
             document.registerRevisionManifest(data);
         } else if (data.id == FndStructureConstants.RevisionManifestStart6FND ||
                 data.id == FndStructureConstants.RevisionManifestStart7FND) {
@@ -490,8 +488,6 @@ class OneNotePtr {
             if (data.id == FndStructureConstants.RevisionManifestStart7FND) {
                 data.gctxid = deserializeExtendedGUID(); // the rid
             }
-            document.registerAdditionalRevisionRole(data.gosid,
-                    data.subType.revisionManifest.revisionRole, data.gctxid);
             document.registerRevisionManifest(data);
         } else if (data.id == FndStructureConstants.GlobalIdTableStartFNDX) {
             data.subType.globalIdTableStartFNDX.reserved = deserializeLittleEndianChar();
@@ -586,8 +582,6 @@ class OneNotePtr {
 
             data.gctxid = data.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND ?
                     deserializeExtendedGUID() : ExtendedGUID.nil();
-            document.registerAdditionalRevisionRole(data.gosid,
-                    data.subType.revisionRoleDeclaration.revisionRole, data.gctxid);
             // FIXME: deal with ObjectDataEncryptionKey
         } else if (data.id == FndStructureConstants.ObjectInfoDependencyOverridesFND) {
             OneNotePtr content = new OneNotePtr(this);

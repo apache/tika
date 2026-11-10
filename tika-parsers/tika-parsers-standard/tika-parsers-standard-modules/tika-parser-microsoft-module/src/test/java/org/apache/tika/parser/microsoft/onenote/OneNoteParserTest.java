@@ -488,6 +488,9 @@ public class OneNoteParserTest extends TikaTest {
         String txt = getText("testOneNote2.one", new Metadata(), context);
         assertContains("tubular", txt);
         assertContains("neat info about totally killin it bro", txt);
+        // only in a saved page version (under a version-history reference)
+        assertNotContained("There are", getText("testOneNote3.one"));
+        assertContains("There are", getText("testOneNote3.one", new Metadata(), context));
 
         Parser parser = TikaLoader.load(getConfigPath(OneNoteParserTest.class,
                 "tika-config-onenote-page-history.json")).loadAutoDetectParser();
@@ -918,26 +921,67 @@ public class OneNoteParserTest extends TikaTest {
         ByteBuffer start = ByteBuffer.allocate(58).order(ByteOrder.LITTLE_ENDIAN);
         start.putInt(0x1B | 58 << 10 | 1 << 31).put(new byte[15]).put((byte) 7).putInt(1)
                 .put(new byte[20]).putLong(0).putInt(1).putShort((short) 0);
-        deserializeFileNode(tempDir, "start4", start, document);
-        ExtendedGUID rid = document.currentRevision;
-        assertEquals(Pair.of(1L, ExtendedGUID.nil()), document.revisionRoleMap.get(rid));
+        FileNode manifest = deserializeFileNode(tempDir, "start4", start, document);
         // RevisionRoleDeclarationFND: rid, revisionRole
         ByteBuffer declaration = ByteBuffer.allocate(28).order(ByteOrder.LITTLE_ENDIAN);
         declaration.putInt(0x5C | 28 << 10 | 1 << 31).put(new byte[15]).put((byte) 8).putInt(1)
                 .putInt(4);
-        deserializeFileNode(tempDir, "declaration", declaration, document);
-        assertEquals(1, document.revisionRoleMap.values().stream()
-                .filter(Pair.of(4L, ExtendedGUID.nil())::equals).count());
+        FileNode role = deserializeFileNode(tempDir, "declaration", declaration, document);
+        List<FileNode> list = List.of(manifest, role);
+        assertEquals(document.currentRevision,
+                OneNoteTreeWalker.labeledRevision(list, Pair.of(1L, ExtendedGUID.nil())));
+        assertEquals(role.gosid,
+                OneNoteTreeWalker.labeledRevision(list, Pair.of(4L, ExtendedGUID.nil())));
     }
 
-    private static void deserializeFileNode(Path tempDir, String name, ByteBuffer node,
-                                            OneNoteDocument document) throws Exception {
+    @Test
+    public void testCurrentRevisionKeepsItsLabelWhenGivenAnother() {
+        GUID guid = new GUID(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+        ExtendedGUID older = new ExtendedGUID(guid, 1);
+        ExtendedGUID current = new ExtendedGUID(guid, 2);
+        ExtendedGUID context = new ExtendedGUID(guid, 3);
+        Pair<Long, ExtendedGUID> label = Pair.of(1L, ExtendedGUID.nil());
+        List<FileNode> list = new ArrayList<>(List.of(
+                manifestStart(older, 1, ExtendedGUID.nil()),
+                manifestStart(current, 1, ExtendedGUID.nil()),
+                // the current revision also labeled in another context
+                roleDeclaration(current, 1, context)));
+        assertEquals(current, OneNoteTreeWalker.labeledRevision(list, label));
+        assertEquals(current, OneNoteTreeWalker.labeledRevision(list, Pair.of(1L, context)));
+        // a later declaration moves the label back to the older revision
+        list.add(roleDeclaration(older, 1, ExtendedGUID.nil()));
+        assertEquals(older, OneNoteTreeWalker.labeledRevision(list, label));
+        assertNull(OneNoteTreeWalker.labeledRevision(list, Pair.of(2L, ExtendedGUID.nil())));
+    }
+
+    private static FileNode manifestStart(ExtendedGUID rid, long role, ExtendedGUID context) {
+        FileNode node = new FileNode();
+        node.id = FndStructureConstants.RevisionManifestStart7FND;
+        node.gosid = rid;
+        node.gctxid = context;
+        node.subType.revisionManifest.revisionRole = role;
+        return node;
+    }
+
+    private static FileNode roleDeclaration(ExtendedGUID rid, long role, ExtendedGUID context) {
+        FileNode node = new FileNode();
+        node.id = FndStructureConstants.RevisionRoleAndContextDeclarationFND;
+        node.gosid = rid;
+        node.gctxid = context;
+        node.subType.revisionRoleDeclaration.revisionRole = role;
+        return node;
+    }
+
+    private static FileNode deserializeFileNode(Path tempDir, String name, ByteBuffer node,
+                                                OneNoteDocument document) throws Exception {
         Path file = Files.write(tempDir.resolve(name), node.array());
         Method deserialize = OneNotePtr.class.getDeclaredMethod("deserializeFileNode",
                 FileNode.class, FileNodePtr.class);
         deserialize.setAccessible(true);
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
-            deserialize.invoke(new OneNotePtr(document, dif), new FileNode(), new FileNodePtr());
+            FileNode fileNode = new FileNode();
+            deserialize.invoke(new OneNotePtr(document, dif), fileNode, new FileNodePtr());
+            return fileNode;
         }
     }
 

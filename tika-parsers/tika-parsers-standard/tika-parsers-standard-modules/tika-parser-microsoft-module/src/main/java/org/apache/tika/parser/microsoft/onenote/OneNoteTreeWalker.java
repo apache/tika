@@ -156,48 +156,78 @@ class OneNoteTreeWalker {
     public void walkRootFileNodes() throws IOException, TikaException, SAXException {
         if (options.isCrawlAllFileNodesFromRoot()) {
             walkFileNodeList(oneNoteDocument.root, null);
-        } else {
-            for (ExtendedGUID revisionListGuid : oneNoteDocument.revisionListOrder) {
-                walkRevision(oneNoteDocument.revisionManifestLists.get(revisionListGuid));
+            return;
+        }
+        Set<ExtendedGUID> seenLists = new HashSet<>();
+        List<FileNode> unlabeledLists = new ArrayList<>();
+        for (ExtendedGUID revisionListGuid : oneNoteDocument.revisionListOrder) {
+            if (!seenLists.add(revisionListGuid)) {
+                continue;
             }
-            // metadata and attachments still come from every revision; with no current
-            // content, so does the text
-            collectOnly = contentEmitted;
-            walkedContexts.clear();
-            visitsRemaining = initialVisits;
-            try {
-                walkFileNodeList(oneNoteDocument.root, null);
-            } finally {
-                collectOnly = false;
+            FileNode list = oneNoteDocument.revisionManifestLists.get(revisionListGuid)
+                    .dereference(oneNoteDocument);
+            if (!walkRevision(list)) {
+                unlabeledLists.add(list);
             }
+        }
+        // a list with no current revision gives text from all of its revisions
+        for (FileNode list : unlabeledLists) {
+            walkFileNode(list, null);
+        }
+        // metadata and attachments come from every revision
+        collectOnly = true;
+        walkedContexts.clear();
+        visitsRemaining = initialVisits;
+        try {
+            walkFileNodeList(oneNoteDocument.root, null);
+        } finally {
+            collectOnly = false;
         }
     }
 
-    private boolean hasRevisionRole(ExtendedGUID rid, Pair<Long, ExtendedGUID> revisionRole) {
-        Pair<Long, ExtendedGUID> where = oneNoteDocument.revisionRoleMap.get(rid);
-        return where != null && where.equals(revisionRole);
+    private static boolean isRevisionStart(FileNode node) {
+        return node.id == FndStructureConstants.RevisionManifestStart4FND ||
+                node.id == FndStructureConstants.RevisionManifestStart6FND ||
+                node.id == FndStructureConstants.RevisionManifestStart7FND;
     }
 
-    private void walkRevision(FileNodePtr fileNodePtr)
-            throws IOException, TikaException, SAXException {
-        FileNode revisionFileNode = fileNodePtr.dereference(oneNoteDocument);
-
-        Set<ExtendedGUID> validRevisions = new HashSet<>();
-        for (int i = revisionFileNode.childFileNodeList.children.size() - 1; i >= 0; --i) {
-            FileNode child = revisionFileNode.childFileNodeList.children.get(i);
-            if (roleAndContext != null && hasRevisionRole(child.gosid, roleAndContext)) {
-                validRevisions.add(child.gosid);
-                if (options.isOnlyLatestRevision()) {
-                    break;
-                }
+    /**
+     * @return the revision that holds {@code label} (a revision role and context) last in the
+     * manifest list, or null; a later declaration moves a label to another revision
+     */
+    static ExtendedGUID labeledRevision(List<FileNode> manifestList,
+                                        Pair<Long, ExtendedGUID> label) {
+        for (int i = manifestList.size() - 1; i >= 0; --i) {
+            FileNode node = manifestList.get(i);
+            long role;
+            if (isRevisionStart(node)) {
+                role = node.subType.revisionManifest.revisionRole;
+            } else if (node.id == FndStructureConstants.RevisionRoleDeclarationFND ||
+                    node.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
+                role = node.subType.revisionRoleDeclaration.revisionRole;
+            } else {
+                continue;
             }
+            if (role == label.getLeft() && label.getRight().equals(node.gctxid)) {
+                return node.gosid;
+            }
+        }
+        return null;
+    }
+
+    /** @return false when no revision in the list holds {@code roleAndContext} */
+    private boolean walkRevision(FileNode revisionFileNode)
+            throws IOException, TikaException, SAXException {
+        List<FileNode> children = revisionFileNode.childFileNodeList.children;
+        ExtendedGUID current =
+                roleAndContext == null ? null : labeledRevision(children, roleAndContext);
+        if (current == null) {
+            return false;
         }
         Map<ExtendedGUID, List<ExtendedGUID>> contentRoots = new HashMap<>();
         ExtendedGUID rid = null;
-        for (FileNode child : revisionFileNode.childFileNodeList.children) {
-            if (child.id == FndStructureConstants.RevisionManifestStart4FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart6FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart7FND) {
+        for (FileNode child : children) {
+            if (isRevisionStart(child)) {
                 rid = child.gosid;
             } else if (rid != null &&
                     (child.id == FndStructureConstants.RootObjectReference2FNDX ||
@@ -206,21 +236,15 @@ class OneNoteTreeWalker {
                 contentRoots.computeIfAbsent(rid, k -> new ArrayList<>()).add(child.gosid);
             }
         }
-        for (FileNode child : revisionFileNode.childFileNodeList.children) {
-            if ((child.id == FndStructureConstants.RevisionManifestStart4FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart6FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart7FND) &&
-                    validRevisions.contains(child.gosid)) {
-                walkedRevision = child.gosid;
-                try {
-                    for (ExtendedGUID root : contentRoots(child.gosid, contentRoots)) {
-                        walkFileNodePtr(object(root), null);
-                    }
-                } finally {
-                    walkedRevision = null;
-                }
+        walkedRevision = current;
+        try {
+            for (ExtendedGUID root : contentRoots(current, contentRoots)) {
+                walkFileNodePtr(object(root), null);
             }
+        } finally {
+            walkedRevision = null;
         }
+        return true;
     }
 
     private FileNodePtr object(ExtendedGUID oid) {

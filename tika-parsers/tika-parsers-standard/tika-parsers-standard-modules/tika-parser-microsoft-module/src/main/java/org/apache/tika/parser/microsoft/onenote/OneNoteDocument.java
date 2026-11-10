@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.tuple.Pair;
 
 class OneNoteDocument {
     OneNoteHeader header;
@@ -35,7 +34,6 @@ class OneNoteDocument {
     // declared JCIDs, for object revisions that do not repeat them
     Map<ExtendedGUID, JCID> objectJcids = new HashMap<>();
 
-    Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap = new HashMap<>();
     ExtendedGUID currentRevision = ExtendedGUID.nil();
     FileNodeList root = new FileNodeList();
     // set when the root file node list could not be fully parsed (e.g. a truncated file);
@@ -92,11 +90,6 @@ class OneNoteDocument {
         currentRevision = fn.gosid;
     }
 
-    public void registerAdditionalRevisionRole(ExtendedGUID gosid, long revisionRole,
-                                               ExtendedGUID gctxid) {
-        revisionRoleMap.put(gosid, Pair.of(revisionRole, gctxid));
-    }
-
     public List<ExtendedGUID> getRevisionListOrder() {
         return revisionListOrder;
     }
@@ -140,16 +133,6 @@ class OneNoteDocument {
 
     public OneNoteDocument setGuidToObject(Map<ExtendedGUID, FileNodePtr> guidToObject) {
         this.guidToObject = guidToObject;
-        return this;
-    }
-
-    public Map<ExtendedGUID, Pair<Long, ExtendedGUID>> getRevisionRoleMap() {
-        return revisionRoleMap;
-    }
-
-    public OneNoteDocument setRevisionRoleMap(
-            Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap) {
-        this.revisionRoleMap = revisionRoleMap;
         return this;
     }
 

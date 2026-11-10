@@ -103,6 +103,7 @@ public class OneNoteParser implements Parser {
         OneNoteParserConfig config = context.get(OneNoteParserConfig.class, defaultConfig);
         OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions()
                 .setCrawlAllFileNodesFromRoot(config.isIncludePageHistory())
+                .setOnlyLatestRevision(!config.isIncludePageHistory())
                 .setIncludeDeletedContent(config.isIncludeDeletedContent());
         try (OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
                         tis.getFile())) {
