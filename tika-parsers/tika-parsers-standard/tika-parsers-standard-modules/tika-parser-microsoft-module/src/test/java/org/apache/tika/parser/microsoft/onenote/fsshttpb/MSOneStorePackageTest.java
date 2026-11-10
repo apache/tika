@@ -2413,6 +2413,64 @@ public class MSOneStorePackageTest {
         assertFalse(walk(pkg).contains("derived picture"));
     }
 
+    /**
+     * A printout's page images each reference the shared source file through a property
+     * other than a picture or file container; the file must not take a page image's name.
+     */
+    @Test
+    public void testSharedSourceFileDoesNotInheritPageImageName() throws Exception {
+        ExGuid sourceID = id(90);
+        RevisionStoreObject source = object(sourceID, propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        source.fileDataObject = fileData("source file");
+        List<RevisionStoreObject> objects = new ArrayList<>(Collections.singletonList(source));
+        List<ExGuid> pages = new ArrayList<>();
+        for (int i = 1; i <= 2; i++) {
+            RevisionStoreObject pageImage = object(id(90 + 2 * i), propertySet(
+                            new PropertySpec(PropertyType.ObjectID, 0x20003FFF, new NoData()),
+                            new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()),
+                            new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                    0x1C001DD7, utf16Text("printout_" + i + ".pdf"))),
+                    Arrays.asList(sourceID, id(91 + 2 * i)), Collections.emptyList());
+            RevisionStoreObject picture = object(id(91 + 2 * i), propertySet(),
+                    Collections.emptyList(), Collections.emptyList());
+            picture.fileDataObject = fileData("page " + i);
+            objects.add(pageImage);
+            objects.add(picture);
+            pages.add(pageImage.objectID);
+        }
+        RevisionStoreObject root = object(id(99), propertySet(
+                        new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                                arrayNumber(2))), pages, Collections.emptyList());
+        objects.add(0, root);
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(objects.toArray(new RevisionStoreObject[0])));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        List<String> names = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata embeddedMetadata, ParseContext c) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(org.apache.tika.io.TikaInputStream stream,
+                                      org.xml.sax.ContentHandler handler,
+                                      Metadata embeddedMetadata, ParseContext c,
+                                      boolean outputHtml) {
+                names.add(embeddedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+            }
+        });
+        walkXml(pkg, new Metadata(), context);
+        assertEquals(Arrays.asList(null, "printout_1.pdf", "printout_2.pdf"), names);
+    }
+
     @Test
     public void testNestedPropertySetsAndMissingReferencesAreTraversedSafely() throws Exception {
         ExGuid childId = id(2);

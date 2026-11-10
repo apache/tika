@@ -23,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -38,6 +36,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectS
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectStreamOfOSIDs;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.LittleEndianBitConverter;
 
 /**
@@ -109,7 +108,7 @@ public class PropertyDeserializationBoundsTest {
                 "deserializeItemsFromByteArray", byte[].class, AtomicInteger.class, int.class);
         deserialize.setAccessible(true);
         deserialize.invoke(schema, bytes, new AtomicInteger(4), 16);
-        assertEquals(UUID.nameUUIDFromBytes(Arrays.copyOfRange(bytes, 4, 20)), schema.guid);
+        assertEquals(GuidUtil.fromMicrosoftBytes(bytes, 4), schema.guid);
     }
 
     @Test

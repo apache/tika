@@ -46,7 +46,7 @@ public class BitReaderTest {
             while (bitsLeft > 0) {
                 int kind = random.nextInt(3);
                 if (kind == 0 && bitsLeft >= 128) {
-                    assertEquals(UUID.nameUUIDFromBytes(referenceBytes(reference, 128, 16)),
+                    assertEquals(GuidUtil.fromMicrosoftBytes(referenceBytes(reference, 128, 16), 0),
                             reader.readGuid());
                     bitsLeft -= 128;
                 } else if (kind == 1 && bitsLeft >= 8) {
@@ -69,8 +69,17 @@ public class BitReaderTest {
     /**
      * The GUID cache slot depends on high ^ low, so XORing both 8-byte halves of a GUID with the
      * same mask gives a different GUID in the same slot. Reads alternating between the two must
-     * each return their own MD5-derived UUID; a repeat read of the resident one is a cache hit.
+     * each return their own UUID; a repeat read of the resident one is a cache hit.
      */
+    /** GUIDs are stored in Microsoft byte order, as in the encryption key root GUID. */
+    @Test
+    public void testGuidByteOrder() throws IOException {
+        byte[] data = {(byte) 0xF8, 0x17, 0x37, 0x4A, 0x14, 0x1C, (byte) 0xE7, 0x49,
+                (byte) 0x95, 0x26, (byte) 0x81, (byte) 0xD9, 0x42, (byte) 0xDE, 0x17, 0x41};
+        assertEquals(UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"),
+                new BitReader(data, 0).readGuid());
+    }
+
     @Test
     public void testGuidCacheCollision() throws IOException {
         byte[] first = new byte[16];
@@ -78,8 +87,8 @@ public class BitReaderTest {
         byte[] second = first.clone();
         second[0] ^= (byte) 0x5A;
         second[8] ^= (byte) 0x5A;
-        UUID firstUuid = UUID.nameUUIDFromBytes(first);
-        UUID secondUuid = UUID.nameUUIDFromBytes(second);
+        UUID firstUuid = GuidUtil.fromMicrosoftBytes(first, 0);
+        UUID secondUuid = GuidUtil.fromMicrosoftBytes(second, 0);
 
         byte[] data = new byte[16 * 5];
         for (int i = 0; i < 5; i++) {

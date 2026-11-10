@@ -16,9 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 
 public class StorageManifestSchemaGUID extends StreamObject {
@@ -36,8 +37,7 @@ public class StorageManifestSchemaGUID extends StreamObject {
             throw new StreamObjectParseErrorException(currentIndex.get(),
                     "StorageManifestSchemaGUID", "Not enough bytes for the GUID", null);
         }
-        byte[] temp = Arrays.copyOfRange(byteArray, index.get(), index.get() + 16);
-        this.guid = UUID.nameUUIDFromBytes(temp);
+        this.guid = GuidUtil.fromMicrosoftBytes(byteArray, index.get());
         index.addAndGet(16);
 
         endItems(currentIndex, index, lengthOfItems, "StorageManifestSchemaGUID");

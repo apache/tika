@@ -1286,7 +1286,9 @@ public class MSOneStorePackage {
             return parentInfo == null ? new EmbeddedResourceInfo(null,
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString()) : parentInfo;
         }
-        return parentInfo;
+        // other references may reach objects shared across nodes, e.g. a printout's source
+        // file referenced by every page image, so the node's name does not apply to them
+        return null;
     }
 
     private static final class EmbeddedResourceInfo {

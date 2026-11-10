@@ -91,7 +91,7 @@ public class BitReader {
         if (entry != null && entry.high == high && entry.low == low) {
             return entry.uuid;
         }
-        UUID uuid = UUID.nameUUIDFromBytes(raw);
+        UUID uuid = GuidUtil.fromMicrosoftBytes(raw, 0);
         GUID_CACHE[slot] = new GuidCacheEntry(high, low, uuid);
         return uuid;
     }

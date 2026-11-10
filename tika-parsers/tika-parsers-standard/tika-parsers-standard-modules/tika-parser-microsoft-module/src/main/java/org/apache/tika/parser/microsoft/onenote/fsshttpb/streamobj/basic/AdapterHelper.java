@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
-import java.util.Arrays;
 import java.util.UUID;
+
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 
 public class AdapterHelper {
 
     public static UUID readGuid(byte[] byteArray, int startIndex) {
-        byte[] bytes = Arrays.copyOfRange(byteArray, startIndex, startIndex + 16);
-        return UUID.nameUUIDFromBytes(bytes);
+        return GuidUtil.fromMicrosoftBytes(byteArray, startIndex);
     }
 }
