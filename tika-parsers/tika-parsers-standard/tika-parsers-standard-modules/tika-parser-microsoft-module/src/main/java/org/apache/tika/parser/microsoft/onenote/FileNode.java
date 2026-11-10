@@ -93,11 +93,6 @@ class FileNode {
         return id;
     }
 
-    public FileNode setId(long id) {
-        this.id = id;
-        return this;
-    }
-
     public long getSize() {
         return size;
     }
@@ -107,90 +102,9 @@ class FileNode {
         return this;
     }
 
-    public long getBaseType() {
-        return baseType;
-    }
-
-    public FileNode setBaseType(long baseType) {
-        this.baseType = baseType;
-        return this;
-    }
-
-    public ExtendedGUID getGosid() {
-        return gosid;
-    }
-
     public FileNode setGosid(ExtendedGUID gosid) {
         this.gosid = gosid;
         return this;
-    }
-
-    public ExtendedGUID getGctxid() {
-        return gctxid;
-    }
-
-    public FileNode setGctxid(ExtendedGUID gctxid) {
-        this.gctxid = gctxid;
-        return this;
-    }
-
-    public GUID getFileDataStoreReference() {
-        return fileDataStoreReference;
-    }
-
-    public FileNode setFileDataStoreReference(GUID fileDataStoreReference) {
-        this.fileDataStoreReference = fileDataStoreReference;
-        return this;
-    }
-
-    public FileChunkReference getRef() {
-        return ref;
-    }
-
-    public FileNode setRef(FileChunkReference ref) {
-        this.ref = ref;
-        return this;
-    }
-
-    public PropertySet getPropertySet() {
-        return propertySet;
-    }
-
-    public FileNode setPropertySet(PropertySet propertySet) {
-        this.propertySet = propertySet;
-        return this;
-    }
-
-    public boolean isFileData() {
-        return isFileData;
-    }
-
-    public FileNode setFileData(boolean fileData) {
-        isFileData = fileData;
-        return this;
-    }
-
-    public FileNodeList getChildFileNodeList() {
-        return childFileNodeList;
-    }
-
-    public FileNode setChildFileNodeList(FileNodeList childFileNodeList) {
-        this.childFileNodeList = childFileNodeList;
-        return this;
-    }
-
-    public FileNodeUnion getSubType() {
-        return subType;
-    }
-
-    public FileNode setSubType(FileNodeUnion subType) {
-        this.subType = subType;
-        return this;
-    }
-
-    /** What this node's GUID means in this context. */
-    public String getIdDesc() {
-        return idDesc;
     }
 
     @Override

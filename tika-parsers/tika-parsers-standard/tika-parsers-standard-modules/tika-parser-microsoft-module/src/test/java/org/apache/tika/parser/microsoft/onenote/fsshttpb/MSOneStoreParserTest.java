@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
+import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestCurrentRevision;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
@@ -134,7 +134,7 @@ public class MSOneStoreParserTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(), metadata,
                 context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
         assertEquals(0, metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
     }
@@ -267,7 +267,7 @@ public class MSOneStoreParserTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(), metadata,
                 context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
         assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .anyMatch(warning -> warning.contains(expected)), expected);

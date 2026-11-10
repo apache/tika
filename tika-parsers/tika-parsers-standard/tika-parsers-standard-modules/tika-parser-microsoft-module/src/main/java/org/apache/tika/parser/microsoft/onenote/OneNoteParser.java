@@ -100,11 +100,7 @@ public class OneNoteParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        OneNoteParserConfig config = context.get(OneNoteParserConfig.class, defaultConfig);
-        OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions()
-                .setCrawlAllFileNodesFromRoot(config.isIncludePageHistory())
-                .setOnlyLatestRevision(!config.isIncludePageHistory())
-                .setIncludeDeletedContent(config.isIncludeDeletedContent());
+        OneNoteParserConfig options = context.get(OneNoteParserConfig.class, defaultConfig);
         try (OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
                         tis.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);

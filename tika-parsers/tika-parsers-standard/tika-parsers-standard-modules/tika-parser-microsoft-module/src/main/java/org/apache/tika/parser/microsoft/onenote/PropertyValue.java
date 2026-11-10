@@ -35,49 +35,12 @@ class PropertyValue {
     PropertySet propertySet = new PropertySet();
     FileChunkReference rawData = new FileChunkReference(); // FourBytesOfLengthFollowedByData
 
-    public OneNotePropertyId getPropertyId() {
-        return propertyId;
-    }
-
-    public PropertyValue setPropertyId(OneNotePropertyId propertyId) {
-        this.propertyId = propertyId;
-        return this;
-    }
-
     public long getScalar() {
         return scalar;
     }
 
-    public PropertyValue setScalar(long scalar) {
-        this.scalar = scalar;
-        return this;
-    }
-
-    public List<CompactID> getCompactIDs() {
-        return compactIDs;
-    }
-
-    public PropertyValue setCompactIDs(List<CompactID> compactIDs) {
-        this.compactIDs = compactIDs;
-        return this;
-    }
-
-    public PropertySet getPropertySet() {
-        return propertySet;
-    }
-
-    public PropertyValue setPropertySet(PropertySet propertySet) {
-        this.propertySet = propertySet;
-        return this;
-    }
-
     public FileChunkReference getRawData() {
         return rawData;
-    }
-
-    public PropertyValue setRawData(FileChunkReference rawData) {
-        this.rawData = rawData;
-        return this;
     }
 
     @Override

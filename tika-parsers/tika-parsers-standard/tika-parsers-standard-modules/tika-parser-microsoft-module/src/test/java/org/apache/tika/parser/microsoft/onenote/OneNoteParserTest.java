@@ -147,16 +147,22 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testEmitSectionGuidSkipsNullAndNil() {
         Metadata metadata = new Metadata();
-        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(null), metadata);
-        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(GUID.nil()), metadata);
+        OneNoteParser.emitSectionFileGuid(header(null), metadata);
+        OneNoteParser.emitSectionFileGuid(header(GUID.nil()), metadata);
         assertNull(metadata.get(OneNote.SECTION_GUID));
 
         GUID fileGuid = new GUID(new int[] {
                 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x08,
                 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00
         });
-        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(fileGuid), metadata);
+        OneNoteParser.emitSectionFileGuid(header(fileGuid), metadata);
         assertEquals(fileGuid.toString(), metadata.get(OneNote.SECTION_GUID));
+    }
+
+    private static OneNoteHeader header(GUID guidFile) {
+        OneNoteHeader header = new OneNoteHeader();
+        header.guidFile = guidFile;
+        return header;
     }
 
     @Test
@@ -481,7 +487,7 @@ public class OneNoteParserTest extends TikaTest {
 
     @Test
     public void testNoTimestampsWithoutDates() {
-        OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+        OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
                 new OneNoteDocument(), null, null, null, new ParseContext(), null);
         Metadata metadata = new Metadata();
         OneNoteParser.setWalkMetadata(walker, metadata);
@@ -756,7 +762,7 @@ public class OneNoteParserTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         Path emptyFile = Files.createFile(tempDir.resolve("empty"));
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
-            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
                     new OneNoteDocument(), dif,
                     new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
                     metadata, parseContext, null);
@@ -785,7 +791,7 @@ public class OneNoteParserTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         Path emptyFile = Files.createFile(tempDir.resolve("empty"));
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
-            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
                     new OneNoteDocument(), dif,
                     new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
                     metadata, parseContext, null);
@@ -1037,7 +1043,7 @@ public class OneNoteParserTest extends TikaTest {
         document.revisionMap.put(edit, editRevision);
         document.revisionMap.put(base, new Revision());
         ParseContext context = new ParseContext();
-        OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+        OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
                 document, null, new XHTMLContentHandler(new ToTextContentHandler(),
                 new Metadata(), context), new Metadata(), context,
                 Pair.of(1L, ExtendedGUID.nil()));
@@ -1218,7 +1224,7 @@ public class OneNoteParserTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         Path emptyFile = Files.createFile(tempDir.resolve("empty"));
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
-            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
                     new OneNoteDocument(), dif,
                     new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
                     metadata, parseContext, null);

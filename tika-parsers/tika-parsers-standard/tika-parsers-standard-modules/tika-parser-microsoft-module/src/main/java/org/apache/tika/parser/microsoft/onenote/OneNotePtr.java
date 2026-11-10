@@ -124,42 +124,46 @@ class OneNotePtr {
 
     public OneNoteHeader deserializeHeader() throws IOException, TikaException {
         OneNoteHeader data = new OneNoteHeader();
-        data.setGuidFileType(deserializeGUID()).setGuidFile(deserializeGUID())
-                .setGuidLegacyFileVersion(deserializeGUID()).setGuidFileFormat(deserializeGUID())
-                .setFfvLastCodeThatWroteToThisFile(deserializeLittleEndianInt())
-                .setFfvOldestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
-                .setFfvNewestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
-                .setFfvOldestCodeThatMayReadThisFile(deserializeLittleEndianInt())
-                .setFcrLegacyFreeChunkList(deserializeFileChunkReference64())
-                .setFcrLegacyTransactionLog(deserializeFileChunkReference64())
-                .setcTransactionsInLog(deserializeLittleEndianInt())
-                .setCbLegacyExpectedFileLength(deserializeLittleEndianInt())
-                .setRgbPlaceholder(deserializeLittleEndianLong())
-                .setFcrLegacyFileNodeListRoot(deserializeFileChunkReference64())
-                .setCbLegacyFreeSpaceInFreeChunkList(deserializeLittleEndianInt())
-                .setIgnoredZeroA(deserializeLittleEndianChar())
-                .setIgnoredZeroB(deserializeLittleEndianChar())
-                .setIgnoredZeroC(deserializeLittleEndianChar())
-                .setIgnoredZeroD(deserializeLittleEndianChar()).setGuidAncestor(deserializeGUID())
-                .setCrcName(deserializeLittleEndianInt())
-                .setFcrHashedChunkList(deserializeFileChunkReference64x32())
-                .setFcrTransactionLog(deserializeFileChunkReference64x32())
-                .setFcrFileNodeListRoot(deserializeFileChunkReference64x32())
-                .setFcrFreeChunkList(deserializeFileChunkReference64x32())
-                .setCbExpectedFileLength(deserializeLittleEndianLong())
-                .setCbFreeSpaceInFreeChunkList(deserializeLittleEndianLong())
-                .setGuidFileVersion(deserializeGUID())
-                .setnFileVersionGeneration(deserializeLittleEndianLong())
-                .setGuidDenyReadFileVersion(deserializeGUID())
-                .setGrfDebugLogFlags(deserializeLittleEndianInt())
-                .setFcrDebugLogA(deserializeFileChunkReference64x32())
-                .setFcrDebugLogB(deserializeFileChunkReference64x32())
-                .setBuildNumberCreated(deserializeLittleEndianInt())
-                .setBuildNumberLastWroteToFile(deserializeLittleEndianInt())
-                .setBuildNumberOldestWritten(deserializeLittleEndianInt())
-                .setBuildNumberNewestWritten(deserializeLittleEndianInt());
+        data.guidFileType = deserializeGUID();
+        data.guidFile = deserializeGUID();
+        data.guidLegacyFileVersion = deserializeGUID();
+        data.guidFileFormat = deserializeGUID();
+        data.ffvLastCodeThatWroteToThisFile = deserializeLittleEndianInt();
+        data.ffvOldestCodeThatHasWrittenToThisFile = deserializeLittleEndianInt();
+        data.ffvNewestCodeThatHasWrittenToThisFile = deserializeLittleEndianInt();
+        data.ffvOldestCodeThatMayReadThisFile = deserializeLittleEndianInt();
+        data.fcrLegacyFreeChunkList = deserializeFileChunkReference64();
+        data.fcrLegacyTransactionLog = deserializeFileChunkReference64();
+        data.cTransactionsInLog = deserializeLittleEndianInt();
+        data.cbLegacyExpectedFileLength = deserializeLittleEndianInt();
+        data.rgbPlaceholder = deserializeLittleEndianLong();
+        data.fcrLegacyFileNodeListRoot = deserializeFileChunkReference64();
+        data.cbLegacyFreeSpaceInFreeChunkList = deserializeLittleEndianInt();
+        data.ignoredZeroA = deserializeLittleEndianChar();
+        data.ignoredZeroB = deserializeLittleEndianChar();
+        data.ignoredZeroC = deserializeLittleEndianChar();
+        data.ignoredZeroD = deserializeLittleEndianChar();
+        data.guidAncestor = deserializeGUID();
+        data.crcName = deserializeLittleEndianInt();
+        data.fcrHashedChunkList = deserializeFileChunkReference64x32();
+        data.fcrTransactionLog = deserializeFileChunkReference64x32();
+        data.fcrFileNodeListRoot = deserializeFileChunkReference64x32();
+        data.fcrFreeChunkList = deserializeFileChunkReference64x32();
+        data.cbExpectedFileLength = deserializeLittleEndianLong();
+        data.cbFreeSpaceInFreeChunkList = deserializeLittleEndianLong();
+        data.guidFileVersion = deserializeGUID();
+        data.nFileVersionGeneration = deserializeLittleEndianLong();
+        data.guidDenyReadFileVersion = deserializeGUID();
+        data.grfDebugLogFlags = deserializeLittleEndianInt();
+        data.fcrDebugLogA = deserializeFileChunkReference64x32();
+        data.fcrDebugLogB = deserializeFileChunkReference64x32();
+        data.buildNumberCreated = deserializeLittleEndianInt();
+        data.buildNumberLastWroteToFile = deserializeLittleEndianInt();
+        data.buildNumberOldestWritten = deserializeLittleEndianInt();
+        data.buildNumberNewestWritten = deserializeLittleEndianInt();
         if (data.getGuidFileFormat().toString().equals(PACKAGE_STORAGE_FILE_FORMAT_GUID)) {
-            return data.setLegacyOrAlternativePackaging(true);
+            data.legacyOrAlternativePackaging = true;
+            return data;
         }
         ByteBuffer reservedBytesAtEndOfHeader =
                 ByteBuffer.allocate(NUM_RESERVED_BYTES_AT_END_OF_HEADER);

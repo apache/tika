@@ -39,35 +39,7 @@ class Revision {
         this.dependent = dependent;
     }
 
-    public Map<Long, GUID> getGlobalId() {
-        return globalId;
-    }
-
-    public void setGlobalId(Map<Long, GUID> globalId) {
-        this.globalId = globalId;
-    }
-
-    public List<FileNodePtr> getManifestList() {
-        return manifestList;
-    }
-
-    public void setManifestList(List<FileNodePtr> manifestList) {
-        this.manifestList = manifestList;
-    }
-
-    public ExtendedGUID getGosid() {
-        return gosid;
-    }
-
     public void setGosid(ExtendedGUID gosid) {
         this.gosid = gosid;
-    }
-
-    public ExtendedGUID getDependent() {
-        return dependent;
-    }
-
-    public void setDependent(ExtendedGUID dependent) {
-        this.dependent = dependent;
     }
 }

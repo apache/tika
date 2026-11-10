@@ -92,67 +92,11 @@ class OneNoteDocument {
         currentRevision = fn.gosid;
     }
 
-    public List<ExtendedGUID> getRevisionListOrder() {
-        return revisionListOrder;
-    }
-
-    public OneNoteDocument setRevisionListOrder(List<ExtendedGUID> revisionListOrder) {
-        this.revisionListOrder = revisionListOrder;
-        return this;
-    }
-
-    public Map<ExtendedGUID, Revision> getRevisionMap() {
-        return revisionMap;
-    }
-
-    public OneNoteDocument setRevisionMap(Map<ExtendedGUID, Revision> revisionMap) {
-        this.revisionMap = revisionMap;
-        return this;
-    }
-
-    public Map<ExtendedGUID, FileNodePtr> getRevisionManifestLists() {
-        return revisionManifestLists;
-    }
-
-    public OneNoteDocument setRevisionManifestLists(
-            Map<ExtendedGUID, FileNodePtr> revisionManifestLists) {
-        this.revisionManifestLists = revisionManifestLists;
-        return this;
-    }
-
-    public Map<ExtendedGUID, FileChunkReference> getGuidToRef() {
-        return guidToRef;
-    }
-
-    public OneNoteDocument setGuidToRef(Map<ExtendedGUID, FileChunkReference> guidToRef) {
-        this.guidToRef = guidToRef;
-        return this;
-    }
-
-    public Map<ExtendedGUID, FileNodePtr> getGuidToObject() {
-        return guidToObject;
-    }
-
-    public OneNoteDocument setGuidToObject(Map<ExtendedGUID, FileNodePtr> guidToObject) {
-        this.guidToObject = guidToObject;
-        return this;
-    }
-
     public ExtendedGUID getCurrentRevision() {
         return currentRevision;
     }
 
-    public OneNoteDocument setCurrentRevision(ExtendedGUID currentRevision) {
-        this.currentRevision = currentRevision;
-        return this;
-    }
-
     public FileNodeList getRoot() {
         return root;
-    }
-
-    public OneNoteDocument setRoot(FileNodeList root) {
-        this.root = root;
-        return this;
     }
 }

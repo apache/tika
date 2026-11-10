@@ -40,15 +40,6 @@ class FileNodeListHeader {
         this.nFragmentSequence = nFragmentSequence;
     }
 
-    public long getFileNodeListId() {
-        return fileNodeListId;
-    }
-
-    public FileNodeListHeader setFileNodeListId(long fileNodeListId) {
-        this.fileNodeListId = fileNodeListId;
-        return this;
-    }
-
     public long getnFragmentSequence() {
         return nFragmentSequence;
     }
@@ -60,15 +51,6 @@ class FileNodeListHeader {
 
     public long getPosition() {
         return position;
-    }
-
-    public FileNodeListHeader setPosition(long position) {
-        this.position = position;
-        return this;
-    }
-
-    public String getPositionHex() {
-        return "0x" + StringUtils.leftPad(Long.toHexString(position), 8, '0');
     }
 
     @Override

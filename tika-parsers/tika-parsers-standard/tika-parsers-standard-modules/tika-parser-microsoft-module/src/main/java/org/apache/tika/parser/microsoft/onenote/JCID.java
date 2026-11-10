@@ -59,56 +59,12 @@ class JCID {
                 ", isFileData=" + isFileData + ", isReadOnly=" + isReadOnly + '}';
     }
 
-    public long getJcid() {
-        return jcid;
-    }
-
     public void setJcid(long jcid) {
         this.jcid = jcid;
     }
 
     public long getIndex() {
         return index;
-    }
-
-    public void setIndex(long index) {
-        this.index = index;
-    }
-
-    public boolean isBinary() {
-        return isBinary;
-    }
-
-    public void setBinary(boolean binary) {
-        isBinary = binary;
-    }
-
-    public boolean isPropertySet() {
-        return isPropertySet;
-    }
-
-    public void setPropertySet(boolean propertySet) {
-        isPropertySet = propertySet;
-    }
-
-    public boolean isGraphNode() {
-        return isGraphNode;
-    }
-
-    public void setGraphNode(boolean graphNode) {
-        isGraphNode = graphNode;
-    }
-
-    public boolean isFileData() {
-        return isFileData;
-    }
-
-    public void setFileData(boolean fileData) {
-        isFileData = fileData;
-    }
-
-    public boolean isReadOnly() {
-        return isReadOnly;
     }
 
     public void setReadOnly(boolean readOnly) {

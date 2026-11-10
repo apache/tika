@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -172,31 +171,13 @@ public class OneNoteTreeWalkerGuidTest {
         return value;
     }
 
-    @Test
-    public void testGuidStringPoolSharesAndBoundsInstances() {
-        OneNoteTreeWalker walker = newWalker(new Metadata(), false, null);
-        // equal-but-distinct instances: an identity implementation would fail assertSame
-        String first = walker.pooledGuid("{A}");
-        String second = walker.pooledGuid(new String("{A}"));
-        assertSame(first, second);
-
-        walker.guidStringPool.clear();
-        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT; i++) {
-            walker.guidStringPool.put("g" + i, "g" + i);
-        }
-        String input = new String("{B}");
-        assertSame(input, walker.pooledGuid(input));
-        // a full pool must not grow: without the size guard this becomes MAX + 1
-        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT, walker.guidStringPool.size());
-    }
-
     private static OneNoteTreeWalker newWalker(Metadata metadata, boolean fail,
                                                 OneNoteDirectFileResource dif) {
         ParseContext context = new ParseContext();
         Metadata handlerMetadata = metadata == null ? new Metadata() : metadata;
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 new ToTextContentHandler(), handlerMetadata, context);
-        return new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(), new OneNoteDocument(), dif,
+        return new OneNoteTreeWalker(new OneNoteParserConfig(), new OneNoteDocument(), dif,
                 xhtml, metadata, context, Pair.of(1L, ExtendedGUID.nil())) {
             @Override
             public void walkRootFileNodes() throws IOException, TikaException, SAXException {

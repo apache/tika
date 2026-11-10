@@ -29,31 +29,6 @@ class ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs {
         return count;
     }
 
-    public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs setCount(long count) {
-        this.count = count;
-        return this;
-    }
-
-    public long getExtendedStreamsPresent() {
-        return extendedStreamsPresent;
-    }
-
-    public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs setExtendedStreamsPresent(
-            long extendedStreamsPresent) {
-        this.extendedStreamsPresent = extendedStreamsPresent;
-        return this;
-    }
-
-    public long getOsidsStreamNotPresent() {
-        return osidsStreamNotPresent;
-    }
-
-    public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs setOsidsStreamNotPresent(
-            long osidsStreamNotPresent) {
-        this.osidsStreamNotPresent = osidsStreamNotPresent;
-        return this;
-    }
-
     public List<CompactID> getData() {
         return data;
     }

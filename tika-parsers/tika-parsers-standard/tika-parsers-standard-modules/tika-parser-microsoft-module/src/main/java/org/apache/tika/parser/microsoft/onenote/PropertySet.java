@@ -48,13 +48,4 @@ class PropertySet {
     public int hashCode() {
         return Objects.hash(rgPridsData);
     }
-
-    public List<PropertyValue> getRgPridsData() {
-        return rgPridsData;
-    }
-
-    public PropertySet setRgPridsData(List<PropertyValue> rgPridsData) {
-        this.rgPridsData = rgPridsData;
-        return this;
-    }
 }

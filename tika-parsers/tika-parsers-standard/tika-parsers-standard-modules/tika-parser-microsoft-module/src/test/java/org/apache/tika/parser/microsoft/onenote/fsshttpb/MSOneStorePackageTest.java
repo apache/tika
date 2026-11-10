@@ -50,7 +50,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
 import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
-import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
+import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FourBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
@@ -328,10 +328,10 @@ public class MSOneStorePackageTest {
         xhtml.startDocument();
         if (failWalk) {
             SAXException exception = assertThrows(SAXException.class,
-                    () -> pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context));
+                    () -> pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context));
             assertEquals("stop walk", exception.getMessage());
         } else {
-            pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+            pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
             xhtml.endDocument();
         }
         assertEquals(Arrays.asList("cached item", "next cell"), observedText);
@@ -1524,7 +1524,7 @@ public class MSOneStorePackageTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
         xhtml.startDocument();
 
-        pkg.emitPage(cell, new OneNoteTreeWalkerOptions(), metadata, xhtml);
+        pkg.emitPage(cell, new OneNoteParserConfig(), metadata, xhtml);
 
         xhtml.endDocument();
         assertEquals(1, pkg.objectIndexBuilds);
@@ -1684,7 +1684,7 @@ public class MSOneStorePackageTest {
         pkg.cells.add(damagedCell);
 
         Metadata metadata = new Metadata();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata,
+        pkg.walkTree(new OneNoteParserConfig(), metadata,
                 new XHTMLContentHandler(new ToTextContentHandler(), metadata, new ParseContext()),
                 new ParseContext());
 
@@ -1809,9 +1809,10 @@ public class MSOneStorePackageTest {
     }
 
     private static String walkPast(boolean history, boolean deleted) throws Exception {
-        return walkXml(deletedPagePackage(), new Metadata(), new ParseContext(),
-                new OneNoteTreeWalkerOptions().setCrawlAllFileNodesFromRoot(history)
-                        .setIncludeDeletedContent(deleted));
+        OneNoteParserConfig config = new OneNoteParserConfig();
+        config.setIncludePageHistory(history);
+        config.setIncludeDeletedContent(deleted);
+        return walkXml(deletedPagePackage(), new Metadata(), new ParseContext(), config);
     }
 
     /**
@@ -2221,7 +2222,7 @@ public class MSOneStorePackageTest {
                 new ParseContext());
         xhtml.startDocument();
 
-        assertThrows(SAXException.class, () -> pkg.walkTree(new OneNoteTreeWalkerOptions(),
+        assertThrows(SAXException.class, () -> pkg.walkTree(new OneNoteParserConfig(),
                 metadata, xhtml, new ParseContext()));
         assertTrue(elements.contains("p"));
         assertTrue(elements.contains("/p"));
@@ -2310,7 +2311,7 @@ public class MSOneStorePackageTest {
         Method walkObject = MSOneStorePackage.class.getDeclaredMethod("walkObject",
                 RevisionStoreObject.class, Map.class, Set.class,
                 Class.forName(MSOneStorePackage.class.getName() + "$AuthorRole"),
-                OneNoteTreeWalkerOptions.class, Metadata.class, XHTMLContentHandler.class,
+                OneNoteParserConfig.class, Metadata.class, XHTMLContentHandler.class,
                 int.class,
                 Class.forName(MSOneStorePackage.class.getName() + "$EmbeddedResourceInfo"));
         walkObject.setAccessible(true);
@@ -2327,11 +2328,11 @@ public class MSOneStorePackageTest {
         xhtml.startDocument();
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteTreeWalkerOptions(), metadata, xhtml, 1000, null);
+                new OneNoteParserConfig(), metadata, xhtml, 1000, null);
         assertTrue(writer.toString().isBlank());
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteTreeWalkerOptions(), metadata, xhtml, 0, null);
+                new OneNoteParserConfig(), metadata, xhtml, 0, null);
         xhtml.endDocument();
         assertTrue(writer.toString().contains("depth capped text"));
     }
@@ -2547,7 +2548,7 @@ public class MSOneStorePackageTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 new ToTextContentHandler(writer), metadata, context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
         return writer.toString();
     }
@@ -2562,11 +2563,11 @@ public class MSOneStorePackageTest {
 
     private static String walkXml(MSOneStorePackage pkg, Metadata metadata, ParseContext context)
             throws Exception {
-        return walkXml(pkg, metadata, context, new OneNoteTreeWalkerOptions());
+        return walkXml(pkg, metadata, context, new OneNoteParserConfig());
     }
 
     private static String walkXml(MSOneStorePackage pkg, Metadata metadata, ParseContext context,
-                                  OneNoteTreeWalkerOptions options) throws Exception {
+                                  OneNoteParserConfig options) throws Exception {
         ToXMLContentHandler xml = new ToXMLContentHandler();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
         xhtml.startDocument();

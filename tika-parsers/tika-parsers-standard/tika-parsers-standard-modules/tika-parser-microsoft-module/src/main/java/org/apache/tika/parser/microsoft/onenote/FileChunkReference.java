@@ -62,17 +62,9 @@ class FileChunkReference {
         return Objects.hash(stp, cb);
     }
 
-    public long getStp() {
-        return stp;
-    }
-
     public FileChunkReference setStp(long stp) {
         this.stp = stp;
         return this;
-    }
-
-    public long getCb() {
-        return cb;
     }
 
     public FileChunkReference setCb(long cb) {

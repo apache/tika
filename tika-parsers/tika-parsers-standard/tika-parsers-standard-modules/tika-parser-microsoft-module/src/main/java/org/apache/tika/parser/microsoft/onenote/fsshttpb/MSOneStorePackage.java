@@ -53,9 +53,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.GUID;
 import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
 import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
+import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteText;
-import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.EightBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FourBytesOfData;
@@ -221,7 +221,7 @@ public class MSOneStorePackage {
         OBJECT_SPACE_REFERENCE_ARRAY_CAPPED
     }
 
-    public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
+    public void walkTree(OneNoteParserConfig options, Metadata metadata,
                          XHTMLContentHandler xhtml, ParseContext parseContext)
             throws SAXException, TikaException, IOException {
         depthSkippedObjects.clear();
@@ -293,13 +293,13 @@ public class MSOneStorePackage {
         return !numberListInfoCache.isEmpty() || !listFormatKeysByDigest.isEmpty();
     }
 
-    void emitPage(RevisionStoreCell cell, OneNoteTreeWalkerOptions options,
+    void emitPage(RevisionStoreCell cell, OneNoteParserConfig options,
                           Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         emitPage(cell, options, metadata, xhtml, "page");
     }
 
-    private void emitPage(RevisionStoreCell cell, OneNoteTreeWalkerOptions options,
+    private void emitPage(RevisionStoreCell cell, OneNoteParserConfig options,
                           Metadata metadata, XHTMLContentHandler xhtml, String cssClass)
             throws SAXException, TikaException, IOException {
         Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(cell.objectGroups);
@@ -335,8 +335,8 @@ public class MSOneStorePackage {
             this.deleted = deleted;
         }
 
-        boolean included(OneNoteTreeWalkerOptions options) {
-            return (!history || options.isCrawlAllFileNodesFromRoot()) &&
+        boolean included(OneNoteParserConfig options) {
+            return (!history || options.isIncludePageHistory()) &&
                     (!deleted || options.isIncludeDeletedContent());
         }
     }
@@ -471,7 +471,7 @@ public class MSOneStorePackage {
 
     private void walkCell(RevisionStoreCell cell,
                           Map<ExGuid, RevisionStoreObject> objectsById,
-                          OneNoteTreeWalkerOptions options, Metadata metadata,
+                          OneNoteParserConfig options, Metadata metadata,
                           XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         depthSkippedObjects.clear();
@@ -620,7 +620,7 @@ public class MSOneStorePackage {
 
     private void walkObject(RevisionStoreObject object,
                              Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                             AuthorRole authorRole, OneNoteTreeWalkerOptions options,
+                             AuthorRole authorRole, OneNoteParserConfig options,
                              Metadata metadata, XHTMLContentHandler xhtml, int depth,
                              EmbeddedResourceInfo inheritedResourceInfo)
             throws SAXException, TikaException, IOException {
@@ -800,7 +800,7 @@ public class MSOneStorePackage {
 
     private void walkObjectGroupRoots(List<RevisionStoreObjectGroup> objectGroups,
                                       Map<ExGuid, RevisionStoreObject> objectsById,
-                                      Set<ExGuid> visited, OneNoteTreeWalkerOptions options,
+                                      Set<ExGuid> visited, OneNoteParserConfig options,
                                       Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         Set<ExGuid> structureDescendantIds = collectStructureDescendantIds(objectsById);
@@ -831,7 +831,7 @@ public class MSOneStorePackage {
     }
 
     private void recoverDepthSkippedObjects(Map<ExGuid, RevisionStoreObject> objectsById,
-                                            Set<ExGuid> visited, OneNoteTreeWalkerOptions options,
+                                            Set<ExGuid> visited, OneNoteParserConfig options,
                                             Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         // Recover only depth-skipped objects, not intentionally suppressed renditions.
@@ -905,7 +905,7 @@ public class MSOneStorePackage {
 
     private void walkRootObject(RevisionStoreObject object,
                                 Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                                OneNoteTreeWalkerOptions options, Metadata metadata,
+                                OneNoteParserConfig options, Metadata metadata,
                                 XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         walkRootObject(object, objectsById, visited, AuthorRole.NONE, options, metadata, xhtml, null);
@@ -913,7 +913,7 @@ public class MSOneStorePackage {
 
     private void walkRootObject(RevisionStoreObject object,
                                 Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                                AuthorRole authorRole, OneNoteTreeWalkerOptions options, Metadata metadata,
+                                AuthorRole authorRole, OneNoteParserConfig options, Metadata metadata,
                                 XHTMLContentHandler xhtml, EmbeddedResourceInfo resourceInfo)
             throws SAXException, TikaException, IOException {
         if (!canWalkObject(object, visited, 0)) {
@@ -940,7 +940,7 @@ public class MSOneStorePackage {
     private void processStructureChildActions(List<PropertyAction> actions,
                                               Map<ExGuid, RevisionStoreObject> objectsById,
                                               Set<ExGuid> visited, AuthorRole authorRole,
-                                              OneNoteTreeWalkerOptions options, Metadata metadata,
+                                              OneNoteParserConfig options, Metadata metadata,
                                               XHTMLContentHandler xhtml, int depth,
                                               EmbeddedResourceInfo resourceInfo)
             throws SAXException, TikaException, IOException {
@@ -1456,7 +1456,7 @@ public class MSOneStorePackage {
 
     private void processAction(PropertyAction action,
                                Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                               AuthorRole authorRole, OneNoteTreeWalkerOptions options,
+                               AuthorRole authorRole, OneNoteParserConfig options,
                                Metadata metadata, XHTMLContentHandler xhtml, int depth,
                                EmbeddedResourceInfo parentResourceInfo)
             throws SAXException, TikaException, IOException {
@@ -1540,7 +1540,7 @@ public class MSOneStorePackage {
     private void processPrimitiveProperty(IProperty property, PropertyType propertyType,
                                           OneNotePropertyEnum oneNotePropertyEnum,
                                           AuthorRole authorRole,
-                                          OneNoteTreeWalkerOptions options, Metadata metadata,
+                                          OneNoteParserConfig options, Metadata metadata,
                                           XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
@@ -1576,16 +1576,14 @@ public class MSOneStorePackage {
                     (PrtFourBytesOfLengthFollowedByData) property;
             if ((dataProperty.data.length & 1) == 0 &&
                     !OneNoteText.isExtendedAscii(oneNotePropertyEnum) && !isBinary) {
-                if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&
-                        !OneNoteText.isImageText(oneNotePropertyEnum)) {
+                if (oneNotePropertyEnum == OneNotePropertyEnum.FolderChildFilename) {
                     emitUtf16Property(xhtml, oneNotePropertyEnum, new String(dataProperty.data,
                             StandardCharsets.UTF_16LE));
                 }
             } else if (OneNoteText.isExtendedAscii(oneNotePropertyEnum)) {
                 emitParagraph(xhtml, new String(dataProperty.data, OneNoteText.EXTENDED_ASCII));
             } else if (!isBinary) {
-                if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum) &&
-                        !OneNoteText.isImageText(oneNotePropertyEnum)) {
+                if (oneNotePropertyEnum == OneNotePropertyEnum.FolderChildFilename) {
                     emitUtf16Property(xhtml, oneNotePropertyEnum, new String(dataProperty.data,
                             StandardCharsets.UTF_16LE));
                 }
@@ -1887,14 +1885,13 @@ public class MSOneStorePackage {
         }
     }
 
-    private void emitImage(List<PropertyAction> actions, OneNoteTreeWalkerOptions options,
+    private void emitImage(List<PropertyAction> actions, OneNoteParserConfig options,
                            XHTMLContentHandler xhtml) throws SAXException {
         String fileName = null;
         String altText = null;
         for (PropertyAction action : actions) {
             if (!action.isChildReference && OneNoteText.isImageText(action.oneNotePropertyEnum) &&
-                    action.property instanceof PrtFourBytesOfLengthFollowedByData &&
-                    options.getUtf16PropertiesToPrint().contains(action.oneNotePropertyEnum)) {
+                    action.property instanceof PrtFourBytesOfLengthFollowedByData) {
                 String text = new String(
                         ((PrtFourBytesOfLengthFollowedByData) action.property).data,
                         StandardCharsets.UTF_16LE);

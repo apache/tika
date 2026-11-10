@@ -42,7 +42,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
+import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.NoData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
@@ -148,7 +148,7 @@ public class MSOneStoreBlobTest {
                 new XHTMLContentHandler(new ToTextContentHandler(new StringWriter()), metadata,
                         context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
 
         assertEquals(1, embedded.size());
@@ -322,7 +322,7 @@ public class MSOneStoreBlobTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 new ToTextContentHandler(new StringWriter()), metadata, context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
     }
 

@@ -67,26 +67,4 @@ public class ExtendedGUID implements Comparable<ExtendedGUID> {
     public String toString() {
         return String.format(Locale.US, "%s [%d]", guid, n);
     }
-
-    public GUID getGuid() {
-        return guid;
-    }
-
-    public ExtendedGUID setGuid(GUID guid) {
-        this.guid = guid;
-        return this;
-    }
-
-    public String getExtendedGuidString() {
-        return guid.toString() + " [" + n + "]";
-    }
-
-    public long getN() {
-        return n;
-    }
-
-    public ExtendedGUID setN(long n) {
-        this.n = n;
-        return this;
-    }
 }

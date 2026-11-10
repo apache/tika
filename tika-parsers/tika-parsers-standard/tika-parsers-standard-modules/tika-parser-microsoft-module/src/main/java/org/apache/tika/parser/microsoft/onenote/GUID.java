@@ -163,17 +163,4 @@ public class GUID implements Comparable<GUID> {
         sb.append("}");
         return sb.toString().toUpperCase(Locale.US);
     }
-
-    public int[] getGuid() {
-        return guid;
-    }
-
-    public GUID setGuid(int[] guid) {
-        this.guid = guid;
-        return this;
-    }
-
-    public String getGuidString() {
-        return Arrays.toString(guid);
-    }
 }

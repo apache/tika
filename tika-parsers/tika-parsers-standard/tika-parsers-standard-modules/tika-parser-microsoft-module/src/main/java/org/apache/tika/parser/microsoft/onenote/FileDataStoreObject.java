@@ -19,13 +19,4 @@ package org.apache.tika.parser.microsoft.onenote;
 class FileDataStoreObject {
     // cbLength is implicit in fileData
     FileChunkReference fileData = new FileChunkReference();
-
-    public FileChunkReference getFileData() {
-        return fileData;
-    }
-
-    public FileDataStoreObject setFileData(FileChunkReference fileData) {
-        this.fileData = fileData;
-        return this;
-    }
 }

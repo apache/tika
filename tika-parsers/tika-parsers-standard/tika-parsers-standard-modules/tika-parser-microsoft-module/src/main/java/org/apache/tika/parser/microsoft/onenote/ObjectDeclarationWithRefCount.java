@@ -22,22 +22,8 @@ class ObjectDeclarationWithRefCount {
     long cRef;
     ReadOnly readOnly = new ReadOnly();
 
-    public ObjectSpaceObjectPropSet getObjectRef() {
-        return objectRef;
-    }
-
-    public ObjectDeclarationWithRefCount setObjectRef(ObjectSpaceObjectPropSet objectRef) {
-        this.objectRef = objectRef;
-        return this;
-    }
-
     public ObjectDeclarationWithRefCountBody getBody() {
         return body;
-    }
-
-    public ObjectDeclarationWithRefCount setBody(ObjectDeclarationWithRefCountBody body) {
-        this.body = body;
-        return this;
     }
 
     public long getcRef() {
@@ -49,10 +35,6 @@ class ObjectDeclarationWithRefCount {
         return this;
     }
 
-    public ReadOnly getReadOnly() {
-        return readOnly;
-    }
-
     public ObjectDeclarationWithRefCount setReadOnly(ReadOnly readOnly) {
         this.readOnly = readOnly;
         return this;
@@ -61,13 +43,5 @@ class ObjectDeclarationWithRefCount {
     public static class ReadOnly {
         byte[] md5;
 
-        public byte[] getMd5() {
-            return md5;
-        }
-
-        public ReadOnly setMd5(byte[] md5) {
-            this.md5 = md5;
-            return this;
-        }
     }
 }

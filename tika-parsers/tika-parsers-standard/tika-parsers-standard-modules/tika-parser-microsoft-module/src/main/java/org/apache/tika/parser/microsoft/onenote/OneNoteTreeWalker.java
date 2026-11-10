@@ -86,7 +86,7 @@ class OneNoteTreeWalker {
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
     private final OneNoteGuidCollector guidCollector;
-    private final OneNoteTreeWalkerOptions options;
+    private final OneNoteParserConfig options;
     private final OneNoteDocument oneNoteDocument;
     private final OneNoteDirectFileResource dif;
     private final XHTMLContentHandler xhtml;
@@ -128,7 +128,7 @@ class OneNoteTreeWalker {
     private boolean textBudgetWarningRecorded;
 
     /** {@code roleAndContext} is null to crawl all root file nodes, ignoring revisions. */
-    public OneNoteTreeWalker(OneNoteTreeWalkerOptions options, OneNoteDocument oneNoteDocument,
+    public OneNoteTreeWalker(OneNoteParserConfig options, OneNoteDocument oneNoteDocument,
                              OneNoteDirectFileResource dif, XHTMLContentHandler xhtml,
                              Metadata parentMetadata, ParseContext parseContext,
                              Pair<Long, ExtendedGUID> roleAndContext) {
@@ -157,7 +157,7 @@ class OneNoteTreeWalker {
     }
 
     public void walkRootFileNodes() throws IOException, TikaException, SAXException {
-        if (options.isCrawlAllFileNodesFromRoot()) {
+        if (options.isIncludePageHistory()) {
             walkFileNodeList(oneNoteDocument.root, null);
             return;
         }
@@ -518,8 +518,7 @@ class OneNoteTreeWalker {
         String altText = null;
         for (PropertyValue value : propertySet.rgPridsData) {
             OneNotePropertyEnum property = value.propertyId.propertyEnum;
-            if (OneNoteText.isImageText(property) && value.propertyId.type == 7 &&
-                    options.getUtf16PropertiesToPrint().contains(property)) {
+            if (OneNoteText.isImageText(property) && value.propertyId.type == 7) {
                 String text = readUtf16(value);
                 if (property == OneNotePropertyEnum.ImageFilename) {
                     fileName = text;
@@ -566,16 +565,20 @@ class OneNoteTreeWalker {
     }
 
     private byte[] readBytes(PropertyValue value) throws IOException, TikaException {
-        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-        content.reposition(value.rawData);
-        if (content.size() > dif.size()) {
-            throw new TikaMemoryLimitException(
-                    "File data store cb " + content.size() + " exceeds document size: " +
-                            dif.size());
-        }
-        ByteBuffer buf = ByteBuffer.allocate(content.size());
+        ByteBuffer buf = ByteBuffer.allocate(positionAt(value));
         dif.read(buf);
         return buf.array();
+    }
+
+    /** Positions {@code dif} at the property's data. @return the data's length */
+    private int positionAt(PropertyValue value) throws IOException, TikaException {
+        long cb = value.rawData.cb;
+        if (cb < 0 || cb > dif.size()) {
+            throw new TikaMemoryLimitException(
+                    "File data store cb " + cb + " exceeds document size: " + dif.size());
+        }
+        dif.position(value.rawData.stp);
+        return (int) cb;
     }
 
     /** @return the recognized words of the paragraph's inline ink, in order */
@@ -606,16 +609,7 @@ class OneNoteTreeWalker {
         for (PropertyValue value : word.rgPridsData) {
             if (value.propertyId.propertyEnum == OneNotePropertyEnum.InkRecognitionAlternates &&
                     value.propertyId.type == 7) {
-                OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-                content.reposition(value.rawData);
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
-                }
-                ByteBuffer buf = ByteBuffer.allocate(content.size());
-                dif.read(buf);
-                return new String(buf.array(), StandardCharsets.UTF_16LE);
+                return readString(positionAt(value), StandardCharsets.UTF_16LE);
             }
         }
         return null;
@@ -623,19 +617,8 @@ class OneNoteTreeWalker {
 
     /** @return the property's UTF-16 text, or null if it was already emitted */
     private String readUtf16(PropertyValue value) throws IOException, TikaException {
-        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-        content.reposition(value.rawData);
-        if (content.size() > dif.size()) {
-            throw new TikaMemoryLimitException(
-                    "File data store cb " + content.size() + " exceeds document size: " +
-                            dif.size());
-        }
-        if (!shouldEmitText(content.size())) {
-            return null;
-        }
-        ByteBuffer buf = ByteBuffer.allocate(content.size());
-        dif.read(buf);
-        return new String(buf.array(), StandardCharsets.UTF_16LE);
+        int size = positionAt(value);
+        return shouldEmitText(size) ? readString(size, StandardCharsets.UTF_16LE) : null;
     }
 
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
@@ -690,76 +673,33 @@ class OneNoteTreeWalker {
         } else if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
             // scalar: nothing to read
         } else {
-            OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-            content.reposition(propertyValue.rawData);
-            boolean isBinary = propertyIsBinary(propertyValue.propertyId.propertyEnum);
-            if ((content.size() & 1) == 0 && !OneNoteText.isExtendedAscii(
-                    propertyValue.propertyId.propertyEnum) && !isBinary) {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
+            int size = positionAt(propertyValue);
+            OneNotePropertyEnum property = propertyValue.propertyId.propertyEnum;
+            if (OneNoteText.isExtendedAscii(property)) {
+                if (shouldEmitText(size)) {
+                    emitParagraph(readString(size, OneNoteText.EXTENDED_ASCII));
                 }
-                boolean print = options.getUtf16PropertiesToPrint()
-                        .contains(propertyValue.propertyId.propertyEnum) &&
-                        !OneNoteText.isImageText(propertyValue.propertyId.propertyEnum) &&
-                        shouldEmitText(content.size());
-                if (print) {
-                    emitUtf16Property(propertyValue.propertyId.propertyEnum,
-                            readString(content.size(), StandardCharsets.UTF_16LE));
+            } else if (!propertyIsBinary(property)) {
+                if (property == OneNotePropertyEnum.FolderChildFilename && shouldEmitText(size)) {
+                    emitUtf16Property(property, readString(size, StandardCharsets.UTF_16LE));
                 }
-            } else if (OneNoteText.isExtendedAscii(propertyValue.propertyId.propertyEnum)) {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
+            } else if (property == OneNotePropertyEnum.RichEditTextUnicode ||
+                    property == OneNotePropertyEnum.CachedTitleString) {
+                if ((parentPropertyId != null || options.isIncludePageHistory()) &&
+                        shouldEmitText(size)) {
+                    handleRichEditTextUnicode(size);
                 }
-                if (shouldEmitText(content.size())) {
-                    emitParagraph(readString(content.size(), OneNoteText.EXTENDED_ASCII));
-                }
-            } else if (!isBinary) {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
-                }
-                boolean print = options.getUtf16PropertiesToPrint()
-                        .contains(propertyValue.propertyId.propertyEnum) &&
-                        !OneNoteText.isImageText(propertyValue.propertyId.propertyEnum) &&
-                        shouldEmitText(content.size());
-                if (print) {
-                    emitUtf16Property(propertyValue.propertyId.propertyEnum,
-                            readString(content.size(), StandardCharsets.UTF_16LE));
-                }
-            } else {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
-                }
-                if (propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.RichEditTextUnicode
-                        || propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.CachedTitleString) {
-                    if ((parentPropertyId != null || !options.isOnlyLatestRevision()) &&
-                            shouldEmitText(content.size())) {
-                        handleRichEditTextUnicode(content.size());
-                    }
-                } else if (propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.NotebookManagementEntityGuid
-                        && content.size() == 16) {
-                    ByteBuffer guidBuffer = ByteBuffer.allocate(16);
-                    dif.read(guidBuffer);
-                    String guid = pooledGuid(GUID.fromMicrosoftBytes(guidBuffer.array()).toString());
-                    // Version-history copies of a page are object-space roots; only the
-                    // current page's metadata is referenced via MetaDataObjectsAboveGraphSpace.
-                    if (objectType != OneNoteJcid.PAGE_METADATA || (parentPropertyId != null
-                            && parentPropertyId.propertyEnum ==
-                            OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace)) {
-                        addClassicEntityGuid(objectType, guid);
-                    }
-                } else {
-                    // TODO: identify these (apparently broken font files and other odds and ends)
+            } else if (property == OneNotePropertyEnum.NotebookManagementEntityGuid &&
+                    size == 16) {
+                ByteBuffer guidBuffer = ByteBuffer.allocate(16);
+                dif.read(guidBuffer);
+                String guid = GUID.fromMicrosoftBytes(guidBuffer.array()).toString();
+                // version-history copies of a page are object-space roots; only the current
+                // page's metadata is referenced via MetaDataObjectsAboveGraphSpace
+                if (objectType != OneNoteJcid.PAGE_METADATA || (parentPropertyId != null &&
+                        parentPropertyId.propertyEnum ==
+                                OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace)) {
+                    addClassicEntityGuid(objectType, guid);
                 }
             }
         }
@@ -796,20 +736,12 @@ class OneNoteTreeWalker {
 
     /** Reads a UTF-16LE author string, without its NUL terminator. */
     private String getAuthor(PropertyValue propertyValue)
-            throws IOException, TikaMemoryLimitException {
-        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-        content.reposition(propertyValue.rawData);
-        if (content.size() > dif.size()) {
-            throw new TikaMemoryLimitException(
-                    "File data store cb " + content.size() + " exceeds document size: " +
-                            dif.size());
-        }
-        if (content.size() > 2 * (OneNoteText.MAX_AUTHOR_CHARS + 1)) {
+            throws IOException, TikaException {
+        int size = positionAt(propertyValue);
+        if (size > 2 * (OneNoteText.MAX_AUTHOR_CHARS + 1)) {
             return "";
         }
-        ByteBuffer buf = ByteBuffer.allocate(content.size());
-        dif.read(buf);
-        return new String(buf.array(), StandardCharsets.UTF_16LE).replace("\u0000", "");
+        return readString(size, StandardCharsets.UTF_16LE).replace("\u0000", "");
     }
 
     /**
@@ -822,7 +754,7 @@ class OneNoteTreeWalker {
         if (collectOnly) {
             return false;
         }
-        if (options.isOnlyLatestRevision() && versionHistoryDepth > 0) {
+        if (!options.isIncludePageHistory() && versionHistoryDepth > 0) {
             return false;
         }
         if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
@@ -890,17 +822,6 @@ class OneNoteTreeWalker {
         }
     }
 
-    // revisit-heavy graphs decode the same GUID many times; pool the canonical string so the
-    // retained per-node maps share one instance instead of one string per visit
-    final Map<String, String> guidStringPool = new HashMap<>();
-
-    String pooledGuid(String guid) {
-        if (guidStringPool.size() >= OneNoteGuidCollector.MAX_GUID_COUNT) {
-            return guid;
-        }
-        String pooled = guidStringPool.putIfAbsent(guid, guid);
-        return pooled != null ? pooled : guid;
-    }
 
     static int jcidIndex(FileNode fileNode) {
         if (fileNode == null || fileNode.subType == null
@@ -928,10 +849,6 @@ class OneNoteTreeWalker {
         return lastModifiedTimestamp;
     }
 
-    public void setLastModifiedTimestamp(Instant lastModifiedTimestamp) {
-        this.lastModifiedTimestamp = lastModifiedTimestamp;
-    }
-
     public long getLastModified() {
         return lastModified;
     }
@@ -942,9 +859,5 @@ class OneNoteTreeWalker {
 
     public long getCreationTimestamp() {
         return creationTimestamp;
-    }
-
-    public void setCreationTimestamp(long creationTimestamp) {
-        this.creationTimestamp = creationTimestamp;
     }
 }

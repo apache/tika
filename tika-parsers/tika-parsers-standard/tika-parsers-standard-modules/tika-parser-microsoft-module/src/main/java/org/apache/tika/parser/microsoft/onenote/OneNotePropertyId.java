@@ -41,21 +41,8 @@ class OneNotePropertyId {
         }
     }
 
-    public OneNotePropertyEnum getPropertyEnum() {
-        return propertyEnum;
-    }
-
     public OneNotePropertyId setPropertyEnum(OneNotePropertyEnum propertyEnum) {
         this.propertyEnum = propertyEnum;
-        return this;
-    }
-
-    public long getPid() {
-        return pid;
-    }
-
-    public OneNotePropertyId setPid(long pid) {
-        this.pid = pid;
         return this;
     }
 
@@ -65,15 +52,6 @@ class OneNotePropertyId {
 
     public OneNotePropertyId setType(long type) {
         this.type = type;
-        return this;
-    }
-
-    public boolean isInlineBool() {
-        return inlineBool;
-    }
-
-    public OneNotePropertyId setInlineBool(boolean inlineBool) {
-        this.inlineBool = inlineBool;
         return this;
     }
 
