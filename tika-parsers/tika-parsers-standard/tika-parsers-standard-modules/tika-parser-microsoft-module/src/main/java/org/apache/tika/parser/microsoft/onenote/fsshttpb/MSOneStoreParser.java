@@ -402,10 +402,8 @@ public class MSOneStoreParser {
         if (manifest == null) {
             return 1;
         }
-        return 1 + (manifest.revisionManifestRootDeclareList == null ? 0 :
-                manifest.revisionManifestRootDeclareList.size()) +
-                (manifest.revisionManifestObjectGroupReferences == null ? 0 :
-                        manifest.revisionManifestObjectGroupReferences.size());
+        return 1L + manifest.revisionManifestRootDeclareList.size() +
+                manifest.revisionManifestObjectGroupReferences.size();
     }
 
     private boolean chargeCellWork(long work, MSOneStorePackage msOneStorePackage) {

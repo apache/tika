@@ -347,8 +347,8 @@ class OneNotePtr {
 
 
     /**
-     * Deserializes one file-node list and its fragments. The property-value budget is reset for
-     * each list; pointers copied while parsing that list share the budget.
+     * Deserializes one file-node list and its fragments. The property-value budget is
+     * document-wide; copied pointers share it.
      */
     public OneNotePtr deserializeFileNodeList(FileNodeList fileNodeList, FileNodePtr curPath)
             throws IOException, TikaException {

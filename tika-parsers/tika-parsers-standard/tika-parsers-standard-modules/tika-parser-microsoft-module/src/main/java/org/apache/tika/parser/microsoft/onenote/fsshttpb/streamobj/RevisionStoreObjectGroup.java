@@ -137,10 +137,6 @@ public class RevisionStoreObjectGroup {
         return objectGroup;
     }
 
-    /**
-     * Creates a cell-local wrapper around this parsed group. The object lists are copied so
-     * revision supersession filtering cannot mutate a cached group used by another cell.
-     */
     private static long weight(ObjectGroupObjectData objectData) {
         long weight = 1;
         if (objectData.data != null) {
@@ -155,6 +151,10 @@ public class RevisionStoreObjectGroup {
         return weight;
     }
 
+    /**
+     * Creates a cell-local wrapper around this parsed group. The object lists are copied so
+     * revision supersession filtering cannot mutate a cached group used by another cell.
+     */
     public RevisionStoreObjectGroup copy() {
         RevisionStoreObjectGroup copy = new RevisionStoreObjectGroup(objectGroupID);
         copy.objects.addAll(objects);

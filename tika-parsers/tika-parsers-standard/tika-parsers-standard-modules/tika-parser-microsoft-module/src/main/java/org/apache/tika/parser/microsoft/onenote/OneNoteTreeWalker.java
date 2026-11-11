@@ -113,7 +113,6 @@ class OneNoteTreeWalker {
     private final Map<PropertySet, List<String>> inkWordsBySet = new IdentityHashMap<>();
     private final Map<PropertySet, List<OneNoteText.TextRun>> textRunsBySet =
             new IdentityHashMap<>();
-    // property data decoded once however many objects reference it, keyed by its offset
     // keyed by (stp, cb); each distinct read is charged to the text budget once
     private final Map<Pair<Long, Long>, String> inkWordByRef = new HashMap<>();
     private final Map<Pair<Long, Long>, int[]> textRunEndsByRef = new HashMap<>();
