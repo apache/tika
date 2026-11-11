@@ -127,7 +127,10 @@ public class MSOneStoreParser {
                 .collect(Collectors.toList());
         revisionManifestDataElementsById.clear();
         for (DataElement element : revisionManifestDataElements) {
-            revisionManifestDataElementsById.putIfAbsent(element.dataElementExGuid, element);
+            if (revisionManifestDataElementsById.putIfAbsent(element.dataElementExGuid,
+                    element) == null) {
+                distinctCellWork += manifestWork((RevisionManifestDataElementData) element.data);
+            }
         }
         objectGroupDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.ObjectGroupDataElementData)
@@ -336,7 +339,9 @@ public class MSOneStoreParser {
         // for each root role, the declaration made by the most recent revision wins
         Map<ExGuid, RevisionManifestRootDeclare> effectiveRootDeclares = new LinkedHashMap<>();
         for (RevisionManifestDataElementData manifest : revisionChain) {
-            msOneStorePackage.revisionManifests.add(manifest);
+            if (!chargeCellWork(manifestWork(manifest), msOneStorePackage)) {
+                return null;
+            }
             RevisionManifestRootDeclare encryptionKeyRoot =
                     manifest.revisionManifestRootDeclareList.stream()
                             .filter(r -> r.rootExGuid.equals(ENCRYPTION_KEY_ROOT_EXGUID))
@@ -383,6 +388,7 @@ public class MSOneStoreParser {
         }
 
         removeSupersededObjects(objectGroups);
+        msOneStorePackage.revisionManifests.addAll(revisionChain);
 
         RevisionStoreCell cell = new RevisionStoreCell();
         cell.cellID = objectGroupCellID;
@@ -391,14 +397,23 @@ public class MSOneStoreParser {
         return cell;
     }
 
+    /** One per manifest, root declare and object-group reference: the loops parseCell runs. */
+    private static long manifestWork(RevisionManifestDataElementData manifest) {
+        if (manifest == null) {
+            return 1;
+        }
+        return 1 + (manifest.revisionManifestRootDeclareList == null ? 0 :
+                manifest.revisionManifestRootDeclareList.size()) +
+                (manifest.revisionManifestObjectGroupReferences == null ? 0 :
+                        manifest.revisionManifestObjectGroupReferences.size());
+    }
+
     private boolean chargeCellWork(long work, MSOneStorePackage msOneStorePackage) {
         if (cellWorkExhausted) {
             return false;
         }
         cellWorkCharged += work;
-        // each revision manifest counts once as distinct work
-        if (cellWorkCharged > MIN_CELL_WORK + CELL_WORK_PER_UNIT *
-                (distinctCellWork + revisionManifestDataElementsById.size())) {
+        if (cellWorkCharged > MIN_CELL_WORK + CELL_WORK_PER_UNIT * distinctCellWork) {
             cellWorkExhausted = true;
             msOneStorePackage.recordParseWarning(
                     "OneNote cells exceeded the shared-revision work budget; skipping the rest");

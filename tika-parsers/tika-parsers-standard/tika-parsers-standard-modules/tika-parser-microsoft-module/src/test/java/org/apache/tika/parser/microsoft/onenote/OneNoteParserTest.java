@@ -748,10 +748,13 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testPropertyValueBudgetCoversTheWholeDocument(@TempDir Path tempDir)
             throws Exception {
+        // an empty list, padded so a 100,000-value count is possible for the file size
         Path emptyFile = tempDir.resolve("empty");
-        Files.write(emptyFile, ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
-                .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
-                .putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST).array());
+        ByteBuffer list = ByteBuffer.allocate(128 * 1024).order(ByteOrder.LITTLE_ENDIAN)
+                .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0);
+        list.position(list.capacity() - 20);
+        list.putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST);
+        Files.write(emptyFile, list.array());
         Method reservePropertyCount = OneNotePtr.class.getDeclaredMethod(
                 "reservePropertyCount", long.class, String.class);
         reservePropertyCount.setAccessible(true);

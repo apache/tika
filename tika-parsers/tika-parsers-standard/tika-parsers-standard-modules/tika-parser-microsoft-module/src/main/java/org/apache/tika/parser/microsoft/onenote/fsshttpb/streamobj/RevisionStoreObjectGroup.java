@@ -91,6 +91,7 @@ public class RevisionStoreObjectGroup {
                                 i);
                 ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference =
                         dataObject.objectGroupData.objectGroupObjectDataBLOBReferenceList.get(i);
+                objectGroup.weight++;
                 if (!objectDict.containsKey(objectGroupObjectBLOBDataDeclaration.objectExGUID)) {
                     revisionObject = new RevisionStoreObject();
                     objectDict.put(objectGroupObjectBLOBDataDeclaration.objectExGUID,

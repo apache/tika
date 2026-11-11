@@ -114,8 +114,9 @@ class OneNoteTreeWalker {
     private final Map<PropertySet, List<OneNoteText.TextRun>> textRunsBySet =
             new IdentityHashMap<>();
     // property data decoded once however many objects reference it, keyed by its offset
-    private final Map<Long, String> inkWordByStp = new HashMap<>();
-    private final Map<Long, int[]> textRunEndsByStp = new HashMap<>();
+    // keyed by (stp, cb); each distinct read is charged to the text budget once
+    private final Map<Pair<Long, Long>, String> inkWordByRef = new HashMap<>();
+    private final Map<Pair<Long, Long>, int[]> textRunEndsByRef = new HashMap<>();
     private final Map<PropertySet, Boolean> hyperlinkByStyle = new IdentityHashMap<>();
     private final Set<FileNode> reportedCycleNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
@@ -656,15 +657,21 @@ class OneNoteTreeWalker {
     }
 
     private int[] textRunEnds(PropertyValue value) throws IOException, TikaException {
-        if (value.rawData != null && textRunEndsByStp.containsKey(value.rawData.stp)) {
-            return textRunEndsByStp.get(value.rawData.stp);
+        if (value.rawData == null) {
+            return OneNoteText.textRunEnds(new byte[0]);
         }
-        ByteBuffer buf = ByteBuffer.allocate(positionAt(value));
+        Pair<Long, Long> ref = Pair.of(value.rawData.stp, value.rawData.cb);
+        if (textRunEndsByRef.containsKey(ref)) {
+            return textRunEndsByRef.get(ref);
+        }
+        int size = positionAt(value);
+        if (!takeTextBytes(size)) {
+            return null;
+        }
+        ByteBuffer buf = ByteBuffer.allocate(size);
         dif.read(buf);
         int[] ends = OneNoteText.textRunEnds(buf.array());
-        if (value.rawData != null) {
-            textRunEndsByStp.put(value.rawData.stp, ends);
-        }
+        textRunEndsByRef.put(ref, ends);
         return ends;
     }
 
@@ -718,12 +725,17 @@ class OneNoteTreeWalker {
                 if (value.rawData == null) {
                     return null;
                 }
-                if (inkWordByStp.containsKey(value.rawData.stp)) {
-                    return inkWordByStp.get(value.rawData.stp);
+                Pair<Long, Long> ref = Pair.of(value.rawData.stp, value.rawData.cb);
+                if (inkWordByRef.containsKey(ref)) {
+                    return inkWordByRef.get(ref);
                 }
-                String alternates = readString(positionAt(value), StandardCharsets.UTF_16LE);
-                String best = OneNoteText.bestInkAlternate(alternates);
-                inkWordByStp.put(value.rawData.stp, best);
+                int size = positionAt(value);
+                if (!takeTextBytes(size)) {
+                    return null;
+                }
+                String best = OneNoteText.bestInkAlternate(
+                        readString(size, StandardCharsets.UTF_16LE));
+                inkWordByRef.put(ref, best);
                 return best;
             }
         }

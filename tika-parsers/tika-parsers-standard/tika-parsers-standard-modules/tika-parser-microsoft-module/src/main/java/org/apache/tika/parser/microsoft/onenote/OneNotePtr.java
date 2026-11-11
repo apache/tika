@@ -1071,15 +1071,22 @@ class OneNotePtr {
         return Math.max(MAX_PROPERTY_VALUES, fileSize / MIN_BYTES_PER_PROPERTY_VALUE);
     }
 
-    private int checkedCount(long count, String description) throws TikaException {
-        if (count < 0 || count > MAX_PROPERTY_VALUES) {
+    private int checkedCount(long count, String description)
+            throws TikaException, IOException {
+        if (count < 0 || count > dif.size()) {
+            // impossible for this file: malformed, not over a limit
+            throw new TikaException(description + " count " + count + " exceeds file size " +
+                    dif.size());
+        }
+        if (count > MAX_PROPERTY_VALUES) {
             throw new TikaMemoryLimitException(
                     description + " count " + count + " exceeds limit " + MAX_PROPERTY_VALUES);
         }
         return (int) count;
     }
 
-    private int reservePropertyCount(long count, String description) throws TikaException {
+    private int reservePropertyCount(long count, String description)
+            throws TikaException, IOException {
         int checked = checkedCount(count, description);
         if (count > documentBudget.propertyValuesRemaining) {
             throw new TikaMemoryLimitException(description + " count " + count +
