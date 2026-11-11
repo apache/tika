@@ -431,6 +431,12 @@ Release 4.3.0 - ???
      UTF-32 code points: binary with a few NULs in its header (a shader file of ASCII 0/1
      after an 80 37 00 00 header) was reported as UTF-32BE (TIKA-5052).
 
+   * Charset detection no longer reads ASCII text with a few control characters (logs with
+     escape or form-feed bytes, IRC colour codes, record separators, banners) as BOM-less
+     UTF-16: the model was retrained with such text, and when it still returns UTF-16 or
+     UTF-32 as its only candidate, the junk filter now compares that decode against
+     windows-1252 and keeps whichever reads as text (TIKA-5052).
+
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>
      becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for

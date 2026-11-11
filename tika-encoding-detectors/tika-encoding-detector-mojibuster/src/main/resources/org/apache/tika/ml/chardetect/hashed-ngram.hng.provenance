@@ -13,11 +13,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-model_sha256	b1a64c01b6404c1dbe9644a054907e4975e9cb527b12c31895612806f72ebeb4
-model_md5	7cd1606fdff904d026678e966c18dab6
+model_sha256	056fcf927453a6eacdcd4f7e463a6d58e8862184990038f62f8dbe6738e5455e
+model_md5	a536ff669cd1610cb9212774d72ab2a9
 model_bytes	2742509
 format	HNG2 (see tika-ml/tika-ml-chardetect/README.md)
-status	datafix "ALL", seed 7, 2026-11-07; trained on gold v1.12 (R-s11 recipe plus the data fixes below)
+status	utf16neg "F", seed 13, 2026-11-11; datafix "ALL" (2026-11-07) plus C0-control negatives; gold v1.12
 
 Architecture
   43 classes: 37 legacy/UTF-8 charsets (IBM420/IBM424 as -ltr/-rtl pairs), IBM437, binary,
@@ -38,6 +38,10 @@ Training data (nothing from the 1.2M regression corpus)
   Vocalized Arabic in windows-1256 / ISO-8859-6; Spanish/Portuguese/Catalan/Galician Wikisource and Spanish
   Wikiquote in windows-1252 (dialogue/literary text with ¡ ¿ º ª); Kurmanji Wikipedia in windows-1254.
   Text with sparse single NULs (<= 2%) labelled by its charset.
+  C0 controls: 3% of single-byte/UTF-8 rows (not EBCDIC) get all C0 types (00-1F except TAB/LF/CR) at
+  weights from per-byte document counts (gold v1.12 web train + a 1.2M-corpus sample; counts only, no
+  bytes; floor 5), rate 1e-4..1e-2, inserted only between 7-bit bytes, half of them with high bytes
+  removed; labelled by their charset.
   Tier B rows whose label set decodes identically take windows-1252 as a hard target.
   Negatives: generated UTF-32LE/BE rows (own classes); generated binary (NUL records, deflate, bytecode,
   integer arrays, random, executables; the scattered-NUL text family was removed) plus the gold v1.12 fit binary-verdict documents

@@ -135,6 +135,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes: an "I don't know". */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
 
+    /** Confidence of the windows-1252 alternative added behind a lone statistical UTF-16/32 pick.
+     *  Kept at JunkFilter's tail band (0.5) so it survives when both endiannesses are listed. */
+    private static final float LONE_WIDE_ALTERNATIVE_CONF = 0.5f;
+
     /**
      * Maximum fraction of malformed-UTF-8 bytes we tolerate before
      * disqualifying the model's UTF-8 pick.  Real-world UTF-8 files often contain
@@ -402,6 +406,18 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // JunkFilter can arbitrate within-family ambiguities (e.g. GB18030 vs
         // x-windows-949), using its language-quality scoring.
         EncodingResult top = finalResults.get(0);
+        // A statistical UTF-16/32 pick with no single-byte alternative gives JunkFilter nothing to
+        // weigh it against, and a wrong wide pick turns readable text into ideographs.  Offer
+        // windows-1252 as the alternative decode (7-bit bytes decode the same under every ASCII
+        // superset); JunkFilter's text-quality model then decides between the two decodes.
+        if (top.getResultType() == EncodingResult.ResultType.STATISTICAL
+                && isWideUnicode(top.getCharset()) && allWide(finalResults)) {
+            finalResults = new java.util.ArrayList<>(finalResults);
+            finalResults.add(new EncodingResult(Charset.forName(WIN1252), LONE_WIDE_ALTERNATIVE_CONF,
+                    WIN1252, EncodingResult.ResultType.STATISTICAL));
+            LOG.trace("mojibuster lone wide pick {}: windows-1252 added as the alternative decode",
+                    top.getCharset().name());
+        }
         List<EncodingResult> toReturn = (top.getResultType() == EncodingResult.ResultType.STRUCTURAL)
                 ? List.of(top) : finalResults;
         if (LOG.isTraceEnabled()) {
@@ -499,6 +515,15 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private static boolean isAsciiRange(byte[] probe) {
         for (byte b : probe) {
             if (b <= 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean allWide(List<EncodingResult> results) {
+        for (EncodingResult r : results) {
+            if (!isWideUnicode(r.getCharset())) {
                 return false;
             }
         }

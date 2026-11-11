@@ -196,7 +196,11 @@ public class WideUnicodeDetectionTest {
         WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(bytes);
         assertTrue(wide.invalidUtf32Be);
         assertTrue(wide.invalidUtf32Le);
-        assertEquals("windows-1252", top(bytes));
+        String top = top(bytes);
+        assertFalse(top.startsWith("UTF-32") || top.startsWith("UTF-16"), top);
+        // which Latin label the model picks is seed-dependent; its decode must equal windows-1252's
+        assertEquals(new String(bytes, Charset.forName("windows-1252")),
+                new String(bytes, Charset.forName(top)));
     }
 
     @ParameterizedTest
