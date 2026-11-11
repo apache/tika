@@ -123,6 +123,8 @@ public class MSOneStorePackage {
     private final Map<ExGuid, EmbeddedResourceInfo> sharedBlobNames = new HashMap<>();
     private final Map<RevisionStoreObject, Boolean> hyperlinkByStyle = new IdentityHashMap<>();
     private long embeddedBytesRemaining = Long.MAX_VALUE;
+    // UTF-16 bytes of text still to write
+    private long textBytesRemaining = Long.MAX_VALUE;
     private final Set<String> originalAuthors = new HashSet<>();
     private final OneNoteGuidCollector guids = new OneNoteGuidCollector(this::recordGuidCapWarning);
     /**
@@ -1932,6 +1934,20 @@ public class MSOneStorePackage {
         embeddedBytesRemaining = limit;
     }
 
+    /** Bounds the text written, in UTF-16 bytes; cells sharing one object group repeat it. */
+    public void setTextByteLimit(long limit) {
+        textBytesRemaining = limit;
+    }
+
+    private boolean takeText(String text) {
+        textBytesRemaining -= 2L * text.length();
+        if (textBytesRemaining >= 0) {
+            return true;
+        }
+        recordParseWarning("OneNote text exceeds twice the file size; skipping the rest");
+        return false;
+    }
+
     private void handleEmbedded(FileDataObject fileData, XHTMLContentHandler xhtml,
                                 EmbeddedResourceInfo resourceInfo, ExGuid objectID)
             throws SAXException, IOException {
@@ -1992,7 +2008,8 @@ public class MSOneStorePackage {
             return;
         }
         if (OneNoteText.isRichText(txt, Collections.emptyList())) {
-            if (OneNoteText.emitRichText(xhtml, txt, textRuns, Collections.emptyList())) {
+            if (takeText(txt) &&
+                    OneNoteText.emitRichText(xhtml, txt, textRuns, Collections.emptyList())) {
                 contentEmitted = true;
             }
         } else {
@@ -2034,7 +2051,7 @@ public class MSOneStorePackage {
     private void emitParagraph(XHTMLContentHandler xhtml, String text) throws SAXException {
         // blank text is dropped, so it cannot suppress the legacy fallback
         text = OneNoteText.clean(text);
-        if (text == null) {
+        if (text == null || !takeText(text)) {
             return;
         }
         xhtml.startElement(P);

@@ -61,7 +61,9 @@ public class AlternativePackaging {
         this.guidCellSchemaId = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);
         AtomicReference<DataElementPackage> pkg = new AtomicReference<>();
-        StreamObject.tryGetCurrent(byteArray, index, pkg, DataElementPackage.class);
+        if (!StreamObject.tryGetCurrent(byteArray, index, pkg, DataElementPackage.class)) {
+            throw new TikaException("Missing data element package");
+        }
         this.dataElementPackage = pkg.get();
         this.packagingEnd = new StreamObjectHeaderEnd16bit();
         this.packagingEnd.deserializeFromByteArray(byteArray, index.get());

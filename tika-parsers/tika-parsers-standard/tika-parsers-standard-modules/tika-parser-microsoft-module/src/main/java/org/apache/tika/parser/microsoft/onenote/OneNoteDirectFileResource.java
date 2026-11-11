@@ -29,6 +29,8 @@ import java.nio.ByteBuffer;
 class OneNoteDirectFileResource implements Closeable {
 
     private static final int WINDOW_SIZE = 64 * 1024;
+    // RandomAccessFile mallocs a native buffer the size of each read
+    private static final int MAX_DIRECT_READ = 1024 * 1024;
 
     private final RandomAccessFile raf;
     private final long size;
@@ -58,12 +60,17 @@ class OneNoteDirectFileResource implements Closeable {
         int totalRead = 0;
         while (totalRead < len && position < size) {
             if (!inWindow(position)) {
-                if (len - totalRead >= WINDOW_SIZE) {
-                    // large reads bypass the window
-                    int n = raf.getChannel().read(byteBuffer, position);
+                if (len - totalRead >= WINDOW_SIZE && byteBuffer.hasArray()) {
+                    // large reads bypass the window; not through a FileChannel, which would
+                    // cache a direct buffer of the read's size on this thread
+                    raf.seek(position);
+                    int n = raf.read(byteBuffer.array(),
+                            byteBuffer.arrayOffset() + byteBuffer.position(),
+                            Math.min(len - totalRead, MAX_DIRECT_READ));
                     if (n <= 0) {
                         throw new IOException("File ended before its recorded size");
                     }
+                    byteBuffer.position(byteBuffer.position() + n);
                     position += n;
                     totalRead += n;
                     continue;

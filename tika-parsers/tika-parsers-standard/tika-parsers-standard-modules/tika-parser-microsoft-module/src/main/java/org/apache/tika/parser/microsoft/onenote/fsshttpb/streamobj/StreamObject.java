@@ -105,20 +105,16 @@ public abstract class StreamObject {
 
         tmpIndex.addAndGet(length);
 
-        StreamObject streamObject =
-                parseStreamObject(streamObjectHeader.get(), byteArray, tmpIndex);
-
-        if (!streamObject.getClass().equals(clazz)) {
-            String destClassName = "(null)";
-            if (streamObjectTypeMapping.containsKey(streamObjectHeader.get().type)) {
-                destClassName =
-                        streamObjectTypeMapping.get(streamObjectHeader.get().type).getName();
-            }
+        // checked before parsing: a wrong type nested in itself would recurse without bound
+        Class<?> mapped = streamObjectTypeMapping.get(streamObjectHeader.get().type);
+        if (!clazz.equals(mapped)) {
             throw new StreamObjectParseErrorException(tmpIndex.get(), clazz.getName(),
                     String.format(Locale.US,
                             "Failed to get stream object as expect type %s, actual type is %s",
-                            clazz.getName(), destClassName), null);
+                            clazz.getName(), mapped == null ? "(null)" : mapped.getName()), null);
         }
+        StreamObject streamObject =
+                parseStreamObject(streamObjectHeader.get(), byteArray, tmpIndex);
 
         index.set(tmpIndex.get());
         return (T) streamObject;

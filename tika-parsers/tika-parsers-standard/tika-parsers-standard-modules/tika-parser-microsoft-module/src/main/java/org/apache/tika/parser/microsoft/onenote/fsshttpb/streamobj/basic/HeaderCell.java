@@ -37,6 +37,9 @@ public class HeaderCell {
                     i).objectPartitionID != null &&
                     objectElement.objectGroupDeclarations.objectDeclarationList.get(
                             i).objectPartitionID.getDecodedValue() == 1) {
+                if (i >= objectElement.objectGroupData.objectGroupObjectDataList.size()) {
+                    throw new IOException("Header cell declaration has no object data");
+                }
                 instance.objectDeclaration =
                         objectElement.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =

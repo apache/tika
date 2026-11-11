@@ -318,7 +318,7 @@ class OneNoteTreeWalker {
                 break;
             }
             Revision revision = oneNoteDocument.revisionMap.get(r);
-            r = revision == null ? null : revision.dependent;
+            r = revision == null || r.equals(revision.dependent) ? null : revision.dependent;
         }
         return Collections.emptyList();
     }
@@ -459,9 +459,9 @@ class OneNoteTreeWalker {
             walkFileNodeList(fileNode.childFileNodeList, parentPropertyId);
         }
         PropertySet propertySet = oneNoteDocument.propertySet(fileNode);
-        if (propertySet != null) {
-            int jcid = jcidIndex(fileNode);
-            boolean history = jcid == OneNoteJcid.VERSION_HISTORY_CONTENT;
+        int jcid = propertySet == null ? -1 : jcidIndex(fileNode);
+        boolean history = jcid == OneNoteJcid.VERSION_HISTORY_CONTENT;
+        if (propertySet != null && (!history || options.isIncludePageHistory())) {
             if (history) {
                 versionHistoryDepth++;
             }
@@ -829,10 +829,10 @@ class OneNoteTreeWalker {
                 }
             }
         }
-        if (propertyValue.compactIDs != null) {
-            // everything below a version-history reference is an older copy
-            boolean history = propertyValue.propertyId.propertyEnum ==
-                    OneNotePropertyEnum.VersionHistoryGraphSpaceContextNodes;
+        // everything below a version-history reference is an older copy
+        boolean history = propertyValue.propertyId.propertyEnum ==
+                OneNotePropertyEnum.VersionHistoryGraphSpaceContextNodes;
+        if (propertyValue.compactIDs != null && (!history || options.isIncludePageHistory())) {
             if (history) {
                 versionHistoryDepth++;
             }
@@ -871,15 +871,11 @@ class OneNoteTreeWalker {
     }
 
     /**
-     * Whether text at the current {@code dif} position should be written: not already written
-     * (the walk can reach shared objects more than once) and, unless all revisions are asked
-     * for, not under a version-history reference.
+     * Whether text at the current {@code dif} position should be written: not already written,
+     * as the walk can reach shared objects more than once.
      */
     private boolean shouldEmitText(int length)
             throws IOException {
-        if (!options.isIncludePageHistory() && versionHistoryDepth > 0) {
-            return false;
-        }
         if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
             return false;
         }

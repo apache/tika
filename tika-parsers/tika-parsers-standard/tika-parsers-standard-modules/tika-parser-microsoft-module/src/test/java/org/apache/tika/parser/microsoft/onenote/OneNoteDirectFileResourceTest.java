@@ -19,9 +19,12 @@ package org.apache.tika.parser.microsoft.onenote;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.management.BufferPoolMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,6 +62,40 @@ public class OneNoteDirectFileResourceTest {
             dif.position(1);
             assertArrayEquals(Arrays.copyOfRange(data, 1, 100_001), read(dif, 100_000));
             assertEquals(100_001, dif.position());
+            // a large read into a buffer with no array goes through the window
+            dif.position(2);
+            ByteBuffer direct = ByteBuffer.allocateDirect(100_000);
+            assertEquals(100_000, dif.read(direct));
+            byte[] fromDirect = new byte[100_000];
+            direct.flip().get(fromDirect);
+            assertArrayEquals(Arrays.copyOfRange(data, 2, 100_002), fromDirect);
+        }
+    }
+
+    @Test
+    public void testLargeReadsDoNotCacheDirectBuffers() throws Exception {
+        byte[] data = data();
+        BufferPoolMXBean pool = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class)
+                .stream().filter(p -> "direct".equals(p.getName())).findFirst().orElseThrow();
+        try (OneNoteDirectFileResource dif = resource(data)) {
+            long[] grown = new long[1];
+            Exception[] failure = new Exception[1];
+            // a fresh thread, so no earlier read has already cached a direct buffer
+            Thread reader = new Thread(() -> {
+                try {
+                    long before = pool.getMemoryUsed();
+                    read(dif, 140_000);
+                    grown[0] = pool.getMemoryUsed() - before;
+                } catch (Exception e) {
+                    failure[0] = e;
+                }
+            });
+            reader.start();
+            reader.join();
+            if (failure[0] != null) {
+                throw failure[0];
+            }
+            assertTrue(grown[0] < 140_000, "direct memory grew by " + grown[0]);
         }
     }
 

@@ -491,6 +491,9 @@ class OneNotePtr {
         } else if (data.id == FndStructureConstants.RevisionManifestListStartFND) {
             data.gosid = deserializeExtendedGUID();
             data.idDesc = "gosid";
+            if (curPath.nodeListPositions.size() < 2) {
+                throw new TikaException("Revision manifest list start outside a manifest list");
+            }
             FileNodePtr parentPath = new FileNodePtr(curPath);
             parentPath.nodeListPositions.remove(parentPath.nodeListPositions.size() - 1);
             document.registerRevisionManifestList(data.gosid, parentPath);
@@ -752,9 +755,7 @@ class OneNotePtr {
             data.gosid = deserializeExtendedGUID(); // the DataSignatureGroup
 
         } else if (data.id == FndStructureConstants.RevisionManifestListReferenceFND) {
-            document.revisionMap.putIfAbsent(document.currentRevision, new Revision());
-            Revision currentRevision = document.revisionMap.get(document.currentRevision);
-            currentRevision.manifestList.add(curPath);
+            // the ref populates the FileNodeList children
         } else {
             LOG.debug(
                     "No fnd needed to be parsed for data.id=0x" + Long.toHexString(data.id) + " (" +

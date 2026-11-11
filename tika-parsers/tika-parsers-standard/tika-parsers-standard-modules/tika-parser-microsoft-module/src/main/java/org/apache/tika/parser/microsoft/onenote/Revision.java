@@ -16,14 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 class Revision {
     Map<Long, GUID> globalId = new HashMap<>();
-    List<FileNodePtr> manifestList = new ArrayList<>();
     ExtendedGUID gosid = ExtendedGUID.nil();
     ExtendedGUID dependent = ExtendedGUID.nil();
     // the table an empty globalId falls back to along the dependent chain, once resolved
@@ -31,14 +28,6 @@ class Revision {
 
     public Revision() {
 
-    }
-
-    public Revision(Map<Long, GUID> globalId, List<FileNodePtr> manifestList, ExtendedGUID gosid,
-                    ExtendedGUID dependent) {
-        this.globalId = globalId;
-        this.manifestList = manifestList;
-        this.gosid = gosid;
-        this.dependent = dependent;
     }
 
     public void setGosid(ExtendedGUID gosid) {

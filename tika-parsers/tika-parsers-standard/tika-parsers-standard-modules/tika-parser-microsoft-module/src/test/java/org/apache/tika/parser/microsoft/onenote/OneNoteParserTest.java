@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -69,6 +70,8 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -533,6 +536,13 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testPageHistoryPerRequest() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("one-note-parser", "{\"includePageHistory\": true}");
+        assertContains("There are", getText("testOneNote3.one", new Metadata(), context));
+    }
+
+    @Test
     public void testOneNote2013Doc3() throws Exception {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote3.one", metadata);
@@ -858,6 +868,121 @@ public class OneNoteParserTest extends TikaTest {
             assertThrows(EncryptedDocumentException.class,
                     () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
         }
+    }
+
+    // MS-ONESTORE 2.3.1: fcrFileNodeListRoot, a FileChunkReference64x32
+    private static final int ROOT_LIST_REFERENCE_OFFSET = 172;
+
+    /**
+     * testOneNote1.one with {@code lists} appended and its root file node list replaced by
+     * their first {@code rootCb} bytes.
+     */
+    private static byte[] withRootList(ByteBuffer lists, int rootCb) throws IOException {
+        byte[] full;
+        try (InputStream is = OneNoteParserTest.class
+                .getResourceAsStream("/test-documents/testOneNote1.one")) {
+            full = is.readAllBytes();
+        }
+        byte[] patched = Arrays.copyOf(full, full.length + lists.capacity());
+        System.arraycopy(lists.array(), 0, patched, full.length, lists.capacity());
+        ByteBuffer.wrap(patched, ROOT_LIST_REFERENCE_OFFSET, 12).order(ByteOrder.LITTLE_ENDIAN)
+                .putLong(full.length).putInt(rootCb);
+        return patched;
+    }
+
+    @Test
+    public void testEncryptedSectionThrowsFromParse(@TempDir Path tempDir) throws Exception {
+        int fileNodeHeader = 0x7C | (16 << 10) | (1 << 27) | (1 << 31);
+        ByteBuffer list = ByteBuffer.allocate(56).order(ByteOrder.LITTLE_ENDIAN);
+        list.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x7FFF).putInt(0)
+                .putInt(fileNodeHeader).putLong(0).putInt(56)
+                .putInt(0)
+                .putLong(-1).putInt(0)
+                .putLong(OneNotePtr.FOOTER_CONST);
+        assertThrows(EncryptedDocumentException.class,
+                () -> parseToText(tempDir.resolve("encrypted.one"),
+                        withRootList(list, list.capacity()), new Metadata()));
+    }
+
+    @Test
+    public void testOverLimitSectionThrowsInsteadOfDumping(@TempDir Path tempDir)
+            throws Exception {
+        // a chain of nested lists deeper than the nesting limit
+        int lists = 120;
+        ByteBuffer chain = ByteBuffer.allocate(56 * lists).order(ByteOrder.LITTLE_ENDIAN);
+        long base = withRootList(ByteBuffer.allocate(0), 0).length;
+        int nodeHeader = 0x10 | (16 << 10) | (2 << 27) | (1 << 31);
+        for (int i = 0; i < lists; i++) {
+            chain.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x7FFF).putInt(0)
+                    .putInt(nodeHeader).putLong(base + 56L * (i + 1)).putInt(56)
+                    .putInt(0)
+                    .putLong(-1).putInt(0)
+                    .putLong(OneNotePtr.FOOTER_CONST);
+        }
+        assertThrows(TikaMemoryLimitException.class,
+                () -> parseToText(tempDir.resolve("deep.one"), withRootList(chain, 56),
+                        new Metadata()));
+    }
+
+    @Test
+    public void testPartialWalkKeepsItsOutputWithoutADump(@TempDir Path tempDir)
+            throws Exception {
+        byte[] full;
+        try (InputStream is = getClass()
+                .getResourceAsStream("/test-documents/testOneNote3.one")) {
+            full = is.readAllBytes();
+        }
+        // corrupts a property set the walk reaches after it has written text
+        byte[] corrupt = full.clone();
+        Arrays.fill(corrupt, 32222, 32230, (byte) 0xFF);
+        Metadata metadata = new Metadata();
+        String txt = parseToText(tempDir.resolve("corrupt.one"), corrupt, metadata);
+        assertFalse(txt.isBlank());
+        String[] warnings = metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(Arrays.stream(warnings).anyMatch(w -> w.contains("output is partial")),
+                Arrays.toString(warnings));
+        assertFalse(Arrays.stream(warnings).anyMatch(w -> w.contains("legacy text dump")),
+                Arrays.toString(warnings));
+    }
+
+    @Test
+    public void testRevisionListStartInTheRootListFallsBack(@TempDir Path tempDir)
+            throws Exception {
+        // RevisionManifestListStartFND (0x14, an ExtendedGUID and a 4-byte count) belongs
+        // only in a revision manifest list
+        int fileNodeHeader = 0x14 | (28 << 10) | (1 << 31);
+        ByteBuffer list = ByteBuffer.allocate(68).order(ByteOrder.LITTLE_ENDIAN);
+        list.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x7FFF).putInt(0)
+                .putInt(fileNodeHeader).putLong(1).putLong(2).putInt(3).putInt(0)
+                .putInt(0)
+                .putLong(-1).putInt(0)
+                .putLong(OneNotePtr.FOOTER_CONST);
+        Metadata metadata = new Metadata();
+        parseToText(tempDir.resolve("misplaced.one"), withRootList(list, list.capacity()),
+                metadata);
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(w -> w.contains("legacy text dump")));
+    }
+
+    @Test
+    public void testFsshttpbWithoutDataElementPackageFallsBack(@TempDir Path tempDir)
+            throws Exception {
+        byte[] full;
+        try (InputStream is = getClass()
+                .getResourceAsStream("/test-documents/testOneNoteFromOffice365.one")) {
+            full = is.readAllBytes();
+        }
+        // four GUIDs, rgbReserved and the packaging start header, then the storage index
+        // ExGuid and the cell schema GUID
+        AtomicInteger index = new AtomicInteger(72);
+        BasicObject.parse(full, index, ExGuid.class);
+        byte[] corrupt = full.clone();
+        // an end header where the data element package should start
+        corrupt[index.get() + 16] = 0x03;
+        Metadata metadata = new Metadata();
+        parseToText(tempDir.resolve("no-package.one"), corrupt, metadata);
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(w -> w.contains("legacy text dump")));
     }
 
     @Test

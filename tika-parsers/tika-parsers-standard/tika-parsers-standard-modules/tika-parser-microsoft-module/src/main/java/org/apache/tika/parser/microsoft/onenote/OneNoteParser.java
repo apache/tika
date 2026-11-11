@@ -37,6 +37,8 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -58,6 +60,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 /** Microsoft OneNote parser, based on the MS-ONE and MS-ONESTORE specs. */
 @TikaComponent
+@RequestConfigurable
 public class OneNoteParser implements Parser {
 
     public static final String ONE_NOTE_PREFIX = "onenote:";
@@ -104,7 +107,8 @@ public class OneNoteParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        OneNoteParserConfig options = context.get(OneNoteParserConfig.class, defaultConfig);
+        OneNoteParserConfig options = ParseContextConfig.getConfig(context, "one-note-parser",
+                OneNoteParserConfig.class, defaultConfig);
         try (OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
                         tis.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
@@ -219,6 +223,7 @@ public class OneNoteParser implements Parser {
                                 "OneNote section is password protected");
                     }
                     pkg.setEmbeddedByteLimit(bytes.length);
+                    pkg.setTextByteLimit(2L * bytes.length);
                     boolean walked = true;
                     try {
                         pkg.walkTree(options, metadata, xhtml, context);
