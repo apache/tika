@@ -1,0 +1,197 @@
+{
+ "tika-core": {
+  "extra": {
+   "test_cwd_is_basedir": true
+  },
+  "test_deps": [
+   "@maven//:org_jspecify_jspecify"
+  ]
+ },
+ "tika-encoding-detector-html": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-encoding-detector-mojibuster": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_slf4j_slf4j_api"
+  ]
+ },
+ "tika-ml-junkdetect": {
+  "deps": [
+   "@maven//:org_slf4j_slf4j_api"
+  ],
+  "test_deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-parser-apple-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_apache_commons_commons_compress"
+  ]
+ },
+ "tika-parser-audiovideo-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-parser-cad-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_apache_commons_commons_lang3",
+   "@maven//:org_apache_poi_poi",
+   "@maven//:org_slf4j_slf4j_api"
+  ]
+ },
+ "tika-parser-code-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-parser-crypto-module": {
+  "deps": [
+   "@maven//:org_slf4j_slf4j_api",
+   "@maven//:org_bouncycastle_bcpkix_jdk18on",
+   "@maven//:org_bouncycastle_bcutil_jdk18on"
+  ]
+ },
+ "tika-parser-font-module": {
+  "deps": [
+   "@maven//:org_apache_pdfbox_pdfbox_io"
+  ]
+ },
+ "tika-parser-image-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_slf4j_slf4j_api"
+  ]
+ },
+ "tika-parser-jdbc-commons": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-parser-mail-commons": {
+  "test_deps": [
+   "@maven//:org_apache_james_apache_mime4j_dom"
+  ]
+ },
+ "tika-parser-mail-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ],
+  "test_deps": [
+   "@maven//:org_jsoup_jsoup"
+  ]
+ },
+ "tika-parser-microsoft-module": {
+  "append": "# jflex-maven-plugin: generate the RTF lexer from src/main/jflex.\ngenrule(\n    name = \"rtf_tokenizer\",\n    srcs = [\"src/main/jflex/org/apache/tika/parser/microsoft/rtf/jflex/RTFTokenizer.jflex\"],\n    outs = [\"RTFTokenizer.java\"],\n    cmd = \"$(execpath //bazel:jflex) -q --nobak -d $(@D) $<\",\n    tools = [\"//bazel:jflex\"],\n)\n",
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_apache_commons_commons_compress"
+  ],
+  "extra": {
+   "extra_srcs": [
+    ":rtf_tokenizer"
+   ]
+  },
+  "test_deps": [
+   "@maven//:org_apache_logging_log4j_log4j_api",
+   "@maven//:org_jsoup_jsoup"
+  ]
+ },
+ "tika-parser-miscoffice-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_apache_commons_commons_compress",
+   "@maven//:org_slf4j_slf4j_api"
+  ]
+ },
+ "tika-parser-news-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-parser-ocr-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_slf4j_slf4j_api"
+  ]
+ },
+ "tika-parser-pdf-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_apache_pdfbox_pdfbox_io",
+   "@maven//:org_slf4j_slf4j_api"
+  ],
+  "test_deps": [
+   "@maven//:com_fasterxml_jackson_core_jackson_annotations"
+  ]
+ },
+ "tika-parser-pkg-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_apache_commons_commons_compress"
+  ]
+ },
+ "tika-parser-text-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-parser-xml-module": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_slf4j_slf4j_api"
+  ]
+ },
+ "tika-parser-xmp-commons": {
+  "deps": [
+   "@maven//:commons_io_commons_io"
+  ]
+ },
+ "tika-parser-zip-commons": {
+  "deps": [
+   "@maven//:commons_io_commons_io",
+   "@maven//:org_slf4j_slf4j_api"
+  ],
+  "test_deps": [
+   "@maven//:commons_codec_commons_codec"
+  ]
+ },
+ "tika-plugins-core": {
+  "append": "# pf4j ships its processor with a META-INF/services entry, so Maven's javac finds it on the\n# classpath and writes META-INF/extensions.idx. Bazel runs only processors named as plugins.\njava_plugin(\n    name = \"pf4j_extension_processor\",\n    processor_class = \"org.pf4j.processor.ExtensionAnnotationProcessor\",\n    deps = [\"@maven//:org_pf4j_pf4j\"],\n)\n",
+  "deps": [
+   "@maven//:com_fasterxml_jackson_core_jackson_core",
+   "@maven//:org_slf4j_slf4j_api"
+  ],
+  "extra": {
+   "plugins": [
+    ":pf4j_extension_processor"
+   ]
+  }
+ },
+ "tika-readability": {
+  "extra": {
+   "test_data": [
+    "@readability_upstream//:test_pages"
+   ]
+  },
+  "test_jvm_flags": [
+   "-Dreadability.testPages=../+http_archive+readability_upstream/test/test-pages"
+  ]
+ },
+ "tika-serialization": {
+  "deps": [
+   "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+   "@maven//:org_slf4j_slf4j_api"
+  ]
+ },
+ "tika-test-support": {
+  "deps": [
+   "@maven//:org_junit_platform_junit_platform_engine"
+  ]
+ }
+}

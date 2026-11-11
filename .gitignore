@@ -27,3 +27,7 @@ __pycache__/
 *.pyc
 
 /.local_m2_repo/
+
+# Bazel
+/bazel-*
+/user.bazelrc

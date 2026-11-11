@@ -1,0 +1,60 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@contrib_rules_jvm//java:defs.bzl", "java_junit5_test")
+load("@rules_java//java:defs.bzl", "java_library", "java_plugin")
+load("//bazel:tika.bzl", "TEST_JVM_FLAGS", "TEST_RUNTIME_DEPS")
+
+# The processor's own classes. Maven builds this module with -proc:none; Bazel only runs
+# processors that are named as plugins, so nothing is needed here.
+java_library(
+    name = "processor-lib",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resource_strip_prefix = package_name() + "/src/main/resources",
+    resources = glob(["src/main/resources/**"]),
+)
+
+java_plugin(
+    name = "processor",
+    processor_class = "org.apache.tika.annotation.TikaComponentProcessor",
+    deps = [":processor-lib"],
+)
+
+# What a module gets from the Maven "provided" dependency plus annotationProcessorPaths:
+# @TikaComponent on the compile classpath, and the processor run over its sources.
+# exported_plugins only reach direct dependants, as annotationProcessorPaths is per module.
+java_library(
+    name = "tika-annotation-processor",
+    exported_plugins = [":processor"],
+    visibility = ["//visibility:public"],
+    exports = [":processor-lib"],
+)
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/java/**/*.java"]),
+    deps = [
+        ":processor-lib",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+)
+
+java_junit5_test(
+    name = "KebabCaseConverterTest",
+    test_class = "org.apache.tika.annotation.KebabCaseConverterTest",
+    jvm_flags = TEST_JVM_FLAGS,
+    runtime_deps = [":tests"] + TEST_RUNTIME_DEPS,
+)

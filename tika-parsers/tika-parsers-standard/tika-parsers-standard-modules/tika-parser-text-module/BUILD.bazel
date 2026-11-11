@@ -1,0 +1,43 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//bazel:tika.bzl", "tika_java_module")
+
+tika_java_module(
+    name = "tika-parser-text-module",
+    deps = [
+        "//tika-annotation-processor",
+        "//tika-core",
+        "//tika-encoding-detectors/tika-encoding-detector-mojibuster",
+        "//tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-datauri-commons",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_csv",
+        "@maven//:org_commonmark_commonmark",
+        "@maven//:org_commonmark_commonmark_ext_gfm_strikethrough",
+        "@maven//:org_commonmark_commonmark_ext_gfm_tables",
+    ],
+    test_deps = [
+        "//tika-core:tests",
+        "//tika-encoding-detectors/tika-encoding-detector-html",
+        "//tika-ml/tika-ml-junkdetect",
+        "//tika-serialization",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_slf4j2_impl",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_jupiter_junit_jupiter_params",
+    ],
+)

@@ -19,9 +19,19 @@ package org.apache.tika.serialization.serdes;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
+
 public class UnreadBlockWarningTest {
+
+    @BeforeAll
+    public static void loadComponentRegistries() {
+        // The registries are loaded with the shared mapper. Load them here so the test does
+        // not depend on an earlier test in the same JVM having done it.
+        TikaObjectMapperFactory.getMapper();
+    }
 
     @Test
     public void testWarnsOncePerComponent() {

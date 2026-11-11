@@ -1,0 +1,31 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Java 17, as maven.compiler.release in tika-parent. Compile and run on the hermetic
+# remote JDK, so neither a local nor a remote-worker JDK is needed.
+common --java_language_version=17
+common --tool_java_language_version=17
+common --java_runtime_version=remotejdk_17
+common --tool_java_runtime_version=remotejdk_17
+
+# Bazel's Java toolchain runs Error Prone and fails on some of its checks; Maven runs
+# plain javac. Turn the checks off to match the Maven build.
+build --javacopt=-XepDisableAllChecks
+
+test --test_output=errors
+test --test_verbose_timeout_warnings
+
+# Machine-specific settings (remote execution, credentials) live here, not in git.
+try-import %workspace%/user.bazelrc
