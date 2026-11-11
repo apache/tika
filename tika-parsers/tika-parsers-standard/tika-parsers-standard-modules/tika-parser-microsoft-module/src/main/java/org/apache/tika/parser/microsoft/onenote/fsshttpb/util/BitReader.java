@@ -21,17 +21,6 @@ import java.util.UUID;
 
 /** Reads values at arbitrary bit positions, LSB first. */
 public class BitReader {
-    /**
-     * Direct-mapped cache from raw GUID bytes to the derived UUID: a file references the same
-     * few GUIDs everywhere, so this avoids recomputing the MD5. Entries are immutable and a pure
-     * function of the key, so racing writers only replace one correct entry with another.
-     */
-    private static final int GUID_CACHE_MASK = 1023;
-    private static final GuidCacheEntry[] GUID_CACHE = new GuidCacheEntry[GUID_CACHE_MASK + 1];
-
-    private record GuidCacheEntry(long high, long low, UUID uuid) {
-    }
-
     private final long startPosition;
     private final long length;
     private byte[] byteArray;
@@ -78,22 +67,7 @@ public class BitReader {
     }
 
     public UUID readGuid() throws IOException {
-        byte[] raw = this.getBytes(128, 16);
-        long high = 0;
-        long low = 0;
-        for (int i = 0; i < 8; i++) {
-            high = (high << 8) | (raw[i] & 0xff);
-            low = (low << 8) | (raw[i + 8] & 0xff);
-        }
-        long mixed = (high ^ low) * 0x9E3779B97F4A7C15L;
-        int slot = (int) (mixed >>> 54) & GUID_CACHE_MASK;
-        GuidCacheEntry entry = GUID_CACHE[slot];
-        if (entry != null && entry.high == high && entry.low == low) {
-            return entry.uuid;
-        }
-        UUID uuid = GuidUtil.fromMicrosoftBytes(raw, 0);
-        GUID_CACHE[slot] = new GuidCacheEntry(high, low, uuid);
-        return uuid;
+        return GuidUtil.fromMicrosoftBytes(this.getBytes(128, 16), 0);
     }
 
     /** Advances one bit; false once past the end. */

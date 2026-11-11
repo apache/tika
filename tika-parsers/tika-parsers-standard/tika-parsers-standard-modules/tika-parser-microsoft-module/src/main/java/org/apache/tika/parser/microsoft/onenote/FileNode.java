@@ -55,6 +55,8 @@ class FileNode {
     // values start; null once read
     ObjectSpaceObjectPropSet propertySetStreams;
     long propertySetValues;
+    // end of the declaration's chunk, which bounds the deferred values
+    long propertySetEnd;
     boolean isFileData;
 
     /** For ObjectGroupListReference, the children; null for nodes that reference no list. */

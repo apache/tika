@@ -159,6 +159,8 @@ public class MSOneStorePackage {
     private boolean parseWarningsSuppressed;
     private boolean storageMappingsIndexed;
     private boolean contentEmitted;
+    // content left out on purpose: page history, deleted pages or declined attachments
+    private boolean contentWithheld;
     private List<OneNoteText.TextRun> textRuns;
     // every revision of a notebook's table of contents lists its sections again
     private final Set<String> emittedFolderChildren = new HashSet<>();
@@ -256,34 +258,36 @@ public class MSOneStorePackage {
                 // Walk each page cell (object space) as a tree, starting from the root objects of
                 // its current revision and following the object references in property order. This
                 // emits the text in document order. The pages are walked in the order in which the
-                // section object space references them; older versions of a page and deleted
-                // pages are emitted only with page history.
+                // section object space references them; older versions of a page come only with
+                // page history, and deleted pages only with deleted content.
                 List<RevisionStoreCell> pageCells = new ArrayList<>();
                 List<RevisionStoreCell> otherCells = new ArrayList<>();
                 Map<RevisionStoreCell, PastPage> pastCells = new LinkedHashMap<>();
                 splitCells(pageCells, otherCells, pastCells);
                 for (RevisionStoreCell cell : pageCells) {
-                    emitPage(cell, options, metadata, xhtml);
+                    emitPage(cell, metadata, xhtml);
                 }
                 for (Map.Entry<RevisionStoreCell, PastPage> past : pastCells.entrySet()) {
                     if (past.getValue().included(options)) {
-                        emitPage(past.getKey(), options, metadata, xhtml,
+                        emitPage(past.getKey(), metadata, xhtml,
                                 past.getValue().cssClass);
+                    } else {
+                        contentWithheld = true;
                     }
                 }
                 for (RevisionStoreCell cell : otherCells) {
-                    walkCell(cell, indexObjectsById(cell.objectGroups), options, metadata, xhtml);
+                    walkCell(cell, indexObjectsById(cell.objectGroups), metadata, xhtml);
                 }
             } else {
                 // a notebook table of contents has no page cells; its entries are in the data root
                 if (dataRootCell != null) {
-                    walkCell(dataRootCell, indexObjectsById(dataRootCell.objectGroups), options,
-                            metadata, xhtml);
+                    walkCell(dataRootCell, indexObjectsById(dataRootCell.objectGroups), metadata,
+                            xhtml);
                 }
                 // no cell information available - walk the object groups in revision order
                 Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(OtherFileNodeList);
                 Set<ExGuid> visited = new HashSet<>();
-                walkObjectGroupRoots(OtherFileNodeList, objectsById, visited, options, metadata,
+                walkObjectGroupRoots(OtherFileNodeList, objectsById, visited, metadata,
                         xhtml);
             }
             if (!authors.isEmpty()) {
@@ -314,14 +318,13 @@ public class MSOneStorePackage {
         return !numberListInfoCache.isEmpty() || !listFormatKeysByDigest.isEmpty();
     }
 
-    void emitPage(RevisionStoreCell cell, OneNoteParserConfig options,
-                          Metadata metadata, XHTMLContentHandler xhtml)
+    void emitPage(RevisionStoreCell cell, Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
-        emitPage(cell, options, metadata, xhtml, "page");
+        emitPage(cell, metadata, xhtml, "page");
     }
 
-    private void emitPage(RevisionStoreCell cell, OneNoteParserConfig options,
-                          Metadata metadata, XHTMLContentHandler xhtml, String cssClass)
+    private void emitPage(RevisionStoreCell cell, Metadata metadata, XHTMLContentHandler xhtml,
+                          String cssClass)
             throws SAXException, TikaException, IOException {
         Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(cell.objectGroups);
         String pageGuid = findPageGuid(cell, objectsById);
@@ -333,7 +336,7 @@ public class MSOneStorePackage {
         }
         xhtml.startElement("div", attributes);
         try {
-            walkCell(cell, objectsById, options, metadata, xhtml);
+            walkCell(cell, objectsById, metadata, xhtml);
         } finally {
             xhtml.endElement("div");
         }
@@ -492,7 +495,7 @@ public class MSOneStorePackage {
 
     private void walkCell(RevisionStoreCell cell,
                           Map<ExGuid, RevisionStoreObject> objectsById,
-                          OneNoteParserConfig options, Metadata metadata,
+                          Metadata metadata,
                           XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         depthSkippedObjects.clear();
@@ -502,7 +505,7 @@ public class MSOneStorePackage {
         // of objects (under a different object ID); those are intentionally not walked.
         CellRoots roots = cellRoots(cell, objectsById, this::recordParseWarning);
         for (RevisionStoreObject rootObject : roots.declared) {
-            walkRootObject(rootObject, objectsById, visited, options, metadata, xhtml);
+            walkRootObject(rootObject, objectsById, visited, metadata, xhtml);
         }
         if (roots.walkAll) {
             if (cell.rootDeclares != null && cell.rootDeclares.isEmpty()) {
@@ -515,7 +518,7 @@ public class MSOneStorePackage {
             } else {
                 recordParseWarning("OneNote cell root objects could not be resolved; walking all objects");
             }
-            walkObjectGroupRoots(cell.objectGroups, objectsById, visited, options, metadata,
+            walkObjectGroupRoots(cell.objectGroups, objectsById, visited, metadata,
                     xhtml);
         }
     }
@@ -641,8 +644,8 @@ public class MSOneStorePackage {
 
     private void walkObject(RevisionStoreObject object,
                              Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                             AuthorRole authorRole, OneNoteParserConfig options,
-                             Metadata metadata, XHTMLContentHandler xhtml, int depth,
+                             AuthorRole authorRole, Metadata metadata,
+                             XHTMLContentHandler xhtml, int depth,
                              EmbeddedResourceInfo inheritedResourceInfo)
             throws SAXException, TikaException, IOException {
         if (object == null) {
@@ -718,7 +721,7 @@ public class MSOneStorePackage {
         textRuns = textRuns(actions, objectsById);
         startObjectStructure(objectType, listStyle, xhtml);
         try {
-            emitImage(actions, options, xhtml);
+            emitImage(actions, xhtml);
             // Emit the title structure before page body nodes to preserve visual order.
             List<PropertyAction> structureActions = new ArrayList<>();
             for (PropertyAction action : actions) {
@@ -727,7 +730,7 @@ public class MSOneStorePackage {
                 }
             }
             processStructureChildActions(structureActions, objectsById, visited, authorRole,
-                    options, metadata, xhtml, depth, resourceInfo);
+                    metadata, xhtml, depth, resourceInfo);
             List<PropertyAction> remainingActions = new ArrayList<>();
             for (PropertyAction action : actions) {
                 if (hasPrimaryPicture &&
@@ -739,7 +742,7 @@ public class MSOneStorePackage {
                 }
             }
             processStructureChildActions(remainingActions, objectsById, visited, authorRole,
-                    options, metadata, xhtml, depth, resourceInfo);
+                    metadata, xhtml, depth, resourceInfo);
         } finally {
             endObjectStructure(objectType, listStyle, xhtml);
             textRuns = outerTextRuns;
@@ -835,8 +838,8 @@ public class MSOneStorePackage {
 
     private void walkObjectGroupRoots(List<RevisionStoreObjectGroup> objectGroups,
                                       Map<ExGuid, RevisionStoreObject> objectsById,
-                                      Set<ExGuid> visited, OneNoteParserConfig options,
-                                      Metadata metadata, XHTMLContentHandler xhtml)
+                                      Set<ExGuid> visited, Metadata metadata,
+                                      XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         Set<ExGuid> structureDescendantIds = collectStructureDescendantIds(objectsById);
         List<RevisionStoreObject> deferredObjects = new ArrayList<>();
@@ -850,24 +853,24 @@ public class MSOneStorePackage {
                     deferredObjects.add(object);
                     continue;
                 }
-                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
+                walkRootObject(object, objectsById, visited, metadata, xhtml);
             }
         }
-        recoverDepthSkippedObjects(objectsById, visited, options, metadata, xhtml);
+        recoverDepthSkippedObjects(objectsById, visited, metadata, xhtml);
         // Residual owners belong to cycles; keep their storage order, not type priority.
         for (RevisionStoreObject object : deferredObjects) {
             if (!visited.contains(object.objectID) &&
                     (jcidIndex(object) == OneNoteJcid.TABLE_NODE ||
                             isListContainer(object, objectsById))) {
-                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
+                walkRootObject(object, objectsById, visited, metadata, xhtml);
             }
         }
-        recoverDepthSkippedObjects(objectsById, visited, options, metadata, xhtml);
+        recoverDepthSkippedObjects(objectsById, visited, metadata, xhtml);
     }
 
     private void recoverDepthSkippedObjects(Map<ExGuid, RevisionStoreObject> objectsById,
-                                            Set<ExGuid> visited, OneNoteParserConfig options,
-                                            Metadata metadata, XHTMLContentHandler xhtml)
+                                            Set<ExGuid> visited, Metadata metadata,
+                                            XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         // Recover only depth-skipped objects, not intentionally suppressed renditions.
         while (!depthSkippedObjects.isEmpty()) {
@@ -875,7 +878,7 @@ public class MSOneStorePackage {
                     depthSkippedObjects.entrySet().iterator().next();
             depthSkippedObjects.remove(skipped.getKey());
             for (Map.Entry<AuthorRole, EmbeddedResourceInfo> reference : skipped.getValue().entrySet()) {
-                walkRootObject(skipped.getKey(), objectsById, visited, reference.getKey(), options,
+                walkRootObject(skipped.getKey(), objectsById, visited, reference.getKey(),
                         metadata, xhtml, reference.getValue());
             }
         }
@@ -940,19 +943,19 @@ public class MSOneStorePackage {
 
     private void walkRootObject(RevisionStoreObject object,
                                 Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                                OneNoteParserConfig options, Metadata metadata,
+                                Metadata metadata,
                                 XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
-        walkRootObject(object, objectsById, visited, AuthorRole.NONE, options, metadata, xhtml, null);
+        walkRootObject(object, objectsById, visited, AuthorRole.NONE, metadata, xhtml, null);
     }
 
     private void walkRootObject(RevisionStoreObject object,
                                 Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                                AuthorRole authorRole, OneNoteParserConfig options, Metadata metadata,
+                                AuthorRole authorRole, Metadata metadata,
                                 XHTMLContentHandler xhtml, EmbeddedResourceInfo resourceInfo)
             throws SAXException, TikaException, IOException {
         if (!canWalkObject(object, visited, 0)) {
-            walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml, 0, resourceInfo);
+            walkObject(object, objectsById, visited, authorRole, metadata, xhtml, 0, resourceInfo);
             return;
         }
         List<PropertyAction> actions = object.propertySet != null
@@ -963,7 +966,7 @@ public class MSOneStorePackage {
             startList(listStyle, xhtml);
         }
         try {
-            walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml,
+            walkObject(object, objectsById, visited, authorRole, metadata, xhtml,
                     0, resourceInfo);
         } finally {
             if (listStyle != null) {
@@ -975,7 +978,7 @@ public class MSOneStorePackage {
     private void processStructureChildActions(List<PropertyAction> actions,
                                               Map<ExGuid, RevisionStoreObject> objectsById,
                                               Set<ExGuid> visited, AuthorRole authorRole,
-                                              OneNoteParserConfig options, Metadata metadata,
+                                              Metadata metadata,
                                               XHTMLContentHandler xhtml, int depth,
                                               EmbeddedResourceInfo resourceInfo)
             throws SAXException, TikaException, IOException {
@@ -985,7 +988,7 @@ public class MSOneStorePackage {
             ListStyle style = isSkippedChild(action, objectsById, visited, depth) ? null :
                     listStyleForChild(action, objectsById);
             if (style == null) {
-                processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
+                processAction(action, objectsById, visited, authorRole, metadata, xhtml,
                         depth, resourceInfo);
                 index++;
                 continue;
@@ -996,7 +999,7 @@ public class MSOneStorePackage {
                 while (next < actions.size()) {
                     PropertyAction sibling = actions.get(next);
                     if (isSkippedChild(sibling, objectsById, visited, depth)) {
-                        processAction(sibling, objectsById, visited, authorRole, options, metadata,
+                        processAction(sibling, objectsById, visited, authorRole, metadata,
                                 xhtml, depth, resourceInfo);
                         next++;
                         continue;
@@ -1005,7 +1008,7 @@ public class MSOneStorePackage {
                     if (siblingStyle == null || !style.matches(siblingStyle)) {
                         break;
                     }
-                    processAction(sibling, objectsById, visited, authorRole, options, metadata,
+                    processAction(sibling, objectsById, visited, authorRole, metadata,
                             xhtml, depth, resourceInfo);
                     next++;
                 }
@@ -1555,8 +1558,8 @@ public class MSOneStorePackage {
 
     private void processAction(PropertyAction action,
                                Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                               AuthorRole authorRole, OneNoteParserConfig options,
-                               Metadata metadata, XHTMLContentHandler xhtml, int depth,
+                               AuthorRole authorRole, Metadata metadata,
+                               XHTMLContentHandler xhtml, int depth,
                                EmbeddedResourceInfo parentResourceInfo)
             throws SAXException, TikaException, IOException {
         if (action.spaceReference != null) {
@@ -1578,11 +1581,11 @@ public class MSOneStorePackage {
                 recordParseWarning("OneNote object " + action.childReference +
                         " could not be resolved");
             }
-            walkObject(child, objectsById, visited, childRole, options, metadata, xhtml,
+            walkObject(child, objectsById, visited, childRole, metadata, xhtml,
                     depth + 1, childResourceInfo);
         } else {
             processPrimitiveProperty(action.property, action.propertyType,
-                    action.oneNotePropertyEnum, authorRole, options, metadata, xhtml);
+                    action.oneNotePropertyEnum, authorRole, metadata, xhtml);
         }
     }
 
@@ -1639,7 +1642,7 @@ public class MSOneStorePackage {
     private void processPrimitiveProperty(IProperty property, PropertyType propertyType,
                                           OneNotePropertyEnum oneNotePropertyEnum,
                                           AuthorRole authorRole,
-                                          OneNoteParserConfig options, Metadata metadata,
+                                          Metadata metadata,
                                           XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
@@ -1980,15 +1983,14 @@ public class MSOneStorePackage {
         xhtml.startElement("div", attributes);
         xhtml.endElement("div");
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+            contentWithheld = true;
             return;
         }
-        // only counts as content when the extractor accepts it, so a declined
-        // embedded object in an otherwise-empty file still triggers the fallback
-        contentEmitted = true;
         if (fileData.getDataLength() > embeddedBytesRemaining) {
             recordParseWarning("OneNote embedded data exceeds the file size; skipping the rest");
             return;
         }
+        contentEmitted = true;
         embeddedBytesRemaining -= fileData.getDataLength();
         // A byte-array stream, not one re-opened over the parsed buffer: parsers that need a
         // seekable channel (zip containers, PDF) get the array zero-copy instead of a temp file.
@@ -2017,8 +2019,8 @@ public class MSOneStorePackage {
         }
     }
 
-    private void emitImage(List<PropertyAction> actions, OneNoteParserConfig options,
-                           XHTMLContentHandler xhtml) throws SAXException {
+    private void emitImage(List<PropertyAction> actions, XHTMLContentHandler xhtml)
+            throws SAXException {
         String fileName = null;
         String altText = null;
         for (PropertyAction action : actions) {
@@ -2063,17 +2065,22 @@ public class MSOneStorePackage {
         contentEmitted = true;
     }
 
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+
     /**
      * Whether the tree walk emitted any content - text or an embedded object. When it did
      * not, the caller can fall back to the legacy string dump so a degraded file still
      * yields its text.
      */
-    public boolean isEncrypted() {
-        return encrypted;
-    }
-
     public boolean hasEmittedContent() {
         return contentEmitted;
+    }
+
+    /** @return whether the walk left out content the configuration or extractor excludes */
+    public boolean hasWithheldContent() {
+        return contentWithheld;
     }
 
     private long getScalar(IProperty property) throws TikaException, IOException {

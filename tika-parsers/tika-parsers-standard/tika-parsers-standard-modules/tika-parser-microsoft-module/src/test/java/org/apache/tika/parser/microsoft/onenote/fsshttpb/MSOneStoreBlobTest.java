@@ -157,8 +157,11 @@ public class MSOneStoreBlobTest {
         assertEquals("INLINE", embeddedTypes.get(0));
     }
 
-    /** One stored file referenced by two objects, under a byte limit. */
-    /** @param firstName null for no name: the first holder is then an unnamed attachment */
+    /**
+     * One stored file referenced by two objects, under a byte limit.
+     *
+     * @param firstName null for no name: the first holder is then an unnamed attachment
+     */
     private List<byte[]> walkSharedBlob(long byteLimit, Metadata metadata, String firstName,
                                         List<String> names) throws Exception {
         DataElement blobElement = roundTripBlobElement();

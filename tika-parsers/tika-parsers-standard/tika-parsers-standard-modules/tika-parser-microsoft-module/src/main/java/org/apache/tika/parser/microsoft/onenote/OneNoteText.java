@@ -32,16 +32,16 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /** Text clean-up and markup shared by the .one and FSSHTTPB walkers. */
 public final class OneNoteText {
 
+    private static final Pattern INK_PUNCTUATION = Pattern.compile("[.,;:!?)\\]}]+");
+    /** Longer author names and more distinct authors are dropped. */
+    public static final int MAX_AUTHOR_CHARS = 1000;
+    public static final int MAX_AUTHORS = 1000;
     /**
      * MS-ONE TextExtendedAscii. OneNote writes it only for text that fits Latin-1, whatever
      * the paragraph's language ID (zh-CN and ja text holds NBSP and U+00D7; cs and ru text
      * holds nothing that windows-1250/1251 would read differently), so the code page is not
      * taken from the LCID.
      */
-    private static final Pattern INK_PUNCTUATION = Pattern.compile("[.,;:!?)\\]}]+");
-    /** Longer author names and more distinct authors are dropped. */
-    public static final int MAX_AUTHOR_CHARS = 1000;
-    public static final int MAX_AUTHORS = 1000;
     public static final Charset EXTENDED_ASCII = Charset.forName("windows-1252");
 
     /**
@@ -97,7 +97,6 @@ public final class OneNoteText {
     private static final Pattern HYPERLINK_FIELD =
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]*)\"");
 
-    /** @return whether the paragraph needs {@link #emitRichText} rather than plain text */
     /** @return UTF-16LE text up to its first NUL, or all of it when it has none */
     public static String richEditText(byte[] utf16) {
         int end = utf16.length & ~1;
@@ -110,6 +109,7 @@ public final class OneNoteText {
         return new String(utf16, 0, end, StandardCharsets.UTF_16LE);
     }
 
+    /** @return whether the paragraph needs {@link #emitRichText} rather than plain text */
     public static boolean isRichText(String text, List<String> inkWords) {
         return !inkWords.isEmpty() || text.indexOf('\uFDDF') >= 0;
     }

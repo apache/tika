@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -66,11 +65,6 @@ public class BitReaderTest {
         }
     }
 
-    /**
-     * The GUID cache slot depends on high ^ low, so XORing both 8-byte halves of a GUID with the
-     * same mask gives a different GUID in the same slot. Reads alternating between the two must
-     * each return their own UUID; a repeat read of the resident one is a cache hit.
-     */
     /** GUIDs are stored in Microsoft byte order, as in the encryption key root GUID. */
     @Test
     public void testGuidByteOrder() throws IOException {
@@ -78,32 +72,6 @@ public class BitReaderTest {
                 (byte) 0x95, 0x26, (byte) 0x81, (byte) 0xD9, 0x42, (byte) 0xDE, 0x17, 0x41};
         assertEquals(UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"),
                 new BitReader(data, 0).readGuid());
-    }
-
-    @Test
-    public void testGuidCacheCollision() throws IOException {
-        byte[] first = new byte[16];
-        new Random(20261106L).nextBytes(first);
-        byte[] second = first.clone();
-        second[0] ^= (byte) 0x5A;
-        second[8] ^= (byte) 0x5A;
-        UUID firstUuid = GuidUtil.fromMicrosoftBytes(first, 0);
-        UUID secondUuid = GuidUtil.fromMicrosoftBytes(second, 0);
-
-        byte[] data = new byte[16 * 5];
-        for (int i = 0; i < 5; i++) {
-            System.arraycopy(i % 2 == 0 ? first : second, 0, data, i * 16, 16);
-        }
-        BitReader reader = new BitReader(data, 0);
-        assertEquals(firstUuid, reader.readGuid());
-        assertEquals(secondUuid, reader.readGuid());
-        assertEquals(firstUuid, reader.readGuid());
-        assertEquals(secondUuid, reader.readGuid());
-
-        BitReader repeat = new BitReader(data, 64);
-        UUID resident = repeat.readGuid();
-        assertEquals(firstUuid, resident);
-        assertSame(resident, new BitReader(data, 64).readGuid());
     }
 
     @Test

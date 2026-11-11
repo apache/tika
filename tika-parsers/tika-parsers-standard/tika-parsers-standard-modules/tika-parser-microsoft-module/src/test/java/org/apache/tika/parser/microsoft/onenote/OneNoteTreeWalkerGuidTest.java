@@ -117,19 +117,23 @@ public class OneNoteTreeWalkerGuidTest {
         Path input = tempDir.resolve("guid-data.bin");
         Files.write(input, guidBytes);
         Metadata metadata = new Metadata();
+        Metadata shortMetadata = new Metadata();
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(input.toFile())) {
             OneNoteTreeWalker walker = newWalker(metadata, false, dif);
             walker.processPropertyValue(notebookGuidProperty(guidBytes.length),
                     parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
                     OneNoteJcid.PAGE_METADATA);
+            walker.walkTree();
             // a 15-byte value is not a GUID and adds nothing
-            walker.processPropertyValue(notebookGuidProperty(15),
+            OneNoteTreeWalker shortWalker = newWalker(shortMetadata, false, dif);
+            shortWalker.processPropertyValue(notebookGuidProperty(15),
                     parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
                     OneNoteJcid.PAGE_METADATA);
-            walker.walkTree();
+            shortWalker.walkTree();
         }
         assertEquals(List.of("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
                 Arrays.asList(metadata.getValues(OneNote.PAGE_GUIDS)));
+        assertEquals(0, shortMetadata.getValues(OneNote.PAGE_GUIDS).length);
     }
 
     @Test

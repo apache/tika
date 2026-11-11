@@ -30,7 +30,7 @@ import org.apache.tika.exception.TikaException;
  * may be modified while the item is in use. {@link #getContent()} swaps a range for an array of
  * its own on the first call; {@link #copyContent()} always returns a fresh array.
  *
- * <p>Construction, {@link #setContent} and serialization keep {@link #length} equal to the
+ * <p>Construction and {@link #setContent} keep {@link #length} equal to the
  * content size, which is 0 for content set to null.
  */
 public class BinaryItem extends BasicObject {

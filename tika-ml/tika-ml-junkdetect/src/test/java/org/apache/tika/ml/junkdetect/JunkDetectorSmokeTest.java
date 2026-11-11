@@ -45,10 +45,6 @@ public class JunkDetectorSmokeTest {
         detector = JunkDetector.loadFromClasspath();
     }
 
-    /**
-     * Clean English should score higher than random high-byte garbage interpreted
-     * as ISO-8859-1.  Simulates binary data mixed into a text extraction.
-     */
     @Test
     public void testServiceLoaderFindsTheBundledDetector() {
         // the registration needs a public no-arg constructor on the class path
@@ -58,6 +54,10 @@ public class JunkDetectorSmokeTest {
         assertFalse(detector.score("The quick brown fox jumps over the lazy dog.").isUnknown());
     }
 
+    /**
+     * Clean English should score higher than random high-byte garbage interpreted
+     * as ISO-8859-1.  Simulates binary data mixed into a text extraction.
+     */
     @Test
     void cleanVsGarbage() {
         String clean = "The quick brown fox jumps over the lazy dog. "

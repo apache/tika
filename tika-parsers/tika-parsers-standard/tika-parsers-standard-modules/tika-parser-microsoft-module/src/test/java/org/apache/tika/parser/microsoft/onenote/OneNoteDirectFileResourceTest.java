@@ -100,6 +100,35 @@ public class OneNoteDirectFileResourceTest {
     }
 
     @Test
+    public void testAlternatingRegionsAreReadOnce() throws IOException {
+        byte[] data = data();
+        try (OneNoteDirectFileResource dif = resource(data)) {
+            // a file node list and the property sets it declares, read in turn
+            for (int i = 0; i < 100; i++) {
+                for (int offset : new int[]{10, 70_000, 140_000}) {
+                    dif.position(offset + i);
+                    assertEquals(data[offset + i] & 0xFF, dif.read());
+                }
+            }
+            assertEquals(SIZE, dif.bytesFilled());
+        }
+    }
+
+    @Test
+    public void testLittleEndianAcrossAPageBoundary() throws IOException {
+        byte[] data = data();
+        try (OneNoteDirectFileResource dif = resource(data)) {
+            dif.position(65_532);
+            long expected = 0;
+            for (int i = 7; i >= 0; i--) {
+                expected = (expected << 8) | (data[65_532 + i] & 0xFF);
+            }
+            assertEquals(expected, dif.readLittleEndian(8));
+            assertEquals(65_540, dif.position());
+        }
+    }
+
+    @Test
     public void testEndOfFile() throws IOException {
         try (OneNoteDirectFileResource dif = resource(data())) {
             dif.position(SIZE);
@@ -107,6 +136,7 @@ public class OneNoteDirectFileResourceTest {
             dif.position(SIZE - 4);
             assertThrows(IOException.class, () -> read(dif, 8));
             assertThrows(IOException.class, () -> dif.position(SIZE + 1));
+            assertThrows(IOException.class, () -> dif.position(-1));
         }
     }
 

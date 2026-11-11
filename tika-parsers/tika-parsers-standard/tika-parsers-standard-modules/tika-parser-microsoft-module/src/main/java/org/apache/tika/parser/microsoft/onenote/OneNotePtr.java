@@ -170,6 +170,9 @@ class OneNotePtr {
     }
 
     private GUID deserializeGUID() throws IOException {
+        if (dif.position() != offset) {
+            dif.position(offset);
+        }
         byte[] guidBytes = new byte[16];
         for (int i = 0; i < 16; ++i) {
             int next = dif.read();
@@ -300,6 +303,10 @@ class OneNotePtr {
     }
 
     public void reposition(FileChunkReference loc) throws IOException {
+        if (loc.stp < 0 || loc.cb < 0 || loc.stp > dif.size() || loc.cb > dif.size() - loc.stp) {
+            throw new IOException("OneNote file chunk reference outside the file: stp=" +
+                    loc.stp + " cb=" + loc.cb);
+        }
         reposition(loc.stp);
         this.end = offset + loc.cb;
     }
@@ -815,7 +822,8 @@ class OneNotePtr {
         ObjectDeclarationWithRefCountBody data = new ObjectDeclarationWithRefCountBody();
         data.oid = deserializeCompactID();
         long jci_odcs_etc = deserializeLittleEndianInt();
-        deserializeLittleEndianShort(); // reserved
+        // MS-ONESTORE 2.6.15: reserved, MUST be ignored; some writers set it to 0xFFFF
+        deserializeLittleEndianShort();
 
         data.jcid.index = jci_odcs_etc & 0x3ffL;
         // undocumented: OneNote 2007 declares picture (0x16), ink (0x17) and zlib-compressed
@@ -827,8 +835,6 @@ class OneNotePtr {
         long must_be_zero = (jci_odcs_etc >> 10) & 0xf;
         data.fHasOidReferences = ((jci_odcs_etc >> 16) & 0x1) != 0;
         data.hasOsidReferences = ((jci_odcs_etc >> 17) & 0x1) != 0;
-        // MS-ONESTORE 2.6.15: the reserved fields MUST be ignored; some writers set the
-        // trailing 16 bits to 0xFFFF in otherwise well-formed declarations
         if (must_be_zero != 0) {
             throw new TikaException("ObjectDeclarationWithRefCountBody odcs must be zero");
         }
@@ -1001,11 +1007,13 @@ class OneNotePtr {
         ptr.reposition(data.ref);
         data.propertySetStreams = ptr.deserializeObjectSpaceObjectPropSet();
         data.propertySetValues = ptr.offset;
+        data.propertySetEnd = ptr.end;
     }
 
     PropertySet readPropertySet(FileNode node) throws IOException, TikaException {
         OneNotePtr ptr = new OneNotePtr(this);
         ptr.reposition(node.propertySetValues);
+        ptr.end = node.propertySetEnd;
         return ptr.deserializePropertySet(new ObjectStreamCounters(), node.propertySetStreams);
     }
 

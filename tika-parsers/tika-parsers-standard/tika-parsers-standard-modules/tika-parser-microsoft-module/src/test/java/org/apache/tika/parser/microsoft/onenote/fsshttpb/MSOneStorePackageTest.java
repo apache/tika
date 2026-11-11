@@ -1524,7 +1524,7 @@ public class MSOneStorePackageTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
         xhtml.startDocument();
 
-        pkg.emitPage(cell, new OneNoteParserConfig(), metadata, xhtml);
+        pkg.emitPage(cell, metadata, xhtml);
 
         xhtml.endDocument();
         assertEquals(1, pkg.objectIndexBuilds);
@@ -1806,6 +1806,19 @@ public class MSOneStorePackageTest {
         assertTrue(all.contains("old live page"));
         assertTrue(all.contains(">deleted page<"));
         assertTrue(all.contains("old deleted page"));
+    }
+
+    @Test
+    public void testOnlyExcludedPagesIsWithheldNotEmpty() throws Exception {
+        MSOneStorePackage pkg = deletedPagePackage();
+        // drop the live page and the unrelated cell: only the deleted page is left
+        pkg.cells.removeIf(cell -> cell.cellID.extendGUID2.equals(id(100)) ||
+                cell.cellID.extendGUID2.equals(id(300)));
+        String xml = walkXml(pkg, new Metadata(), new ParseContext(), new OneNoteParserConfig());
+        assertFalse(xml.contains("deleted page"));
+        assertFalse(pkg.hasEmittedContent());
+        // so the parser does not dump the excluded text instead
+        assertTrue(pkg.hasWithheldContent());
     }
 
     private static String walkPast(boolean history, boolean deleted) throws Exception {
@@ -2311,8 +2324,7 @@ public class MSOneStorePackageTest {
         Method walkObject = MSOneStorePackage.class.getDeclaredMethod("walkObject",
                 RevisionStoreObject.class, Map.class, Set.class,
                 Class.forName(MSOneStorePackage.class.getName() + "$AuthorRole"),
-                OneNoteParserConfig.class, Metadata.class, XHTMLContentHandler.class,
-                int.class,
+                Metadata.class, XHTMLContentHandler.class, int.class,
                 Class.forName(MSOneStorePackage.class.getName() + "$EmbeddedResourceInfo"));
         walkObject.setAccessible(true);
         // an object that emits text when walked, so the depth-capped walk's blank
@@ -2328,11 +2340,11 @@ public class MSOneStorePackageTest {
         xhtml.startDocument();
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteParserConfig(), metadata, xhtml, 1000, null);
+                metadata, xhtml, 1000, null);
         assertTrue(writer.toString().isBlank());
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteParserConfig(), metadata, xhtml, 0, null);
+                metadata, xhtml, 0, null);
         xhtml.endDocument();
         assertTrue(writer.toString().contains("depth capped text"));
     }

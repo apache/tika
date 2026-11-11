@@ -162,7 +162,7 @@ public class OneNoteParser implements Parser {
                     structureFailure = e;
                 }
                 boolean walked = false;
-                boolean emittedContent = false;
+                boolean outputComplete = false;
                 if (structureFailure == null) {
                     OneNoteTreeWalker oneNoteTreeWalker = new OneNoteTreeWalker(options,
                             oneNoteDocument, oneNoteDirectFileResource, xhtml, metadata, context,
@@ -182,14 +182,17 @@ public class OneNoteParser implements Parser {
                     }
                     if (walked) {
                         setWalkMetadata(oneNoteTreeWalker, metadata);
-                        emittedContent = oneNoteTreeWalker.hasEmittedContent();
+                        // nothing written because the rest was excluded is the right output;
+                        // the dump would write the excluded text
+                        outputComplete = oneNoteTreeWalker.hasEmittedContent() ||
+                                oneNoteTreeWalker.hasWithheldContent();
                     }
                 }
                 if (!walked) {
                     legacyFallbackDump("OneNote parse failed; falling back to legacy text dump",
                             structureFailure, metadata, xhtml, oneNoteDirectFileResource,
                             context);
-                } else if (!emittedContent) {
+                } else if (!outputComplete) {
                     // a walk that found no text, e.g. a property layout the walker does not
                     // know, still has text the dump can recover (including TOC section names)
                     legacyFallbackDump("OneNote parse produced no content; " +
@@ -295,7 +298,7 @@ public class OneNoteParser implements Parser {
                                           OneNoteDirectFileResource oneNoteDirectFileResource,
                                           ParseContext context)
             throws TikaException, SAXException {
-        if (pkg != null && !pkg.hasEmittedContent()) {
+        if (pkg != null && !pkg.hasEmittedContent() && !pkg.hasWithheldContent()) {
             legacyFallbackDump("OneNote FSSHTTPB parse produced no content; " +
                             "falling back to legacy text dump", null, metadata, xhtml,
                     oneNoteDirectFileResource, context);
@@ -347,7 +350,7 @@ public class OneNoteParser implements Parser {
         metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         if (cause != null) {
             LOG.debug("OneNote parse failure", cause);
-            //the failure text is the policy's business, so it goes through format, not here
+            // the exception text is recorded as ExceptionReporting allows, not in the warning
             EmbeddedDocumentUtil.recordException(cause, metadata, context);
         }
         new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml).dump();

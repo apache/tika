@@ -224,6 +224,7 @@
 ** `application/x-chm`
 * `org.apache.tika.parser.microsoft.onenote.` link:{tika-javadoc-url}/org/apache/tika/parser/microsoft/onenote/OneNoteParser.html[OneNoteParser]
 ** `application/onenote; format=one`
+** `application/onenote; format=onetoc2`
 * `org.apache.tika.parser.microsoft.ooxml.` link:{tika-javadoc-url}/org/apache/tika/parser/microsoft/ooxml/OOXMLParser.html[OOXMLParser]
 ** `application/vnd.ms-excel.addin.macroenabled.12`
 ** `application/vnd.ms-excel.sheet.binary.macroenabled.12`

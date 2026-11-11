@@ -21,6 +21,15 @@ Release 4.3.0 - ???
      untrained scripts. JunkFilterEncodingDetector takes a HashedJunkModel instead of a
      TextQualityDetector (TIKA-5027).
 
+   * OneNote sections, .one and FSSHTTPB, give each page's current text and metadata
+     only, not every stored revision. Set includePageHistory on one-note-parser, in the
+     config or per request, for earlier revisions and saved page versions, and
+     includeDeletedContent for FSSHTTPB recycle-bin pages. All .one attachments are still
+     extracted. A file over a parse limit throws TikaMemoryLimitException instead of
+     falling back to the legacy text dump. OneNoteTreeWalkerOptions, the public
+     OneNoteLegacyDumpStrings settings and most public classes of the OneNote structure
+     model are removed (TIKA-5057).
+
    * FetcherManager.getFetcher and EmitterManager.getEmitter return a Lease
      (AbstractComponentManager.getComponent is now acquire); close it when done with
      the component and anything it returned. Pipes now closes a
@@ -170,18 +179,16 @@ Release 4.3.0 - ???
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
 
-   * OneNote sections, .one and FSSHTTPB, give each page's current text and metadata
-     only, not every stored revision. Set includePageHistory on one-note-parser for
-     earlier revisions and saved page versions, and includeDeletedContent for FSSHTTPB
-     recycle-bin pages. All .one attachments are still extracted (TIKA-5057).
-
    * OneNote FSSHTTPB sections extract each stored file once, not once per reference
      to it (TIKA-5057).
 
+   * OneNoteParser parses .onetoc2 notebook tables of contents, listing their section
+     names (TIKA-5057).
+
    * OneNote sections that fell back to the legacy text dump now parse structurally,
-     including OneNote 2007 sections, Aspose.Note files, .onetoc2 tables of contents
-     (which now list their section names) and sections with leftover bytes from earlier
-     saves. OneNote 2003 sections fall back to the dump instead of failing (TIKA-5057).
+     including OneNote 2007 sections, Aspose.Note files and sections with leftover bytes
+     from earlier saves. OneNote 2003 sections fall back to the dump instead of failing
+     (TIKA-5057).
 
    * OneNote text that was dropped or garbled is extracted: objects edited in later
      revisions, text behind element child references, and paragraphs with hyperlinks
@@ -198,11 +205,9 @@ Release 4.3.0 - ???
      (TIKA-5057).
 
    * OneNote parsing bounds CPU and memory on crafted files with limits scaled to file
-     size, and rejects more malformed structures up front. A file over a limit throws
-     TikaMemoryLimitException instead of falling back to the legacy text dump (TIKA-5057).
+     size, and rejects more malformed structures up front (TIKA-5057).
 
-   * OneNote .one sections allocate far less and small ones parse about ten times
-     faster, reading from a buffered window instead of one system call per field.
+   * OneNote .one sections allocate far less and small ones parse much faster, reading from a buffered window instead of one system call per field.
      Large multi-revision sections are slower, as every committed revision is now read
      (TIKA-5057).
 

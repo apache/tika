@@ -138,6 +138,19 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testClassicGuidsIncludeVersionHistoryPagesWithHistory() throws Exception {
+        ParseContext context = new ParseContext();
+        OneNoteParserConfig config = new OneNoteParserConfig();
+        config.setIncludePageHistory(true);
+        context.set(OneNoteParserConfig.class, config);
+        Metadata metadata = new Metadata();
+        getText("test-tika-3970-dupetext.one", metadata, context);
+        List<String> pageGuids = Arrays.asList(metadata.getValues(OneNote.PAGE_GUIDS));
+        assertTrue(pageGuids.contains("{70D3B6E3-B023-4A5E-AC96-6FCE9D66F63C}"), pageGuids::toString);
+        assertTrue(pageGuids.size() > 1, pageGuids::toString);
+    }
+
+    @Test
     public void testFsshttpbGuidValuesAreSorted() throws Exception {
         Metadata metadata = new Metadata();
         getText("testOneNoteFromOffice365.one", metadata);

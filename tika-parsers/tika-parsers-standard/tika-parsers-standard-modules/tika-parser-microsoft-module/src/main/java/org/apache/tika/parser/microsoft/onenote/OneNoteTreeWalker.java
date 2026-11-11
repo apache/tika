@@ -128,6 +128,10 @@ class OneNoteTreeWalker {
     private final Map<ExtendedGUID, FileNodePtr> resolvedObjects = new HashMap<>();
     private int versionHistoryDepth;
     private boolean contentEmitted;
+    // content left out on purpose: other revisions, page history or declined attachments
+    private boolean contentWithheld;
+    // the walk reached a section or page object, so its layout is one the walker reads
+    private boolean sectionStructureSeen;
     // the revision whose objects the walk resolves, or null for the last declared anywhere
     private ExtendedGUID walkedRevision;
     private final Set<Long> emittedEmbedded = new HashSet<>();
@@ -241,9 +245,11 @@ class OneNoteTreeWalker {
         // per root role: 1 content, 2 page metadata, 4 revision metadata (author, times)
         Map<Long, Map<ExtendedGUID, List<ExtendedGUID>>> rootsByRole = new HashMap<>();
         ExtendedGUID rid = null;
+        boolean otherRevisions = false;
         for (FileNode child : children) {
             if (isRevisionStart(child)) {
                 rid = child.gosid;
+                otherRevisions |= !current.equals(rid);
             } else if (rid != null &&
                     (child.id == FndStructureConstants.RootObjectReference2FNDX ||
                             child.id == FndStructureConstants.RootObjectReference3FND)) {
@@ -266,6 +272,11 @@ class OneNoteTreeWalker {
         } finally {
             walkedRevision = null;
             clearRevisionCaches();
+        }
+        // not for a table of contents, whose layout the walker may not read: its every
+        // revision lists the sections again, and the dump is how they are recovered
+        if (otherRevisions && sectionStructureSeen) {
+            contentWithheld = true;
         }
         return true;
     }
@@ -403,6 +414,11 @@ class OneNoteTreeWalker {
         return contentEmitted;
     }
 
+    /** @return whether the walk left out content the configuration or extractor excludes */
+    public boolean hasWithheldContent() {
+        return contentWithheld;
+    }
+
     private void recordVisitBudgetWarning() {
         if (visitBudgetWarningRecorded) {
             return;
@@ -461,6 +477,13 @@ class OneNoteTreeWalker {
         PropertySet propertySet = oneNoteDocument.propertySet(fileNode);
         int jcid = propertySet == null ? -1 : jcidIndex(fileNode);
         boolean history = jcid == OneNoteJcid.VERSION_HISTORY_CONTENT;
+        if (jcid == OneNoteJcid.SECTION_NODE || jcid == OneNoteJcid.PAGE_SERIES_NODE ||
+                jcid == OneNoteJcid.PAGE_NODE) {
+            sectionStructureSeen = true;
+        }
+        if (history && !options.isIncludePageHistory()) {
+            contentWithheld = true;
+        }
         if (propertySet != null && (!history || options.isIncludePageHistory())) {
             if (history) {
                 versionHistoryDepth++;
@@ -547,6 +570,8 @@ class OneNoteTreeWalker {
                 contentEmitted = true;
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);
+            } else {
+                contentWithheld = true;
             }
         } finally {
             IOUtils.closeQuietly(tis);
@@ -690,12 +715,15 @@ class OneNoteTreeWalker {
         return (int) cb;
     }
 
-    /** @return the recognized words of the paragraph's inline ink, in order */
+    /**
+     * @return the recognized words of the paragraph's inline ink, in order: its
+     * TextRunDataObject references, one per U+FFFC in its text (undocumented)
+     */
     private List<String> inlineInkWords(PropertySet propertySet)
             throws IOException, TikaException {
         List<String> words = Collections.emptyList();
         for (PropertyValue value : propertySet.rgPridsData) {
-            if (value.propertyId.propertyEnum != OneNotePropertyEnum.InlineInkWords ||
+            if (value.propertyId.propertyEnum != OneNotePropertyEnum.TextRunDataObject ||
                     value.compactIDs == null) {
                 continue;
             }
@@ -822,8 +850,8 @@ class OneNoteTreeWalker {
                 String guid = GUID.fromMicrosoftBytes(guidBuffer.array()).toString();
                 // version-history copies of a page are object-space roots; only the current
                 // page's metadata is referenced via MetaDataObjectsAboveGraphSpace
-                if (objectType != OneNoteJcid.PAGE_METADATA || (parentPropertyId != null &&
-                        parentPropertyId.propertyEnum ==
+                if (objectType != OneNoteJcid.PAGE_METADATA || options.isIncludePageHistory() ||
+                        (parentPropertyId != null && parentPropertyId.propertyEnum ==
                                 OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace)) {
                     addClassicEntityGuid(objectType, guid);
                 }
@@ -832,6 +860,9 @@ class OneNoteTreeWalker {
         // everything below a version-history reference is an older copy
         boolean history = propertyValue.propertyId.propertyEnum ==
                 OneNotePropertyEnum.VersionHistoryGraphSpaceContextNodes;
+        if (history && !options.isIncludePageHistory()) {
+            contentWithheld = true;
+        }
         if (propertyValue.compactIDs != null && (!history || options.isIncludePageHistory())) {
             if (history) {
                 versionHistoryDepth++;

@@ -24,21 +24,27 @@ import java.nio.ByteBuffer;
 
 /**
  * Seekable reads over a OneNote file. The parser mostly reads a few bytes at a time, so reads
- * come from a window of the file rather than one system call each.
+ * come from a few cached pages of the file rather than one system call each. Several pages,
+ * as file node lists and the property sets they declare are read in alternation.
  */
 class OneNoteDirectFileResource implements Closeable {
 
-    private static final int WINDOW_SIZE = 64 * 1024;
+    private static final int PAGE_SHIFT = 16;
+    private static final int PAGE_SIZE = 1 << PAGE_SHIFT;
+    private static final int PAGES = 4;
     // RandomAccessFile mallocs a native buffer the size of each read
     private static final int MAX_DIRECT_READ = 1024 * 1024;
 
     private final RandomAccessFile raf;
     private final long size;
-    private final byte[] window = new byte[WINDOW_SIZE];
-    // file offset of window[0], and how many bytes of the window are valid
-    private long windowStart;
-    private int windowLength;
+    private final byte[][] pages = new byte[PAGES][];
+    // page number held in each slot, or -1; how many of its bytes are valid; last use
+    private final long[] pageNumbers = {-1, -1, -1, -1};
+    private final int[] pageLengths = new int[PAGES];
+    private final long[] lastUse = new long[PAGES];
+    private long useClock;
     private long position;
+    private long bytesFilled;
 
     public OneNoteDirectFileResource(File f) throws IOException {
         this.raf = new RandomAccessFile(f, "r");
@@ -49,37 +55,33 @@ class OneNoteDirectFileResource implements Closeable {
         if (position >= size) {
             return -1;
         }
-        if (!inWindow(position)) {
-            fill(position);
-        }
-        return window[(int) (position++ - windowStart)] & 0xFF;
+        int slot = page(position);
+        return pages[slot][offsetIn(slot, position++)] & 0xFF;
     }
 
     public int read(ByteBuffer byteBuffer) throws IOException {
         int len = byteBuffer.remaining();
         int totalRead = 0;
         while (totalRead < len && position < size) {
-            if (!inWindow(position)) {
-                if (len - totalRead >= WINDOW_SIZE && byteBuffer.hasArray()) {
-                    // large reads bypass the window; not through a FileChannel, which would
-                    // cache a direct buffer of the read's size on this thread
-                    raf.seek(position);
-                    int n = raf.read(byteBuffer.array(),
-                            byteBuffer.arrayOffset() + byteBuffer.position(),
-                            Math.min(len - totalRead, MAX_DIRECT_READ));
-                    if (n <= 0) {
-                        throw new IOException("File ended before its recorded size");
-                    }
-                    byteBuffer.position(byteBuffer.position() + n);
-                    position += n;
-                    totalRead += n;
-                    continue;
+            if (len - totalRead >= PAGE_SIZE && byteBuffer.hasArray()) {
+                // large reads bypass the cache; not through a FileChannel, which would
+                // cache a direct buffer of the read's size on this thread
+                raf.seek(position);
+                int n = raf.read(byteBuffer.array(),
+                        byteBuffer.arrayOffset() + byteBuffer.position(),
+                        Math.min(len - totalRead, MAX_DIRECT_READ));
+                if (n <= 0) {
+                    throw new IOException("File ended before its recorded size");
                 }
-                fill(position);
+                byteBuffer.position(byteBuffer.position() + n);
+                position += n;
+                totalRead += n;
+                continue;
             }
-            int offset = (int) (position - windowStart);
-            int n = Math.min(len - totalRead, windowLength - offset);
-            byteBuffer.put(window, offset, n);
+            int slot = page(position);
+            int offset = offsetIn(slot, position);
+            int n = Math.min(len - totalRead, pageLengths[slot] - offset);
+            byteBuffer.put(pages[slot], offset, n);
             position += n;
             totalRead += n;
         }
@@ -94,18 +96,17 @@ class OneNoteDirectFileResource implements Closeable {
         if (position + n > size) {
             throw new IOException("End of stream reached earlier than expected");
         }
-        if (position < windowStart || position + n > windowStart + windowLength) {
-            fill(position);
-        }
+        int slot = page(position);
+        int offset = offsetIn(slot, position);
         long res = 0;
-        if (windowLength >= n) {
-            int offset = (int) (position - windowStart);
+        if (offset + n <= pageLengths[slot]) {
+            byte[] page = pages[slot];
             for (int i = n - 1; i >= 0; i--) {
-                res = (res << 8) | (window[offset + i] & 0xFF);
+                res = (res << 8) | (page[offset + i] & 0xFF);
             }
             position += n;
         } else {
-            // short read from the file
+            // straddles a page boundary
             for (int i = 0; i < n; i++) {
                 res |= ((long) read()) << (8 * i);
             }
@@ -113,19 +114,52 @@ class OneNoteDirectFileResource implements Closeable {
         return res;
     }
 
-    private boolean inWindow(long pos) {
-        return pos >= windowStart && pos < windowStart + windowLength;
+    /** @return the slot holding the page with {@code pos}, read in if needed */
+    private int page(long pos) throws IOException {
+        long number = pos >>> PAGE_SHIFT;
+        int victim = 0;
+        for (int i = 0; i < PAGES; i++) {
+            if (pageNumbers[i] == number) {
+                lastUse[i] = ++useClock;
+                return i;
+            }
+            if (lastUse[i] < lastUse[victim]) {
+                victim = i;
+            }
+        }
+        if (pages[victim] == null) {
+            pages[victim] = new byte[PAGE_SIZE];
+        }
+        long start = number << PAGE_SHIFT;
+        int want = (int) Math.min(PAGE_SIZE, size - start);
+        raf.seek(start);
+        int filled = 0;
+        while (filled < want) {
+            int n = raf.read(pages[victim], filled, want - filled);
+            if (n < 0) {
+                break;
+            }
+            filled += n;
+        }
+        pageNumbers[victim] = number;
+        pageLengths[victim] = filled;
+        lastUse[victim] = ++useClock;
+        bytesFilled += filled;
+        return victim;
     }
 
-    private void fill(long pos) throws IOException {
-        raf.seek(pos);
-        int n = raf.read(window, 0, (int) Math.min(WINDOW_SIZE, size - pos));
-        if (n <= 0) {
+    private int offsetIn(int slot, long pos) throws IOException {
+        int offset = (int) (pos & (PAGE_SIZE - 1));
+        if (offset >= pageLengths[slot]) {
             // the file shrank after it was opened
             throw new IOException("File ended before its recorded size");
         }
-        windowStart = pos;
-        windowLength = n;
+        return offset;
+    }
+
+    /** @return bytes read from the file into the cache so far */
+    long bytesFilled() {
+        return bytesFilled;
     }
 
     public long size() throws IOException {
@@ -137,8 +171,8 @@ class OneNoteDirectFileResource implements Closeable {
     }
 
     public void position(long nuPos) throws IOException {
-        if (nuPos > size) {
-            throw new IOException("requesting seek past end of stream");
+        if (nuPos < 0 || nuPos > size) {
+            throw new IOException("requesting seek outside the stream: " + nuPos);
         }
         position = nuPos;
     }
