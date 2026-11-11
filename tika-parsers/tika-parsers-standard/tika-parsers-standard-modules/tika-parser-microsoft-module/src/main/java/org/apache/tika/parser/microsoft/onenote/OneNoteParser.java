@@ -185,9 +185,9 @@ public class OneNoteParser implements Parser {
                     legacyFallbackDump("OneNote parse failed; falling back to legacy text dump",
                             structureFailure, metadata, xhtml, oneNoteDirectFileResource,
                             context);
-                } else if (!emittedContent && !isTableOfContents(header)) {
-                    // a section walk that found no text, e.g. a property layout the walker
-                    // does not know, still has text the dump can recover
+                } else if (!emittedContent) {
+                    // a walk that found no text, e.g. a property layout the walker does not
+                    // know, still has text the dump can recover (including TOC section names)
                     legacyFallbackDump("OneNote parse produced no content; " +
                                     "falling back to legacy text dump", null, metadata, xhtml,
                             oneNoteDirectFileResource, context);
@@ -263,15 +263,6 @@ public class OneNoteParser implements Parser {
         String[] sorted = values.toArray(new String[0]);
         Arrays.sort(sorted);
         return sorted;
-    }
-
-    // a .onetoc2 notebook table of contents holds section names, not page text
-    private static final String TABLE_OF_CONTENTS_FILE_TYPE =
-            "{43FF2FA1-EFD9-4C76-9EE2-10EA5722765F}";
-
-    static boolean isTableOfContents(OneNoteHeader header) {
-        GUID fileType = header.getGuidFileType();
-        return fileType != null && TABLE_OF_CONTENTS_FILE_TYPE.equalsIgnoreCase(fileType.toString());
     }
 
     private static final String SECTION_FILE_TYPE = "{7B5C52E4-D88C-4DA7-AEB1-5378D02996D3}";

@@ -30,9 +30,12 @@ public class OneNoteParserConfig implements Serializable {
     private boolean includeDeletedContent = false;
 
     /**
-     * Whether text and metadata (authors, timestamps, page GUIDs) include every earlier revision
-     * and saved page version, not only each page's current one. Off, the output describes the
-     * section as it is now, like the final state of an incrementally updated PDF.
+     * Whether text and metadata (authors, timestamps, page GUIDs) include earlier versions of
+     * each page, not only its current one. Off, the output describes the section as it is now,
+     * like the final state of an incrementally updated PDF.
+     * <p>
+     * For .one sections this is every earlier revision. For FSSHTTPB (SharePoint/OneDrive)
+     * sections it is only the saved page versions; edits within a version are merged.
      * <p>
      * Exception: .one (2010-2016) sections keep attachments in one store shared by all
      * versions, so every stored attachment is extracted either way, including files that only

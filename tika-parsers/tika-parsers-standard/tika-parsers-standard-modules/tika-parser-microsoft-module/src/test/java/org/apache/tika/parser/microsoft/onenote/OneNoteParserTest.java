@@ -1406,20 +1406,6 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
-    public void testTableOfContentsIsRecognized() throws Exception {
-        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNote-fuzz1.one");
-             OneNoteDirectFileResource dif = new OneNoteDirectFileResource(tis.getFile())) {
-            OneNoteHeader header = new OneNotePtr(new OneNoteDocument(), dif).deserializeHeader();
-            assertTrue(OneNoteParser.isTableOfContents(header));
-        }
-        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNote.one");
-             OneNoteDirectFileResource dif = new OneNoteDirectFileResource(tis.getFile())) {
-            OneNoteHeader header = new OneNotePtr(new OneNoteDocument(), dif).deserializeHeader();
-            assertFalse(OneNoteParser.isTableOfContents(header));
-        }
-    }
-
-    @Test
     public void testFileNodeListNestingIsDepthCapped(@TempDir Path tempDir) throws Exception {
         // 120 lists, each holding one baseType-2 node pointing at the next list - acyclic,
         // so only the depth cap can stop the recursion
