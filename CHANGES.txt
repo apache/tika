@@ -388,6 +388,11 @@ Release 4.3.0 - ???
      is honored only when the bytes after it decode in that charset, and a rejected BOM
      is dropped rather than left in the text as junk characters (TIKA-5019).
 
+   * An HTML meta charset naming UTF-16 (or UTF-32) is read as UTF-8, as the WHATWG
+     prescan does: a meta readable as ASCII means the bytes are not UTF-16. A page with a
+     UTF-8 BOM and a UTF-16BE meta was decoded as UTF-16BE, turning its text into CJK
+     characters (TIKA-5019).
+
    * Charset detection reads UTF-8 with sparse corruption (up to one bad sequence per
      ten valid ones, existing U+FFFD not counted) as UTF-8 (TIKA-5019).
 
