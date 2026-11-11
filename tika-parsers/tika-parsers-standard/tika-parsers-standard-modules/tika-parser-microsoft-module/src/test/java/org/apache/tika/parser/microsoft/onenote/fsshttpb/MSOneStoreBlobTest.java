@@ -157,6 +157,88 @@ public class MSOneStoreBlobTest {
         assertEquals("INLINE", embeddedTypes.get(0));
     }
 
+    /** One stored file referenced by two objects, under a byte limit. */
+    /** @param firstName null for no name: the first holder is then an unnamed attachment */
+    private List<byte[]> walkSharedBlob(long byteLimit, Metadata metadata, String firstName,
+                                        List<String> names) throws Exception {
+        DataElement blobElement = roundTripBlobElement();
+        ObjectGroupDataElementData groupData = new ObjectGroupDataElementData();
+        for (int i = 0; i < 2; i++) {
+            ObjectGroupObjectBLOBDataDeclaration declaration =
+                    new ObjectGroupObjectBLOBDataDeclaration();
+            declaration.objectExGUID = new ExGuid(1 + i, UUID.randomUUID());
+            declaration.objectPartitionID.setDecodedValue(2);
+            groupData.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList
+                    .add(declaration);
+            ObjectGroupObjectDataBLOBReference blobReference =
+                    new ObjectGroupObjectDataBLOBReference();
+            blobReference.blobExtendedGUID = blobElement.dataElementExGuid;
+            groupData.objectGroupData.objectGroupObjectDataBLOBReferenceList.add(blobReference);
+        }
+        RevisionStoreObjectGroup objectGroup =
+                RevisionStoreObjectGroup.createInstance(new ExGuid(5, UUID.randomUUID()),
+                        groupData, false,
+                        Collections.singletonMap(blobElement.dataElementExGuid, blobElement));
+        assertEquals(2, objectGroup.objects.size());
+        RevisionStoreObject first = objectGroup.objects.get(0);
+        RevisionStoreObject second = objectGroup.objects.get(1);
+        addImageContainer(objectGroup, second, "second.png");
+        if (firstName != null) {
+            addImageContainer(objectGroup, first, firstName);
+        }
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.OtherFileNodeList.add(objectGroup);
+        pkg.setEmbeddedByteLimit(byteLimit);
+
+        List<byte[]> embedded = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata m, ParseContext parseContext) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata m, ParseContext c, boolean outputHtml)
+                    throws IOException {
+                embedded.add(stream.readAllBytes());
+                names.add(m.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+            }
+        });
+        XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(new ToTextContentHandler(new StringWriter()), metadata,
+                        context);
+        xhtml.startDocument();
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
+        xhtml.endDocument();
+        return embedded;
+    }
+
+    @Test
+    public void testSharedBlobIsEmbeddedOnce() throws Exception {
+        List<String> names = new ArrayList<>();
+        List<byte[]> embedded = walkSharedBlob(Long.MAX_VALUE, new Metadata(), "first.png", names);
+        assertEquals(1, embedded.size());
+        assertArrayEquals(BLOB_BYTES, embedded.get(0));
+    }
+
+    @Test
+    public void testSharedBlobTakesItsNameFromAnyHolder() throws Exception {
+        List<String> names = new ArrayList<>();
+        assertEquals(1, walkSharedBlob(Long.MAX_VALUE, new Metadata(), null, names).size());
+        assertEquals(Collections.singletonList("second.png"), names);
+    }
+
+    @Test
+    public void testEmbeddedBytesAreBoundedByTheLimit() throws Exception {
+        Metadata metadata = new Metadata();
+        assertEquals(0, walkSharedBlob(BLOB_BYTES.length - 1, metadata, "first.png",
+                new ArrayList<>()).size());
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(w -> w.contains("embedded data exceeds the file size")));
+    }
+
     private static void addImageContainer(RevisionStoreObjectGroup objectGroup,
                                            RevisionStoreObject blob, String name) throws IOException {
         RevisionStoreObject parent = new RevisionStoreObject();

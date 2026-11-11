@@ -162,6 +162,10 @@ public class MSOneStoreParserTest {
         cellMapping.cellID = cellID;
         cellMapping.cellMappingExGuid = cellMappingID;
         pkg.storageIndex.storageIndexCellMappingList.add(cellMapping);
+        StorageIndexCellMapping sameManifest = new StorageIndexCellMapping();
+        sameManifest.cellID = cell(30);
+        sameManifest.cellMappingExGuid = cellMappingID;
+        pkg.storageIndex.storageIndexCellMappingList.add(sameManifest);
         StorageIndexRevisionMapping currentMapping = new StorageIndexRevisionMapping();
         currentMapping.revisionMappingExGuid = currentMappingID;
         currentMapping.revisionExGuid = currentRevisionID;
@@ -211,6 +215,9 @@ public class MSOneStoreParserTest {
 
         RevisionStoreCell result = parseCell(parser, cellID, pkg);
         assertEquals(2, result.objectGroups.size());
+        // a second cell mapped to the same manifest would walk the same content again
+        assertParseWarning(parser, pkg, sameManifest.cellID,
+                "its cell manifest belongs to another cell");
 
         old.revisionManifest.baseRevisionID = id(1001);
         RevisionStoreCell missingBaseResult = parseCell(parser, cellID, pkg);

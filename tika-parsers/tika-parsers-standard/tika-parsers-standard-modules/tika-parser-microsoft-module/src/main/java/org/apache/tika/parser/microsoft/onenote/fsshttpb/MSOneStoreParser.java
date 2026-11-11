@@ -55,6 +55,8 @@ public class MSOneStoreParser {
     private static final ExGuid ENCRYPTION_KEY_ROOT_EXGUID =
             new ExGuid(3, UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"));
     private final Set<CellID> storageIndexHashTab = new HashSet<>();
+    // a cell manifest is walked once, however many cells map to it
+    private final Map<ExGuid, CellID> parsedCellManifests = new HashMap<>();
     private List<DataElement> storageIndexDataElements;
     private List<DataElement> storageManifestDataElements;
     private List<DataElement> cellManifestDataElements;
@@ -93,6 +95,7 @@ public class MSOneStoreParser {
 
     public MSOneStorePackage parse(DataElementPackage dataElementPackage) throws IOException {
         storageIndexHashTab.clear();
+        parsedCellManifests.clear();
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
         objectGroupsByDataElementId.clear();
 
@@ -245,6 +248,12 @@ public class MSOneStoreParser {
         if (cellMapping == null || cellMapping.guid == null ||
                 GuidUtil.emptyGuid().equals(cellMapping.guid)) {
             // a deleted version context: nothing to parse, nothing wrong
+            return null;
+        }
+        CellID owner = parsedCellManifests.putIfAbsent(cellMapping, objectGroupCellID);
+        if (owner != null && !owner.equals(objectGroupCellID)) {
+            msOneStorePackage.recordParseWarning("Skipping OneNote cell " + objectGroupCellID +
+                    ": its cell manifest belongs to another cell");
             return null;
         }
         CellManifestDataElementData cellManifest = this.findCellManifest(cellMapping);

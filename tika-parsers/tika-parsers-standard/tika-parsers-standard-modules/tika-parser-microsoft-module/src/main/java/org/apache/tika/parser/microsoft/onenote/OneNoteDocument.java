@@ -98,6 +98,7 @@ class OneNoteDocument {
             Revision revision = revisionMap.get(r);
             r = revision == null ? null : revision.dependent;
         }
+        // outside the dependency chain, e.g. in Aspose-written sections: the last declaration
         return guidToObject.get(oid);
     }
 

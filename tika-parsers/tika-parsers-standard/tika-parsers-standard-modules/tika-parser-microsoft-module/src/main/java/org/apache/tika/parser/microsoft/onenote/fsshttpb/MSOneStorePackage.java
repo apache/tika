@@ -114,6 +114,11 @@ public class MSOneStorePackage {
 
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
+    private final Set<ExGuid> emittedBlobs = new HashSet<>();
+    // objects holding each BLOB, built once per object index
+    private Map<ExGuid, List<RevisionStoreObject>> blobHolders = Collections.emptyMap();
+    private Map<ExGuid, RevisionStoreObject> blobHoldersIndexed;
+    private long embeddedBytesRemaining = Long.MAX_VALUE;
     private final Set<String> originalAuthors = new HashSet<>();
     private final OneNoteGuidCollector guids = new OneNoteGuidCollector(this::recordGuidCapWarning);
     /**
@@ -655,6 +660,13 @@ public class MSOneStorePackage {
         }
         if (resourceInfo == null && object.fileDataObject != null && object.objectID != null) {
             resourceInfo = resourceInfoFromReferencingObject(object, objectsById, depth);
+            if (resourceInfo == null || resourceInfo.name == null) {
+                // the file is extracted once, so take a name from any object that shares it
+                EmbeddedResourceInfo shared = resourceInfoFromSharedBlob(object, objectsById, depth);
+                if (shared != null) {
+                    resourceInfo = shared;
+                }
+            }
         }
         if (object.fileDataObject != null) {
             handleEmbedded(object.fileDataObject, xhtml, resourceInfo, object.objectID);
@@ -1233,6 +1245,43 @@ public class MSOneStorePackage {
             }
         }
         return typeOnlyFallback;
+    }
+
+    /** A name for the object's file data from another object that holds the same BLOB. */
+    private EmbeddedResourceInfo resourceInfoFromSharedBlob(
+            RevisionStoreObject target, Map<ExGuid, RevisionStoreObject> objectsById, int depth) {
+        ExGuid blob = blobId(target);
+        if (blob == null) {
+            return null;
+        }
+        if (blobHoldersIndexed != objectsById) {
+            Map<ExGuid, List<RevisionStoreObject>> holders = new HashMap<>();
+            for (RevisionStoreObject candidate : objectsById.values()) {
+                ExGuid id = blobId(candidate);
+                if (id != null) {
+                    holders.computeIfAbsent(id, k -> new ArrayList<>()).add(candidate);
+                }
+            }
+            blobHolders = holders;
+            blobHoldersIndexed = objectsById;
+        }
+        for (RevisionStoreObject holder : blobHolders.getOrDefault(blob,
+                Collections.emptyList())) {
+            if (holder != target && holder.objectID != null) {
+                EmbeddedResourceInfo info =
+                        resourceInfoFromReferencingObject(holder, objectsById, depth);
+                if (info != null && info.name != null) {
+                    return info;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static ExGuid blobId(RevisionStoreObject object) {
+        return object.fileDataObject == null ||
+                object.fileDataObject.objectDataBLOBDataElement == null ? null :
+                object.fileDataObject.objectDataBLOBDataElement.dataElementExGuid;
     }
 
     /**
@@ -1829,10 +1878,21 @@ public class MSOneStorePackage {
         return ".".equals(name) || "..".equals(name) ? "" : name;
     }
 
+    /** Bounds the embedded bytes handed out, e.g. to the file size. */
+    public void setEmbeddedByteLimit(long limit) {
+        embeddedBytesRemaining = limit;
+    }
+
     private void handleEmbedded(FileDataObject fileData, XHTMLContentHandler xhtml,
                                 EmbeddedResourceInfo resourceInfo, ExGuid objectID)
             throws SAXException, IOException {
         if (!fileData.hasData() || embeddedDocumentExtractor == null) {
+            return;
+        }
+        // a stored file referenced from several places is extracted once
+        if (fileData.objectDataBLOBDataElement != null &&
+                fileData.objectDataBLOBDataElement.dataElementExGuid != null &&
+                !emittedBlobs.add(fileData.objectDataBLOBDataElement.dataElementExGuid)) {
             return;
         }
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
@@ -1860,6 +1920,11 @@ public class MSOneStorePackage {
         // only counts as content when the extractor accepts it, so a declined
         // embedded object in an otherwise-empty file still triggers the fallback
         contentEmitted = true;
+        if (fileData.getDataLength() > embeddedBytesRemaining) {
+            recordParseWarning("OneNote embedded data exceeds the file size; skipping the rest");
+            return;
+        }
+        embeddedBytesRemaining -= fileData.getDataLength();
         // A byte-array stream, not one re-opened over the parsed buffer: parsers that need a
         // seekable channel (zip containers, PDF) get the array zero-copy instead of a temp file.
         // Copied only once accepted, so declined embeddings cost no allocation.

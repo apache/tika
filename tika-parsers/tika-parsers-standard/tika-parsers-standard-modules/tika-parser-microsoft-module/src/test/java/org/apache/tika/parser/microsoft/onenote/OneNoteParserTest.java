@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -1242,6 +1243,32 @@ public class OneNoteParserTest extends TikaTest {
                 .count());
     }
 
+    @Test
+    public void testPropertiesCountAgainstVisitBudget(@TempDir Path tempDir) throws Exception {
+        // two nodes share one property set of 60,000 properties: 120,000 property visits
+        // exceed an empty document's budget of 100,000, though only 3 file nodes are visited
+        PropertySet shared = new PropertySet();
+        shared.rgPridsData = new ArrayList<>();
+        for (int i = 0; i < 60_000; i++) {
+            PropertyValue value = new PropertyValue();
+            value.propertyId = new OneNotePropertyId(0x1L << 26);
+            shared.rgPridsData.add(value);
+        }
+        FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
+        root.childFileNodeList = new FileNodeList().setFileNodeListHeader(new FileNodeListHeader(0,
+                FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+        for (int i = 0; i < 2; i++) {
+            FileNode node = new FileNode().setGosid(ExtendedGUID.nil());
+            node.propertySet = shared;
+            root.childFileNodeList.children.add(node);
+        }
+        Metadata metadata = walkWithEmptyFile(tempDir, root);
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("exceeded visit budget"))
+                .count());
+    }
+
     private static Metadata walkWithEmptyFile(Path tempDir, FileNode root) throws Exception {
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
@@ -1272,6 +1299,42 @@ public class OneNoteParserTest extends TikaTest {
                     () -> deserialize.invoke(ptr));
             assertTrue(e.getCause() instanceof TikaException, e.getCause().toString());
         }
+    }
+
+    @Test
+    public void testEmbeddedBytesAreBoundedByFileSize(@TempDir Path tempDir) throws Exception {
+        // two overlapping file data objects of 40 bytes in a 64-byte file
+        Path file = Files.write(tempDir.resolve("filedata"), new byte[64]);
+        List<Integer> embedded = new ArrayList<>();
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata m, ParseContext c) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata m, ParseContext c, boolean outputHtml)
+                    throws IOException {
+                embedded.add(stream.readAllBytes().length);
+            }
+        });
+        Metadata metadata = new Metadata();
+        Method handle = OneNoteTreeWalker.class.getDeclaredMethod("handleEmbedded", long.class,
+                int.class, ExtendedGUID.class);
+        handle.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
+                    new OneNoteDocument(), dif,
+                    new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
+                    metadata, parseContext, null);
+            handle.invoke(walker, 0L, 40, null);
+            handle.invoke(walker, 8L, 40, null);
+        }
+        assertEquals(Collections.singletonList(40), embedded);
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(w -> w.contains("embedded data exceeds the file size")));
     }
 
     @Test

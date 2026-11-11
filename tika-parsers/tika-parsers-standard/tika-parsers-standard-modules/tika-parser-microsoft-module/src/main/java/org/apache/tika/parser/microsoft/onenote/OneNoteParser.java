@@ -199,6 +199,7 @@ public class OneNoteParser implements Parser {
                         throw new EncryptedDocumentException(
                                 "OneNote section is password protected");
                     }
+                    pkg.setEmbeddedByteLimit(bytes.length);
                     pkg.walkTree(options, metadata, xhtml, context);
                 } catch (EncryptedDocumentException | SAXException e) {
                     throw e;

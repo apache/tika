@@ -61,6 +61,8 @@ class OneNoteTreeWalker {
     // crafted file can make the visits exponential in depth without forming a cycle
     private static final long VISITS_PER_FILE_NODE = 64;
     private static final long MIN_VISIT_BUDGET = 100_000;
+    // the largest array a single property or attachment is read into
+    private static final long MAX_DATA_LENGTH = Integer.MAX_VALUE - 8;
     private static final String P = "p";
     /** MS-ONE 2.3.1 TIME32 counts seconds from 1980-01-01 UTC; that epoch in Unix seconds. */
     private static final long TIME32_EPOCH_DIFF_1980;
@@ -121,6 +123,9 @@ class OneNoteTreeWalker {
     // the revision whose objects the walk resolves, or null for the last declared anywhere
     private ExtendedGUID walkedRevision;
     private final Set<Long> emittedEmbedded = new HashSet<>();
+    // embedded bytes handed out are bounded by the file size; set on first use
+    private long embeddedBytesRemaining = Long.MIN_VALUE;
+    private boolean embeddedBudgetWarningRecorded;
     private boolean visitBudgetWarningRecorded;
     // text read is bounded by the file size; set on first use
     private long textBytesRemaining = Long.MIN_VALUE;
@@ -461,12 +466,32 @@ class OneNoteTreeWalker {
             FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
         FileChunkReference fileData = fileDataStoreObjectReference.ref.fileData;
-        if (fileData.cb > dif.size()) {
+        if (fileData.cb > dif.size() || fileData.cb > MAX_DATA_LENGTH) {
             throw new TikaMemoryLimitException(
                     "File data store cb " + fileData.cb + " exceeds document size: " +
                             dif.size());
         }
         handleEmbedded(fileData.stp, (int) fileData.cb, gosid);
+    }
+
+    /** Overlapping file data objects could otherwise hand out the file many times over. */
+    private boolean takeEmbeddedBytes(int length) throws IOException {
+        if (embeddedBytesRemaining == Long.MIN_VALUE) {
+            embeddedBytesRemaining = dif.size();
+        }
+        if (length <= embeddedBytesRemaining) {
+            embeddedBytesRemaining -= length;
+            return true;
+        }
+        if (!embeddedBudgetWarningRecorded) {
+            embeddedBudgetWarningRecorded = true;
+            String warning = "OneNote embedded data exceeds the file size; skipping the rest";
+            LOG.warn(warning);
+            if (parentMetadata != null) {
+                parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+            }
+        }
+        return false;
     }
 
     private void handleEmbedded(long stp, int length, ExtendedGUID gosid)
@@ -487,6 +512,9 @@ class OneNoteTreeWalker {
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                if (!takeEmbeddedBytes(length)) {
+                    return;
+                }
                 ByteBuffer buf;
                 try {
                     buf = ByteBuffer.allocate(length);
@@ -516,6 +544,14 @@ class OneNoteTreeWalker {
             recordDepthWarning();
             return;
         }
+        // a node reached in many contexts re-processes its properties each time
+        int size = propertySet.rgPridsData.size();
+        if (visitsRemaining < size) {
+            visitsRemaining = 0;
+            recordVisitBudgetWarning();
+            return;
+        }
+        visitsRemaining -= size;
         walkDepth++;
         try {
             processPropertySetInternal(propertySet, parentPropertyId, objectType);
@@ -608,7 +644,7 @@ class OneNoteTreeWalker {
             return 0;
         }
         long cb = value.rawData.cb;
-        if (cb < 0 || cb > dif.size()) {
+        if (cb < 0 || cb > dif.size() || cb > MAX_DATA_LENGTH) {
             throw new TikaMemoryLimitException(
                     "File data store cb " + cb + " exceeds document size: " + dif.size());
         }

@@ -319,6 +319,12 @@ class OneNotePtr {
                 if (FileChunkReference.nil().equals(next)) {
                     break;
                 }
+                // later fragments hold only uncommitted nodes, which may be garbage
+                Long committed = document.committedFileNodeCounts
+                        .get(fileNodeList.fileNodeListHeader.fileNodeListId);
+                if (committed != null && fileNodeList.children.size() >= committed) {
+                    break;
+                }
                 if (!seenFragmentOffsets.add(next.stp)) {
                     throw new TikaException(
                             "OneNote file node list fragment cycle detected at offset " +
@@ -696,9 +702,11 @@ class OneNotePtr {
             long cch = deserializeLittleEndianInt();
 
             long roomLeftLong = roomLeft();
-            if (cch > roomLeftLong) { // not a valid guid
+            // cch counts UTF-16 characters
+            if (2 * cch > roomLeftLong) {
                 throw new TikaException(
-                        "Data out of bounds - cch " + cch + " is > room left = " + roomLeftLong);
+                        "Data out of bounds - 2 * cch " + 2 * cch + " is > room left = " +
+                                roomLeftLong);
             }
 
             if (cch > dif.size() || cch > Integer.MAX_VALUE / 2L) {
