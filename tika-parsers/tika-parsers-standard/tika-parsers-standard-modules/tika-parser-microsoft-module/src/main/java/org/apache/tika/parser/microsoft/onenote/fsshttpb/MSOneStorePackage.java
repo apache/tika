@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -162,6 +163,13 @@ public class MSOneStorePackage {
     private final Map<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> depthSkippedObjects =
             new LinkedHashMap<>();
     private Map<ExGuid, RevisionStoreObject> containerReferencesIndexed;
+    // per-index memos so shared subtrees and repeated references cost one scan
+    private Map<ExGuid, RevisionStoreObject> perIndexMemosIndexed;
+    private final Map<ExGuid, Boolean> usablePictureById = new HashMap<>();
+    private final Map<RevisionStoreObject, EmbeddedResourceInfo> referencingInfoByTarget =
+            new IdentityHashMap<>();
+    private final Map<RevisionStoreObject, Set<AuthorRole>> authorRolesRecorded =
+            new IdentityHashMap<>();
     private Map<ExGuid, List<ContainerReference>> containerReferences;
     // flattened property actions per object; objects can be re-flattened many times during
     // picture/resource-name resolution, which is quadratic without this cache
@@ -288,6 +296,10 @@ public class MSOneStorePackage {
         } finally {
             numberListInfoCache.clear();
             listFormatKeysByDigest.clear();
+            authorRolesRecorded.clear();
+            usablePictureById.clear();
+            referencingInfoByTarget.clear();
+            perIndexMemosIndexed = null;
             guids.publish(metadata);
         }
     }
@@ -692,7 +704,7 @@ public class MSOneStorePackage {
         for (PropertyAction action : actions) {
             if (action.isChildReference && action.childReference != null &&
                     action.oneNotePropertyEnum == OneNotePropertyEnum.PictureContainer &&
-                    hasUsablePicture(action.childReference, objectsById, new HashSet<>(), depth)) {
+                    hasUsablePicture(action.childReference, objectsById, depth)) {
                 hasPrimaryPicture = true;
                 break;
             }
@@ -1213,28 +1225,43 @@ public class MSOneStorePackage {
     }
 
     private boolean hasUsablePicture(ExGuid objectId,
-                                      Map<ExGuid, RevisionStoreObject> objectsById,
-                                      Set<ExGuid> visited, int depth) {
-        if (depth >= MAX_OBJECT_WALK_DEPTH || objectId == null || !visited.add(objectId)) {
+                                      Map<ExGuid, RevisionStoreObject> objectsById, int depth) {
+        if (depth >= MAX_OBJECT_WALK_DEPTH || objectId == null) {
             return false;
         }
+        resetPerIndexMemos(objectsById);
+        Boolean memo = usablePictureById.get(objectId);
+        if (memo != null) {
+            return memo;
+        }
+        // false while in progress, so a cycle ends the search
+        usablePictureById.put(objectId, false);
+        boolean usable = false;
         RevisionStoreObject object = objectsById.get(objectId);
         if (object == null) {
-            return false;
-        }
-        if (object.fileDataObject != null && object.fileDataObject.hasData()) {
-            return true;
-        }
-        if (object.propertySet == null || object.propertySet.objectSpaceObjectPropSet == null) {
-            return false;
-        }
-        for (PropertyAction action : collectObjectActions(object)) {
-            if (action.isChildReference && action.childReference != null &&
-                    hasUsablePicture(action.childReference, objectsById, visited, depth + 1)) {
-                return true;
+            usable = false;
+        } else if (object.fileDataObject != null && object.fileDataObject.hasData()) {
+            usable = true;
+        } else if (object.propertySet != null &&
+                object.propertySet.objectSpaceObjectPropSet != null) {
+            for (PropertyAction action : collectObjectActions(object)) {
+                if (action.isChildReference && action.childReference != null &&
+                        hasUsablePicture(action.childReference, objectsById, depth + 1)) {
+                    usable = true;
+                    break;
+                }
             }
         }
-        return false;
+        usablePictureById.put(objectId, usable);
+        return usable;
+    }
+
+    private void resetPerIndexMemos(Map<ExGuid, RevisionStoreObject> objectsById) {
+        if (perIndexMemosIndexed != objectsById) {
+            usablePictureById.clear();
+            referencingInfoByTarget.clear();
+            perIndexMemosIndexed = objectsById;
+        }
     }
 
     private EmbeddedResourceInfo resourceInfoFromReferencingObject(
@@ -1242,19 +1269,29 @@ public class MSOneStorePackage {
         if (depth >= MAX_OBJECT_WALK_DEPTH) {
             return null;
         }
+        resetPerIndexMemos(objectsById);
+        if (referencingInfoByTarget.containsKey(target)) {
+            return referencingInfoByTarget.get(target);
+        }
+        EmbeddedResourceInfo result = null;
         EmbeddedResourceInfo typeOnlyFallback = null;
         for (ContainerReference reference : containerReferences(objectsById)
                 .getOrDefault(target.objectID, Collections.emptyList())) {
             EmbeddedResourceInfo info =
                     embeddedResourceInfo(collectObjectActions(reference.container));
             if (info != null) {
-                return info;
+                result = info;
+                break;
             }
             if (typeOnlyFallback == null) {
                 typeOnlyFallback = resourceInfoForChild(reference.action, null);
             }
         }
-        return typeOnlyFallback;
+        if (result == null) {
+            result = typeOnlyFallback;
+        }
+        referencingInfoByTarget.put(target, result);
+        return result;
     }
 
     /** A name for the object's file data from another object that holds the same BLOB. */
@@ -1683,7 +1720,9 @@ public class MSOneStorePackage {
     private void recordAuthors(RevisionStoreObject object, AuthorRole role) {
         // NONE also records (into authors) so the result is visit-order independent
         if (object.propertySet == null ||
-                object.propertySet.objectSpaceObjectPropSet == null) {
+                object.propertySet.objectSpaceObjectPropSet == null ||
+                !authorRolesRecorded.computeIfAbsent(object, k -> EnumSet.noneOf(AuthorRole.class))
+                        .add(role == null ? AuthorRole.NONE : role)) {
             return;
         }
         for (PropertyAction action : collectObjectActions(object)) {

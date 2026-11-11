@@ -68,6 +68,13 @@ public class MSOneStoreParser {
     private final Map<ObjectGroupCacheKey, RevisionStoreObjectGroup> objectGroupsByDataElementId =
             new HashMap<>();
     private Map<ExGuid, DataElement> objectBlobElementsById;
+    // Cells may share revisions and object groups; without a bound, N tiny cells naming one big
+    // revision chain cost N times its content to build, walk and emit.
+    static final long CELL_WORK_PER_UNIT = 64;
+    static final long MIN_CELL_WORK = 1_000_000;
+    private long cellWorkCharged;
+    private long distinctCellWork;
+    private boolean cellWorkExhausted;
 
     private static final class ObjectGroupCacheKey {
         private final ExGuid dataElementId;
@@ -98,6 +105,9 @@ public class MSOneStoreParser {
         parsedCellManifests.clear();
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
         objectGroupsByDataElementId.clear();
+        cellWorkCharged = 0;
+        distinctCellWork = 0;
+        cellWorkExhausted = false;
 
         storageIndexDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.StorageIndexDataElementData)
@@ -187,18 +197,30 @@ public class MSOneStoreParser {
             throw new IOException("Could not parse the OneNote data root cell");
         }
         msOneStorePackage.dataRootCell = dataRootCell;
-        for (StorageIndexCellMapping storageIndexCellMapping : msOneStorePackage.storageIndex
-                .storageIndexCellMappingList) {
-            if (!storageIndexHashTab.contains(storageIndexCellMapping.cellID)) {
-                RevisionStoreCell cell =
-                        this.parseCell(storageIndexCellMapping.cellID, msOneStorePackage);
+        List<StorageIndexCellMapping> mappings =
+                msOneStorePackage.storageIndex.storageIndexCellMappingList;
+        RevisionStoreCell[] parsed = new RevisionStoreCell[mappings.size()];
+        // current-context cells first, so the work budget drops old page versions, not pages
+        ExGuid currentContext = dataRootCellID == null ? null : dataRootCellID.extendGUID1;
+        for (boolean current : new boolean[]{true, false}) {
+            for (int i = 0; i < mappings.size(); i++) {
+                CellID cellID = mappings.get(i).cellID;
+                boolean inCurrent = cellID != null &&
+                        Objects.equals(currentContext, cellID.extendGUID1);
+                if (storageIndexHashTab.contains(cellID) ||
+                        current != inCurrent) {
+                    continue;
+                }
                 // null for a deleted version context the storage index still maps (no cell
                 // manifest, often an all-zero mapping GUID): no current content
-                if (cell != null) {
-                    msOneStorePackage.OtherFileNodeList.addAll(cell.objectGroups);
-                    msOneStorePackage.cells.add(cell);
-                }
-                storageIndexHashTab.add(storageIndexCellMapping.cellID);
+                parsed[i] = this.parseCell(cellID, msOneStorePackage);
+                storageIndexHashTab.add(cellID);
+            }
+        }
+        for (RevisionStoreCell cell : parsed) {
+            if (cell != null) {
+                msOneStorePackage.OtherFileNodeList.addAll(cell.objectGroups);
+                msOneStorePackage.cells.add(cell);
             }
         }
         return msOneStorePackage;
@@ -290,6 +312,9 @@ public class MSOneStoreParser {
         Deque<RevisionManifestDataElementData> revisionChain = new ArrayDeque<>();
         Set<ExGuid> seenRevisionIds = new HashSet<>();
         while (revisionManifest != null) {
+            if (!chargeCellWork(1, msOneStorePackage)) {
+                return null;
+            }
             ExGuid revisionId = revisionManifest.revisionManifest.revisionID;
             if (revisionId != null && !seenRevisionIds.add(revisionId)) {
                 // cycle guard
@@ -348,6 +373,10 @@ public class MSOneStoreParser {
                             objRef.objectGroupExtendedGUID, dataObject, isEncryption,
                             objectBlobElementsById);
                     objectGroupsByDataElementId.put(cacheKey, cachedObjectGroup);
+                    distinctCellWork += cachedObjectGroup.weight;
+                }
+                if (!chargeCellWork(cachedObjectGroup.weight, msOneStorePackage)) {
+                    return null;
                 }
                 objectGroups.add(cachedObjectGroup.copy());
             }
@@ -360,6 +389,22 @@ public class MSOneStoreParser {
         cell.objectGroups = objectGroups;
         cell.rootDeclares = new ArrayList<>(effectiveRootDeclares.values());
         return cell;
+    }
+
+    private boolean chargeCellWork(long work, MSOneStorePackage msOneStorePackage) {
+        if (cellWorkExhausted) {
+            return false;
+        }
+        cellWorkCharged += work;
+        // each revision manifest counts once as distinct work
+        if (cellWorkCharged > MIN_CELL_WORK + CELL_WORK_PER_UNIT *
+                (distinctCellWork + revisionManifestDataElementsById.size())) {
+            cellWorkExhausted = true;
+            msOneStorePackage.recordParseWarning(
+                    "OneNote cells exceeded the shared-revision work budget; skipping the rest");
+            return false;
+        }
+        return true;
     }
 
     /**

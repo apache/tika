@@ -28,6 +28,8 @@ public class RevisionStoreObjectGroup {
     public ExGuid objectGroupID;
     public List<RevisionStoreObject> objects;
     public List<EncryptionObject> encryptionObjects;
+    /** Bytes of object data plus references and declarations; a cost measure for walking. */
+    public long weight;
 
     public RevisionStoreObjectGroup(ExGuid objectGroupId) {
         this.objects = new ArrayList<>();
@@ -55,6 +57,7 @@ public class RevisionStoreObjectGroup {
                         dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
                         dataObject.objectGroupData.objectGroupObjectDataList.get(i);
+                objectGroup.weight += weight(objectData);
 
                 if (!objectDict.containsKey(objectDeclaration.objectExtendedGUID)) {
                     revisionObject = new RevisionStoreObject();
@@ -119,6 +122,7 @@ public class RevisionStoreObjectGroup {
                         dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
                         dataObject.objectGroupData.objectGroupObjectDataList.get(i);
+                objectGroup.weight += weight(objectData);
 
                 if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
                     EncryptionObject encrypObject = new EncryptionObject();
@@ -136,10 +140,25 @@ public class RevisionStoreObjectGroup {
      * Creates a cell-local wrapper around this parsed group. The object lists are copied so
      * revision supersession filtering cannot mutate a cached group used by another cell.
      */
+    private static long weight(ObjectGroupObjectData objectData) {
+        long weight = 1;
+        if (objectData.data != null) {
+            weight += objectData.data.getContentLength();
+        }
+        if (objectData.objectExGUIDArray != null && objectData.objectExGUIDArray.content != null) {
+            weight += objectData.objectExGUIDArray.content.size();
+        }
+        if (objectData.cellIDArray != null && objectData.cellIDArray.content != null) {
+            weight += objectData.cellIDArray.content.size();
+        }
+        return weight;
+    }
+
     public RevisionStoreObjectGroup copy() {
         RevisionStoreObjectGroup copy = new RevisionStoreObjectGroup(objectGroupID);
         copy.objects.addAll(objects);
         copy.encryptionObjects.addAll(encryptionObjects);
+        copy.weight = weight;
         return copy;
     }
 }
