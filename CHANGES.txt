@@ -198,7 +198,8 @@ Release 4.3.0 - ???
      (TIKA-5057).
 
    * OneNote parsing bounds CPU and memory on crafted files with limits scaled to file
-     size, and rejects more malformed structures up front (TIKA-5057).
+     size, and rejects more malformed structures up front. A file over a limit throws
+     TikaMemoryLimitException instead of falling back to the legacy text dump (TIKA-5057).
 
    * OneNote .one sections allocate far less and small ones parse about ten times
      faster, reading from a buffered window instead of one system call per field.

@@ -16,7 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
-public class StreamObjectParseErrorException extends RuntimeException {
+import org.apache.tika.exception.TikaException;
+
+public class StreamObjectParseErrorException extends TikaException {
 
     public int index;
 
@@ -24,7 +26,7 @@ public class StreamObjectParseErrorException extends RuntimeException {
 
     public StreamObjectParseErrorException(int index, String streamObjectTypeName,
                                            Exception innerException) {
-        super(innerException);
+        super("Failed to parse a " + streamObjectTypeName + " at " + index, innerException);
         this.index = index;
         this.streamObjectTypeName = streamObjectTypeName;
     }

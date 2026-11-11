@@ -109,6 +109,14 @@ class OneNoteTreeWalker {
     // recognized words of the inline ink in the paragraph being walked
     private List<String> inkWords = Collections.emptyList();
     private List<OneNoteText.TextRun> textRuns = null;
+    // per walked revision: a property set reached in many contexts resolves its ink and runs once
+    private final Map<PropertySet, List<String>> inkWordsBySet = new IdentityHashMap<>();
+    private final Map<PropertySet, List<OneNoteText.TextRun>> textRunsBySet =
+            new IdentityHashMap<>();
+    // property data decoded once however many objects reference it, keyed by its offset
+    private final Map<Long, String> inkWordByStp = new HashMap<>();
+    private final Map<Long, int[]> textRunEndsByStp = new HashMap<>();
+    private final Map<PropertySet, Boolean> hyperlinkByStyle = new IdentityHashMap<>();
     private final Set<FileNode> reportedCycleNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private int cycleWarningCount;
@@ -247,7 +255,7 @@ class OneNoteTreeWalker {
             }
         }
         walkedRevision = current;
-        resolvedObjects.clear();
+        clearRevisionCaches();
         try {
             for (long role : new long[]{1, 2, 4}) {
                 for (ExtendedGUID root : contentRoots(current,
@@ -257,8 +265,15 @@ class OneNoteTreeWalker {
             }
         } finally {
             walkedRevision = null;
+            clearRevisionCaches();
         }
         return true;
+    }
+
+    private void clearRevisionCaches() {
+        resolvedObjects.clear();
+        inkWordsBySet.clear();
+        textRunsBySet.clear();
     }
 
     private PropertySet propertySetOf(FileNodePtr ptr) throws IOException, TikaException {
@@ -298,6 +313,9 @@ class OneNoteTreeWalker {
             List<ExtendedGUID> roots = contentRoots.get(r);
             if (roots != null) {
                 return roots;
+            }
+            if (!takeVisit()) {
+                break;
             }
             Revision revision = oneNoteDocument.revisionMap.get(r);
             r = revision == null ? null : revision.dependent;
@@ -566,8 +584,12 @@ class OneNoteTreeWalker {
         emitImage(propertySet);
         List<String> outerInkWords = inkWords;
         List<OneNoteText.TextRun> outerTextRuns = textRuns;
-        inkWords = inlineInkWords(propertySet);
-        textRuns = textRuns(propertySet);
+        if (!inkWordsBySet.containsKey(propertySet)) {
+            inkWordsBySet.put(propertySet, inlineInkWords(propertySet));
+            textRunsBySet.put(propertySet, textRuns(propertySet));
+        }
+        inkWords = inkWordsBySet.get(propertySet);
+        textRuns = textRunsBySet.get(propertySet);
         try {
             for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
                 PropertyValue propertyValue = propertySet.rgPridsData.get(i);
@@ -607,14 +629,17 @@ class OneNoteTreeWalker {
         for (PropertyValue value : propertySet.rgPridsData) {
             OneNotePropertyEnum property = value.propertyId.propertyEnum;
             if (property == OneNotePropertyEnum.TextRunIndex && value.propertyId.type == 7) {
-                ends = OneNoteText.textRunEnds(readBytes(value));
+                ends = textRunEnds(value);
             } else if (property == OneNotePropertyEnum.TextRunFormatting &&
                     value.compactIDs != null) {
                 hyperlink = new ArrayList<>();
                 for (CompactID compactID : value.compactIDs) {
-                    FileNodePtr ptr = object(compactID.guid);
-                    PropertySet style = propertySetOf(ptr);
-                    hyperlink.add(style != null && isHyperlink(style));
+                    if (!takeVisit()) {
+                        return null;
+                    }
+                    PropertySet style = propertySetOf(object(compactID.guid));
+                    hyperlink.add(style != null &&
+                            hyperlinkByStyle.computeIfAbsent(style, OneNoteTreeWalker::isHyperlink));
                 }
             }
         }
@@ -630,10 +655,17 @@ class OneNoteTreeWalker {
         return false;
     }
 
-    private byte[] readBytes(PropertyValue value) throws IOException, TikaException {
+    private int[] textRunEnds(PropertyValue value) throws IOException, TikaException {
+        if (value.rawData != null && textRunEndsByStp.containsKey(value.rawData.stp)) {
+            return textRunEndsByStp.get(value.rawData.stp);
+        }
         ByteBuffer buf = ByteBuffer.allocate(positionAt(value));
         dif.read(buf);
-        return buf.array();
+        int[] ends = OneNoteText.textRunEnds(buf.array());
+        if (value.rawData != null) {
+            textRunEndsByStp.put(value.rawData.stp, ends);
+        }
+        return ends;
     }
 
     /** Positions {@code dif} at the property's data. @return the data's length */
@@ -663,11 +695,15 @@ class OneNoteTreeWalker {
             }
             words = new ArrayList<>();
             for (CompactID compactID : value.compactIDs) {
-                FileNodePtr ptr = object(compactID.guid);
-                PropertySet word = propertySetOf(ptr);
-                String alternates = word == null ? null : readAlternates(word);
-                String best = alternates == null ? null :
-                        OneNoteText.bestInkAlternate(alternates);
+                if (!takeVisit()) {
+                    break;
+                }
+                PropertySet word = propertySetOf(object(compactID.guid));
+                String best = word == null ? null : bestInkWord(word);
+                // every occurrence is written, so each counts against the text budget
+                if (best != null && !takeTextBytes(2L * best.length())) {
+                    break;
+                }
                 // a null keeps later words on their own placeholders
                 words.add(best);
             }
@@ -675,11 +711,20 @@ class OneNoteTreeWalker {
         return words;
     }
 
-    private String readAlternates(PropertySet word) throws IOException, TikaException {
+    private String bestInkWord(PropertySet word) throws IOException, TikaException {
         for (PropertyValue value : word.rgPridsData) {
             if (value.propertyId.propertyEnum == OneNotePropertyEnum.InkRecognitionAlternates &&
                     value.propertyId.type == 7) {
-                return readString(positionAt(value), StandardCharsets.UTF_16LE);
+                if (value.rawData == null) {
+                    return null;
+                }
+                if (inkWordByStp.containsKey(value.rawData.stp)) {
+                    return inkWordByStp.get(value.rawData.stp);
+                }
+                String alternates = readString(positionAt(value), StandardCharsets.UTF_16LE);
+                String best = OneNoteText.bestInkAlternate(alternates);
+                inkWordByStp.put(value.rawData.stp, best);
+                return best;
             }
         }
         return null;
@@ -827,12 +872,16 @@ class OneNoteTreeWalker {
         if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
             return false;
         }
+        return takeTextBytes(length);
+    }
+
+    private boolean takeTextBytes(long length) throws IOException {
         if (textBytesRemaining == Long.MIN_VALUE) {
             textBytesRemaining = 2 * dif.size();
         }
         textBytesRemaining -= length;
         if (textBytesRemaining < 0) {
-            // overlapping text regions in a crafted file
+            // overlapping text regions or repeated ink in a crafted file
             recordTextBudgetWarning();
             return false;
         }

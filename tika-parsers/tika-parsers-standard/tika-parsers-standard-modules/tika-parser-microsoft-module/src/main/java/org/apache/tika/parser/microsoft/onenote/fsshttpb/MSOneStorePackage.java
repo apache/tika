@@ -118,6 +118,9 @@ public class MSOneStorePackage {
     // objects holding each BLOB, built once per object index
     private Map<ExGuid, List<RevisionStoreObject>> blobHolders = Collections.emptyMap();
     private Map<ExGuid, RevisionStoreObject> blobHoldersIndexed;
+    // a shared BLOB's name, looked up once however many holders lack one
+    private final Map<ExGuid, EmbeddedResourceInfo> sharedBlobNames = new HashMap<>();
+    private final Map<RevisionStoreObject, Boolean> hyperlinkByStyle = new IdentityHashMap<>();
     private long embeddedBytesRemaining = Long.MAX_VALUE;
     private final Set<String> originalAuthors = new HashSet<>();
     private final OneNoteGuidCollector guids = new OneNoteGuidCollector(this::recordGuidCapWarning);
@@ -660,9 +663,15 @@ public class MSOneStorePackage {
         }
         if (resourceInfo == null && object.fileDataObject != null && object.objectID != null) {
             resourceInfo = resourceInfoFromReferencingObject(object, objectsById, depth);
-            if (resourceInfo == null || resourceInfo.name == null) {
+            ExGuid blob = blobId(object);
+            if ((resourceInfo == null || resourceInfo.name == null) && blob != null &&
+                    !emittedBlobs.contains(blob)) {
                 // the file is extracted once, so take a name from any object that shares it
-                EmbeddedResourceInfo shared = resourceInfoFromSharedBlob(object, objectsById, depth);
+                if (!sharedBlobNames.containsKey(blob)) {
+                    sharedBlobNames.put(blob,
+                            resourceInfoFromSharedBlob(object, objectsById, depth));
+                }
+                EmbeddedResourceInfo shared = sharedBlobNames.get(blob);
                 if (shared != null) {
                     resourceInfo = shared;
                 }
@@ -724,7 +733,7 @@ public class MSOneStorePackage {
     }
 
     /** The paragraph's text runs, flagging hyperlink runs; null if absent. */
-    private static List<OneNoteText.TextRun> textRuns(List<PropertyAction> actions,
+    private List<OneNoteText.TextRun> textRuns(List<PropertyAction> actions,
                                                       Map<ExGuid, RevisionStoreObject> objectsById) {
         int[] ends = null;
         List<Boolean> hyperlink = null;
@@ -740,7 +749,8 @@ public class MSOneStorePackage {
                 }
                 RevisionStoreObject style = action.childReference == null ? null :
                         objectsById.get(action.childReference);
-                hyperlink.add(style != null && isHyperlink(style));
+                hyperlink.add(style != null &&
+                        hyperlinkByStyle.computeIfAbsent(style, MSOneStorePackage::isHyperlink));
             }
         }
         return ends == null || hyperlink == null ? null : OneNoteText.textRuns(ends, hyperlink);

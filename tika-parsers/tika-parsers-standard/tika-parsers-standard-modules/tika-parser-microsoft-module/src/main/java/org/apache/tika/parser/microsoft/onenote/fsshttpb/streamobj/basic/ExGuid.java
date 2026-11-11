@@ -19,8 +19,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 import java.io.IOException;
 import java.util.UUID;
 
-import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
-
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
@@ -80,7 +79,8 @@ public class ExGuid extends BasicObject {
     }
 
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
+            throws IOException, TikaException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
         while (numberOfContinousZeroBit < 8 && bitReader.moveNext()) {
@@ -122,7 +122,7 @@ public class ExGuid extends BasicObject {
                 return 1;
 
             default:
-                throw new InvalidOperationException(
+                throw new TikaException(
                         "Failed to parse the ExGuid, the type value is unexpected");
         }
     }

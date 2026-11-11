@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
 /**
@@ -55,7 +56,7 @@ public class Compact64bitInt extends BasicObject {
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex)
-            throws IOException // return the length consumed
+            throws IOException, TikaException // return the length consumed
     {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
@@ -114,7 +115,7 @@ public class Compact64bitInt extends BasicObject {
                 return 1;
 
             default:
-                throw new IllegalArgumentException(
+                throw new TikaException(
                         "Failed to parse the Compact64bitInt, the type value is unexpected");
         }
     }

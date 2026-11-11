@@ -206,7 +206,7 @@ public abstract class StreamObject {
                 end = BasicObject.parse(byteArray, index, StreamObjectHeaderEnd16bit.class);
             }
 
-            if (end.type.getIntVal() != this.streamObjectType.getIntVal()) {
+            if (end == null || end.type.getIntVal() != this.streamObjectType.getIntVal()) {
                 throw new StreamObjectParseErrorException(index.get(), null,
                         "Unexpected the stream header end value " +
                                 this.streamObjectType.getIntVal(), null);

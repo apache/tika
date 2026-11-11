@@ -16,8 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 
 public abstract class StreamObjectHeaderStart extends BasicObject {
@@ -34,7 +36,12 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
     }
 
     public static int tryParse(byte[] byteArray, int startIndex,
-                               AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
+                               AtomicReference<StreamObjectHeaderStart> streamObjectHeader)
+            throws TikaException, IOException {
+        if (startIndex < 0 || startIndex >= byteArray.length) {
+            throw new TikaException("Stream object header at " + startIndex +
+                    " is past the end of the data");
+        }
         int headerType = byteArray[startIndex] & 0x03;
         if (headerType == StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_16_BIT) {
             streamObjectHeader.set(new StreamObjectHeaderStart16bit());
@@ -46,10 +53,6 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
             }
         }
 
-        try {
-            return streamObjectHeader.get().deserializeFromByteArray(byteArray, startIndex);
-        } catch (Exception e) {
-            return 0;
-        }
+        return streamObjectHeader.get().deserializeFromByteArray(byteArray, startIndex);
     }
 }

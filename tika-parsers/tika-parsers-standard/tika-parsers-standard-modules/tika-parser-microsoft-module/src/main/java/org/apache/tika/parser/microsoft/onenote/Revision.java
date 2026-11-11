@@ -26,6 +26,8 @@ class Revision {
     List<FileNodePtr> manifestList = new ArrayList<>();
     ExtendedGUID gosid = ExtendedGUID.nil();
     ExtendedGUID dependent = ExtendedGUID.nil();
+    // the table an empty globalId falls back to along the dependent chain, once resolved
+    Map<Long, GUID> inheritedGlobalId;
 
     public Revision() {
 

@@ -40,13 +40,12 @@ class OneNoteDocument {
 
     ExtendedGUID currentRevision = ExtendedGUID.nil();
     FileNodeList root = new FileNodeList();
-    // set when the root file node list could not be fully parsed (e.g. a truncated file);
-    // the header and any structure parsed so far remain usable
-    Exception structureParseException;
+    // set when the transaction log could not be fully read; counts committed before it stay
+    String transactionLogWarning;
     // file nodes committed while parsing; sizes the tree walker's visit budget
     long fileNodeCount;
     // committed FileNode count per FileNodeListID from the transaction log; nodes past it
-    // are uncommitted leftovers. Empty when the log could not be read.
+    // are uncommitted leftovers. Partial or empty when the log could not be read.
     Map<Long, Long> committedFileNodeCounts = new HashMap<>();
 
     // reads deferred property sets; set by the pointer that parses the document

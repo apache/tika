@@ -16,9 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 
@@ -31,7 +33,8 @@ public class StorageManifestSchemaGUID extends StreamObject {
 
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (index.get() < 0 || index.get() > byteArray.length - 16) {
             throw new StreamObjectParseErrorException(currentIndex.get(),

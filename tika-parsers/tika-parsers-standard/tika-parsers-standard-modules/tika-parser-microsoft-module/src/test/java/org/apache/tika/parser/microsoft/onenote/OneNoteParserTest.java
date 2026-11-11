@@ -43,6 +43,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,6 +64,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
@@ -1123,6 +1126,29 @@ public class OneNoteParserTest extends TikaTest {
                     assertThrows(InvocationTargetException.class, () -> read.invoke(ptr));
             assertTrue(e.getCause() instanceof TikaMemoryLimitException, e.getCause().toString());
         }
+    }
+
+    @Test
+    public void testTransactionLogKeepsCountsCommittedBeforeAFailure(@TempDir Path tempDir)
+            throws Exception {
+        // fragment 1 (cb 32): one committed transaction, then a nextFragment past the file
+        ByteBuffer buf = ByteBuffer.allocate(32).order(ByteOrder.LITTLE_ENDIAN);
+        buf.putInt(5).putInt(3).putInt(1).putInt(0).putLong(1000).putInt(28);
+        Path log = Files.write(tempDir.resolve("log"), buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(log.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            Map<Long, Long> counts = new HashMap<>();
+            assertThrows(TikaException.class,
+                    () -> ptr.deserializeTransactionLog(new FileChunkReference(0, 32), 2, counts));
+            assertEquals(Map.of(5L, 3L), counts);
+        }
+    }
+
+    @Test
+    public void testTableOfContentsIsRoutedToOneNoteParser() {
+        Parser parser = new DefaultParser().getParsers(new ParseContext())
+                .get(MediaType.parse("application/onenote; format=onetoc2"));
+        assertTrue(parser instanceof OneNoteParser, String.valueOf(parser));
     }
 
     @Test

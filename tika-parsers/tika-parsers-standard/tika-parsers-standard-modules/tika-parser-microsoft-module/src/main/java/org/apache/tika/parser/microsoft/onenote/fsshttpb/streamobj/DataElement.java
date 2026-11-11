@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -78,7 +79,7 @@ public class DataElement extends StreamObject {
             this.dataElementType = DataElementType.fromIntVal(
                     (int) BasicObject.parse(byteArray, index, Compact64bitInt.class)
                             .getDecodedValue());
-        } catch (Exception e) {
+        } catch (TikaException | IOException e) {
             throw new DataElementParseErrorException(index.get(), e);
         }
 
@@ -100,7 +101,7 @@ public class DataElement extends StreamObject {
             try {
                 index.addAndGet(
                         this.data.deserializeDataElementDataFromByteArray(byteArray, index.get()));
-            } catch (Exception e) {
+            } catch (TikaException | IOException e) {
                 throw new DataElementParseErrorException(index.get(), e);
             }
         } else {

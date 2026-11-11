@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
@@ -43,7 +44,7 @@ public class SerialNumber extends BasicObject {
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray,
                                              int startIndex)
-            throws IOException // return the length consumed
+            throws IOException, TikaException // return the length consumed
     {
         BitReader bitField = new BitReader(byteArray, startIndex);
         int type = bitField.readInt32(8);
@@ -59,7 +60,7 @@ public class SerialNumber extends BasicObject {
             this.type = 128;
             return 25;
         } else {
-            throw new IllegalArgumentException(
+            throw new TikaException(
                     "Failed to parse SerialNumber object, Expect the type value is either 0 or 128, " +
                             "but the actual value is " + this.type);
         }

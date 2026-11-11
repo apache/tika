@@ -256,6 +256,13 @@ class OneNotePtr {
     Map<Long, Long> deserializeTransactionLog(FileChunkReference first, long cTransactions)
             throws IOException, TikaException {
         Map<Long, Long> counts = new HashMap<>();
+        deserializeTransactionLog(first, cTransactions, counts);
+        return counts;
+    }
+
+    /** As above, into {@code counts}, which keeps the transactions committed before a failure. */
+    void deserializeTransactionLog(FileChunkReference first, long cTransactions,
+                                   Map<Long, Long> counts) throws IOException, TikaException {
         Map<Long, Long> pending = new HashMap<>();
         Set<Long> seenFragments = new HashSet<>();
         FileChunkReference fragment = first;
@@ -290,7 +297,6 @@ class OneNotePtr {
             reposition(fragment.stp + 8 * entries);
             fragment = deserializeFileChunkReference64x32();
         }
-        return counts;
     }
 
     public void reposition(FileChunkReference loc) throws IOException {
@@ -1007,15 +1013,33 @@ class OneNotePtr {
      * files, where it yields the current text, not taken from MS-ONESTORE.
      */
     private Map<Long, GUID> globalIds(Revision revision) {
+        // memoized along the walked path, so each revision's chain is walked once in total
+        List<Revision> path = new ArrayList<>();
         Revision r = revision;
-        for (int i = 0; r.globalId.isEmpty() && i < document.revisionMap.size(); i++) {
+        Map<Long, GUID> table = null;
+        for (int i = 0; i <= document.revisionMap.size(); i++) {
+            if (!r.globalId.isEmpty()) {
+                table = r.globalId;
+                break;
+            }
+            if (r.inheritedGlobalId != null) {
+                table = r.inheritedGlobalId;
+                break;
+            }
+            path.add(r);
             Revision dependent = document.revisionMap.get(r.dependent);
             if (dependent == null) {
                 break;
             }
             r = dependent;
         }
-        return r.globalId;
+        if (table == null) {
+            table = r.globalId;
+        }
+        for (Revision p : path) {
+            p.inheritedGlobalId = table;
+        }
+        return table;
     }
 
     private Revision getCurrentRevision() throws TikaException {
