@@ -43,6 +43,7 @@ import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.AdaptiveProbe;
+import org.apache.tika.ml.chardetect.EvidenceProbe;
 import org.apache.tika.ml.chardetect.StructuralEncodingRules;
 import org.apache.tika.parser.ParseContext;
 
@@ -551,17 +552,18 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     private byte[] readProbe(TikaInputStream tis, EncodingDetectorContext context)
             throws IOException {
         // readLimit is the tag-stripped content target; cap raw reads at 512 KB.
+        // Same kind as Mojibuster's probe: the filter must weigh the evidence the model saw.
         int rawCap = AdaptiveProbe.DEFAULT_RAW_CAP;
         EncodingProbeCache cache = context == null ? null : context.getProbeCache();
         if (cache != null) {
-            byte[] cached = cache.get(readLimit, rawCap);
+            byte[] cached = cache.get(EvidenceProbe.KIND, readLimit, rawCap);
             if (cached != null) {
                 return cached.length == 0 ? null : cached;
             }
         }
-        byte[] probe = AdaptiveProbe.read(tis, readLimit, rawCap);
+        byte[] probe = EvidenceProbe.read(tis, readLimit, rawCap);
         if (cache != null) {
-            cache.put(probe, readLimit, rawCap);
+            cache.put(probe, EvidenceProbe.KIND, readLimit, rawCap);
         }
         return probe.length == 0 ? null : probe;
     }
@@ -669,7 +671,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             }
             Long count = LEGACY_FREQUENCY.get(cs.name());
             if (count == null) {
-                count = LEGACY_FREQUENCY.getOrDefault(CharsetSupersets.decodeAs(cs).name(), 0L);
+                count = LEGACY_FREQUENCY.getOrDefault(CharsetSupersets.jdkDecodeAs(cs).name(), 0L);
             }
             if (count > bestCount) {
                 best = cs;

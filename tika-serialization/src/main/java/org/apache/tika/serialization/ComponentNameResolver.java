@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.OperatorOnly;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.detect.Detector;
@@ -332,6 +333,22 @@ public final class ComponentNameResolver {
             }
         }
         return false;
+    }
+
+    /**
+     * False for a self-configuring component that does not read a {@code parse-context} block
+     * under its own name (see {@link RequestConfigurable}); true for everything else.
+     */
+    public static boolean readsParseContextConfig(ComponentInfo info) {
+        return !info.selfConfiguring()
+                || info.componentClass().isAnnotationPresent(RequestConfigurable.class);
+    }
+
+    public static String notRequestConfigurableMessage(String name, Class<?> clazz) {
+        return "Component '" + name + "' (" + clazz.getName() + ") does not read a per-request "
+                + "or parse-context block, so this block has no effect; Tika 5.0 will refuse it. "
+                + "Configure the component in the Tika config's component section instead. If it "
+                + "is a custom component that reads this block, annotate it @RequestConfigurable.";
     }
 
     /** The refusal for a class {@link #isWireBlockedClass} blocks. */

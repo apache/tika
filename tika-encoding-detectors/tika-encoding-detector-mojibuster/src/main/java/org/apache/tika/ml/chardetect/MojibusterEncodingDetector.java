@@ -72,7 +72,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     // Probe sized by tag-stripped content (16 KB target), capped at 512 KB raw.
     // Markup-heavy pages whose distinguishing bytes (esp. UTF-8 multi-byte
     // sequences) sit past a fixed 16 KB raw window would otherwise starve the
-    // structural UTF-8 check and the model. See AdaptiveProbe.
+    // structural UTF-8 check and the model. See AdaptiveProbe; EvidenceProbe adds
+    // windows from past this prefix when it is not decisive.
     private static final int PROBE_CONTENT_TARGET = AdaptiveProbe.DEFAULT_CONTENT_TARGET;
     private static final int PROBE_RAW_CAP = AdaptiveProbe.DEFAULT_RAW_CAP;
 
@@ -249,10 +250,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         java.util.List<EncodingResult> pool = new java.util.ArrayList<>();
 
-        // UTF-32 codepoint validity, plus UTF-16 surrogate validity for the model's UTF-16 picks.
+        // UTF-32 codepoint validity, plus UTF-16/UTF-32 validity for the model's wide picks.
         WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(withBom);
-        LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={}",
-                wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be);
+        LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={} invalid32LE={} invalid32BE={}",
+                wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be,
+                wide.invalidUtf32Le, wide.invalidUtf32Be);
         if (wide.charset != null) {
             pool.add(new EncodingResult(wide.charset, UTF32_STRUCTURAL_CONF,
                     wide.charset.name(), EncodingResult.ResultType.STRUCTURAL));
@@ -344,6 +346,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             if (("UTF-16LE".equals(name) && wide.invalidUtf16Le)
                     || ("UTF-16BE".equals(name) && wide.invalidUtf16Be)) {
                 LOG.trace("mojibuster veto {} (broken surrogates)", name);
+                continue;
+            }
+            if (("UTF-32LE".equals(name) && wide.invalidUtf32Le)
+                    || ("UTF-32BE".equals(name) && wide.invalidUtf32Be)) {
+                LOG.trace("mojibuster veto {} (invalid code points)", name);
                 continue;
             }
             // False-CJK veto: a legacy multi-byte CJK pick whose bytes don't
@@ -675,14 +682,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 parseContext == null ? null : parseContext.get(EncodingDetectorContext.class);
         EncodingProbeCache cache = context == null ? null : context.getProbeCache();
         if (cache != null) {
-            byte[] cached = cache.get(PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+            byte[] cached = cache.get(EvidenceProbe.KIND, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
             if (cached != null) {
                 return cached;
             }
         }
-        byte[] probe = AdaptiveProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+        byte[] probe = EvidenceProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
         if (cache != null) {
-            cache.put(probe, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+            cache.put(probe, EvidenceProbe.KIND, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
         }
         return probe;
     }

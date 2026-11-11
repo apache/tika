@@ -530,10 +530,10 @@ public class TestParseContextSerialization {
         // SelfConfiguring, so they should be allowed to coexist.
         String json = """
                 {
-                  "configurable-test-parser": {
+                  "request-config-test-parser": {
                     "maxItems": 5
                   },
-                  "minimal-test-parser": {}
+                  "request-config-test-sub-parser": {}
                 }
                 """;
 
@@ -541,10 +541,10 @@ public class TestParseContextSerialization {
         // Should NOT throw - self-configuring components skip duplicate detection
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
 
-        assertTrue(deserialized.hasJsonConfig("configurable-test-parser"),
-                "configurable-test-parser should be stored as JSON config");
-        assertTrue(deserialized.hasJsonConfig("minimal-test-parser"),
-                "minimal-test-parser should be stored as JSON config");
+        assertTrue(deserialized.hasJsonConfig("request-config-test-parser"),
+                "request-config-test-parser should be stored as JSON config");
+        assertTrue(deserialized.hasJsonConfig("request-config-test-sub-parser"),
+                "request-config-test-sub-parser should be stored as JSON config");
     }
 
     /**

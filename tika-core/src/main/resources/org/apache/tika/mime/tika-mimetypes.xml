@@ -6378,6 +6378,7 @@
     </magic>
     <glob pattern="*.texinfo"/>
     <glob pattern="*.texi"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
   <mime-type type="application/x-tex-virtual-font">
     <_comment>TeX Virtual Font format</_comment>

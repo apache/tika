@@ -50,6 +50,12 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * A parse-context block (config file, preset, tika-server /config, gRPC
+     parse_context_json, pipes FetchEmitTuple) for a parser, detector, renderer or
+     translator that never reads one is logged as a warning instead of being silently
+     ignored; Tika 5.0 will refuse it. Parsers that read a block carry the new
+     @RequestConfigurable annotation, which a custom parser that reads its own block
+     should add; until then it still reads it, and a warning names the class (TIKA-5059).
 
    * tika-server sets any field of the config's "server" block from the command line
      (--serverSetting <field>=<value>, repeatable) and the environment (TIKA_SERVER_SETTING_<FIELD>,
@@ -104,6 +110,15 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * ASX playlists (application/x-ms-asx) are parsed by JSoupParser; XMLParser failed on
+     many real ones (mixed-case or unclosed tags, raw '&', non-UTF-8 without a declaration).
+     Texinfo files are parsed as text; they produced no content (TIKA-5029).
+     
+   * ISO-2022-JP is decoded as x-windows-50221, so NEC/IBM extension characters (circled
+     numbers, Roman numerals) no longer become U+FFFD. ISO-8859-1, ISO-8859-9, TIS-620 and
+     ISO-8859-11 decode as windows-1252, windows-1254 and windows-874, as browsers do, when a
+     detector other than the default chain reports them (TIKA-5045).
+     
    * Binary files are no longer detected as text because of their name or a text header.
      When content has no magic and at least 5% control bytes, and does not decode as
      UTF-16 or UTF-32, a text type from the file name or Content-Type no longer wins: Terminal Reality
@@ -449,6 +464,10 @@ Release 4.3.0 - ???
    * Charset detection keeps x-MacRoman instead of relabelling it windows-1252 when the
      text has MacRoman curly quotes (TIKA-5052).
 
+   * A UTF-32 guess from the statistical model is dropped when the bytes are not valid
+     UTF-32 code points: binary with a few NULs in its header (a shader file of ASCII 0/1
+     after an 80 37 00 00 header) was reported as UTF-32BE (TIKA-5052).
+
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>
      becomes <b>Note:</b> ); u and s are unchanged. The Markdown writer does the same for
@@ -467,6 +486,28 @@ Release 4.3.0 - ???
      200-character window, which finds a damaged region in a clean document) and
      tika-eval:languagenessCoverage. Languageness is -99 (unknown) for text with no letters
      or with under 90% of its letters in scripts the model was trained on (TIKA-5027).
+
+   * Big5 text decodes as browsers do: Big5-HKSCS with the 144 byte pairs where the WHATWG
+     Encoding Standard differs patched to the WHATWG value. A3E1 is the euro sign instead of
+     U+FFFD; A145, A1E3 and A1FE are the CP950 forms U+2027, U+FF5E and U+FF0F; six pairs in
+     C6CF-C6DF are radicals and ditto marks, not kana. Detected-charset metadata is unchanged;
+     tk:decoded-charset is x-Big5-HKSCS-WHATWG, which Charset.forName does not resolve
+     (TIKA-5052).
+
+   * EUC-JP text decodes as browsers do: x-eucJP-Open with nine pairs patched to the WHATWG
+     value, the Microsoft forms windows-31j already gives for Shift_JIS (A1C1 wave dash is
+     U+FF5E, A1DD minus U+FF0D, A1F1/A1F2/A2CC cent, pound and not signs U+FFE0-FFE2, A1BD
+     U+2015, A1C2 U+2225, FCFB/FCFC U+FFE2/U+FFE4). tk:decoded-charset is
+     x-eucJP-Open-WHATWG (TIKA-5052).
+
+   * Charset detection finds non-ASCII text past the first 16 KB, as in an email with a
+     long ASCII header block, a log or a CSV: those were reported as windows-1252. When the
+     leading sample is not conclusive, detection reads on (up to 16 MB of a file or byte
+     array, 1 MB of a stream) and adds the bytes around each non-ASCII byte and each
+     ISO-2022, HZ or UTF-7 sequence to the sample, stopping at 50 non-ASCII bytes or 16
+     UTF-8 characters. Fewer than 8 scattered non-ASCII bytes leave the sample as it was.
+     The junk filter scores the same sample. EncodingProbeCache keys on a probe kind
+     (TIKA-5046).
 
   OTHER CHANGES
 

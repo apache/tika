@@ -59,6 +59,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -124,6 +125,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * If your PDFs contain marked content or tags, consider
  * {@link PDFParserConfig#setMarkedContent(MarkedContentConfig)}
  */
+@RequestConfigurable
 @TikaComponent
 public class PDFParser implements Parser, RenderingParser, EnrichingParser {
 

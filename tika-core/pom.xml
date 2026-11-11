@@ -203,6 +203,8 @@
             <inputExclude>src/test/resources/org/apache/tika/**</inputExclude>
             <inputExclude>src/main/resources/org/apache/tika/language/*.ngp</inputExclude>
             <inputExclude>src/main/resources/org/apache/tika/detect/*.nnmodel</inputExclude>
+            <!-- BSD-3 (WHATWG Encoding Standard); notice in LICENSE -->
+            <inputExclude>src/main/resources/org/apache/tika/detect/*-WHATWG.tsv</inputExclude>
             <inputExclude>src/test/resources/test-documents/file-list.txt</inputExclude>
             <inputExclude>src/test/resources/test-documents/ang20150420t182050_corr_v1e_img.hdr</inputExclude>
             <inputExclude>src/test/resources/test-documents/*.pdf</inputExclude>

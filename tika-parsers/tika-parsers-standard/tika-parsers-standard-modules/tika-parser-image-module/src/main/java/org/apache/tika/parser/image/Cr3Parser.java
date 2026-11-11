@@ -43,6 +43,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -76,6 +77,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * The {@code THMB} and {@code PRVW} records carry width and height and the JPEG
  * length ahead of the JPEG, which starts 24 bytes into the record.
  */
+@RequestConfigurable
 @TikaComponent(name = "cr3-parser")
 public class Cr3Parser implements Parser {
 

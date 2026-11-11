@@ -31,24 +31,29 @@ package org.apache.tika.detect;
  * <p>
  * Not thread-safe: a single detection runs its detectors sequentially on one
  * thread. The cache is keyed by the probe parameters — {@link #get} returns the
- * cached probe only when both {@code contentTarget} and {@code rawCap} match what
- * it was stored with, so a detector that wants a differently-sized probe
+ * cached probe only when its {@code kind}, {@code contentTarget} and {@code rawCap}
+ * all match what it was stored with, so a detector that wants a different probe
  * transparently reads (and caches) its own.
  * <p>
  * The cached array is shared read-only state; callers must not mutate it in place.
  */
 public class EncodingProbeCache {
 
+    /** Kind of the plain leading-bytes probe, used by the kind-less methods. */
+    public static final String PREFIX = "prefix";
+
     private byte[] probe;
+    private String kind;
     private int contentTarget = -1;
     private int rawCap = -1;
 
     /**
-     * @return the cached probe if one was stored with the same {@code contentTarget} and
-     * {@code rawCap}; otherwise {@code null}
+     * @return the cached probe if one was stored with the same {@code kind},
+     * {@code contentTarget} and {@code rawCap}; otherwise {@code null}
      */
-    public byte[] get(int contentTarget, int rawCap) {
-        if (probe != null && this.contentTarget == contentTarget && this.rawCap == rawCap) {
+    public byte[] get(String kind, int contentTarget, int rawCap) {
+        if (probe != null && this.kind.equals(kind) && this.contentTarget == contentTarget
+                && this.rawCap == rawCap) {
             return probe;
         }
         return null;
@@ -57,9 +62,20 @@ public class EncodingProbeCache {
     /**
      * Stores the probe bytes read with the given parameters.
      */
-    public void put(byte[] probe, int contentTarget, int rawCap) {
+    public void put(byte[] probe, String kind, int contentTarget, int rawCap) {
         this.probe = probe;
+        this.kind = kind;
         this.contentTarget = contentTarget;
         this.rawCap = rawCap;
+    }
+
+    /** {@link #get(String, int, int)} for a {@link #PREFIX} probe. */
+    public byte[] get(int contentTarget, int rawCap) {
+        return get(PREFIX, contentTarget, rawCap);
+    }
+
+    /** {@link #put(byte[], String, int, int)} for a {@link #PREFIX} probe. */
+    public void put(byte[] probe, int contentTarget, int rawCap) {
+        put(probe, PREFIX, contentTarget, rawCap);
     }
 }
