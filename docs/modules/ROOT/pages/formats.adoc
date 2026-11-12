@@ -85,6 +85,24 @@ ODF is based;
 link:{api}/org/apache/tika/parser/odf/FlatOpenDocumentParser.html[FlatOpenDocumentParser]
 handles the single-file flat XML variants (`.fodt`, `.fods`, `.fodp`).
 
+Both write spreadsheet tables as the Excel parsers do: empty rows are dropped,
+empty cells are written only to pad out to the next value in their row, and
+the filler at the end of a row or sheet is dropped. Set `includeMissingRows`
+to write each empty row before a row with content, as `includeMissingRows`
+does for Excel; at most 100,000 are written per document. Set `extractMacros`
+to extract Basic macros.
+
+[source,json]
+----
+{
+  "parsers": [
+    { "default-parser": {} },
+    { "open-document-parser": { "includeMissingRows": true } },
+    { "flat-open-document-parser": { "includeMissingRows": true } }
+  ]
+}
+----
+
 == iWork document formats
 
 The Apple iWork formats (Pages, Numbers, Keynote) are supported by
