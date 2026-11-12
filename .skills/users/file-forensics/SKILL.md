@@ -281,7 +281,9 @@ The file's own story about its origin — read it as testimony, not fact:
   (`Normal.dotm` = stock Word), total edit time, claimed created/modified
   timestamps
 - **`tk:orig-resource-name`** — for xlsx, the absolute path where the file
-  was last saved (Excel records it in the workbook): drive letters, network
+  was last saved (Excel records it in the workbook); on an embedded entry
+  (OLE packages, OneNote attachments and inserted pictures), the path the
+  file had where it was inserted: drive letters, network
   shares, and `C:\Users\<name>\...` usernames leak here. (The `tk:` prefix
   here means Tika surfaced it; the *value* is still the file's own record —
   treat it as a claim like the rest of this section.)

@@ -36,6 +36,8 @@ public final class OneNoteText {
     /** Longer author names and more distinct authors are dropped. */
     public static final int MAX_AUTHOR_CHARS = 1000;
     public static final int MAX_AUTHORS = 1000;
+    // the longest Windows extended-length path
+    static final int MAX_PATH_CHARS = 32767;
     /**
      * MS-ONE TextExtendedAscii. OneNote writes it only for text that fits Latin-1, whatever
      * the paragraph's language ID (zh-CN and ja text holds NBSP and U+00D7; cs and ru text
@@ -359,6 +361,27 @@ public final class OneNoteText {
     public static boolean isExtendedAscii(OneNotePropertyEnum property) {
         return property == OneNotePropertyEnum.TextExtendedAscii ||
                 property == OneNotePropertyEnum.TextExtendedAscii2007;
+    }
+
+    /** @return the file name of a stored path, without its directories */
+    public static String sanitizeResourceName(String name) {
+        name = name.replace('\\', '/');
+        // a drive-relative name like C:pic.png has no slash, so strip the prefix separately
+        if (name.length() > 1 && name.charAt(1) == ':') {
+            name = name.substring(2);
+        }
+        int slash = name.lastIndexOf('/');
+        name = slash >= 0 ? name.substring(slash + 1) : name;
+        return ".".equals(name) || "..".equals(name) ? "" : name;
+    }
+
+    /** @return a SourceFilepath value, or null if empty or longer than a Windows path */
+    public static String originalPath(byte[] utf16) {
+        if (utf16 == null || utf16.length > 2 * (MAX_PATH_CHARS + 1)) {
+            return null;
+        }
+        String path = new String(utf16, StandardCharsets.UTF_16LE).replace("\u0000", "").trim();
+        return path.isEmpty() ? null : path;
     }
 
     public static boolean isImageText(OneNotePropertyEnum property) {

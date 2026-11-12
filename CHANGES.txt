@@ -182,6 +182,11 @@ Release 4.3.0 - ???
    * OneNote FSSHTTPB sections extract each stored file once, not once per reference
      to it (TIKA-5057).
 
+   * OneNote attachments and pictures carry their stored file name (resourceName) and,
+     for inserted files, the path they were inserted from (tk:orig-resource-name). .one
+     sections named none before, and an FSSHTTPB file's icon no longer takes the file's
+     name and ATTACHMENT type (TIKA-5057).
+
    * OneNoteParser parses .onetoc2 notebook tables of contents, listing their section
      names (TIKA-5057).
 

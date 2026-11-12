@@ -135,6 +135,8 @@ class OneNoteTreeWalker {
     // the revision whose objects the walk resolves, or null for the last declared anywhere
     private ExtendedGUID walkedRevision;
     private final Set<Long> emittedEmbedded = new HashSet<>();
+    // file data store GUID -> name, type and original path from the node that holds the file
+    private final Map<ExtendedGUID, FileInfo> fileInfoByGuid = new HashMap<>();
     // embedded bytes handed out are bounded by the file size; set on first use
     private long embeddedBytesRemaining = Long.MIN_VALUE;
     private boolean embeddedBudgetWarningRecorded;
@@ -173,7 +175,12 @@ class OneNoteTreeWalker {
 
     public void walkRootFileNodes() throws IOException, TikaException, SAXException {
         if (options.isIncludePageHistory()) {
-            walkFileNodeList(oneNoteDocument.root, null);
+            for (FileNode node : oneNoteDocument.root.children) {
+                if (node.id != FndStructureConstants.FileDataStoreListReferenceFND) {
+                    walkFileNode(node, null);
+                }
+            }
+            walkFileDataStores();
             return;
         }
         Set<ExtendedGUID> seenLists = new HashSet<>();
@@ -192,7 +199,11 @@ class OneNoteTreeWalker {
         for (FileNode list : unlabeledLists) {
             walkFileNode(list, null);
         }
-        // attachments are in a file-wide store, not linked to the revisions that use them
+        walkFileDataStores();
+    }
+
+    /** After the pages, which name the files they hold. */
+    private void walkFileDataStores() throws IOException, TikaException, SAXException {
         for (FileNode node : oneNoteDocument.root.children) {
             if (node.id == FndStructureConstants.FileDataStoreListReferenceFND) {
                 walkFileNode(node, null);
@@ -512,7 +523,8 @@ class OneNoteTreeWalker {
                     "File data store cb " + fileData.cb + " exceeds document size: " +
                             dif.size());
         }
-        handleEmbedded(fileData.stp, (int) fileData.cb, gosid);
+        handleEmbedded(fileData.stp, (int) fileData.cb, gosid,
+                fileInfoByGuid.get(fileDataStoreObjectReference.guid));
     }
 
     /** Overlapping file data objects could otherwise hand out the file many times over. */
@@ -535,15 +547,21 @@ class OneNoteTreeWalker {
         return false;
     }
 
-    private void handleEmbedded(long stp, int length, ExtendedGUID gosid)
+    private void handleEmbedded(long stp, int length, ExtendedGUID gosid, FileInfo info)
             throws TikaException, IOException, SAXException {
         if (!emittedEmbedded.add(stp)) {
             return;
         }
         TikaInputStream tis = null;
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
-        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, info == null ?
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString() : info.type);
+        if (info != null && info.name != null) {
+            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, info.name);
+        }
+        if (info != null && info.originalPath != null) {
+            embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, info.originalPath);
+        }
         if (gosid != null && !ExtendedGUID.nil().equals(gosid)) {
             embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, gosid.toString());
         }
@@ -607,6 +625,7 @@ class OneNoteTreeWalker {
                                             OneNotePropertyId parentPropertyId, int objectType)
             throws IOException, TikaException, SAXException {
         emitImage(propertySet);
+        recordFileInfo(propertySet);
         List<String> outerInkWords = inkWords;
         List<OneNoteText.TextRun> outerTextRuns = textRuns;
         if (!inkWordsBySet.containsKey(propertySet)) {
@@ -643,6 +662,104 @@ class OneNoteTreeWalker {
         }
         if (OneNoteText.emitImage(xhtml, fileName, altText)) {
             contentEmitted = true;
+        }
+    }
+
+    /**
+     * Records the names of the files a picture or embedded file node holds, for when the file
+     * data store is walked: ImageFilename names its pictures, EmbeddedFileName and
+     * SourceFilepath its embedded file.
+     */
+    private void recordFileInfo(PropertySet propertySet) throws IOException, TikaException {
+        List<ExtendedGUID> pictures = null;
+        List<ExtendedGUID> files = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (property == OneNotePropertyEnum.EmbeddedFileContainer) {
+                files = unnamedFileData(value, files);
+            } else if (property == OneNotePropertyEnum.PictureContainer ||
+                    property == OneNotePropertyEnum.WebPictureContainer14) {
+                pictures = unnamedFileData(value, pictures);
+            }
+        }
+        if (pictures == null && files == null) {
+            return;
+        }
+        String imageName = null;
+        String fileName = null;
+        String originalPath = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (value.propertyId.type != 7 || (property != OneNotePropertyEnum.ImageFilename &&
+                    property != OneNotePropertyEnum.EmbeddedFileName &&
+                    property != OneNotePropertyEnum.SourceFilepath)) {
+                continue;
+            }
+            int size = positionAt(value);
+            if (size > 2 * (OneNoteText.MAX_PATH_CHARS + 1)) {
+                continue;
+            }
+            ByteBuffer buf = ByteBuffer.allocate(size);
+            dif.read(buf);
+            if (property == OneNotePropertyEnum.SourceFilepath) {
+                originalPath = OneNoteText.originalPath(buf.array());
+                continue;
+            }
+            String name = OneNoteText.sanitizeResourceName(
+                    new String(buf.array(), StandardCharsets.UTF_16LE).replace(" ", ""));
+            if (name.isEmpty()) {
+                continue;
+            }
+            if (property == OneNotePropertyEnum.ImageFilename) {
+                imageName = name;
+            } else {
+                fileName = name;
+            }
+        }
+        record(pictures, new FileInfo(imageName, null,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString()));
+        record(files, new FileInfo(fileName, originalPath,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString()));
+    }
+
+    /** Adds the file data store GUIDs referenced by {@code value} that have no name yet. */
+    private List<ExtendedGUID> unnamedFileData(PropertyValue value, List<ExtendedGUID> guids)
+            throws TikaException {
+        if (value.compactIDs == null) {
+            return guids;
+        }
+        for (CompactID compactID : value.compactIDs) {
+            FileNodePtr ptr = object(compactID.guid);
+            FileNode node = ptr == null ? null : ptr.dereference(oneNoteDocument);
+            ObjectDeclarationWithRefCount declaration =
+                    node == null ? null : node.subType.objectDeclarationWithRefCount;
+            ExtendedGUID guid = declaration == null || declaration.body == null ? null :
+                    declaration.body.fileDataGuid;
+            if (guid != null && !fileInfoByGuid.containsKey(guid)) {
+                guids = guids == null ? new ArrayList<>() : guids;
+                guids.add(guid);
+            }
+        }
+        return guids;
+    }
+
+    private void record(List<ExtendedGUID> guids, FileInfo info) {
+        if (guids != null) {
+            for (ExtendedGUID guid : guids) {
+                fileInfoByGuid.putIfAbsent(guid, info);
+            }
+        }
+    }
+
+    private static final class FileInfo {
+        private final String name;
+        private final String originalPath;
+        private final String type;
+
+        private FileInfo(String name, String originalPath, String type) {
+            this.name = name;
+            this.originalPath = originalPath;
+            this.type = type;
         }
     }
 

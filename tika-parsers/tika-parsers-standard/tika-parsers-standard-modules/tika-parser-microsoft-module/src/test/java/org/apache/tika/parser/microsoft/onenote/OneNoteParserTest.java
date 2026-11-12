@@ -1610,15 +1610,16 @@ public class OneNoteParserTest extends TikaTest {
         });
         Metadata metadata = new Metadata();
         Method handle = OneNoteTreeWalker.class.getDeclaredMethod("handleEmbedded", long.class,
-                int.class, ExtendedGUID.class);
+                int.class, ExtendedGUID.class,
+                Class.forName(OneNoteTreeWalker.class.getName() + "$FileInfo"));
         handle.setAccessible(true);
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
             OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteParserConfig(),
                     new OneNoteDocument(), dif,
                     new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
                     metadata, parseContext, null);
-            handle.invoke(walker, 0L, 40, null);
-            handle.invoke(walker, 8L, 40, null);
+            handle.invoke(walker, 0L, 40, null, null);
+            handle.invoke(walker, 8L, 40, null, null);
         }
         assertEquals(Collections.singletonList(40), embedded);
         assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
@@ -1726,13 +1727,37 @@ public class OneNoteParserTest extends TikaTest {
                 getResourceAsStream("/test-documents/testOneNoteEmbeddedWordDoc.one")) {
             new OneNoteParser().parse(tis, new ToTextContentHandler(), new Metadata(), context);
         }
-        assertTrue(offered.size() > 0);
-        // the legacy path offers every embedded object as an ATTACHMENT; the relationship
-        // id is set only when the object carries a non-nil gosid
-        for (Metadata offeredMetadata : offered) {
-            assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
-                    offeredMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        // the embedded file, named by its node, and its printout
+        assertEquals(2, offered.size());
+        Metadata docx = offered.stream().filter(m -> TikaCoreProperties.EmbeddedResourceType
+                .ATTACHMENT.toString().equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE)))
+                .findFirst().orElseThrow();
+        assertEquals("Dude this is a super cool embedded doc.docx",
+                docx.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("C:\\Users\\ndipiazza\\Documents\\Dude this is a super cool embedded doc.docx",
+                docx.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        Metadata printout = offered.get(offered.get(0) == docx ? 1 : 0);
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                printout.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        // the file's name and path are not the printout's
+        assertNull(printout.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertNull(printout.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+    }
+
+    @Test
+    public void testNativePicturesAreNamedInline() throws Exception {
+        List<Metadata> embedded = getRecursiveMetadata("testOneNote.one");
+        List<String> names = new ArrayList<>();
+        for (Metadata m : embedded.subList(1, embedded.size())) {
+            if (m.get(TikaCoreProperties.RESOURCE_NAME_KEY) != null) {
+                assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                        m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                names.add(m.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+            }
         }
+        Collections.sort(names);
+        assertEquals(Arrays.asList("clip_image001.png", "clip_image002.png", "clip_image003.png"),
+                names);
     }
 
     /** From Office 365: MS-ONESTORE carried in MS-FSSHTTPB. */

@@ -51,6 +51,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
 import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
+import org.apache.tika.parser.microsoft.onenote.OneNoteText;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FixedBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
@@ -2248,12 +2249,12 @@ public class MSOneStorePackageTest {
     @Test
     public void testSanitizeResourceNameKeepsBasenameOfPathShapedNames() {
         assertEquals("pic 1.png",
-                MSOneStorePackage.sanitizeResourceName("D:\\images\\pic 1.png"));
-        assertEquals("pic.png", MSOneStorePackage.sanitizeResourceName("C:pic.png"));
-        assertEquals("a.png", MSOneStorePackage.sanitizeResourceName("/tmp/a.png"));
-        assertEquals("plain.png", MSOneStorePackage.sanitizeResourceName("plain.png"));
-        assertEquals("", MSOneStorePackage.sanitizeResourceName(".."));
-        assertEquals("", MSOneStorePackage.sanitizeResourceName("D:\\images\\.."));
+                OneNoteText.sanitizeResourceName("D:\\images\\pic 1.png"));
+        assertEquals("pic.png", OneNoteText.sanitizeResourceName("C:pic.png"));
+        assertEquals("a.png", OneNoteText.sanitizeResourceName("/tmp/a.png"));
+        assertEquals("plain.png", OneNoteText.sanitizeResourceName("plain.png"));
+        assertEquals("", OneNoteText.sanitizeResourceName(".."));
+        assertEquals("", OneNoteText.sanitizeResourceName("D:\\images\\.."));
     }
 
     @Test
@@ -2590,6 +2591,53 @@ public class MSOneStorePackageTest {
         });
         walkXml(pkg, new Metadata(), context);
         assertEquals(Arrays.asList(null, "printout_1.pdf", "printout_2.pdf"), names);
+    }
+
+    @Test
+    public void testEmbeddedFileHasItsOriginalPathAndItsPrintoutDoesNot() throws Exception {
+        RevisionStoreObject file = object(id(81), propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        file.fileDataObject = fileData("the file");
+        RevisionStoreObject printout = object(id(82), propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        printout.fileDataObject = fileData("its printout");
+        RevisionStoreObject node = object(id(80), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001D9B, new NoData()),
+                        new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D9C, utf16Text("report.docx")),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D9D, utf16Text("C:\\Users\\me\\report.docx"))),
+                Arrays.asList(file.objectID, printout.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(node, file, printout));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = node.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        List<String> rows = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata embeddedMetadata, ParseContext c) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(org.apache.tika.io.TikaInputStream stream,
+                                      org.xml.sax.ContentHandler handler,
+                                      Metadata embeddedMetadata, ParseContext c,
+                                      boolean outputHtml) {
+                rows.add(embeddedMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE) + " " +
+                        embeddedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) + " " +
+                        embeddedMetadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+            }
+        });
+        walkXml(pkg, new Metadata(), context);
+        assertEquals(Arrays.asList("ATTACHMENT report.docx C:\\Users\\me\\report.docx",
+                "INLINE null null"), rows);
     }
 
     @Test

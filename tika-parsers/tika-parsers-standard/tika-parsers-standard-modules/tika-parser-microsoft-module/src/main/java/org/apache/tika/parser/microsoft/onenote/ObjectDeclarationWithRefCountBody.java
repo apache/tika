@@ -23,6 +23,8 @@ class ObjectDeclarationWithRefCountBody {
     boolean hasOsidReferences;
     // the object is a file data store GUID (ObjectDeclarationFileData3RefCountFND)
     boolean file_data_store_reference;
+    // the file data store object it names, for file_data_store_reference
+    ExtendedGUID fileDataGuid;
 
     public ObjectDeclarationWithRefCountBody setJcid(JCID jcid) {
         this.jcid = jcid;

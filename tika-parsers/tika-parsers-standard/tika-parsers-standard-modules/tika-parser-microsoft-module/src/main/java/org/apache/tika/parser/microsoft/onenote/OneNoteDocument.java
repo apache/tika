@@ -31,7 +31,6 @@ class OneNoteDocument {
     List<ExtendedGUID> revisionListOrder = new ArrayList<>();
     Map<ExtendedGUID, Revision> revisionMap = new HashMap<>();
     Map<ExtendedGUID, FileNodePtr> revisionManifestLists = new HashMap<>();
-    Map<ExtendedGUID, FileChunkReference> guidToRef = new HashMap<>();
     Map<ExtendedGUID, FileNodePtr> guidToObject = new HashMap<>();
     // each revision's own declarations; guidToObject holds the last one in the file
     Map<ExtendedGUID, Map<ExtendedGUID, FileNodePtr>> revisionObjects = new HashMap<>();
@@ -62,14 +61,6 @@ class OneNoteDocument {
             node.propertySetStreams = null;
         }
         return node.propertySet;
-    }
-
-    FileChunkReference getAssocGuidToRef(ExtendedGUID guid) {
-        return guidToRef.get(guid);
-    }
-
-    void setAssocGuidToRef(ExtendedGUID guid, FileChunkReference ref) {
-        guidToRef.put(guid, ref);
     }
 
     void putObject(ExtendedGUID oid, FileNodePtr ptr) {

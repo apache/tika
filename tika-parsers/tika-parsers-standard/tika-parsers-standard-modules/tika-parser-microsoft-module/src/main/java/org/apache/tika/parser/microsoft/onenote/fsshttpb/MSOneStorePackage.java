@@ -1300,14 +1300,14 @@ public class MSOneStorePackage {
         EmbeddedResourceInfo typeOnlyFallback = null;
         for (ContainerReference reference : containerReferences(objectsById)
                 .getOrDefault(target.objectID, Collections.emptyList())) {
-            EmbeddedResourceInfo info =
-                    embeddedResourceInfo(collectObjectActions(reference.container));
-            if (info != null) {
+            EmbeddedResourceInfo info = resourceInfoForChild(reference.action,
+                    embeddedResourceInfo(collectObjectActions(reference.container)));
+            if (info != null && (info.name != null || info.originalPath != null)) {
                 result = info;
                 break;
             }
             if (typeOnlyFallback == null) {
-                typeOnlyFallback = resourceInfoForChild(reference.action, null);
+                typeOnlyFallback = info;
             }
         }
         if (result == null) {
@@ -1396,14 +1396,17 @@ public class MSOneStorePackage {
 
     private EmbeddedResourceInfo resourceInfoForChild(PropertyAction action,
                                                        EmbeddedResourceInfo parentInfo) {
+        // a node's picture, e.g. an embedded file's printout, does not take the file's name
         if (action.oneNotePropertyEnum == OneNotePropertyEnum.PictureContainer ||
                 action.oneNotePropertyEnum == OneNotePropertyEnum.WebPictureContainer14) {
-            return parentInfo == null ? new EmbeddedResourceInfo(null,
-                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString()) : parentInfo;
+            String inline = TikaCoreProperties.EmbeddedResourceType.INLINE.toString();
+            return parentInfo != null && inline.equals(parentInfo.type) ? parentInfo :
+                    new EmbeddedResourceInfo(null, inline, null);
         }
         if (action.oneNotePropertyEnum == OneNotePropertyEnum.EmbeddedFileContainer) {
-            return parentInfo == null ? new EmbeddedResourceInfo(null,
-                    TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString()) : parentInfo;
+            String attachment = TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString();
+            return parentInfo != null && attachment.equals(parentInfo.type) ? parentInfo :
+                    new EmbeddedResourceInfo(null, attachment, null);
         }
         // other references may reach objects shared across nodes, e.g. a printout's source
         // file referenced by every page image, so the node's name does not apply to them
@@ -1413,10 +1416,13 @@ public class MSOneStorePackage {
     private static final class EmbeddedResourceInfo {
         private final String name;
         private final String type;
+        // where the file was when it was inserted (SourceFilepath)
+        private final String originalPath;
 
-        private EmbeddedResourceInfo(String name, String type) {
+        private EmbeddedResourceInfo(String name, String type, String originalPath) {
             this.name = name;
             this.type = type;
+            this.originalPath = originalPath;
         }
     }
 
@@ -1915,34 +1921,36 @@ public class MSOneStorePackage {
     }
 
     private EmbeddedResourceInfo embeddedResourceInfo(List<PropertyAction> actions) {
+        EmbeddedResourceInfo info = null;
+        String originalPath = null;
         for (PropertyAction action : actions) {
-            if (action.property instanceof PrtFourBytesOfLengthFollowedByData &&
+            if (!(action.property instanceof PrtFourBytesOfLengthFollowedByData)) {
+                continue;
+            }
+            byte[] bytes = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.SourceFilepath) {
+                originalPath = OneNoteText.originalPath(bytes);
+            } else if (info == null &&
                     (action.oneNotePropertyEnum == OneNotePropertyEnum.ImageFilename ||
                             action.oneNotePropertyEnum == OneNotePropertyEnum.EmbeddedFileName)) {
-                byte[] bytes = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
-                String name = sanitizeResourceName(new String(bytes, StandardCharsets.UTF_16LE)
+                String name = OneNoteText.sanitizeResourceName(new String(bytes, StandardCharsets.UTF_16LE)
                         .replace("\u0000", ""));
                 if (!name.isEmpty()) {
                     String type = action.oneNotePropertyEnum == OneNotePropertyEnum.ImageFilename ?
                             TikaCoreProperties.EmbeddedResourceType.INLINE.toString() :
                             TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString();
-                    return new EmbeddedResourceInfo(name, type);
+                    info = new EmbeddedResourceInfo(name, type, null);
                 }
             }
         }
-        return null;
+        if (originalPath == null) {
+            return info;
+        }
+        return info == null ? new EmbeddedResourceInfo(null,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(), originalPath) :
+                new EmbeddedResourceInfo(info.name, info.type, originalPath);
     }
 
-    static String sanitizeResourceName(String name) {
-        name = name.replace('\\', '/');
-        // a drive-relative name like C:pic.png has no slash, so strip the prefix separately
-        if (name.length() > 1 && name.charAt(1) == ':') {
-            name = name.substring(2);
-        }
-        int slash = name.lastIndexOf('/');
-        name = slash >= 0 ? name.substring(slash + 1) : name;
-        return ".".equals(name) || "..".equals(name) ? "" : name;
-    }
 
     /** Bounds the embedded bytes handed out, e.g. to the file size. */
     public void setEmbeddedByteLimit(long limit) {
@@ -1981,6 +1989,10 @@ public class MSOneStorePackage {
                         resourceInfo.type);
         if (resourceInfo != null && resourceInfo.name != null) {
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, resourceInfo.name);
+        }
+        if (resourceInfo != null && resourceInfo.originalPath != null) {
+            embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME,
+                    resourceInfo.originalPath);
         }
         String relationshipID = objectID == null ? null : "_" + objectID.value + "_" +
                 objectID.guid;
@@ -2046,7 +2058,7 @@ public class MSOneStorePackage {
                         ((PrtFourBytesOfLengthFollowedByData) action.property).data,
                         StandardCharsets.UTF_16LE);
                 if (action.oneNotePropertyEnum == OneNotePropertyEnum.ImageFilename) {
-                    fileName = sanitizeResourceName(text.replace("\u0000", ""));
+                    fileName = OneNoteText.sanitizeResourceName(text.replace("\u0000", ""));
                 } else {
                     altText = text;
                 }

@@ -642,11 +642,8 @@ class OneNotePtr {
         } else if (data.id == FndStructureConstants.FileDataStoreListReferenceFND) {
             // already processed this
         } else if (data.id == FndStructureConstants.FileDataStoreObjectReferenceFND) {
-            FileChunkReference ref = deserializeFileChunkReference64();
             GUID guid = deserializeGUID();
             ExtendedGUID extendedGuid = new ExtendedGUID(guid, 0);
-            LOG.trace("found extended guid {}", extendedGuid);
-            document.guidToRef.put(extendedGuid, ref);
             // an empty reference is file data OneNote never wrote
             if (data.ref.cb != 0) {
                 OneNotePtr fileDataStorePtr = new OneNotePtr(this);
@@ -655,6 +652,7 @@ class OneNotePtr {
                 data.subType.fileDataStoreObjectReference = new FileDataStoreObjectReference();
                 data.subType.fileDataStoreObjectReference.ref =
                         fileDataStorePtr.deserializeFileDataStoreObject();
+                data.subType.fileDataStoreObjectReference.guid = extendedGuid;
             }
 
         } else if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCountFNDX ||
@@ -740,13 +738,11 @@ class OneNotePtr {
                 GUID guid = GUID.fromCurlyBraceUTF16Bytes(
                         Arrays.copyOfRange(dataSpaceBufferBytes, IFNDF.length,
                                 dataSpaceBufferBytes.length));
-                ExtendedGUID extendedGUID = new ExtendedGUID(guid, 0);
-                FileChunkReference fileChunk = document.getAssocGuidToRef(extendedGUID);
-                if (fileChunk == null) {
-                    LOG.debug("{} have not seen GUID {} yet", getIndent(), extendedGUID);
-                } else {
-                    // TODO - call postprocessObjectDeclarationContents on this object?
-                }
+                data.subType.objectDeclarationWithRefCount.body.fileDataGuid =
+                        new ExtendedGUID(guid, 0);
+                // so the picture or embedded file node that references it can name the file
+                data.gosid = data.subType.objectDeclarationWithRefCount.body.oid.guid;
+                document.putObject(data.gosid, new FileNodePtr(curPath));
             } else {
                 LOG.debug("{}Ignoring an external reference {}", getIndent(),
                         new String(dataSpaceBufferBytes, StandardCharsets.UTF_16LE));
@@ -783,7 +779,6 @@ class OneNotePtr {
         }
 
         if (data.baseType == 1 && !(data.ref.equals(FileChunkReference.nil()))) {
-            document.setAssocGuidToRef(data.gosid, data.ref);
             OneNotePtr content = new OneNotePtr(this);
             content.reposition(data.ref);
             if (data.hasGctxid()) {

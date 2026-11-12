@@ -18,4 +18,5 @@ package org.apache.tika.parser.microsoft.onenote;
 
 class FileDataStoreObjectReference {
     FileDataStoreObject ref;
+    ExtendedGUID guid;
 }
