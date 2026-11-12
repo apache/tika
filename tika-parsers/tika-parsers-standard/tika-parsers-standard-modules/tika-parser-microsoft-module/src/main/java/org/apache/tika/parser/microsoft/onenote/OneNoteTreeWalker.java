@@ -137,6 +137,9 @@ class OneNoteTreeWalker {
     private final Set<Long> emittedEmbedded = new HashSet<>();
     // file data store GUID -> name, type and original path from the node that holds the file
     private final Map<ExtendedGUID, FileInfo> fileInfoByGuid = new HashMap<>();
+    private final Map<PropertySet, String> noteTagLabels = new IdentityHashMap<>();
+    private final Set<PropertySet> taggedParagraphs =
+            Collections.newSetFromMap(new IdentityHashMap<>());
     // embedded bytes handed out are bounded by the file size; set on first use
     private long embeddedBytesRemaining = Long.MIN_VALUE;
     private boolean embeddedBudgetWarningRecorded;
@@ -625,6 +628,7 @@ class OneNoteTreeWalker {
                                             OneNotePropertyId parentPropertyId, int objectType)
             throws IOException, TikaException, SAXException {
         emitImage(propertySet);
+        emitNoteTags(propertySet);
         recordFileInfo(propertySet);
         List<String> outerInkWords = inkWords;
         List<OneNoteText.TextRun> outerTextRuns = textRuns;
@@ -663,6 +667,60 @@ class OneNoteTreeWalker {
         if (OneNoteText.emitImage(xhtml, fileName, altText)) {
             contentEmitted = true;
         }
+    }
+
+    /** Writes the labels of the paragraph's note tags, once per paragraph. */
+    private void emitNoteTags(PropertySet propertySet)
+            throws IOException, TikaException, SAXException {
+        for (PropertyValue value : propertySet.rgPridsData) {
+            if (value.propertyId.propertyEnum != OneNotePropertyEnum.NoteTagStates ||
+                    value.propertySet == null || !taggedParagraphs.add(propertySet)) {
+                continue;
+            }
+            for (PropertyValue state : value.propertySet.rgPridsData) {
+                if (state.propertySet == null) {
+                    continue;
+                }
+                for (PropertyValue v : state.propertySet.rgPridsData) {
+                    if (v.propertyId.propertyEnum != OneNotePropertyEnum.NoteTagDefinitionOid ||
+                            v.compactIDs == null) {
+                        continue;
+                    }
+                    for (CompactID compactID : v.compactIDs) {
+                        if (!takeVisit()) {
+                            return;
+                        }
+                        String label = noteTagLabel(propertySetOf(object(compactID.guid)));
+                        if (label != null && takeTextBytes(2L * label.length()) &&
+                                OneNoteText.emitNoteTag(xhtml, label)) {
+                            contentEmitted = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private String noteTagLabel(PropertySet definition) throws IOException, TikaException {
+        if (definition == null) {
+            return null;
+        }
+        if (noteTagLabels.containsKey(definition)) {
+            return noteTagLabels.get(definition);
+        }
+        String label = null;
+        for (PropertyValue value : definition.rgPridsData) {
+            if (value.propertyId.propertyEnum == OneNotePropertyEnum.NoteTagLabel &&
+                    value.propertyId.type == 7) {
+                int size = positionAt(value);
+                if (size <= 2 * OneNoteText.MAX_NOTE_TAG_LABEL_CHARS) {
+                    label = readString(size, StandardCharsets.UTF_16LE).replace(" ", "");
+                }
+                break;
+            }
+        }
+        noteTagLabels.put(definition, label);
+        return label;
     }
 
     /**

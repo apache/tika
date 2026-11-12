@@ -68,7 +68,7 @@ public enum OneNotePropertyEnum {
     HasVersionPages(0x08003462), ActionItemType(0x10003463), NoteTagShape(0x10003464),
     NoteTagHighlightColor(0x14003465), NoteTagTextColor(0x14003466),
     NoteTagPropertyStatus(0x14003467), NoteTagLabel(0x1C003468), NoteTagCreated(0x1400346E),
-    NoteTagCompleted(0x1400346F), NoteTagDefinitionOid(0x20003488), NoteTagStates(0x04003489),
+    NoteTagCompleted(0x1400346F), NoteTagDefinitionOid(0x20003488), NoteTagStates(0x40003489),
     ActionItemStatus(0x10003470), ActionItemSchemaVersion(0x0C003473), ReadingOrderRTL(0x08003476),
     ParagraphAlignment(0x0C003477), VersionHistoryGraphSpaceContextNodes(0x3400347B),
     DisplayedPageNumber(0x14003480), SectionDisplayName(0x1C00349B), NextStyle(0x1C00348A),

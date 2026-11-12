@@ -2594,6 +2594,35 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testNoteTagLabelPrecedesTheTaggedParagraph() throws Exception {
+        RevisionStoreObject definition = object(id(71), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003468, utf16Text("To Do"))),
+                Collections.emptyList(), Collections.emptyList());
+        // NoteTagStates: one state, referencing the shared definition
+        PrtArrayOfPropertyValues states = new PrtArrayOfPropertyValues();
+        states.data = new PropertySet[] {propertySet(
+                new PropertySpec(PropertyType.ObjectID, 0x20003488, new NoData()))};
+        RevisionStoreObject paragraph = object(id(70), propertySet(
+                        new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x40003489, states),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001C22, utf16Text("Buy milk"))),
+                Collections.singletonList(definition.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(paragraph, definition));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = paragraph.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        String xml = walkXml(pkg);
+        assertTrue(xml.replaceAll(">\\s+<", "><")
+                .contains("<p class=\"note-tag\">To Do</p><p>Buy milk</p>"), xml);
+        assertEquals(1, xml.split("To Do", -1).length - 1);
+    }
+
+    @Test
     public void testEmbeddedFileHasItsOriginalPathAndItsPrintoutDoesNot() throws Exception {
         RevisionStoreObject file = object(id(81), propertySet(),
                 Collections.emptyList(), Collections.emptyList());

@@ -187,6 +187,9 @@ Release 4.3.0 - ???
      sections named none before, and an FSSHTTPB file's icon no longer takes the file's
      name and ATTACHMENT type (TIKA-5057).
 
+   * OneNote note tag labels ("To Do", "Important", custom tags) are written before the
+     paragraphs they tag, as <p class="note-tag"> (TIKA-5057).
+
    * OneNoteParser parses .onetoc2 notebook tables of contents, listing their section
      names (TIKA-5057).
 

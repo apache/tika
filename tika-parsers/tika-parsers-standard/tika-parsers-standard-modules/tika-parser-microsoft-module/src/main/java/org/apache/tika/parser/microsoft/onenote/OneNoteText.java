@@ -38,6 +38,8 @@ public final class OneNoteText {
     public static final int MAX_AUTHORS = 1000;
     // the longest Windows extended-length path
     static final int MAX_PATH_CHARS = 32767;
+    /** Longer note tag labels are dropped. */
+    public static final int MAX_NOTE_TAG_LABEL_CHARS = 1000;
     /**
      * MS-ONE TextExtendedAscii. OneNote writes it only for text that fits Latin-1, whatever
      * the paragraph's language ID (zh-CN and ja text holds NBSP and U+00D7; cs and ru text
@@ -307,6 +309,19 @@ public final class OneNoteText {
      *
      * @return whether an element was emitted
      */
+    /** Writes a note tag's label, e.g. "To Do", ahead of the paragraph it tags. */
+    public static boolean emitNoteTag(XHTMLContentHandler xhtml, String label)
+            throws SAXException {
+        label = clean(label);
+        if (label == null) {
+            return false;
+        }
+        xhtml.startElement("p", "class", "note-tag");
+        xhtml.characters(label.strip());
+        xhtml.endElement("p");
+        return true;
+    }
+
     public static boolean emitImage(XHTMLContentHandler xhtml, String fileName, String altText)
             throws SAXException {
         fileName = fileName == null ? null : clean(fileName.strip());

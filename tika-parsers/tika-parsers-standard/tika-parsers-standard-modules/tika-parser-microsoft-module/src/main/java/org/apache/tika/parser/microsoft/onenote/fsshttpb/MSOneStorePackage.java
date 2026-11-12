@@ -122,6 +122,7 @@ public class MSOneStorePackage {
     // a shared BLOB's name, looked up once however many holders lack one
     private final Map<ExGuid, EmbeddedResourceInfo> sharedBlobNames = new HashMap<>();
     private final Map<RevisionStoreObject, Boolean> hyperlinkByStyle = new IdentityHashMap<>();
+    private final Map<RevisionStoreObject, String> noteTagLabels = new IdentityHashMap<>();
     private long embeddedBytesRemaining = Long.MAX_VALUE;
     private boolean embeddedCapWarned;
     // UTF-16 bytes of text still to write
@@ -740,6 +741,7 @@ public class MSOneStorePackage {
         startObjectStructure(objectType, listStyle, xhtml);
         try {
             emitImage(actions, xhtml);
+            emitNoteTags(actions, objectsById, xhtml);
             // Emit the title structure before page body nodes to preserve visual order.
             List<PropertyAction> structureActions = new ArrayList<>();
             for (PropertyAction action : actions) {
@@ -2067,6 +2069,39 @@ public class MSOneStorePackage {
         if (OneNoteText.emitImage(xhtml, fileName, altText)) {
             contentEmitted = true;
         }
+    }
+
+    /** Writes the labels of the paragraph's note tags. */
+    private void emitNoteTags(List<PropertyAction> actions,
+                              Map<ExGuid, RevisionStoreObject> objectsById,
+                              XHTMLContentHandler xhtml) throws SAXException {
+        for (PropertyAction action : actions) {
+            if (action.oneNotePropertyEnum != OneNotePropertyEnum.NoteTagDefinitionOid ||
+                    action.childReference == null) {
+                continue;
+            }
+            String label = noteTagLabels.computeIfAbsent(
+                    objectsById.get(action.childReference), this::noteTagLabel);
+            if (label != null && takeText(label) && OneNoteText.emitNoteTag(xhtml, label)) {
+                contentEmitted = true;
+            }
+        }
+    }
+
+    private String noteTagLabel(RevisionStoreObject definition) {
+        if (definition == null || definition.propertySet == null ||
+                definition.propertySet.objectSpaceObjectPropSet == null) {
+            return null;
+        }
+        for (PropertyAction action : collectObjectActions(definition)) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.NoteTagLabel &&
+                    action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                byte[] bytes = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
+                return bytes.length > 2 * OneNoteText.MAX_NOTE_TAG_LABEL_CHARS ? null :
+                        new String(bytes, StandardCharsets.UTF_16LE).replace(" ", "");
+            }
+        }
+        return null;
     }
 
     private void emitUtf16Property(XHTMLContentHandler xhtml, OneNotePropertyEnum property,
