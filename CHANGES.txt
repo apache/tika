@@ -130,6 +130,16 @@ Release 4.3.0 - ???
      A UTF-8 BOM followed by binary magic (JPEG, PNG, GIF, ID3, zip, SQLite) is detected by
      that magic instead of as text (TIKA-5029).
 
+   * Content with no magic is judged text or binary by TextBinaryClassifier, a small
+     model over byte statistics of the 64 KB prefix, instead of TextDetector's control-byte
+     check, which only accepted mostly-ASCII or valid UTF-8. Extensionless text in legacy
+     encodings (windows-1251, GB18030, Shift_JIS, EUC-JP, EUC-KR, KOI8-R and others), logs
+     with a few control bytes, zero-filled holes or backspace progress bars are now
+     text/plain; 3.x returned application/octet-stream for these, and 4.0-4.2 rescued
+     some only through a 512-byte re-sniff. Printable ASCII is always text; inputs under
+     16 bytes keep the old check. A text name or Content-Type still loses to content with
+     5% or more control bytes that the classifier calls binary (TIKA-5062).
+
    * New or fixed magic: Emacs bytecode from every Emacs version (only version 19 matched
      before, and *.elc is no longer also an octet-stream glob), Lua bytecode
      (application/x-lua-bytecode), Qt .qm translations (application/x-qt-translation, were

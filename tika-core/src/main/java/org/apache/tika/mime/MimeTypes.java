@@ -37,6 +37,7 @@ import javax.xml.namespace.QName;
 import org.apache.tika.Tika;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.TextBinaryClassifier;
 import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.TextStatistics;
 import org.apache.tika.detect.XmlRootExtractor;
@@ -306,10 +307,15 @@ public final class MimeTypes implements Detector, Serializable {
             return result;
         }
 
-        // Finally, assume plain text if no control bytes are found
+        byte[] content = withoutNulTail(data);
+        if (content.length >= TextBinaryClassifier.MIN_LENGTH) {
+            return TextBinaryClassifier.isText(content) ? Collections.singletonList(textMimeType)
+                    : rootMimeTypeL;
+        }
+        // too short for the classifier: plain text only if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
-            try (TikaInputStream tis = TikaInputStream.get(withoutNulTail(data))) {
+            try (TikaInputStream tis = TikaInputStream.get(content)) {
                 MimeType type = forName(detector.detect(tis, new Metadata(), new ParseContext()).toString());
                 return Collections.singletonList(type);
             }
