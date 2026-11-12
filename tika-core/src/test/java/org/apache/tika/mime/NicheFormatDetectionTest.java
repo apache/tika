@@ -269,7 +269,54 @@ public class NicheFormatDetectionTest {
         assertDetected(MediaType.application("x-python-pickle"), "\u0080\u0004\u0095\u0010\u0000\u0000\u0000");
         assertDetected(MediaType.application("x-lucene-index"), "?×l\u0017\u0013Lucene62SegmentInfo");
         assertDetected(MediaType.application("x-git-pack"), "PACK\u0000\u0000\u0000\u0002\u0000\u0000\u0000\u0003");
-        assertDetected(MediaType.OCTET_STREAM, "PACK\u0000\u0000\u0000\u0001\u0000\u0000\u0002-");
+        assertDetected(MediaType.application("x-libreoffice-pack"),
+                "PACK\u0000\u0000\u0000\u0001\u0000\u0000\u0002!\u000e\u009dEb\u0000\u0000\u0001\u0017xÚ");
+        // two entries: the zlib stream after the 24-byte entry table tells it from a git pack
+        assertDetected(MediaType.application("x-libreoffice-pack"),
+                "PACK\u0000\u0000\u0000\u0002\u0000\u0000(\u0092\u008aSø¸\u0000\u0000\u0005\u0003"
+                        + "\u0000\u0000\b{\u0088\u009eaÈ\u0000\u0000\u0001ÑxÚÅ\u009a");
+        assertDetected(MediaType.application("x-git-pack"),
+                "PACK\u0000\u0000\u0000\u0002\u0000\u0000\u0000:\u009b\u000fx\u009c\u009dËKj");
+        assertDetected(MediaType.OCTET_STREAM, "PACK\u0000\u0000\u0000\u0000\u0000\u0000\u0002!");
+    }
+
+    @Test
+    public void testOfficeProfileCaches() throws Exception {
+        MediaType cache = MediaType.application("x-openoffice-registry-cache");
+        assertDetected(cache, "'\u0011\u0000\u0003\u0080\u0000\u0000\u0012320m12(Build:9483)\u0000\u0000\u0000\u0001");
+        assertDetected(cache, "'\u0011\u0000\u0003\u0080\u0000\u0000\u0011300m15(Build:9379)\u0000\u0000\u0000\u0001");
+        assertDetected(MediaType.OCTET_STREAM, "'\u0011\u0000\u0003\u0080\u0000\u0000\u0012320m12 Build 9483");
+    }
+
+    @Test
+    public void testRpmHeader() throws Exception {
+        assertDetected(MediaType.application("x-rpm-header"),
+                "\u008e­è\u0001\u0000\u0000\u0000\u0000\u0000\u0000\u00009\u0000\u0000T\u0080");
+        assertDetected(MediaType.OCTET_STREAM, "\u008e­è\u0001\u0001\u0000\u0000\u0000\u0000\u0000\u00009");
+        assertDetected(MediaType.application("x-rpm"), "í«îÛ\u0003\u0000\u0000\u0000");
+    }
+
+    @Test
+    public void testPdfJsBinaryCMap() throws Exception {
+        MediaType bcmap = MediaType.application("x-pdfjs-bcmap");
+        String comment = "àRCopyright 1990-2009 Adobe Systems Incorporated.\nAll rights";
+        // flags byte: bit 0 vertical, bits 1-2 the CMap type
+        assertDetected(bcmap, "\u0002" + comment);
+        assertDetected(bcmap, "\u0003" + comment);
+        assertDetected(bcmap, "\u0004" + comment);
+    }
+
+    @Test
+    public void testHobbyFormats() throws Exception {
+        MediaType puz = MediaType.application("x-crossword");
+        assertDetected(puz, "\u000e\u0000ACROSS&DOWN\u0000\u0002ºKÙá\u0083û\\æE1.2\u0000\u0000");
+        assertDetected(puz, "=EACROSS&DOWN\u0000\u0002ªKÂ3\u0083ë\u0001ÇQ1.3\u0000\u0000");
+        assertDetected(MediaType.OCTET_STREAM, "ACROSS&DOWN\u0000\u0002ºKÙá");
+        MediaType tape = MediaType.application("x-commodore-tape");
+        assertDetected(tape, "C64 tape image file" + "\u0000".repeat(13) + "\u0001\u0001\u001e\u0000\u0001\u0000");
+        assertDetected(tape, "C64S tape file\r\nDemo tape\u001a......\u0000\u0001\u001e\u0000\u0001\u0000");
+        assertDetected(tape, "C64-TAPE-RAW\u0001\u0000\u0000\u0000");
+        assertDetected(MediaType.OCTET_STREAM, "C64 tape image file" + "\u0000".repeat(13) + "\t\t");
     }
 
     @Test
