@@ -48,7 +48,12 @@ class OneNoteDirectFileResource implements Closeable {
 
     public OneNoteDirectFileResource(File f) throws IOException {
         this.raf = new RandomAccessFile(f, "r");
-        this.size = raf.length();
+        try {
+            this.size = raf.length();
+        } catch (IOException e) {
+            raf.close();
+            throw e;
+        }
     }
 
     public int read() throws IOException {

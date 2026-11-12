@@ -443,7 +443,6 @@ class OneNotePtr {
         OneNotePtr backup = new OneNotePtr(this);
         long reserved;
 
-        data.isFileData = false;
         data.gosid = ExtendedGUID.nil();
         long fileNodeHeader = deserializeLittleEndianInt();
         data.id = fileNodeHeader & 0x3ff;
@@ -977,7 +976,6 @@ class OneNotePtr {
             if (!data.subType.objectDeclarationWithRefCount.body.jcid.isFileData) {
                 throw new TikaException("JCID must be file data when !isObjectSpaceObjectPropSet.");
             }
-            data.isFileData = true;
         }
     }
 
@@ -1331,6 +1329,9 @@ class OneNotePtr {
                     "OneNote object stream entries exceed the document's limit");
         }
         documentBudget.streamEntriesRemaining -= count;
+        if (count > 0) {
+            data.data = new ArrayList<>(Math.min(count, 1024));
+        }
         for (int i = 0; i < count; ++i) {
             CompactID cid;
             cid = deserializeCompactID();

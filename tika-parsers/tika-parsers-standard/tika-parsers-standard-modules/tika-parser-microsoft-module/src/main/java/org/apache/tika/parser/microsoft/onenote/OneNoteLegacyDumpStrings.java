@@ -23,6 +23,8 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -35,6 +37,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * ASCII and UTF-16LE strings are scraped as GNU "strings" does.
  */
 class OneNoteLegacyDumpStrings {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OneNoteLegacyDumpStrings.class);
 
     private static final int MIN_STRING_LENGTH = 8;
     private static final float ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO = 0.6f;
@@ -73,10 +77,24 @@ class OneNoteLegacyDumpStrings {
         private static final TextQualityDetector DETECTOR = load();
 
         private static TextQualityDetector load() {
+            ClassLoader own = OneNoteLegacyDumpStrings.class.getClassLoader();
+            TextQualityDetector detector = load(own);
+            ClassLoader context = Thread.currentThread().getContextClassLoader();
+            if (detector == null && context != null && context != own) {
+                detector = load(context);
+            }
+            if (detector == null) {
+                LOG.debug("No TextQualityDetector found; the OneNote dump uses a letter ratio");
+            }
+            return detector;
+        }
+
+        private static TextQualityDetector load(ClassLoader loader) {
             try {
-                return ServiceLoader.load(TextQualityDetector.class,
-                        OneNoteLegacyDumpStrings.class.getClassLoader()).findFirst().orElse(null);
+                return ServiceLoader.load(TextQualityDetector.class, loader).findFirst()
+                        .orElse(null);
             } catch (ServiceConfigurationError | RuntimeException e) {
+                LOG.warn("Could not load a TextQualityDetector", e);
                 return null;
             }
         }

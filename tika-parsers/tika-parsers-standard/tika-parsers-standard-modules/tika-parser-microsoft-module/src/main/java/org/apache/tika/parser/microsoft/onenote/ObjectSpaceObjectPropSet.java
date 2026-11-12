@@ -23,9 +23,4 @@ public class ObjectSpaceObjectPropSet {
             new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
     ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs contextIDs =
             new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
-    PropertySet body = new PropertySet();
-
-    public PropertySet getBody() {
-        return body;
-    }
 }

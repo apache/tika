@@ -16,14 +16,15 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 class ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs {
     long count; // 24 bits
     long extendedStreamsPresent;
     long osidsStreamNotPresent;
-    List<CompactID> data = new ArrayList<>();
+    // most streams are empty; OneNotePtr allocates the rest
+    List<CompactID> data = Collections.emptyList();
 
     public long getCount() {
         return count;

@@ -18,17 +18,11 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 /**
  * Basic unit of data in a file node list: header fields plus a data field (fnd) that may be
  * empty, hold data, reference another block of the file, or both.
  */
 class FileNode {
-    private static final Logger LOG = LoggerFactory.getLogger(FileNode.class);
-
     long id;
     long size;
 
@@ -47,7 +41,6 @@ class FileNode {
 
     // only present for RevisionManifestStart7FND and RevisionRoleAndContextDeclarationFND
     ExtendedGUID gctxid;
-    GUID fileDataStoreReference;
     FileChunkReference ref;
     // read on first use through OneNoteDocument.propertySet
     PropertySet propertySet;
@@ -57,7 +50,6 @@ class FileNode {
     long propertySetValues;
     // end of the declaration's chunk, which bounds the deferred values
     long propertySetEnd;
-    boolean isFileData;
 
     /** For ObjectGroupListReference, the children; null for nodes that reference no list. */
     FileNodeList childFileNodeList;
@@ -76,9 +68,8 @@ class FileNode {
         }
         FileNode fileNode = (FileNode) o;
         return id == fileNode.id && size == fileNode.size && baseType == fileNode.baseType &&
-                isFileData == fileNode.isFileData && Objects.equals(gosid, fileNode.gosid) &&
+                Objects.equals(gosid, fileNode.gosid) &&
                 Objects.equals(gctxid, fileNode.gctxid) &&
-                Objects.equals(fileDataStoreReference, fileNode.fileDataStoreReference) &&
                 Objects.equals(ref, fileNode.ref) &&
                 Objects.equals(propertySet, fileNode.propertySet) &&
                 Objects.equals(childFileNodeList, fileNode.childFileNodeList) &&
@@ -87,8 +78,8 @@ class FileNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref,
-                propertySet, isFileData, childFileNodeList, subType);
+        return Objects.hash(id, size, baseType, gosid, gctxid, ref, propertySet,
+                childFileNodeList, subType);
     }
 
     public boolean hasGctxid() {

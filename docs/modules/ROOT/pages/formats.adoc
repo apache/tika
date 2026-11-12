@@ -70,7 +70,11 @@ and
 link:{api}/org/apache/tika/parser/microsoft/ooxml/xwpf/ml2006/Word2006MLParser.html[Word2006MLParser].
 
 link:{api}/org/apache/tika/parser/microsoft/onenote/OneNoteParser.html[OneNoteParser]
-extracts text from OneNote notebooks, and
+extracts text from OneNote sections (`.one`) and notebook tables of contents
+(`.onetoc2`); by default only each page's current version. Set
+`includePageHistory` on `one-note-parser` for earlier versions and
+`includeDeletedContent` for pages in the recycle bin (newer, FSSHTTPB
+sections only), in the config or per request.
 link:{api}/org/apache/tika/parser/microsoft/MSOwnerFileParser.html[MSOwnerFileParser]
 pulls basic metadata from the temporary lock ("owner") files Office leaves
 beside open documents.

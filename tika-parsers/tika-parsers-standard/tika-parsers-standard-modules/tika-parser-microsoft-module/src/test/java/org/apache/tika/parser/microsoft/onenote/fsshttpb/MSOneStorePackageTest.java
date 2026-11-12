@@ -1821,6 +1821,50 @@ public class MSOneStorePackageTest {
         assertTrue(pkg.hasWithheldContent());
     }
 
+    @Test
+    public void testSectionWithEveryPageDeleted() throws Exception {
+        String xml = walkXml(allDeletedPackage(Collections.emptyList()), new Metadata(),
+                new ParseContext(), new OneNoteParserConfig());
+        assertFalse(xml.contains("deleted page"), xml);
+        OneNoteParserConfig deleted = new OneNoteParserConfig();
+        deleted.setIncludeDeletedContent(true);
+        xml = walkXml(allDeletedPackage(Collections.emptyList()), new Metadata(),
+                new ParseContext(), deleted);
+        assertTrue(xml.contains("<div class=\"page deleted\""), xml);
+    }
+
+    @Test
+    public void testIncompleteSectionWalkKeepsUnplacedPages() throws Exception {
+        // the section root names an object that is missing: the page may be live
+        String xml = walkXml(allDeletedPackage(List.of(id(77))), new Metadata(),
+                new ParseContext(), new OneNoteParserConfig());
+        assertTrue(xml.contains("deleted page"), xml);
+    }
+
+    /** A section whose current root references no page; an older object references one. */
+    private static MSOneStorePackage allDeletedPackage(List<ExGuid> rootReferences)
+            throws Exception {
+        CellID deletedPage = cell(10, 200);
+        PropertySet rootBody = rootReferences.isEmpty() ? propertySet() : propertySet(
+                new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()));
+        RevisionStoreObject sectionRoot = object(id(1), rootBody, rootReferences,
+                Collections.emptyList());
+        RevisionStoreObject oldPageSeries = object(id(2), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(deletedPage));
+        RevisionStoreCell section = new RevisionStoreCell();
+        section.cellID = cell(10, 1);
+        section.objectGroups.add(group(sectionRoot, oldPageSeries));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = sectionRoot.objectID;
+        section.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = section;
+        pkg.cells.add(cellWithText(deletedPage, "deleted page"));
+        return pkg;
+    }
+
     private static String walkPast(boolean history, boolean deleted) throws Exception {
         OneNoteParserConfig config = new OneNoteParserConfig();
         config.setIncludePageHistory(history);

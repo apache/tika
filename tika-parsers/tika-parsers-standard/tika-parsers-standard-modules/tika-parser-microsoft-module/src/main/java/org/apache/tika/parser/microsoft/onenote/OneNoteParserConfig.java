@@ -50,9 +50,10 @@ public class OneNoteParserConfig implements Serializable {
     }
 
     /**
-     * Whether text includes pages the section still stores but no longer holds, e.g. pages moved
-     * to the recycle bin, with all their stored versions. Only FSSHTTPB sections (saved by OneNote
-     * for the web, Windows 10 and later) are checked.
+     * Whether the output includes pages the section still stores but no longer holds, e.g. pages
+     * moved to the recycle bin: their text, metadata and attachments, in all their stored
+     * versions. Only FSSHTTPB sections (saved by OneNote for the web, Windows 10 and later) are
+     * checked.
      */
     public boolean isIncludeDeletedContent() {
         return includeDeletedContent;

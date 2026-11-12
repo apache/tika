@@ -217,9 +217,10 @@ The full switch list:
   page version, not only each page's current content. Off, earlier authors
   and dates are absent, as for the final state of an incrementally updated
   PDF. Exception: `.one` (2010–2016) attachments come out either way,
-  including files only an earlier page version used. In `.one` files saved by OneNote 2010–2016, history is not marked
-  as such; it is mixed in with the current text. In newer (FSSHTTPB)
-  sections each old version is its own `<div class="page history">`.
+  including files only an earlier page version used. In `.one` files saved
+  by OneNote 2010–2016, history is not marked as such; it is mixed in with
+  the current text. In newer (FSSHTTPB) sections each saved page version is
+  its own `<div class="page history">`; edits within a version are merged.
 - `one-note-parser.includeDeletedContent` — newer (FSSHTTPB) OneNote
   sections still store pages moved to the recycle bin; with this set they
   come out as `<div class="page deleted">`, each older version as

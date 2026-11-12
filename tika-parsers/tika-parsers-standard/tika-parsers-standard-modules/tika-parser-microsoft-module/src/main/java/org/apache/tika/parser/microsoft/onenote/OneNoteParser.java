@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -68,7 +69,7 @@ public class OneNoteParser implements Parser {
     private static final int HEADER_SIZE = 1024;
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final Map<MediaType, List<String>> TYPES_MAP = new HashMap<>();
-    private static final long serialVersionUID = -5504243905998074168L;
+    private static final long serialVersionUID = 3937286094553180342L;
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(TYPES_MAP.keySet());
 
@@ -87,7 +88,7 @@ public class OneNoteParser implements Parser {
     }
 
     public OneNoteParser(OneNoteParserConfig config) {
-        this.defaultConfig = config;
+        this.defaultConfig = Objects.requireNonNull(config, "config");
     }
 
     public OneNoteParser(JsonConfig jsonConfig) {

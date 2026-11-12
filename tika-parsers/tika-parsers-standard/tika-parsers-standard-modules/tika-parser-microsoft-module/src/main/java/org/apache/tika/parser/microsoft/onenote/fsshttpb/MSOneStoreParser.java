@@ -57,6 +57,8 @@ public class MSOneStoreParser {
     private final Set<CellID> storageIndexHashTab = new HashSet<>();
     // a cell manifest is walked once, however many cells map to it
     private final Map<ExGuid, CellID> parsedCellManifests = new HashMap<>();
+    // likewise a current revision: another cell naming it would only repeat its content
+    private final Map<ExGuid, CellID> parsedCurrentRevisions = new HashMap<>();
     private List<DataElement> storageIndexDataElements;
     private List<DataElement> storageManifestDataElements;
     private List<DataElement> cellManifestDataElements;
@@ -103,6 +105,7 @@ public class MSOneStoreParser {
     public MSOneStorePackage parse(DataElementPackage dataElementPackage) throws IOException {
         storageIndexHashTab.clear();
         parsedCellManifests.clear();
+        parsedCurrentRevisions.clear();
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
         objectGroupsByDataElementId.clear();
         cellWorkCharged = 0;
@@ -305,6 +308,13 @@ public class MSOneStoreParser {
             String warning = "Skipping OneNote cell " + objectGroupCellID +
                     ": no revision manifest";
             msOneStorePackage.recordParseWarning(warning);
+            return null;
+        }
+        CellID revisionOwner = parsedCurrentRevisions.putIfAbsent(
+                revisionMapping.revisionMappingExGuid, objectGroupCellID);
+        if (revisionOwner != null && !revisionOwner.equals(objectGroupCellID)) {
+            msOneStorePackage.recordParseWarning("Skipping OneNote cell " + objectGroupCellID +
+                    ": its current revision belongs to another cell");
             return null;
         }
 

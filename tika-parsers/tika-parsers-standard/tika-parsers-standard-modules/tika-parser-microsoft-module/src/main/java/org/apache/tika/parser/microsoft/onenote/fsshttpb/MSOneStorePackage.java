@@ -123,6 +123,7 @@ public class MSOneStorePackage {
     private final Map<ExGuid, EmbeddedResourceInfo> sharedBlobNames = new HashMap<>();
     private final Map<RevisionStoreObject, Boolean> hyperlinkByStyle = new IdentityHashMap<>();
     private long embeddedBytesRemaining = Long.MAX_VALUE;
+    private boolean embeddedCapWarned;
     // UTF-16 bytes of text still to write
     private long textBytesRemaining = Long.MAX_VALUE;
     private final Set<String> originalAuthors = new HashSet<>();
@@ -290,6 +291,8 @@ public class MSOneStorePackage {
                 walkObjectGroupRoots(OtherFileNodeList, objectsById, visited, metadata,
                         xhtml);
             }
+        } finally {
+            // kept on a partial walk, as the native walker does
             if (!authors.isEmpty()) {
                 metadata.set(TikaCoreProperties.CREATOR, sortedValues(authors));
             }
@@ -299,7 +302,6 @@ public class MSOneStorePackage {
             if (!originalAuthors.isEmpty()) {
                 metadata.set(OneNote.ORIGINAL_AUTHORS, sortedValues(originalAuthors));
             }
-        } finally {
             numberListInfoCache.clear();
             listFormatKeysByDigest.clear();
             authorRolesRecorded.clear();
@@ -365,6 +367,9 @@ public class MSOneStorePackage {
         }
     }
 
+    // false when the section walk stopped early or hit an unresolved object
+    private boolean sectionWalkComplete;
+
     /**
      * Splits the cells into page cells, ordered as the section object space references them,
      * past cells, and the remaining cells. A past cell is an older version of a page (the same
@@ -382,7 +387,7 @@ public class MSOneStorePackage {
             return;
         }
         List<CellID> orderedCellIds = collectSectionReferencedCells();
-        if (orderedCellIds.isEmpty()) {
+        if (orderedCellIds == null) {
             // no page ordering information available - process the cells in storage order
             otherCells.addAll(cells);
             return;
@@ -408,12 +413,13 @@ public class MSOneStorePackage {
             ExGuid space = cell.cellID.extendGUID2;
             if (coveredObjectSpaces.contains(space)) {
                 pastCells.put(cell, PastPage.HISTORY);
-            } else if (sectionObjectSpaces.contains(space)) {
+            } else if (sectionObjectSpaces.contains(space) && sectionWalkComplete) {
                 pastCells.put(cell, currentContext == null ||
                         currentContext.equals(cell.cellID.extendGUID1) ?
                         PastPage.DELETED : PastPage.DELETED_HISTORY);
             } else {
-                // nothing says what this is - keep it so no content is lost
+                // nothing says what this is, or the section walk may have missed it as a
+                // live page - keep it so no content is lost
                 otherCells.add(cell);
             }
         }
@@ -443,21 +449,29 @@ public class MSOneStorePackage {
     /**
      * Walks the section object space (the data root cell) and collects the object space (cell)
      * references in document order - this is the order of the pages in the section.
+     *
+     * @return the references, empty when every page is deleted, or {@code null} when that
+     *         cannot be told apart from a walk that missed the pages
      */
     private List<CellID> collectSectionReferencedCells() {
-        List<CellID> orderedCellIds = new ArrayList<>();
-        if (dataRootCell == null) {
-            return orderedCellIds;
-        }
         Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(dataRootCell.objectGroups);
+        List<CellID> orderedCellIds = new ArrayList<>();
         Set<ExGuid> visited = new HashSet<>();
+        sectionWalkComplete = true;
+        boolean rootResolved = false;
         for (RevisionManifestRootDeclare rootDeclare : dataRootCell.rootDeclares) {
             RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
             if (rootObject == null) {
+                sectionWalkComplete = false;
                 recordParseWarning("OneNote section root object " + rootDeclare.objectExGuid +
                         " could not be resolved");
+            } else {
+                rootResolved = true;
             }
             collectReferencedCells(rootObject, objectsById, visited, orderedCellIds, 0);
+        }
+        if (orderedCellIds.isEmpty() && !(rootResolved && sectionWalkComplete)) {
+            return null;
         }
         return orderedCellIds;
     }
@@ -470,6 +484,7 @@ public class MSOneStorePackage {
             return;
         }
         if (depth >= MAX_OBJECT_WALK_DEPTH) {
+            sectionWalkComplete = false;
             recordParseWarning("OneNote section reference traversal exceeded depth limit " +
                     MAX_OBJECT_WALK_DEPTH);
             return;
@@ -484,6 +499,9 @@ public class MSOneStorePackage {
                 out.add(action.spaceReference);
             } else if (action.isChildReference && action.childReference != null) {
                 RevisionStoreObject child = objectsById.get(action.childReference);
+                if (child == null) {
+                    sectionWalkComplete = false;
+                }
                 if (child == null && !warningsSaturated()) {
                     recordParseWarning("OneNote section object " + action.childReference +
                             " could not be resolved");
@@ -1676,13 +1694,7 @@ public class MSOneStorePackage {
             boolean isBinary = propertyIsBinary(oneNotePropertyEnum);
             PrtFourBytesOfLengthFollowedByData dataProperty =
                     (PrtFourBytesOfLengthFollowedByData) property;
-            if ((dataProperty.data.length & 1) == 0 &&
-                    !OneNoteText.isExtendedAscii(oneNotePropertyEnum) && !isBinary) {
-                if (oneNotePropertyEnum == OneNotePropertyEnum.FolderChildFilename) {
-                    emitUtf16Property(xhtml, oneNotePropertyEnum, new String(dataProperty.data,
-                            StandardCharsets.UTF_16LE));
-                }
-            } else if (OneNoteText.isExtendedAscii(oneNotePropertyEnum)) {
+            if (OneNoteText.isExtendedAscii(oneNotePropertyEnum)) {
                 emitParagraph(xhtml, new String(dataProperty.data, OneNoteText.EXTENDED_ASCII));
             } else if (!isBinary) {
                 if (oneNotePropertyEnum == OneNotePropertyEnum.FolderChildFilename) {
@@ -1987,7 +1999,11 @@ public class MSOneStorePackage {
             return;
         }
         if (fileData.getDataLength() > embeddedBytesRemaining) {
-            recordParseWarning("OneNote embedded data exceeds the file size; skipping the rest");
+            // straight to the metadata: the warning cap must not drop it
+            if (!embeddedCapWarned) {
+                embeddedCapWarned = true;
+                emitParseWarning("OneNote embedded data exceeds the file size; skipping the rest");
+            }
             return;
         }
         contentEmitted = true;

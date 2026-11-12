@@ -166,6 +166,10 @@ public class MSOneStoreParserTest {
         sameManifest.cellID = cell(30);
         sameManifest.cellMappingExGuid = cellMappingID;
         pkg.storageIndex.storageIndexCellMappingList.add(sameManifest);
+        StorageIndexCellMapping sameRevision = new StorageIndexCellMapping();
+        sameRevision.cellID = cell(40);
+        sameRevision.cellMappingExGuid = id(41);
+        pkg.storageIndex.storageIndexCellMappingList.add(sameRevision);
         StorageIndexRevisionMapping currentMapping = new StorageIndexRevisionMapping();
         currentMapping.revisionMappingExGuid = currentMappingID;
         currentMapping.revisionExGuid = currentRevisionID;
@@ -180,10 +184,13 @@ public class MSOneStoreParserTest {
         CellManifestDataElementData cellManifest = new CellManifestDataElementData();
         cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid = currentRevisionID;
         cellManifestElement.data = cellManifest;
-        set(parser, "cellManifestDataElements", Arrays.asList(cellManifestElement));
-        set(parser, "cellManifestDataElementsById",
-                Collections.singletonMap(cellManifestElement.dataElementExGuid,
-                        cellManifestElement));
+        DataElement otherCellManifest = cellManifest(id(41), currentRevisionID);
+        set(parser, "cellManifestDataElements",
+                Arrays.asList(cellManifestElement, otherCellManifest));
+        Map<ExGuid, DataElement> cellManifests = new HashMap<>();
+        cellManifests.put(cellMappingID, cellManifestElement);
+        cellManifests.put(id(41), otherCellManifest);
+        set(parser, "cellManifestDataElementsById", cellManifests);
 
         RevisionManifestDataElementData current = revision(currentRevisionID, oldRevisionID,
                 currentGroupID, currentGroupID, id(99));
@@ -215,8 +222,11 @@ public class MSOneStoreParserTest {
 
         RevisionStoreCell result = parseCell(parser, cellID, pkg);
         assertEquals(2, result.objectGroups.size());
-        // a second cell mapped to the same manifest would walk the same content again
-        assertParseWarning(parser, pkg, sameManifest.cellID,
+        // a second cell mapped to the same manifest would walk the same content again, as
+        // would one whose own cell manifest names the same current revision
+        assertNull(parseCell(parser, sameManifest.cellID, pkg));
+        assertParseWarning(parser, pkg, sameRevision.cellID,
+                "its current revision belongs to another cell",
                 "its cell manifest belongs to another cell");
 
         old.revisionManifest.baseRevisionID = id(1001);
@@ -267,7 +277,7 @@ public class MSOneStoreParserTest {
     }
 
     private static void assertParseWarning(MSOneStoreParser parser, MSOneStorePackage pkg,
-                                           CellID cellID, String expected) throws Exception {
+                                           CellID cellID, String... expected) throws Exception {
         assertNull(parseCell(parser, cellID, pkg));
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
@@ -276,8 +286,11 @@ public class MSOneStoreParserTest {
         xhtml.startDocument();
         pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
-        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                .anyMatch(warning -> warning.contains(expected)), expected);
+        for (String e : expected) {
+            assertTrue(Arrays.stream(
+                            metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                    .anyMatch(warning -> warning.contains(e)), e);
+        }
     }
 
     private static RevisionManifestDataElementData revision(ExGuid revisionID,

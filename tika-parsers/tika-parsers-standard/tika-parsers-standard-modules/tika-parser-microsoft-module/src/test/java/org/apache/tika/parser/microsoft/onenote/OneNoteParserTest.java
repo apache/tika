@@ -549,6 +549,12 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testNullConfigIsRejectedAtConstruction() {
+        assertThrows(NullPointerException.class,
+                () -> new OneNoteParser((OneNoteParserConfig) null));
+    }
+
+    @Test
     public void testPageHistoryPerRequest() throws Exception {
         ParseContext context = new ParseContext();
         context.setJsonConfig("one-note-parser", "{\"includePageHistory\": true}");

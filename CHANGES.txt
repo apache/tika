@@ -207,8 +207,9 @@ Release 4.3.0 - ???
    * OneNote parsing bounds CPU and memory on crafted files with limits scaled to file
      size, and rejects more malformed structures up front (TIKA-5057).
 
-   * OneNote .one sections allocate far less and small ones parse much faster, reading from a buffered window instead of one system call per field.
-     Large multi-revision sections are slower, as every committed revision is now read
+   * OneNote .one sections allocate far less and small ones parse much faster, reading
+     through a small page cache instead of one system call per field. Large
+     multi-revision sections can be slower, as every committed revision is now read
      (TIKA-5057).
 
    * OneNote legacy text dump: strings crossing a 1 MB read boundary are written once,

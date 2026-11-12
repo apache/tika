@@ -28,8 +28,6 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
     public ExGuid objectExGUID;
     public ExGuid objectDataBLOBExGUID;
     public Compact64bitInt objectPartitionID;
-    /** MUST match the size of the binary item in the referenced object data BLOB. */
-    public Compact64bitInt objectDataSize;
     public Compact64bitInt objectReferencesCount;
     public Compact64bitInt cellReferencesCount;
 
@@ -38,7 +36,6 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
         this.objectExGUID = new ExGuid();
         this.objectDataBLOBExGUID = new ExGuid();
         this.objectPartitionID = new Compact64bitInt();
-        this.objectDataSize = new Compact64bitInt();
         this.objectReferencesCount = new Compact64bitInt();
         this.cellReferencesCount = new Compact64bitInt();
     }
