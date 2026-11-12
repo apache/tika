@@ -1841,6 +1841,33 @@ public class MSOneStorePackageTest {
         assertTrue(xml.contains("deleted page"), xml);
     }
 
+    @Test
+    public void testIncompleteSectionWalkKeepsUnplacedPagesBesideLivePages() throws Exception {
+        CellID livePage = cell(10, 100);
+        CellID unplaced = cell(10, 200);
+        // the root reaches one page and names an object that is missing
+        RevisionStoreObject sectionRoot = object(id(1), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData()),
+                        new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData())),
+                List.of(id(77)), List.of(livePage));
+        RevisionStoreObject other = object(id(2), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(unplaced));
+        RevisionStoreCell section = new RevisionStoreCell();
+        section.cellID = cell(10, 1);
+        section.objectGroups.add(group(sectionRoot, other));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = sectionRoot.objectID;
+        section.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = section;
+        pkg.cells.add(cellWithText(livePage, "live page"));
+        pkg.cells.add(cellWithText(unplaced, "maybe live page"));
+        String xml = walkXml(pkg, new Metadata(), new ParseContext(), new OneNoteParserConfig());
+        assertTrue(xml.contains("live page"), xml);
+        assertTrue(xml.contains("maybe live page"), xml);
+    }
+
     /** A section whose current root references no page; an older object references one. */
     private static MSOneStorePackage allDeletedPackage(List<ExGuid> rootReferences)
             throws Exception {
@@ -1996,6 +2023,44 @@ public class MSOneStorePackageTest {
         assertFalse(text.contains("unrelated object"));
         assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .anyMatch(warning -> warning.contains(id(1003).toString())));
+    }
+
+    @Test
+    public void testAuthorsSurviveAWalkThatFailsLater() throws Exception {
+        ExGuid authorId = id(721);
+        RevisionStoreObject root = object(id(720), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001D78, new NoData())),
+                Collections.singletonList(authorId), Collections.emptyList());
+        RevisionStoreObject author = object(authorId, propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D75, utf16Text("Early Author"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell first = new RevisionStoreCell();
+        first.cellID = cell(1, 1);
+        first.objectGroups.add(group(root, author));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        first.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(first);
+        pkg.cells.add(cellWithText(cell(2, 2), "boom"));
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        // fails on the second cell, after the first recorded its author
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler() {
+            @Override
+            public void characters(char[] ch, int start, int length) throws SAXException {
+                if (new String(ch, start, length).contains("boom")) {
+                    throw new SAXException("boom");
+                }
+            }
+        }, metadata, context);
+        xhtml.startDocument();
+        assertThrows(SAXException.class,
+                () -> pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context));
+        assertEquals("Early Author", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Early Author", metadata.get(OneNote.ORIGINAL_AUTHORS));
     }
 
     @Test

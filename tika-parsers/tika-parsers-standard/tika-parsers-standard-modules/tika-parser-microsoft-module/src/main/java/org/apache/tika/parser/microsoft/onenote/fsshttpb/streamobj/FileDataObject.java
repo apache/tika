@@ -36,7 +36,7 @@ public class FileDataObject {
     }
 
     /** @return the referenced BLOB, which several file data objects may share; or null */
-    public ObjectDataBLOB getBlob() {
+    private ObjectDataBLOB getBlob() {
         if (objectDataBLOBDataElement != null &&
                 objectDataBLOBDataElement.data instanceof ObjectDataBLOBDataElementData) {
             return ((ObjectDataBLOBDataElementData) objectDataBLOBDataElement.data).objectDataBLOB;

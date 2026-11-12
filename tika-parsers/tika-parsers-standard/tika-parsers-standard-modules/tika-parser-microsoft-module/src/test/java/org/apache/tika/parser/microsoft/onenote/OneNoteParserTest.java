@@ -254,6 +254,21 @@ public class OneNoteParserTest extends TikaTest {
                     new ParseContext());
             xhtml2.endDocument();
             assertTrue(exceptionPath.toString().isBlank());
+
+            // nothing written because the config excluded it: the dump would write it back
+            MSOneStorePackage withheld = new MSOneStorePackage();
+            java.lang.reflect.Field flag =
+                    MSOneStorePackage.class.getDeclaredField("contentWithheld");
+            flag.setAccessible(true);
+            flag.setBoolean(withheld, true);
+            StringWriter withheldOutput = new StringWriter();
+            XHTMLContentHandler xhtml3 = new XHTMLContentHandler(
+                    new ToTextContentHandler(withheldOutput), metadata, new ParseContext());
+            xhtml3.startDocument();
+            OneNoteParser.legacyFallbackIfNoContent(withheld, metadata, xhtml3, resource,
+                    new ParseContext());
+            xhtml3.endDocument();
+            assertTrue(withheldOutput.toString().isBlank());
         }
         xhtml.endDocument();
     }
@@ -546,6 +561,106 @@ public class OneNoteParserTest extends TikaTest {
                 "tika-config-onenote-page-history.json")).loadAutoDetectParser();
         assertContains("neat info about totally killin it bro",
                 getText("testOneNote2.one", parser));
+    }
+
+    // section, page series and page jcids; the version-history jcid and property
+    private static final int[] SECTION_STRUCTURE = {0x00060007, 0x00060008, 0x0006000B};
+    private static final int[] VERSION_HISTORY = {0x0006003C, 0x3400347B};
+
+    @Test
+    public void testNativeHistoryOffIsWithheldContent() throws Exception {
+        assertTrue(walkNative(fixture("testOneNote1.one"), false, null).hasWithheldContent());
+        assertFalse(walkNative(fixture("testOneNote1.one"), true, null).hasWithheldContent());
+    }
+
+    @Test
+    public void testNativeOlderRevisionsOfASectionAreWithheld() throws Exception {
+        // no history subtree: only the revision list's older revisions are left out
+        byte[] file = renameIds(fixture("testOneNote1.one"), VERSION_HISTORY);
+        assertTrue(walkNative(file, false, null).hasWithheldContent());
+    }
+
+    @Test
+    public void testNativeWalkWithoutSectionStructureIsNotWithheld() throws Exception {
+        // as a table of contents walks: an empty walk must still fall back to the dump, which
+        // recovers its section names
+        byte[] file = renameIds(renameIds(fixture("testOneNote1.one"), VERSION_HISTORY),
+                SECTION_STRUCTURE);
+        assertFalse(walkNative(file, false, null).hasWithheldContent());
+    }
+
+    @Test
+    public void testNativeDeclinedAttachmentIsWithheld() throws Exception {
+        ParseContext declining = new ParseContext();
+        declining.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
+                return false;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext context,
+                                      boolean outputHtml) {
+                throw new AssertionError("declined");
+            }
+        });
+        byte[] file = fixture("testOneNoteEmbeddedWordDoc.one");
+        // history on, so the attachment is the only content left out
+        assertFalse(walkNative(file, true, null).hasWithheldContent());
+        assertTrue(walkNative(file, true, declining).hasWithheldContent());
+    }
+
+    private static byte[] fixture(String name) throws IOException {
+        try (InputStream is = OneNoteParserTest.class.getResourceAsStream(
+                "/test-documents/" + name)) {
+            assertNotNull(is, name);
+            return is.readAllBytes();
+        }
+    }
+
+    /** Replaces each little-endian occurrence of {@code ids} with an unknown id. */
+    private static byte[] renameIds(byte[] file, int[] ids) {
+        byte[] out = file.clone();
+        for (int id : ids) {
+            int replacement = (id & 0xFFFFFF00) | 0x99;
+            int found = 0;
+            for (int i = 0; i + 4 <= out.length; i++) {
+                if (ByteBuffer.wrap(out, i, 4).order(ByteOrder.LITTLE_ENDIAN).getInt() == id) {
+                    ByteBuffer.wrap(out, i, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(replacement);
+                    found++;
+                }
+            }
+            assertTrue(found > 0, Integer.toHexString(id));
+        }
+        return out;
+    }
+
+    private static OneNoteTreeWalker walkNative(byte[] bytes, boolean history,
+                                                ParseContext context) throws Exception {
+        Path file = Files.createTempFile("onenote", ".one");
+        try {
+            Files.write(file, bytes);
+            ParseContext parseContext = context == null ? new ParseContext() : context;
+            OneNoteParserConfig config = new OneNoteParserConfig();
+            config.setIncludePageHistory(history);
+            OneNoteParser parser = new OneNoteParser();
+            try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(file.toFile())) {
+                OneNoteDocument document = parser.createOneNoteDocumentFromDirectFileResource(dif);
+                parser.deserializeRootFileNodeList(document);
+                Metadata metadata = new Metadata();
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(),
+                        metadata, parseContext);
+                xhtml.startDocument();
+                OneNoteTreeWalker walker = new OneNoteTreeWalker(config, document, dif, xhtml,
+                        metadata, parseContext, Pair.of(1L, ExtendedGUID.nil()));
+                walker.walkTree();
+                assertTrue(walker.hasEmittedContent());
+                return walker;
+            }
+        } finally {
+            Files.delete(file);
+        }
     }
 
     @Test
