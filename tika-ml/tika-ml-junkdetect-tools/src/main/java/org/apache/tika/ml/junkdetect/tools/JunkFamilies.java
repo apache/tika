@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.tika.ml.junkdetect.HtmlContentCleaner;
+
 /** Synthetic junk for training: wrong decodes of clean text, and the pointwise junk families. */
 final class JunkFamilies {
 
@@ -63,6 +65,17 @@ final class JunkFamilies {
 
     static final int EXTRA_DECODES = 2;
 
+    /**
+     * UTF-16 misreads per text, both directions: its BOM-less UTF-16 bytes read as windows-1252
+     * (what Mojibuster offers against a lone UTF-16 pick: every other char NUL or a C0 control) and
+     * its single-byte/UTF-8 bytes read as UTF-16 (ideograph soup).
+     */
+    static final int WIDE_DECODES = 1;
+
+    private static final List<Charset> WIDE = List.of(StandardCharsets.UTF_16LE, StandardCharsets.UTF_16BE);
+
+    private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
+
     private JunkFamilies() {
     }
 
@@ -91,7 +104,20 @@ final class JunkFamilies {
         extra.removeAll(decoders);
         extra.remove(source);
         out.addAll(misreads(b, text, extra, r, EXTRA_DECODES));
+        out.addAll(wideMisreads(b, text, r));
         return out;
+    }
+
+    /** Cleaned as the runtime cleans a candidate decode (NUL -> U+FFFD), so train and inference match. */
+    private static List<String> wideMisreads(byte[] b, String text, Random r) {
+        List<String> out = new ArrayList<>();
+        for (Charset wide : WIDE) {
+            out.add(HtmlContentCleaner.clean(new String(text.getBytes(wide), WINDOWS_1252)));
+            out.add(HtmlContentCleaner.clean(new String(b, wide)));
+        }
+        out.removeIf(m -> m == null || m.isEmpty() || m.equals(text));
+        Collections.shuffle(out, r);
+        return out.size() > WIDE_DECODES ? new ArrayList<>(out.subList(0, WIDE_DECODES)) : out;
     }
 
     private static List<String> misreads(byte[] b, String text, Iterable<String> decoders, Random r, int max) {

@@ -410,6 +410,11 @@ Release 4.3.0 - ???
      is honored only when the bytes after it decode in that charset, and a rejected BOM
      is dropped rather than left in the text as junk characters (TIKA-5019).
 
+   * An HTML meta charset naming UTF-16 (or UTF-32) is read as UTF-8, as the WHATWG
+     prescan does: a meta readable as ASCII means the bytes are not UTF-16. A page with a
+     UTF-8 BOM and a UTF-16BE meta was decoded as UTF-16BE, turning its text into CJK
+     characters (TIKA-5019).
+
    * Charset detection reads UTF-8 with sparse corruption (up to one bad sequence per
      ten valid ones, existing U+FFFD not counted) as UTF-8 (TIKA-5019).
 
@@ -447,6 +452,17 @@ Release 4.3.0 - ???
    * A UTF-32 guess from the statistical model is dropped when the bytes are not valid
      UTF-32 code points: binary with a few NULs in its header (a shader file of ASCII 0/1
      after an 80 37 00 00 header) was reported as UTF-32BE (TIKA-5052).
+
+   * Charset detection no longer reads ASCII text with a few control characters (logs with
+     escape or form-feed bytes, IRC colour codes, record separators, banners) as BOM-less
+     UTF-16: the model was retrained with such text, and when it still returns UTF-16 or
+     UTF-32 as its only candidate, the junk filter now compares that decode against
+     windows-1252 and keeps whichever reads as text (TIKA-5052).
+
+   * The junk model that arbitrates between charset candidates was retrained with UTF-16
+     misreads of every script (text read as UTF-16, and UTF-16 text read as a single-byte
+     charset) and with fully vocalized Arabic, so a BOM-less UTF-16 decode of vocalized
+     Arabic is no longer scored below its windows-1252 misread (TIKA-5027).
 
    * XHTML output no longer contains empty or whitespace-only b/strong/i/em/sup/sub
      elements, and whitespace at their edges is written outside them (<b>Note: </b>

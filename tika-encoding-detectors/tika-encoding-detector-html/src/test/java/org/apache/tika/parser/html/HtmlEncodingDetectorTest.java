@@ -38,12 +38,14 @@ public class HtmlEncodingDetectorTest {
         assertWindows1252("<meta charset='WINDOWS-1252'>");
     }
 
+    /** A meta read as ASCII rules out UTF-16 and UTF-32 bytes: WHATWG reads it as UTF-8. */
     @Test
-    @Disabled("can we can prove this harms detection")
     public void utf16() throws IOException {
-        // According to the specification 'If charset is a UTF-16 encoding,
-        // then set charset to UTF-8.'
-        assertCharset("<meta charset='UTF-16BE'>", StandardCharsets.UTF_8);
+        for (String label : new String[]{"UTF-16BE", "utf-16le", "UTF-32", "utf-32be"}) {
+            assertCharset("<meta charset='" + label + "'>", StandardCharsets.UTF_8);
+        }
+        assertCharset("<meta http-equiv='content-type' content='text/html; charset=UTF-16LE'>",
+                StandardCharsets.UTF_8);
     }
 
     @Test
@@ -93,9 +95,9 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
-    public void nakedUtf16IsUtf16Le() throws IOException {
-        // WHATWG: naked 'utf-16' (no BOM) defaults to UTF-16LE.
-        assertCharset("<meta charset='utf-16'>", StandardCharsets.UTF_16LE);
+    public void nakedUtf16IsUtf8() throws IOException {
+        // WHATWG: the label 'utf-16' is UTF-16LE, which the prescan then reads as UTF-8.
+        assertCharset("<meta charset='utf-16'>", StandardCharsets.UTF_8);
     }
 
     @Test

@@ -29,7 +29,7 @@
 
 set -euo pipefail
 
-CORPUS=junk-clean-20261103                                   # Wikipedia sentences per language
+CORPUS=junk-clean-20261111                                   # Wikipedia sentences per language + arv (vocalized Arabic, Wikisource train buckets)
 GOLD=charsets/gold-v113-train-halves.tsv                     # gold v1.13 cc-html train, even/odd halves, damage spans
 SAMPLE=charsets/cchtml-train-unanimous/sample-gen-20261103.tsv  # cc-html train pages for real-decision pairs
 SAMPLE_DOCS=charsets/cchtml-train-unanimous/docs
