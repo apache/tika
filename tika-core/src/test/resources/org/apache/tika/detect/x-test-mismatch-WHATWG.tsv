@@ -1,0 +1,6 @@
+# Test table whose unit lengths disagree with the base (PatchedCharsetTest): A1 is a single byte
+# here but a 2-byte lead to x-eucJP-Open; 8F is 2 bytes here but 3 to the base.
+name	x-test-mismatch
+base	x-eucJP-Open
+lead	80-8E,8F-8F,90-A0,A2-FF
+A2CC	U+00AC

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -30,6 +31,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HexFormat;
@@ -206,6 +208,71 @@ public class PatchedCharsetTest {
             for (int chunk = 1; chunk <= 8; chunk++) {
                 assertEquals(expected, read(new FixedChunkStream(b, chunk), BIG5, chunk));
             }
+        }
+    }
+
+    /**
+     * Bytes that are not the charset make the base report a malformed sequence every few bytes;
+     * each one re-enters decodeLoop.  The walk to the next patched unit was unbounded, so this
+     * was quadratic: 131 KB of a non-EUC-JP page took 5 s and a 2.6 MB page half an hour.
+     */
+    @Test
+    public void malformedHeavyInputDecodesInLinearTime() {
+        // 0x80 is a lead byte in every patch table and a malformed single byte for every base
+        byte[] junk = new byte[1 << 20];
+        for (int i = 0; i < junk.length; i++) {
+            junk[i] = (byte) (i % 2 == 0 ? 0x80 : 'A');
+        }
+        for (Charset c : CharsetSupersets.patched()) {
+            PatchedCharset cs = (PatchedCharset) c;
+            String decoded = assertTimeoutPreemptively(Duration.ofSeconds(20),
+                    () -> new String(junk, cs), cs.name());
+            assertEquals(unitwise(cs, junk, true), decoded, cs.name());
+        }
+    }
+
+    /**
+     * A unit table whose lead bytes disagree with the base's: the base then stops inside a
+     * sequence the walk ended early.  Its view wins, decoding continues past the point, and the
+     * loop ends.  The shipped tables agree with their bases, so this needs a test table.
+     */
+    @Test
+    public void baseSequenceLongerThanTableUnit() throws IOException {
+        PatchedCharset mismatch = PatchedCharset.load("/org/apache/tika/detect/x-test-mismatch-WHATWG.tsv");
+        Charset base = mismatch.base();
+        // a wrong exit condition here loops forever; fail instead of hanging the build
+        Charset cs = assertTimeoutPreemptively(Duration.ofSeconds(30), () -> {
+            new String(new byte[] {(byte) 0xA1, (byte) 0xC1}, mismatch);
+            new String(new byte[] {(byte) 0x8F, (byte) 0xB0, (byte) 0xA2, (byte) 0xCC}, mismatch);
+            new String(new byte[] {'a', (byte) 0x8F, (byte) 0xB0}, mismatch);
+            return mismatch;
+        });
+        assertEquals(1, mismatch.unitLength(0xA1));
+        assertEquals(2, mismatch.unitLength(0x8F));
+        String waveDash = dec(base, 0xA1, 0xC1);
+        assertFalse(waveDash.contains("�"));
+        // A1 is a single byte to the table; the base needs the trail
+        assertEquals(waveDash, dec(cs, 0xA1, 0xC1));
+        // ... followed by a patched pair, and inside a longer text
+        assertEquals(waveDash + "¬", dec(cs, 0xA1, 0xC1, 0xA2, 0xCC));
+        assertEquals("ab" + waveDash + "¬c" + waveDash, dec(cs, 'a', 'b', 0xA1, 0xC1, 0xA2, 0xCC, 'c', 0xA1, 0xC1));
+        // 8F is 2 bytes to the table and 3 to the base, so it straddles the patched pair that follows
+        String jisX0212 = dec(base, 0x8F, 0xB0, 0xA2);
+        assertEquals(1, jisX0212.length());
+        assertEquals(jisX0212 + "�", dec(cs, 0x8F, 0xB0, 0xA2, 0xCC));
+        // truly incomplete at the end
+        assertEquals("a�", dec(cs, 'a', 0xA1));
+        assertEquals("a�", dec(cs, 'a', 0x8F, 0xB0));
+        // whole and streamed decodes agree
+        byte[] b = new byte[2000];
+        Random r = new Random(5052L);
+        int[] pieces = {0xA1, 0xC1, 0xA2, 0xCC, 0x8F, 0xB0, 0xA2, 'x', 0x80};
+        for (int i = 0; i < b.length; i++) {
+            b[i] = (byte) pieces[r.nextInt(pieces.length)];
+        }
+        String whole = new String(b, cs);
+        for (int chunk = 1; chunk <= 5; chunk++) {
+            assertEquals(whole, read(new FixedChunkStream(b, chunk), cs, chunk), "chunk " + chunk);
         }
     }
 
