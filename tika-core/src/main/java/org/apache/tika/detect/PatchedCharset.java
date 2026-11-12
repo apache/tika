@@ -225,41 +225,92 @@ final class PatchedCharset extends Charset {
             this.base = cs.base.newDecoder();
         }
 
+        /**
+         * Bound on the unit walk per base run.  The framework re-enters decodeLoop after every
+         * malformed sequence the base reports, and an unbounded walk to the next patched unit
+         * made malformed-heavy input quadratic (a 2.6 MB non-EUC-JP page took 30 minutes).
+         */
+        private static final int SCAN_CHUNK = 256;
+
         @Override
         protected CoderResult decodeLoop(ByteBuffer in, CharBuffer out) {
+            // State for a base that stops inside a sequence the unit table ended early (its lead
+            // bytes differ from the table): the next run must reach further.  Each retry strictly
+            // extends the run or returns, so the loop terminates.
+            int chunk = SCAN_CHUNK;
+            int skip = -1;          // walk past the patched unit the base straddles
+            boolean toEnd = false;  // the rest is shorter than a table unit: give the base all of it
             while (true) {
                 int start = in.position();
                 int limit = in.limit();
+                int scanEnd = toEnd ? limit : (int) Math.min(limit, start + (long) chunk);
                 // Walk the base's units so a patched sequence is only matched at a unit boundary.
                 int i = start;
                 int unit = 0;
                 String value = null;
+                boolean incomplete = false;
                 while (i < limit) {
+                    if (toEnd) {
+                        i = limit;
+                        break;
+                    }
                     int b = in.get(i) & 0xFF;
                     int n = cs.unitLength[b];
                     if (n == 1) {
                         value = cs.single[b];
                     } else if (i + n > limit) {
+                        incomplete = true;
                         break;
                     } else if (n == 2) {
                         value = cs.patch(b, in.get(i + 1));
                     }
                     if (value != null) {
-                        unit = n;
-                        break;
+                        if (i != skip) {
+                            unit = n;
+                            break;
+                        }
+                        value = null;
                     }
                     i += n;
+                    if (i >= scanEnd) {
+                        break;
+                    }
                 }
                 if (i > start) {
                     ByteBuffer run = in.duplicate();
                     run.limit(i);
                     CoderResult cr = base.decode(run, out, false);
                     in.position(run.position());
-                    if (cr.isError() || cr.isOverflow() || run.hasRemaining()) {
+                    if (cr.isError() || cr.isOverflow()) {
                         return cr;
                     }
+                    if (run.hasRemaining()) {
+                        if (run.position() == start) {
+                            if (i >= limit) {
+                                return CoderResult.UNDERFLOW;
+                            }
+                            if (value != null) {
+                                skip = i;
+                            } else if (incomplete) {
+                                toEnd = true;
+                            } else {
+                                chunk = Math.min(chunk * 2, Integer.MAX_VALUE / 2);
+                            }
+                            continue;
+                        }
+                        chunk = SCAN_CHUNK;
+                        skip = -1;
+                        toEnd = false;
+                        continue;
+                    }
                 }
+                chunk = SCAN_CHUNK;
+                skip = -1;
+                toEnd = false;
                 if (value == null) {
+                    if (i < limit && !incomplete) {
+                        continue;
+                    }
                     return CoderResult.UNDERFLOW;
                 }
                 if (out.remaining() < value.length()) {
