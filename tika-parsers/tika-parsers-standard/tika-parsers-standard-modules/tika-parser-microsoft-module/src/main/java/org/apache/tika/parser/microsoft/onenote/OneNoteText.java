@@ -302,13 +302,6 @@ public final class OneNoteText {
         return runs;
     }
 
-    /**
-     * Emits a picture as {@code <p><img src="embedded:fileName" alt="altText"/></p>}, leaving out
-     * whichever is missing; OneNote's own OCR alt text goes in a following
-     * {@code <div class="ocr">} instead, as body text.
-     *
-     * @return whether an element was emitted
-     */
     /** Writes a note tag's label, e.g. "To Do", ahead of the paragraph it tags. */
     public static boolean emitNoteTag(XHTMLContentHandler xhtml, String label)
             throws SAXException {
@@ -322,17 +315,25 @@ public final class OneNoteText {
         return true;
     }
 
-    public static boolean emitImage(XHTMLContentHandler xhtml, String fileName, String altText)
-            throws SAXException {
+    /**
+     * Emits a picture as {@code <p><img src="embedded:fileName" alt="altText"/></p>}, leaving out
+     * whichever is missing, inside {@code <a href="url">} when the picture is a link; OneNote's
+     * own OCR alt text goes in a following {@code <div class="ocr">} instead, as body text.
+     *
+     * @return whether an element was emitted
+     */
+    public static boolean emitImage(XHTMLContentHandler xhtml, String fileName, String altText,
+                                    String url) throws SAXException {
         fileName = fileName == null ? null : clean(fileName.strip());
         altText = altText == null ? null : clean(altText.strip());
+        url = url == null ? null : clean(url.replace("\u0000", "").strip());
         String ocr = null;
         int ocrStart = altText == null ? -1 : machineAltTextStart(altText);
         if (ocrStart >= 0) {
             ocr = clean(altText.substring(ocrStart).strip());
             altText = null;
         }
-        if (fileName == null && altText == null && ocr == null) {
+        if (fileName == null && altText == null && ocr == null && url == null) {
             return false;
         }
         AttributesImpl atts = new AttributesImpl();
@@ -343,10 +344,18 @@ public final class OneNoteText {
             atts.addAttribute("", "alt", "alt", "CDATA", altText);
         }
         // its own paragraph, so Markdown does not run it into the next inline element
-        if (fileName != null || altText != null) {
+        if (fileName != null || altText != null || url != null) {
             xhtml.startElement("p");
-            xhtml.startElement("img", atts);
-            xhtml.endElement("img");
+            if (url != null) {
+                xhtml.startElement("a", "href", url);
+            }
+            if (fileName != null || altText != null) {
+                xhtml.startElement("img", atts);
+                xhtml.endElement("img");
+            }
+            if (url != null) {
+                xhtml.endElement("a");
+            }
             xhtml.endElement("p");
         }
         if (ocr != null) {
@@ -401,6 +410,7 @@ public final class OneNoteText {
 
     public static boolean isImageText(OneNotePropertyEnum property) {
         return property == OneNotePropertyEnum.ImageFilename ||
-                property == OneNotePropertyEnum.ImageAltText;
+                property == OneNotePropertyEnum.ImageAltText ||
+                property == OneNotePropertyEnum.WzHyperlinkUrl;
     }
 }

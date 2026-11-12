@@ -2053,6 +2053,7 @@ public class MSOneStorePackage {
             throws SAXException {
         String fileName = null;
         String altText = null;
+        String url = null;
         for (PropertyAction action : actions) {
             if (!action.isChildReference && OneNoteText.isImageText(action.oneNotePropertyEnum) &&
                     action.property instanceof PrtFourBytesOfLengthFollowedByData) {
@@ -2061,12 +2062,14 @@ public class MSOneStorePackage {
                         StandardCharsets.UTF_16LE);
                 if (action.oneNotePropertyEnum == OneNotePropertyEnum.ImageFilename) {
                     fileName = OneNoteText.sanitizeResourceName(text.replace("\u0000", ""));
+                } else if (action.oneNotePropertyEnum == OneNotePropertyEnum.WzHyperlinkUrl) {
+                    url = takeText(text) ? text : null;
                 } else {
                     altText = text;
                 }
             }
         }
-        if (OneNoteText.emitImage(xhtml, fileName, altText)) {
+        if (OneNoteText.emitImage(xhtml, fileName, altText, url)) {
             contentEmitted = true;
         }
     }
@@ -2098,7 +2101,7 @@ public class MSOneStorePackage {
                     action.property instanceof PrtFourBytesOfLengthFollowedByData) {
                 byte[] bytes = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
                 return bytes.length > 2 * OneNoteText.MAX_NOTE_TAG_LABEL_CHARS ? null :
-                        new String(bytes, StandardCharsets.UTF_16LE).replace(" ", "");
+                        new String(bytes, StandardCharsets.UTF_16LE).replace("\u0000", "");
             }
         }
         return null;

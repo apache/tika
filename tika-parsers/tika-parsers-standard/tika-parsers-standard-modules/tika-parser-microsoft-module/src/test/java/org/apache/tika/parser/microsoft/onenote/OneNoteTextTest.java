@@ -117,16 +117,25 @@ public class OneNoteTextTest {
     @Test
     public void testImage() throws SAXException {
         assertEquals("<p><img src=\"embedded:a.png\" alt=\"Play button\" /></p>",
-                body(x -> OneNoteText.emitImage(x, "a.png\u0000", "Play button\r\n")));
+                body(x -> OneNoteText.emitImage(x, "a.png\u0000", "Play button\r\n", null)));
         // OneNote's OCR of a printout is body text, not alt text
         assertEquals("<p><img src=\"embedded:b.png\" /></p><div class=\"ocr\">Name:\nDate:</div>",
                 body(x -> OneNoteText.emitImage(x, "b.png",
-                        "Machine generated alternative text:\r\nName:\r\nDate:\r\n")));
+                        "Machine generated alternative text:\r\nName:\r\nDate:\r\n", null)));
         assertEquals("<p><img src=\"embedded:c.png\" /></p><div class=\"ocr\">Nom</div>",
                 body(x -> OneNoteText.emitImage(x, "c.png",
-                        "Texte de remplacement g\u00E9n\u00E9r\u00E9 par une machine\u00A0:\r\nNom")));
+                        "Texte de remplacement g\u00E9n\u00E9r\u00E9 par une machine\u00A0:\r\nNom", null)));
         assertEquals("<p><img src=\"embedded:d.png\" /></p><div class=\"ocr\">\u540D\u524D</div>",
-                body(x -> OneNoteText.emitImage(x, "d.png", "\u81EA\u52D5\u751F\u6210\u3055\u308C\u305F\u4EE3\u66FF\u30C6\u30AD\u30B9\u30C8: \u540D\u524D")));
+                body(x -> OneNoteText.emitImage(x, "d.png", "\u81EA\u52D5\u751F\u6210\u3055\u308C\u305F\u4EE3\u66FF\u30C6\u30AD\u30B9\u30C8: \u540D\u524D", null)));
+    }
+
+    @Test
+    public void testLinkedImage() throws SAXException {
+        assertEquals("<p><a href=\"http://x\"><img src=\"embedded:a.png\" /></a></p>",
+                body(x -> OneNoteText.emitImage(x, "a.png", null, "http://x\u0000")));
+        assertEquals("<p><a href=\"http://x\" /></p>",
+                body(x -> OneNoteText.emitImage(x, null, null, "http://x")));
+        assertEquals("", body(x -> OneNoteText.emitImage(x, null, null, " ")));
     }
 
     private interface Emitter {

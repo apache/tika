@@ -2623,6 +2623,37 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testPictureHyperlinkWrapsThePicture() throws Exception {
+        RevisionStoreObject named = object(id(61), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001DD7, utf16Text("cat.png")),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001E20, utf16Text("https://example.com/cat\u0000"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject unnamed = object(id(62), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001E20, utf16Text("https://example.com/dog"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject root = object(id(60), propertySet(
+                        new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                                arrayNumber(2))),
+                Arrays.asList(named.objectID, unnamed.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(root, named, unnamed));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        String xml = walkXml(pkg).replaceAll(">\\s+<", "><");
+        assertTrue(xml.contains("<p><a href=\"https://example.com/cat\">" +
+                "<img src=\"embedded:cat.png\" /></a></p>"), xml);
+        assertTrue(xml.contains("<p><a href=\"https://example.com/dog\" /></p>"), xml);
+        assertEquals(1, xml.split("example.com/cat", -1).length - 1, xml);
+    }
+
+    @Test
     public void testEmbeddedFileHasItsOriginalPathAndItsPrintoutDoesNot() throws Exception {
         RevisionStoreObject file = object(id(81), propertySet(),
                 Collections.emptyList(), Collections.emptyList());

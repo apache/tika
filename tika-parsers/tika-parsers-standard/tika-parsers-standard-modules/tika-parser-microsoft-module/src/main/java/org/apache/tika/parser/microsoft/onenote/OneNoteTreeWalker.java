@@ -653,18 +653,21 @@ class OneNoteTreeWalker {
             throws IOException, TikaException, SAXException {
         String fileName = null;
         String altText = null;
+        String url = null;
         for (PropertyValue value : propertySet.rgPridsData) {
             OneNotePropertyEnum property = value.propertyId.propertyEnum;
             if (OneNoteText.isImageText(property) && value.propertyId.type == 7) {
                 String text = readUtf16(value);
                 if (property == OneNotePropertyEnum.ImageFilename) {
                     fileName = text;
+                } else if (property == OneNotePropertyEnum.WzHyperlinkUrl) {
+                    url = text;
                 } else {
                     altText = text;
                 }
             }
         }
-        if (OneNoteText.emitImage(xhtml, fileName, altText)) {
+        if (OneNoteText.emitImage(xhtml, fileName, altText, url)) {
             contentEmitted = true;
         }
     }
@@ -714,7 +717,7 @@ class OneNoteTreeWalker {
                     value.propertyId.type == 7) {
                 int size = positionAt(value);
                 if (size <= 2 * OneNoteText.MAX_NOTE_TAG_LABEL_CHARS) {
-                    label = readString(size, StandardCharsets.UTF_16LE).replace(" ", "");
+                    label = readString(size, StandardCharsets.UTF_16LE).replace("\u0000", "");
                 }
                 break;
             }
@@ -764,7 +767,7 @@ class OneNoteTreeWalker {
                 continue;
             }
             String name = OneNoteText.sanitizeResourceName(
-                    new String(buf.array(), StandardCharsets.UTF_16LE).replace(" ", ""));
+                    new String(buf.array(), StandardCharsets.UTF_16LE).replace("\u0000", ""));
             if (name.isEmpty()) {
                 continue;
             }
