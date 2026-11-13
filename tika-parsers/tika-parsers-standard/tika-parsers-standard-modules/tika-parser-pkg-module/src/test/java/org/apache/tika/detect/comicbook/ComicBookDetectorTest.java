@@ -42,7 +42,6 @@ public class ComicBookDetectorTest {
         assertEquals(ComicBookDetector.CBR, detect(RAR5, "COMIC.CBR", null));
         assertEquals(ComicBookDetector.CBR, detect(RAR5, null, "application/vnd.comicbook-rar"));
         assertEquals(ComicBookDetector.CBR, detect(RAR5, null, "application/x-cbr"));
-        assertEquals(ComicBookDetector.CB7, detect(SEVEN_Z, "comic.cb7", null));
         assertEquals(ComicBookDetector.CBT, detect(tar("ustar  \0"), "comic.cbt", null));
         assertEquals(ComicBookDetector.CBT, detect(tar("ustar\u000000"), null, "application/x-cbt"));
     }
@@ -54,7 +53,8 @@ public class ComicBookDetectorTest {
         assertEquals(MediaType.OCTET_STREAM, detect(RAR5, null, "application/x-rar-compressed"));
         assertEquals(MediaType.OCTET_STREAM, detect(SEVEN_Z, "comic.cbr", null));
         assertEquals(MediaType.OCTET_STREAM, detect(new byte[]{'P', 'K', 3, 4}, "comic.cbt", null));
-        assertEquals(MediaType.OCTET_STREAM, detect(new byte[0], "comic.cb7", null));
+        assertEquals(MediaType.OCTET_STREAM, detect(new byte[0], "comic.cbr", null));
+        assertEquals(MediaType.OCTET_STREAM, detect(SEVEN_Z, "comic.cb7", null));
     }
 
     private static byte[] tar(String magic) {

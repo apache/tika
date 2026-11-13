@@ -99,11 +99,14 @@ public class PackageParser extends AbstractArchiveParser {
 
     private void doParse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                          ParseContext context) throws TikaException, IOException, SAXException {
+        ArchiveStreamFactory factory =
+                context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
+
         String cover = null;
         if (ComicBook.is(metadata, ComicBook.CBT)) {
             // the cover is the first page by name; a streamed tar has its names only one by one
             List<String> names = new ArrayList<>();
-            try (TarFile tar = new TarFile(tis.getPath())) {
+            try (TarFile tar = new TarFile(tis.getPath(), factory.getEntryEncoding())) {
                 for (TarArchiveEntry e : tar.getEntries()) {
                     if (!e.isDirectory()) {
                         names.add(e.getName());
@@ -117,8 +120,6 @@ public class PackageParser extends AbstractArchiveParser {
 
         ArchiveInputStream ais;
         try {
-            ArchiveStreamFactory factory =
-                    context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
             ais = factory.createArchiveInputStream(tis);
         } catch (ArchiveException e) {
             throw new TikaException("Unable to unpack document stream", e);

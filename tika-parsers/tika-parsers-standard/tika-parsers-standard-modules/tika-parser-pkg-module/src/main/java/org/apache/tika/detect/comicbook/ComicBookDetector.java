@@ -35,9 +35,9 @@ import org.apache.tika.parser.ParseContext;
  * Detects comic book archives in RAR and tar, which a file name or declared type alone
  * cannot: the magic of a RAR is a versioned type (RAR4, RAR5) and that of a GNU tar is
  * application/x-gtar, and a name or type hint only replaces the magic type when it is a
- * sub-type of it. When the name ends in .cbr, .cb7 or .cbt, or the declared content type
- * is a comic type, and the content starts like the matching container, this returns the
- * comic type.
+ * sub-type of it. When the name ends in .cbr or .cbt, or the declared content type is one
+ * of their types, and the content starts like the matching container, this returns the
+ * comic type. A .cb7 needs none of this: the magic of a 7z has no version.
  */
 @TikaComponent
 public class ComicBookDetector implements Detector {
@@ -45,11 +45,9 @@ public class ComicBookDetector implements Detector {
     private static final long serialVersionUID = 1L;
 
     static final MediaType CBR = MediaType.application("vnd.comicbook-rar");
-    static final MediaType CB7 = MediaType.application("x-cb7");
     static final MediaType CBT = MediaType.application("x-cbt");
 
     private static final byte[] RAR = {'R', 'a', 'r', '!', 0x1a, 0x07};
-    private static final byte[] SEVEN_Z = {'7', 'z', (byte) 0xbc, (byte) 0xaf, 0x27, 0x1c};
     private static final byte[] USTAR = "ustar".getBytes(StandardCharsets.US_ASCII);
     private static final int USTAR_OFFSET = 257;
 
@@ -72,7 +70,6 @@ public class ComicBookDetector implements Detector {
             tis.reset();
         }
         boolean matches = CBR.equals(wanted) ? startsWith(head, RAR, 0)
-                : CB7.equals(wanted) ? startsWith(head, SEVEN_Z, 0)
                 : startsWith(head, USTAR, USTAR_OFFSET);
         return matches ? wanted : MediaType.OCTET_STREAM;
     }
@@ -84,8 +81,6 @@ public class ComicBookDetector implements Detector {
             String lower = name.toLowerCase(Locale.ROOT);
             if (lower.endsWith(".cbr")) {
                 return CBR;
-            } else if (lower.endsWith(".cb7")) {
-                return CB7;
             } else if (lower.endsWith(".cbt")) {
                 return CBT;
             }
@@ -93,7 +88,7 @@ public class ComicBookDetector implements Detector {
         MediaType type = MediaType.parse(metadata.get(HttpHeaders.CONTENT_TYPE));
         if (type != null) {
             type = MediaTypeRegistry.getDefaultRegistry().normalize(type.getBaseType());
-            if (CBR.equals(type) || CB7.equals(type) || CBT.equals(type)) {
+            if (CBR.equals(type) || CBT.equals(type)) {
                 return type;
             }
         }

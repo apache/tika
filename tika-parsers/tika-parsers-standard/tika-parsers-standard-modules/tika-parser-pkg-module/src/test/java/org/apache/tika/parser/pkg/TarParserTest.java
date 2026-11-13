@@ -26,8 +26,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.junit.jupiter.api.Test;
@@ -45,10 +47,6 @@ import org.apache.tika.sax.BodyContentHandler;
  */
 public class TarParserTest extends AbstractPkgTest {
 
-    /**
-     * Tests that the ParseContext parser is correctly
-     * fired for all the embedded entries.
-     */
     /**
      * A .cbt keeps its type, and its first page by name is the cover, which a streamed tar
      * only reaches in storage order; POSIX and GNU tar alike.
@@ -92,7 +90,7 @@ public class TarParserTest extends AbstractPkgTest {
             for (int i = 0; i < 512; i++) {
                 sum += tar[at + i] & 0xff;
             }
-            byte[] checksum = String.format("%06o\0 ", sum).getBytes(StandardCharsets.US_ASCII);
+            byte[] checksum = String.format(Locale.ROOT, "%06o\0 ", sum).getBytes(StandardCharsets.US_ASCII);
             System.arraycopy(checksum, 0, tar, at + 148, checksum.length);
             long size = Long.parseLong(new String(tar, at + 124, 11, StandardCharsets.US_ASCII).trim(), 8);
             at += 512 + (int) ((size + 511) / 512) * 512;
@@ -100,6 +98,33 @@ public class TarParserTest extends AbstractPkgTest {
         return tar;
     }
 
+    /** The names the cover is chosen from are read in the encoding the entries are read in. */
+    @Test
+    public void testComicBookCoverEntryEncoding(@TempDir Path tmp) throws Exception {
+        String encoding = StandardCharsets.ISO_8859_1.name();
+        Path cbt = tmp.resolve("latin1.cbt");
+        try (TarArchiveOutputStream out =
+                     new TarArchiveOutputStream(Files.newOutputStream(cbt), encoding)) {
+            for (String name : new String[]{"über-02.png", "über-01.png"}) {
+                byte[] data = name.getBytes(StandardCharsets.UTF_8);
+                TarArchiveEntry entry = new TarArchiveEntry(name);
+                entry.setSize(data.length);
+                out.putArchiveEntry(entry);
+                out.write(data);
+                out.closeArchiveEntry();
+            }
+        }
+        ParseContext context = new ParseContext();
+        context.set(ArchiveStreamFactory.class, new ArchiveStreamFactory(encoding));
+        Map<String, String> types = resourceTypes(getRecursiveMetadata(cbt, context, false));
+        assertEquals("THUMBNAIL", types.get("über-01.png"), types.toString());
+        assertEquals("null", types.get("über-02.png"));
+    }
+
+    /**
+     * Tests that the ParseContext parser is correctly
+     * fired for all the embedded entries.
+     */
     @Test
     public void testEmbedded() throws Exception {
         ContentHandler handler = new BodyContentHandler();

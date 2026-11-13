@@ -66,10 +66,11 @@ final class ComicBook {
     }
 
     private static boolean isPage(String name) {
-        if (name.startsWith("__MACOSX/")) {
+        String path = name.replace('\\', '/');
+        if (path.startsWith("__MACOSX/")) {
             return false;
         }
-        String base = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1);
+        String base = path.substring(path.lastIndexOf('/') + 1);
         int dot = base.lastIndexOf('.');
         if (base.startsWith(".") || dot < 0) {
             return false;

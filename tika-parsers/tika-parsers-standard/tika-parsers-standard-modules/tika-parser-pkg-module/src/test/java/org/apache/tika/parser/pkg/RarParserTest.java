@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -183,7 +184,7 @@ public class RarParserTest extends AbstractPkgTest {
      * than -1 is written as Unix time.
      */
     private static byte[] storedRar5(long mtime, String... namesAndContents) {
-        java.util.LinkedHashMap<String, byte[]> files = new java.util.LinkedHashMap<>();
+        LinkedHashMap<String, byte[]> files = new LinkedHashMap<>();
         for (int i = 0; i < namesAndContents.length; i += 2) {
             files.put(namesAndContents[i], namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8));
         }
