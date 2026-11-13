@@ -237,4 +237,33 @@ public class OpenSearchClientTest extends TikaTest {
         assertThrows(TikaConfigException.class, () -> OpenSearchEmitterConfig.load(
                 String.format(Locale.ROOT, base, "PARENT_CHILD", ", \"chunkStrategy\": \"DOCUMENTS\"")));
     }
+
+    /** A crafted tk:chunks value cannot add or split action lines in the NDJSON _bulk body. */
+    @Test
+    public void testChunksCannotInjectBulkActions() throws Exception {
+        // Trailing content after a valid array plus embedded newlines. Written raw, the "}" closed
+        // the source document early and the newlines added a delete and an index action.
+        String attack = "[1]}\n{\"delete\":{\"_index\":\"victim\",\"_id\":\"1\"}}\n"
+                + "{\"index\":{\"_index\":\"junk\"}}\n{\"pad\":[1]";
+        CapturingClient client = new CapturingClient(config(
+                OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
+                OpenSearchEmitterConfig.ChunkStrategy.INLINE));
+        client.emitDocument("k", List.of(document(attack)));
+        List<JsonNode> lines = lines(client.bodies.get(0));
+        assertEquals(2, lines.size(), "one action and one source document, nothing injected");
+        assertTrue(lines.get(0).has("index"));
+        assertTrue(lines.get(1).get("tk:chunks").isTextual(),
+                "a value that is not a single clean JSON document is escaped, not written raw");
+        assertFalse(lines.get(1).has("delete"));
+
+        // A legitimate chunks array still indexes natively, even with newlines around its tokens.
+        CapturingClient ok = new CapturingClient(config(
+                OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
+                OpenSearchEmitterConfig.ChunkStrategy.INLINE));
+        ok.emitDocument("k", List.of(document("[\n  {\"text\":\"hi\"}\n]")));
+        List<JsonNode> okLines = lines(ok.bodies.get(0));
+        assertEquals(2, okLines.size());
+        assertTrue(okLines.get(1).get("tk:chunks").isArray());
+        assertEquals("hi", okLines.get(1).get("tk:chunks").get(0).get("text").asText());
+    }
 }
