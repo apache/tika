@@ -17,34 +17,20 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * Specifies a revision manifest root declare, each followed by root and object extended GUIDs
- */
 public class RevisionManifestRootDeclare extends StreamObject {
     public ExGuid rootExGuid;
     public ExGuid objectExGuid;
 
-    /**
-     * Initializes a new instance of the RevisionManifestRootDeclare class.
-     */
     public RevisionManifestRootDeclare() {
         super(StreamObjectTypeHeaderStart.RevisionManifestRootDeclare);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte list
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -52,25 +38,6 @@ public class RevisionManifestRootDeclare extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.rootExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.objectExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "RevisionManifestRootDeclare", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The length of list
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.rootExGuid.serializeToByteList());
-        byteList.addAll(this.objectExGuid.serializeToByteList());
-        return byteList.size() - itemsIndex;
+        endItems(currentIndex, index, lengthOfItems, "RevisionManifestRootDeclare");
     }
 }

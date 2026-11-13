@@ -17,17 +17,13 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BinaryItem;
 
-/**
- * Specifies an object data BLOB stream object - the opaque binary data of an object,
- * e.g. an embedded image or file. See MS-FSSHTTPB section 2.2.1.12.8.
- */
+/** Opaque binary data of an object, e.g. an embedded image or file. MS-FSSHTTPB 2.2.1.12.8. */
 public class ObjectDataBLOB extends StreamObject {
     public BinaryItem data;
 
@@ -36,16 +32,10 @@ public class ObjectDataBLOB extends StreamObject {
         this.data = new BinaryItem();
     }
 
-    /**
-     * @return a copy of the opaque binary data, or null if not present.
-     */
     public byte[] getData() {
         return this.data == null ? null : this.data.copyContent();
     }
 
-    /**
-     * @return the length of the binary data, 0 if not present
-     */
     public int getDataLength() {
         return this.data == null ? 0 : this.data.getContentLength();
     }
@@ -57,20 +47,6 @@ public class ObjectDataBLOB extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.data = BasicObject.parse(byteArray, index, BinaryItem.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectDataBLOB",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int startPoint = byteList.size();
-        if (this.data != null) {
-            byteList.addAll(this.data.serializeToByteList());
-        }
-        return byteList.size() - startPoint;
+        endItems(currentIndex, index, lengthOfItems, "ObjectDataBLOB");
     }
 }

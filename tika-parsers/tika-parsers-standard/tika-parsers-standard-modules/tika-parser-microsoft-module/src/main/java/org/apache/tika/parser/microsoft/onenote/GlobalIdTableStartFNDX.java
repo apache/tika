@@ -18,13 +18,4 @@ package org.apache.tika.parser.microsoft.onenote;
 
 class GlobalIdTableStartFNDX {
     char reserved;
-
-    public char getReserved() {
-        return reserved;
-    }
-
-    public GlobalIdTableStartFNDX setReserved(char reserved) {
-        this.reserved = reserved;
-        return this;
-    }
 }

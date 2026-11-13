@@ -16,38 +16,26 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
-/**
- * This class is used to represent the file data.
- */
 public class FileDataObject {
     public ObjectGroupObjectBLOBDataDeclaration objectDataBLOBDeclaration;
     public ObjectGroupObjectDataBLOBReference objectDataBLOBReference;
     public DataElement objectDataBLOBDataElement;
 
-    /**
-     * @return a copy of the opaque binary data of this file data object, or null if it could
-     * not be resolved.
-     */
     public byte[] getData() {
         ObjectDataBLOB blob = getBlob();
         return blob == null ? null : blob.getData();
     }
 
-    /**
-     * @return the length of the binary data, 0 if it could not be resolved
-     */
     public int getDataLength() {
         ObjectDataBLOB blob = getBlob();
         return blob == null ? 0 : blob.getDataLength();
     }
 
-    /**
-     * @return whether the file data resolves to non-empty binary data, without copying it.
-     */
     public boolean hasData() {
         return getDataLength() > 0;
     }
 
+    /** @return the referenced BLOB, which several file data objects may share; or null */
     private ObjectDataBLOB getBlob() {
         if (objectDataBLOBDataElement != null &&
                 objectDataBLOBDataElement.data instanceof ObjectDataBLOBDataElementData) {

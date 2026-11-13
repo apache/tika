@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -31,8 +32,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,31 +51,23 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-/**
- * Walk the one note tree and create a Map while it goes.
- * Also writes user input text to a print writer as it parses.
- */
 class OneNoteTreeWalker {
 
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteTreeWalker.class);
     private static final int MAX_CYCLE_WARNINGS = 100;
     // low enough that the ~3 stack frames per level cannot overflow a default thread stack
     private static final int MAX_WALK_DEPTH = 500;
+    // real files revisit each node a few times (once per reference); shared references in a
+    // crafted file can make the visits exponential in depth without forming a cycle
+    private static final long VISITS_PER_FILE_NODE = 64;
+    private static final long MIN_VISIT_BUDGET = 100_000;
+    // the largest array a single property or attachment is read into
+    private static final long MAX_DATA_LENGTH = Integer.MAX_VALUE - 8;
     private static final String P = "p";
-    /**
-     * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
-     */
+    /** MS-ONE 2.3.1 TIME32 counts seconds from 1980-01-01 UTC; that epoch in Unix seconds. */
     private static final long TIME32_EPOCH_DIFF_1980;
-    /**
-     * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
-     * So we create this offset used to calculate number of seconds between this and the Instant
-     * .EPOCH.
-     */
+    /** MS-DTYP 2.3.3 DATETIME counts from 1601-01-01 UTC; that epoch in Unix seconds. */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
 
     static {
         LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
@@ -97,7 +88,7 @@ class OneNoteTreeWalker {
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
     private final OneNoteGuidCollector guidCollector;
-    private final OneNoteTreeWalkerOptions options;
+    private final OneNoteParserConfig options;
     private final OneNoteDocument oneNoteDocument;
     private final OneNoteDirectFileResource dif;
     private final XHTMLContentHandler xhtml;
@@ -105,35 +96,60 @@ class OneNoteTreeWalker {
     private Instant lastModifiedTimestamp = Instant.MIN;
     private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;
-    private boolean mostRecentAuthorProp = false;
-    private boolean originalAuthorProp = false;
 
-    /**
-     * Contains pairs of {Offset,Length} that we have added to the text stream already.
-     */
+    /** {Offset,Length} pairs already written to the text stream. */
     private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
     private final Set<FileNode> activeFileNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
+    // contexts (parent property, inside version history) each node was walked in; a repeat
+    // walk in the same context adds nothing, as text is deduplicated by position
+    private final Map<FileNode, Set<Long>> walkedContexts = new IdentityHashMap<>();
+    // every revision of a notebook's table of contents lists its sections again
+    private final Set<String> emittedFolderChildren = new HashSet<>();
+    // recognized words of the inline ink in the paragraph being walked
+    private List<String> inkWords = Collections.emptyList();
+    private List<OneNoteText.TextRun> textRuns = null;
+    // per walked revision: a property set reached in many contexts resolves its ink and runs once
+    private final Map<PropertySet, List<String>> inkWordsBySet = new IdentityHashMap<>();
+    private final Map<PropertySet, List<OneNoteText.TextRun>> textRunsBySet =
+            new IdentityHashMap<>();
+    // keyed by (stp, cb); each distinct read is charged to the text budget once
+    private final Map<Pair<Long, Long>, String> inkWordByRef = new HashMap<>();
+    private final Map<Pair<Long, Long>, int[]> textRunEndsByRef = new HashMap<>();
+    private final Map<PropertySet, Boolean> hyperlinkByStyle = new IdentityHashMap<>();
     private final Set<FileNode> reportedCycleNodes =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private int cycleWarningCount;
     private boolean cycleWarningsSuppressed;
     private int walkDepth;
     private boolean depthWarningRecorded;
+    private long visitsRemaining;
+    // objects resolved in walkedRevision
+    private final Map<ExtendedGUID, FileNodePtr> resolvedObjects = new HashMap<>();
+    private int versionHistoryDepth;
+    private boolean contentEmitted;
+    // content left out on purpose: other revisions, page history or declined attachments
+    private boolean contentWithheld;
+    // the walk reached a section or page object, so its layout is one the walker reads
+    private boolean sectionStructureSeen;
+    // the revision whose objects the walk resolves, or null for the last declared anywhere
+    private ExtendedGUID walkedRevision;
+    private final Set<Long> emittedEmbedded = new HashSet<>();
+    // file data store GUID -> name, type and original path from the node that holds the file
+    private final Map<ExtendedGUID, FileInfo> fileInfoByGuid = new HashMap<>();
+    private final Map<PropertySet, String> noteTagLabels = new IdentityHashMap<>();
+    private final Set<PropertySet> taggedParagraphs =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    // embedded bytes handed out are bounded by the file size; set on first use
+    private long embeddedBytesRemaining = Long.MIN_VALUE;
+    private boolean embeddedBudgetWarningRecorded;
+    private boolean visitBudgetWarningRecorded;
+    // text read is bounded by the file size; set on first use
+    private long textBytesRemaining = Long.MIN_VALUE;
+    private boolean textBudgetWarningRecorded;
 
-    /**
-     * Create a one tree walker.
-     *
-     * @param options         The options for how to walk this tree.
-     * @param oneNoteDocument The one note document we want to walk.
-     * @param dif             The rando  file access structure we read and reposition while
-     *                        extracting the content.
-     * @param xhtml           The XHTMLContentHandler to populate as you walk the tree.
-     * @param roleAndContext  The role  nd context value we want to use when crawling. Set this
-     *                        to null if you are
-     *                        crawling all root file nodes, and don't care about revisions.
-     */
-    public OneNoteTreeWalker(OneNoteTreeWalkerOptions options, OneNoteDocument oneNoteDocument,
+    /** {@code roleAndContext} is null to crawl all root file nodes, ignoring revisions. */
+    public OneNoteTreeWalker(OneNoteParserConfig options, OneNoteDocument oneNoteDocument,
                              OneNoteDirectFileResource dif, XHTMLContentHandler xhtml,
                              Metadata parentMetadata, ParseContext parseContext,
                              Pair<Long, ExtendedGUID> roleAndContext) {
@@ -145,194 +161,287 @@ class OneNoteTreeWalker {
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
         this.guidCollector = new OneNoteGuidCollector(this::recordGuidCapWarning);
+        this.visitsRemaining = Math.max(MIN_VISIT_BUDGET,
+                VISITS_PER_FILE_NODE * oneNoteDocument.fileNodeCount);
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
 
-    /**
-     * Parse the tree.
-     *
-     * @return Map of the fully parsed one note document.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    public Map<String, Object> walkTree() throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("header", oneNoteDocument.header);
+    /** Walks the tree, writing text, metadata and embedded documents as it goes. */
+    public void walkTree() throws IOException, TikaException, SAXException {
         try {
-            structure.put("rootFileNodes", walkRootFileNodes());
-            return structure;
+            walkRootFileNodes();
         } finally {
             publishGuidBags();
         }
     }
 
-    /**
-     * Walk the root file nodes, depending on the options will crawl revisions or the entire
-     * revision tree.
-     *
-     * @return List of the root file nodes.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    public List<Map<String, Object>> walkRootFileNodes()
-            throws IOException, TikaException, SAXException {
-        List<Map<String, Object>> res = new ArrayList<>();
-        if (options.isCrawlAllFileNodesFromRoot()) {
-            res.add(walkFileNodeList(oneNoteDocument.root, null));
-        } else {
-            for (ExtendedGUID revisionListGuid : oneNoteDocument.revisionListOrder) {
-                Map<String, Object> structure = new HashMap<>();
-                structure.put("oneNoteType", "Revision");
-                structure.put("revisionListGuid", revisionListGuid.toString());
-                FileNodePtr fileNodePtr =
-                        oneNoteDocument.revisionManifestLists.get(revisionListGuid);
-                structure.put("fileNode", walkRevision(fileNodePtr));
-                res.add(structure);
+    public void walkRootFileNodes() throws IOException, TikaException, SAXException {
+        if (options.isIncludePageHistory()) {
+            for (FileNode node : oneNoteDocument.root.children) {
+                if (node.id != FndStructureConstants.FileDataStoreListReferenceFND) {
+                    walkFileNode(node, null);
+                }
+            }
+            walkFileDataStores();
+            return;
+        }
+        Set<ExtendedGUID> seenLists = new HashSet<>();
+        List<FileNode> unlabeledLists = new ArrayList<>();
+        for (ExtendedGUID revisionListGuid : oneNoteDocument.revisionListOrder) {
+            if (!seenLists.add(revisionListGuid)) {
+                continue;
+            }
+            FileNode list = oneNoteDocument.revisionManifestLists.get(revisionListGuid)
+                    .dereference(oneNoteDocument);
+            if (!walkRevision(list)) {
+                unlabeledLists.add(list);
             }
         }
-        return res;
-    }
-
-    /**
-     * Does the revision role map have this revision role id.
-     *
-     * @param rid          The revision id.
-     * @param revisionRole The revision role Long,GUID pair.
-     * @return True if exists, false if not.
-     */
-    private boolean hasRevisionRole(ExtendedGUID rid, Pair<Long, ExtendedGUID> revisionRole) {
-        Pair<Long, ExtendedGUID> where = oneNoteDocument.revisionRoleMap.get(rid);
-        return where != null && where.equals(revisionRole);
-    }
-
-    /**
-     * Walk revisions.
-     *
-     * @param fileNodePtr The file node pointer to start with.
-     * @return A map of the parsed data.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    private Map<String, Object> walkRevision(FileNodePtr fileNodePtr)
-            throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("oneNoteType", "FileNodePointer");
-        structure.put("offsets", fileNodePtr.nodeListPositions);
-        FileNode revisionFileNode = fileNodePtr.dereference(oneNoteDocument);
-        structure.put("fileNodeId", revisionFileNode.id);
-        if (revisionFileNode.gosid != null) {
-            structure.put("gosid", revisionFileNode.gosid.toString());
+        // a list with no current revision gives text from all of its revisions
+        for (FileNode list : unlabeledLists) {
+            walkFileNode(list, null);
         }
-        structure.put("subType", revisionFileNode.subType);
-        structure.put("size", revisionFileNode.size);
-        structure.put("isFileData", revisionFileNode.isFileData);
+        walkFileDataStores();
+    }
 
-        Set<ExtendedGUID> validRevisions = new HashSet<>();
-        for (int i = revisionFileNode.childFileNodeList.children.size() - 1; i >= 0; --i) {
-            FileNode child = revisionFileNode.childFileNodeList.children.get(i);
-            if (roleAndContext != null && hasRevisionRole(child.gosid, roleAndContext)) {
-                validRevisions.add(child.gosid);
-                if (options.isOnlyLatestRevision()) {
-                    break;
+    /** After the pages, which name the files they hold. */
+    private void walkFileDataStores() throws IOException, TikaException, SAXException {
+        for (FileNode node : oneNoteDocument.root.children) {
+            if (node.id == FndStructureConstants.FileDataStoreListReferenceFND) {
+                walkFileNode(node, null);
+            }
+        }
+    }
+
+    private static boolean isRevisionStart(FileNode node) {
+        return node.id == FndStructureConstants.RevisionManifestStart4FND ||
+                node.id == FndStructureConstants.RevisionManifestStart6FND ||
+                node.id == FndStructureConstants.RevisionManifestStart7FND;
+    }
+
+    /**
+     * @return the revision that holds {@code label} (a revision role and context) last in the
+     * manifest list, or null; a later declaration moves a label to another revision
+     */
+    static ExtendedGUID labeledRevision(List<FileNode> manifestList,
+                                        Pair<Long, ExtendedGUID> label) {
+        for (int i = manifestList.size() - 1; i >= 0; --i) {
+            FileNode node = manifestList.get(i);
+            long role;
+            if (isRevisionStart(node)) {
+                role = node.subType.revisionManifest.revisionRole;
+            } else if (node.id == FndStructureConstants.RevisionRoleDeclarationFND ||
+                    node.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
+                role = node.subType.revisionRoleDeclaration.revisionRole;
+            } else {
+                continue;
+            }
+            if (role == label.getLeft() && label.getRight().equals(node.gctxid)) {
+                return node.gosid;
+            }
+        }
+        return null;
+    }
+
+    /** @return false when no revision in the list holds {@code roleAndContext} */
+    private boolean walkRevision(FileNode revisionFileNode)
+            throws IOException, TikaException, SAXException {
+        if (revisionFileNode.childFileNodeList == null) {
+            return false;
+        }
+        List<FileNode> children = revisionFileNode.childFileNodeList.children;
+        ExtendedGUID current =
+                roleAndContext == null ? null : labeledRevision(children, roleAndContext);
+        if (current == null) {
+            return false;
+        }
+        // per root role: 1 content, 2 page metadata, 4 revision metadata (author, times)
+        Map<Long, Map<ExtendedGUID, List<ExtendedGUID>>> rootsByRole = new HashMap<>();
+        ExtendedGUID rid = null;
+        boolean otherRevisions = false;
+        for (FileNode child : children) {
+            if (isRevisionStart(child)) {
+                rid = child.gosid;
+                otherRevisions |= !current.equals(rid);
+            } else if (rid != null &&
+                    (child.id == FndStructureConstants.RootObjectReference2FNDX ||
+                            child.id == FndStructureConstants.RootObjectReference3FND)) {
+                long role = child.subType.rootObjectReference.rootObjectReferenceBase.rootRole;
+                if (role == 1 || role == 2 || role == 4) {
+                    rootsByRole.computeIfAbsent(role, k -> new HashMap<>())
+                            .computeIfAbsent(rid, k -> new ArrayList<>()).add(child.gosid);
                 }
             }
         }
-        List<Map<String, Object>> children = new ArrayList<>();
-        boolean okGroup = false;
-        for (FileNode child : revisionFileNode.childFileNodeList.children) {
-            if (child.id == FndStructureConstants.RevisionManifestStart4FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart6FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart7FND) {
-                okGroup = validRevisions.contains(child.gosid);
-            }
-            if (okGroup) {
-                if ((child.id == FndStructureConstants.RootObjectReference2FNDX ||
-                        child.id == FndStructureConstants.RootObjectReference3FND) &&
-                        child.subType.rootObjectReference.rootObjectReferenceBase.rootRole == 1) {
-                    FileNodePtr childFileNodePointer =
-                            oneNoteDocument.guidToObject.get(child.gosid);
-                    children.add(walkFileNodePtr(childFileNodePointer, null));
+        walkedRevision = current;
+        clearRevisionCaches();
+        try {
+            for (long role : new long[]{1, 2, 4}) {
+                for (ExtendedGUID root : contentRoots(current,
+                        rootsByRole.getOrDefault(role, Collections.emptyMap()))) {
+                    walkFileNodePtr(object(root), null);
                 }
             }
+        } finally {
+            walkedRevision = null;
+            clearRevisionCaches();
         }
-        if (!children.isEmpty()) {
-            Map<String, Object> childFileNodeListMap = new HashMap<>();
-            childFileNodeListMap.put("fileNodeListHeader",
-                    revisionFileNode.childFileNodeList.fileNodeListHeader);
-            childFileNodeListMap.put("children", children);
-            structure.put("revisionFileNodeList", childFileNodeListMap);
+        // not for a table of contents, whose layout the walker may not read: its every
+        // revision lists the sections again, and the dump is how they are recovered
+        if (otherRevisions && sectionStructureSeen) {
+            contentWithheld = true;
         }
-        return structure;
+        return true;
     }
 
-    /**
-     * Walk the file node pointer.
-     *
-     * @param fileNodePtr The file node pointer.
-     * @param parentPropertyId The PropertyId of the parent.
-     * @return Returns a map of the main data.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    public Map<String, Object> walkFileNodePtr(FileNodePtr fileNodePtr,
-                                               OneNotePropertyId parentPropertyId)
+    private void clearRevisionCaches() {
+        resolvedObjects.clear();
+        inkWordsBySet.clear();
+        textRunsBySet.clear();
+    }
+
+    private PropertySet propertySetOf(FileNodePtr ptr) throws IOException, TikaException {
+        FileNode node = ptr == null ? null : ptr.dereference(oneNoteDocument);
+        return node == null ? null : oneNoteDocument.propertySet(node);
+    }
+
+    private FileNodePtr object(ExtendedGUID oid) {
+        if (walkedRevision == null) {
+            return oneNoteDocument.guidToObject.get(oid);
+        }
+        if (resolvedObjects.containsKey(oid)) {
+            return resolvedObjects.get(oid);
+        }
+        // each step down the dependency chain counts as a visit, so long chains stay bounded
+        FileNodePtr ptr = oneNoteDocument.objectIn(walkedRevision, oid, this::takeVisit);
+        if (visitsRemaining > 0) {
+            resolvedObjects.put(oid, ptr);
+        }
+        return ptr;
+    }
+
+    private boolean takeVisit() {
+        if (visitsRemaining <= 0) {
+            recordVisitBudgetWarning();
+            return false;
+        }
+        visitsRemaining--;
+        return true;
+    }
+
+    /** A revision that declares no root of a role keeps its dependency's. */
+    private List<ExtendedGUID> contentRoots(ExtendedGUID rid,
+                                            Map<ExtendedGUID, List<ExtendedGUID>> contentRoots) {
+        ExtendedGUID r = rid;
+        for (int i = 0; r != null && i <= oneNoteDocument.revisionMap.size(); i++) {
+            List<ExtendedGUID> roots = contentRoots.get(r);
+            if (roots != null) {
+                return roots;
+            }
+            if (!takeVisit()) {
+                break;
+            }
+            Revision revision = oneNoteDocument.revisionMap.get(r);
+            r = revision == null || r.equals(revision.dependent) ? null : revision.dependent;
+        }
+        return Collections.emptyList();
+    }
+
+    public void walkFileNodePtr(FileNodePtr fileNodePtr, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNodePtr != null) {
-            FileNode fileNode = fileNodePtr.dereference(oneNoteDocument);
-            return walkFileNode(fileNode, parentPropertyId);
+            walkFileNode(fileNodePtr.dereference(oneNoteDocument), parentPropertyId);
         }
-        return Collections.emptyMap();
     }
 
-    /**
-     * Walk the file node list.
-     *
-     * @param fileNodeList The file node list to parse.
-     * @return The result.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    public Map<String, Object> walkFileNodeList(FileNodeList fileNodeList, OneNotePropertyId parentPropertyId)
+    public void walkFileNodeList(FileNodeList fileNodeList, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("oneNoteType", "FileNodeList");
-        structure.put("fileNodeListHeader", fileNodeList.fileNodeListHeader);
-        if (!fileNodeList.children.isEmpty()) {
-            List<Map<String, Object>> children = new ArrayList<>();
-            for (FileNode child : fileNodeList.children) {
-                children.add(walkFileNode(child, parentPropertyId));
-            }
-            structure.put("children", children);
+        for (FileNode child : fileNodeList.children) {
+            walkFileNode(child, parentPropertyId);
         }
-        return structure;
     }
 
-    /**
-     * Walk a single file node.
-     *
-     * @param fileNode The file node.
-     * @param parentPropertyId
-     * @return Map which is result of the parsed file node.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    public Map<String, Object> walkFileNode(FileNode fileNode,
-                                            OneNotePropertyId parentPropertyId)
+    public void walkFileNode(FileNode fileNode, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNode == null) {
-            return Collections.emptyMap();
+            return;
         }
         if (walkDepth >= MAX_WALK_DEPTH) {
             // the cycle guard cannot catch a long acyclic chain - cap the recursion depth
             // so a crafted file cannot overflow the stack
             recordDepthWarning();
-            return Collections.emptyMap();
+            return;
+        }
+        if (visitsRemaining <= 0) {
+            recordVisitBudgetWarning();
+            return;
         }
         if (!activeFileNodes.add(fileNode)) {
             recordCycleWarning(fileNode);
-            return Collections.emptyMap();
+            return;
         }
+        long context = ((parentPropertyId == null ? -1L : parentPropertyId.pid) << 1) |
+                (versionHistoryDepth > 0 ? 1 : 0);
+        if (!walkedContexts.computeIfAbsent(fileNode, k -> new HashSet<>()).add(context)) {
+            activeFileNodes.remove(fileNode);
+            return;
+        }
+        visitsRemaining--;
         walkDepth++;
         try {
-            return walkFileNodeInternal(fileNode, parentPropertyId);
+            walkFileNodeInternal(fileNode, parentPropertyId);
         } finally {
             walkDepth--;
             activeFileNodes.remove(fileNode);
+        }
+    }
+
+    private void emitUtf16Property(OneNotePropertyEnum property, String text)
+            throws SAXException {
+        if (property == OneNotePropertyEnum.FolderChildFilename &&
+                !emittedFolderChildren.add(OneNoteText.clean(text))) {
+            return;
+        }
+        emitParagraph(text);
+    }
+
+    private void emitParagraph(String text) throws SAXException {
+        text = OneNoteText.clean(text);
+        if (text == null) {
+            return;
+        }
+        xhtml.startElement(P);
+        try {
+            xhtml.characters(text);
+        } finally {
+            xhtml.endElement(P);
+        }
+        contentEmitted = true;
+    }
+
+    /**
+     * @return whether the walk wrote any text or handed any embedded document to the
+     * extractor
+     */
+    public boolean hasEmittedContent() {
+        return contentEmitted;
+    }
+
+    /** @return whether the walk left out content the configuration or extractor excludes */
+    public boolean hasWithheldContent() {
+        return contentWithheld;
+    }
+
+    private void recordVisitBudgetWarning() {
+        if (visitBudgetWarningRecorded) {
+            return;
+        }
+        visitBudgetWarningRecorded = true;
+        String warning = "OneNote file-node traversal exceeded visit budget";
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
     }
 
@@ -373,75 +482,89 @@ class OneNoteTreeWalker {
         }
     }
 
-    private Map<String, Object> walkFileNodeInternal(FileNode fileNode,
-                                                      OneNotePropertyId parentPropertyId)
+    private void walkFileNodeInternal(FileNode fileNode, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
-        Map<String, Object> structure = new HashMap<>();
-        structure.put("oneNoteType", "FileNode");
-        structure.put("gosid", fileNode.gosid.toString());
-        structure.put("size", fileNode.size);
-        structure.put("fileNodeId", "0x" + Long.toHexString(fileNode.id));
-        structure.put("fileNodeIdName", FndStructureConstants.nameOf(fileNode.id));
-        structure.put("fileNodeBaseType", "0x" + Long.toHexString(fileNode.baseType));
-        structure.put("isFileData", fileNode.isFileData);
-        structure.put("idDesc", fileNode.idDesc);
         if (fileNode.childFileNodeList != null &&
                 fileNode.childFileNodeList.fileNodeListHeader != null) {
-            structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList, parentPropertyId));
+            walkFileNodeList(fileNode.childFileNodeList, parentPropertyId);
         }
-        if (fileNode.propertySet != null) {
-            List<Map<String, Object>> propSet =
-                    processPropertySet(fileNode.propertySet, parentPropertyId, jcidIndex(fileNode));
-            if (!propSet.isEmpty()) {
-                structure.put("propertySet", propSet);
+        PropertySet propertySet = oneNoteDocument.propertySet(fileNode);
+        int jcid = propertySet == null ? -1 : jcidIndex(fileNode);
+        boolean history = jcid == OneNoteJcid.VERSION_HISTORY_CONTENT;
+        if (jcid == OneNoteJcid.SECTION_NODE || jcid == OneNoteJcid.PAGE_SERIES_NODE ||
+                jcid == OneNoteJcid.PAGE_NODE) {
+            sectionStructureSeen = true;
+        }
+        if (history && !options.isIncludePageHistory()) {
+            contentWithheld = true;
+        }
+        if (propertySet != null && (!history || options.isIncludePageHistory())) {
+            if (history) {
+                versionHistoryDepth++;
+            }
+            try {
+                processPropertySet(propertySet, parentPropertyId, jcid);
+            } finally {
+                if (history) {
+                    versionHistoryDepth--;
+                }
             }
         }
-        if (fileNode.subType.fileDataStoreObjectReference.ref != null && !FileChunkReference.nil()
-                .equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
-            structure.put("fileDataStoreObjectReference", walkFileDataStoreObjectReference(
-                    fileNode.subType.fileDataStoreObjectReference, fileNode.gosid));
+        FileDataStoreObjectReference fileData = fileNode.subType.fileDataStoreObjectReference;
+        if (fileData != null && fileData.ref != null &&
+                !FileChunkReference.nil().equals(fileData.ref.fileData)) {
+            walkFileDataStoreObjectReference(fileData, fileNode.gosid);
         }
-        return structure;
     }
 
-    /**
-     * Walk a file data store object reference.
-     *
-     * @param fileDataStoreObjectReference The file data store object reference we are parsing.
-     * @return Map containing parsed content.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    private Map<String, Object> walkFileDataStoreObjectReference(
+    private void walkFileDataStoreObjectReference(
             FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> structure = new HashMap<>();
-        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-        content.reposition(fileDataStoreObjectReference.ref.fileData);
-        if (fileDataStoreObjectReference.ref.fileData.cb > dif.size()) {
+        FileChunkReference fileData = fileDataStoreObjectReference.ref.fileData;
+        if (fileData.cb > dif.size() || fileData.cb > MAX_DATA_LENGTH) {
             throw new TikaMemoryLimitException(
-                    "File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
-                            " exceeds document size: " + dif.size());
+                    "File data store cb " + fileData.cb + " exceeds document size: " +
+                            dif.size());
         }
-        handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb, gosid);
-        structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
-        return structure;
+        handleEmbedded(fileData.stp, (int) fileData.cb, gosid,
+                fileInfoByGuid.get(fileDataStoreObjectReference.guid));
     }
 
-    private void handleEmbedded(int length, ExtendedGUID gosid)
+    /** Overlapping file data objects could otherwise hand out the file many times over. */
+    private boolean takeEmbeddedBytes(int length) throws IOException {
+        if (embeddedBytesRemaining == Long.MIN_VALUE) {
+            embeddedBytesRemaining = dif.size();
+        }
+        if (length <= embeddedBytesRemaining) {
+            embeddedBytesRemaining -= length;
+            return true;
+        }
+        if (!embeddedBudgetWarningRecorded) {
+            embeddedBudgetWarningRecorded = true;
+            String warning = "OneNote embedded data exceeds the file size; skipping the rest";
+            LOG.warn(warning);
+            if (parentMetadata != null) {
+                parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+            }
+        }
+        return false;
+    }
+
+    private void handleEmbedded(long stp, int length, ExtendedGUID gosid, FileInfo info)
             throws TikaException, IOException, SAXException {
-        TikaInputStream tis = null;
-        ByteBuffer buf;
-        try {
-            buf = ByteBuffer.allocate(length);
-            dif.read(buf);
-        } catch (IOException e) {
-            //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
+        if (!emittedEmbedded.add(stp)) {
             return;
         }
+        TikaInputStream tis = null;
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
-        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, info == null ?
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString() : info.type);
+        if (info != null && info.name != null) {
+            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, info.name);
+        }
+        if (info != null && info.originalPath != null) {
+            embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, info.originalPath);
+        }
         if (gosid != null && !ExtendedGUID.nil().equals(gosid)) {
             embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, gosid.toString());
         }
@@ -451,9 +574,25 @@ class OneNoteTreeWalker {
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                if (!takeEmbeddedBytes(length)) {
+                    return;
+                }
+                ByteBuffer buf;
+                try {
+                    buf = ByteBuffer.allocate(length);
+                    dif.position(stp);
+                    dif.read(buf);
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata,
+                            parseContext);
+                    return;
+                }
                 tis = TikaInputStream.get(buf.array());
+                contentEmitted = true;
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);
+            } else {
+                contentWithheld = true;
             }
         } finally {
             IOUtils.closeQuietly(tis);
@@ -461,30 +600,359 @@ class OneNoteTreeWalker {
 
     }
 
-    /**
-     * @param propertySet
-     * @param parentPropertyId
-     * @return
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
-     */
-    private List<Map<String, Object>> processPropertySet(PropertySet propertySet,
-                                                         OneNotePropertyId parentPropertyId,
-                                                         int objectType)
+    private void processPropertySet(PropertySet propertySet, OneNotePropertyId parentPropertyId,
+                                    int objectType)
             throws IOException, TikaException, SAXException {
-        List<Map<String, Object>> propValues = new ArrayList<>();
-        for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
-            PropertyValue propertyValue = propertySet.rgPridsData.get(i);
-            propValues.add(processPropertyValue(propertyValue, parentPropertyId, objectType));
+        // nested property sets recurse too
+        if (walkDepth >= MAX_WALK_DEPTH) {
+            recordDepthWarning();
+            return;
         }
-        return propValues;
+        // a node reached in many contexts re-processes its properties each time
+        int size = propertySet.rgPridsData.size();
+        if (visitsRemaining < size) {
+            visitsRemaining = 0;
+            recordVisitBudgetWarning();
+            return;
+        }
+        visitsRemaining -= size;
+        walkDepth++;
+        try {
+            processPropertySetInternal(propertySet, parentPropertyId, objectType);
+        } finally {
+            walkDepth--;
+        }
+    }
+
+    private void processPropertySetInternal(PropertySet propertySet,
+                                            OneNotePropertyId parentPropertyId, int objectType)
+            throws IOException, TikaException, SAXException {
+        emitImage(propertySet);
+        emitNoteTags(propertySet);
+        recordFileInfo(propertySet);
+        List<String> outerInkWords = inkWords;
+        List<OneNoteText.TextRun> outerTextRuns = textRuns;
+        if (!inkWordsBySet.containsKey(propertySet)) {
+            inkWordsBySet.put(propertySet, inlineInkWords(propertySet));
+            textRunsBySet.put(propertySet, textRuns(propertySet));
+        }
+        inkWords = inkWordsBySet.get(propertySet);
+        textRuns = textRunsBySet.get(propertySet);
+        try {
+            for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
+                PropertyValue propertyValue = propertySet.rgPridsData.get(i);
+                processPropertyValue(propertyValue, parentPropertyId, objectType);
+            }
+        } finally {
+            inkWords = outerInkWords;
+            textRuns = outerTextRuns;
+        }
+    }
+
+    private void emitImage(PropertySet propertySet)
+            throws IOException, TikaException, SAXException {
+        String fileName = null;
+        String altText = null;
+        String url = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (OneNoteText.isImageText(property) && value.propertyId.type == 7) {
+                String text = readUtf16(value);
+                if (property == OneNotePropertyEnum.ImageFilename) {
+                    fileName = text;
+                } else if (property == OneNotePropertyEnum.WzHyperlinkUrl) {
+                    url = text;
+                } else {
+                    altText = text;
+                }
+            }
+        }
+        if (OneNoteText.emitImage(xhtml, fileName, altText, url)) {
+            contentEmitted = true;
+        }
+    }
+
+    /** Writes the labels of the paragraph's note tags, once per paragraph. */
+    private void emitNoteTags(PropertySet propertySet)
+            throws IOException, TikaException, SAXException {
+        for (PropertyValue value : propertySet.rgPridsData) {
+            if (value.propertyId.propertyEnum != OneNotePropertyEnum.NoteTagStates ||
+                    value.propertySet == null || !taggedParagraphs.add(propertySet)) {
+                continue;
+            }
+            for (PropertyValue state : value.propertySet.rgPridsData) {
+                if (state.propertySet == null) {
+                    continue;
+                }
+                for (PropertyValue v : state.propertySet.rgPridsData) {
+                    if (v.propertyId.propertyEnum != OneNotePropertyEnum.NoteTagDefinitionOid ||
+                            v.compactIDs == null) {
+                        continue;
+                    }
+                    for (CompactID compactID : v.compactIDs) {
+                        if (!takeVisit()) {
+                            return;
+                        }
+                        String label = noteTagLabel(propertySetOf(object(compactID.guid)));
+                        if (label != null && takeTextBytes(2L * label.length()) &&
+                                OneNoteText.emitNoteTag(xhtml, label)) {
+                            contentEmitted = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private String noteTagLabel(PropertySet definition) throws IOException, TikaException {
+        if (definition == null) {
+            return null;
+        }
+        if (noteTagLabels.containsKey(definition)) {
+            return noteTagLabels.get(definition);
+        }
+        String label = null;
+        for (PropertyValue value : definition.rgPridsData) {
+            if (value.propertyId.propertyEnum == OneNotePropertyEnum.NoteTagLabel &&
+                    value.propertyId.type == 7) {
+                int size = positionAt(value);
+                if (size <= 2 * OneNoteText.MAX_NOTE_TAG_LABEL_CHARS) {
+                    label = readString(size, StandardCharsets.UTF_16LE).replace("\u0000", "");
+                }
+                break;
+            }
+        }
+        noteTagLabels.put(definition, label);
+        return label;
     }
 
     /**
-     * Is this property a binary property?
-     *
-     * @param property The property.
-     * @return Is it binary?
+     * Records the names of the files a picture or embedded file node holds, for when the file
+     * data store is walked: ImageFilename names its pictures, EmbeddedFileName and
+     * SourceFilepath its embedded file.
      */
+    private void recordFileInfo(PropertySet propertySet) throws IOException, TikaException {
+        List<ExtendedGUID> pictures = null;
+        List<ExtendedGUID> files = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (property == OneNotePropertyEnum.EmbeddedFileContainer) {
+                files = unnamedFileData(value, files);
+            } else if (property == OneNotePropertyEnum.PictureContainer ||
+                    property == OneNotePropertyEnum.WebPictureContainer14) {
+                pictures = unnamedFileData(value, pictures);
+            }
+        }
+        if (pictures == null && files == null) {
+            return;
+        }
+        String imageName = null;
+        String fileName = null;
+        String originalPath = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (value.propertyId.type != 7 || (property != OneNotePropertyEnum.ImageFilename &&
+                    property != OneNotePropertyEnum.EmbeddedFileName &&
+                    property != OneNotePropertyEnum.SourceFilepath)) {
+                continue;
+            }
+            int size = positionAt(value);
+            if (size > 2 * (OneNoteText.MAX_PATH_CHARS + 1)) {
+                continue;
+            }
+            ByteBuffer buf = ByteBuffer.allocate(size);
+            dif.read(buf);
+            if (property == OneNotePropertyEnum.SourceFilepath) {
+                originalPath = OneNoteText.originalPath(buf.array());
+                continue;
+            }
+            String name = OneNoteText.sanitizeResourceName(
+                    new String(buf.array(), StandardCharsets.UTF_16LE).replace("\u0000", ""));
+            if (name.isEmpty()) {
+                continue;
+            }
+            if (property == OneNotePropertyEnum.ImageFilename) {
+                imageName = name;
+            } else {
+                fileName = name;
+            }
+        }
+        record(pictures, new FileInfo(imageName, null,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString()));
+        record(files, new FileInfo(fileName, originalPath,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString()));
+    }
+
+    /** Adds the file data store GUIDs referenced by {@code value} that have no name yet. */
+    private List<ExtendedGUID> unnamedFileData(PropertyValue value, List<ExtendedGUID> guids)
+            throws TikaException {
+        if (value.compactIDs == null) {
+            return guids;
+        }
+        for (CompactID compactID : value.compactIDs) {
+            FileNodePtr ptr = object(compactID.guid);
+            FileNode node = ptr == null ? null : ptr.dereference(oneNoteDocument);
+            ObjectDeclarationWithRefCount declaration =
+                    node == null ? null : node.subType.objectDeclarationWithRefCount;
+            ExtendedGUID guid = declaration == null || declaration.body == null ? null :
+                    declaration.body.fileDataGuid;
+            if (guid != null && !fileInfoByGuid.containsKey(guid)) {
+                guids = guids == null ? new ArrayList<>() : guids;
+                guids.add(guid);
+            }
+        }
+        return guids;
+    }
+
+    private void record(List<ExtendedGUID> guids, FileInfo info) {
+        if (guids != null) {
+            for (ExtendedGUID guid : guids) {
+                fileInfoByGuid.putIfAbsent(guid, info);
+            }
+        }
+    }
+
+    private static final class FileInfo {
+        private final String name;
+        private final String originalPath;
+        private final String type;
+
+        private FileInfo(String name, String originalPath, String type) {
+            this.name = name;
+            this.originalPath = originalPath;
+            this.type = type;
+        }
+    }
+
+    /** @return the paragraph's text runs and which are hyperlink text, or null */
+    private List<OneNoteText.TextRun> textRuns(PropertySet propertySet)
+            throws IOException, TikaException {
+        int[] ends = null;
+        List<Boolean> hyperlink = null;
+        for (PropertyValue value : propertySet.rgPridsData) {
+            OneNotePropertyEnum property = value.propertyId.propertyEnum;
+            if (property == OneNotePropertyEnum.TextRunIndex && value.propertyId.type == 7) {
+                ends = textRunEnds(value);
+            } else if (property == OneNotePropertyEnum.TextRunFormatting &&
+                    value.compactIDs != null) {
+                hyperlink = new ArrayList<>();
+                for (CompactID compactID : value.compactIDs) {
+                    if (!takeVisit()) {
+                        return null;
+                    }
+                    PropertySet style = propertySetOf(object(compactID.guid));
+                    hyperlink.add(style != null &&
+                            hyperlinkByStyle.computeIfAbsent(style, OneNoteTreeWalker::isHyperlink));
+                }
+            }
+        }
+        return ends == null || hyperlink == null ? null : OneNoteText.textRuns(ends, hyperlink);
+    }
+
+    private static boolean isHyperlink(PropertySet style) {
+        for (PropertyValue value : style.rgPridsData) {
+            if (value.propertyId.propertyEnum == OneNotePropertyEnum.Hyperlink) {
+                return value.propertyId.inlineBool;
+            }
+        }
+        return false;
+    }
+
+    private int[] textRunEnds(PropertyValue value) throws IOException, TikaException {
+        if (value.rawData == null) {
+            return OneNoteText.textRunEnds(new byte[0]);
+        }
+        Pair<Long, Long> ref = Pair.of(value.rawData.stp, value.rawData.cb);
+        if (textRunEndsByRef.containsKey(ref)) {
+            return textRunEndsByRef.get(ref);
+        }
+        int size = positionAt(value);
+        if (!takeTextBytes(size)) {
+            return null;
+        }
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        dif.read(buf);
+        int[] ends = OneNoteText.textRunEnds(buf.array());
+        textRunEndsByRef.put(ref, ends);
+        return ends;
+    }
+
+    /** Positions {@code dif} at the property's data. @return the data's length */
+    private int positionAt(PropertyValue value) throws IOException, TikaException {
+        if (value.rawData == null) {
+            // not a data property (type 0x7)
+            dif.position(0);
+            return 0;
+        }
+        long cb = value.rawData.cb;
+        if (cb < 0 || cb > dif.size() || cb > MAX_DATA_LENGTH) {
+            throw new TikaMemoryLimitException(
+                    "File data store cb " + cb + " exceeds document size: " + dif.size());
+        }
+        dif.position(value.rawData.stp);
+        return (int) cb;
+    }
+
+    /**
+     * @return the recognized words of the paragraph's inline ink, in order: its
+     * TextRunDataObject references, one per U+FFFC in its text (undocumented)
+     */
+    private List<String> inlineInkWords(PropertySet propertySet)
+            throws IOException, TikaException {
+        List<String> words = Collections.emptyList();
+        for (PropertyValue value : propertySet.rgPridsData) {
+            if (value.propertyId.propertyEnum != OneNotePropertyEnum.TextRunDataObject ||
+                    value.compactIDs == null) {
+                continue;
+            }
+            words = new ArrayList<>();
+            for (CompactID compactID : value.compactIDs) {
+                if (!takeVisit()) {
+                    break;
+                }
+                PropertySet word = propertySetOf(object(compactID.guid));
+                String best = word == null ? null : bestInkWord(word);
+                // every occurrence is written, so each counts against the text budget
+                if (best != null && !takeTextBytes(2L * best.length())) {
+                    break;
+                }
+                // a null keeps later words on their own placeholders
+                words.add(best);
+            }
+        }
+        return words;
+    }
+
+    private String bestInkWord(PropertySet word) throws IOException, TikaException {
+        for (PropertyValue value : word.rgPridsData) {
+            if (value.propertyId.propertyEnum == OneNotePropertyEnum.InkRecognitionAlternates &&
+                    value.propertyId.type == 7) {
+                if (value.rawData == null) {
+                    return null;
+                }
+                Pair<Long, Long> ref = Pair.of(value.rawData.stp, value.rawData.cb);
+                if (inkWordByRef.containsKey(ref)) {
+                    return inkWordByRef.get(ref);
+                }
+                int size = positionAt(value);
+                if (!takeTextBytes(size)) {
+                    return null;
+                }
+                String best = OneNoteText.bestInkAlternate(
+                        readString(size, StandardCharsets.UTF_16LE));
+                inkWordByRef.put(ref, best);
+                return best;
+            }
+        }
+        return null;
+    }
+
+    /** @return the property's UTF-16 text, or null if it was already emitted */
+    private String readUtf16(PropertyValue value) throws IOException, TikaException {
+        int size = positionAt(value);
+        return shouldEmitText(size) ? readString(size, StandardCharsets.UTF_16LE) : null;
+    }
+
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
         return property == OneNotePropertyEnum.RgOutlineIndentDistance ||
                 property == OneNotePropertyEnum.NotebookManagementEntityGuid ||
@@ -493,24 +961,12 @@ class OneNoteTreeWalker {
     }
 
     /**
-     * Process a property value and populate a map containing all the property value data.
-     * <p>
-     * Parse out any relevant text and write it to the print writer as well for easy search
-     * engine parsing.
-     *
-     * @param propertyValue The property value we are parsing.
-     * @param parentPropertyId
-     * @return The map parsed by this property value.
-     * @throws IOException Can throw these when manipulating the seekable byte channel.
+     * Processes a property value: records its metadata, writes its text and walks the
+     * objects it references.
      */
-    Map<String, Object> processPropertyValue(PropertyValue propertyValue,
-                                                     OneNotePropertyId parentPropertyId,
-                                                     int objectType)
+    void processPropertyValue(PropertyValue propertyValue, OneNotePropertyId parentPropertyId,
+                              int objectType)
             throws IOException, TikaException, SAXException {
-        Map<String, Object> propMap = new HashMap<>();
-        propMap.put("oneNoteType", "PropertyValue");
-        propMap.put("propertyId", propertyValue.propertyId.toString());
-
         if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
             long fullval = propertyValue.scalar;
             Instant instant = Instant.ofEpochSecond(fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
@@ -518,212 +974,162 @@ class OneNoteTreeWalker {
                 lastModifiedTimestamp = instant;
             }
         } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
-            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
-            // 1970
             long creationTs = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
             if (creationTs < creationTimestamp) {
                 creationTimestamp = creationTs;
             }
         } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTime) {
-            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
-            // 1970
             long lastMod = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
             if (lastMod > lastModified) {
                 lastModified = lastMod;
             }
         } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.Author) {
             String author = getAuthor(propertyValue);
-            if (mostRecentAuthorProp) {
-                propMap.put("MostRecentAuthor", author);
-                mostRecentAuthors.add(author);
-            } else if (originalAuthorProp) {
-                propMap.put("OriginalAuthor", author);
-                originalAuthors.add(author);
-            } else {
-                propMap.put("Author", author);
-                authors.add(author);
-            }
-            mostRecentAuthorProp = false;
-            originalAuthorProp = false;
-        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorMostRecent) {
-            mostRecentAuthorProp = true;
-        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorOriginal) {
-            originalAuthorProp = true;
-        } else if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
-            propMap.put("scalar", propertyValue.scalar);
-        } else {
-            OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-            content.reposition(propertyValue.rawData);
-            boolean isBinary = propertyIsBinary(propertyValue.propertyId.propertyEnum);
-            propMap.put("isBinary", isBinary);
-            if ((content.size() & 1) == 0 && propertyValue.propertyId.propertyEnum !=
-                    OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
-                }
-                ByteBuffer buf = ByteBuffer.allocate(content.size());
-                dif.read(buf);
-                propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
-                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
-                    xhtml.startElement(P);
-                    try {
-                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
-                    } finally {
-                        xhtml.endElement(P);
-                    }
-                }
-            } else if (propertyValue.propertyId.propertyEnum ==
-                    OneNotePropertyEnum.TextExtendedAscii) {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
-                }
-                ByteBuffer buf = ByteBuffer.allocate(content.size());
-                dif.read(buf);
-                propMap.put("dataAscii", new String(buf.array(), StandardCharsets.US_ASCII));
-                xhtml.startElement(P);
-                try {
-                    xhtml.characters((String) propMap.get("dataAscii"));
-                } finally {
-                    xhtml.endElement(P);
-                }
-            } else if (!isBinary) {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
-                }
-                ByteBuffer buf = ByteBuffer.allocate(content.size());
-                dif.read(buf);
-                propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
-                if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
-                    xhtml.startElement(P);
-                    try {
-                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
-                    } finally {
-                        xhtml.endElement(P);
-                    }
-                }
-            } else {
-                if (content.size() > dif.size()) {
-                    throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
-                }
-                if (propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.RichEditTextUnicode
-                        || propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.CachedTitleString) {
-                    if (!options.isOnlyLatestRevision()
-                            || (parentPropertyId != null &&
-                            parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
-                        // only handle text for the latest revision, unless the options
-                        // have the onlyLatestRevision = false
-                        handleRichEditTextUnicode(content.size());
-                    }
-                } else if (propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.NotebookManagementEntityGuid
-                        && content.size() == 16) {
-                    ByteBuffer guidBuffer = ByteBuffer.allocate(16);
-                    dif.read(guidBuffer);
-                    String guid = pooledGuid(GUID.fromMicrosoftBytes(guidBuffer.array()).toString());
-                    propMap.put("notebookManagementEntityGuid", guid);
-                    // Version-history copies of a page are object-space roots; only the
-                    // current page's metadata is referenced via MetaDataObjectsAboveGraphSpace.
-                    if (objectType != OneNoteJcid.PAGE_METADATA || (parentPropertyId != null
-                            && parentPropertyId.propertyEnum ==
-                            OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace)) {
-                        addClassicEntityGuid(objectType, guid);
-                    }
+            // the role is the reference the author object was reached through
+            OneNotePropertyEnum role =
+                    parentPropertyId == null ? null : parentPropertyId.propertyEnum;
+            if (!author.isBlank() && author.length() <= OneNoteText.MAX_AUTHOR_CHARS &&
+                    authors.size() + mostRecentAuthors.size() + originalAuthors.size() <
+                            OneNoteText.MAX_AUTHORS) {
+                if (role == OneNotePropertyEnum.AuthorMostRecent) {
+                    mostRecentAuthors.add(author);
+                } else if (role == OneNotePropertyEnum.AuthorOriginal) {
+                    originalAuthors.add(author);
                 } else {
-                    //TODO -- these seem to be somewhat broken font files and other
-                    //odds and ends...what are they and how should we process them?
-                    //handleEmbedded(content.size());
+                    authors.add(author);
+                }
+            }
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorMostRecent ||
+                propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorOriginal) {
+            // reference only; its target records the author under this role
+        } else if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
+            // scalar: nothing to read
+        } else {
+            int size = positionAt(propertyValue);
+            OneNotePropertyEnum property = propertyValue.propertyId.propertyEnum;
+            if (OneNoteText.isExtendedAscii(property)) {
+                if (shouldEmitText(size)) {
+                    emitParagraph(readString(size, OneNoteText.EXTENDED_ASCII));
+                }
+            } else if (!propertyIsBinary(property)) {
+                if (property == OneNotePropertyEnum.FolderChildFilename && shouldEmitText(size)) {
+                    emitUtf16Property(property, readString(size, StandardCharsets.UTF_16LE));
+                }
+            } else if (property == OneNotePropertyEnum.RichEditTextUnicode ||
+                    property == OneNotePropertyEnum.CachedTitleString) {
+                if ((parentPropertyId != null || options.isIncludePageHistory()) &&
+                        shouldEmitText(size)) {
+                    handleRichEditTextUnicode(size);
+                }
+            } else if (property == OneNotePropertyEnum.NotebookManagementEntityGuid &&
+                    size == 16) {
+                ByteBuffer guidBuffer = ByteBuffer.allocate(16);
+                dif.read(guidBuffer);
+                String guid = GUID.fromMicrosoftBytes(guidBuffer.array()).toString();
+                // version-history copies of a page are object-space roots; only the current
+                // page's metadata is referenced via MetaDataObjectsAboveGraphSpace
+                if (objectType != OneNoteJcid.PAGE_METADATA || options.isIncludePageHistory() ||
+                        (parentPropertyId != null && parentPropertyId.propertyEnum ==
+                                OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace)) {
+                    addClassicEntityGuid(objectType, guid);
                 }
             }
         }
-        if (propertyValue.compactIDs != null) {
-            List<Map<String, Object>> children = new ArrayList<>();
-            for (CompactID compactID : propertyValue.compactIDs) {
-                FileNodePtr childFileNodePointer = oneNoteDocument.guidToObject.get(compactID.guid);
-                children.add(walkFileNodePtr(childFileNodePointer, propertyValue.propertyId));
+        // everything below a version-history reference is an older copy
+        boolean history = propertyValue.propertyId.propertyEnum ==
+                OneNotePropertyEnum.VersionHistoryGraphSpaceContextNodes;
+        if (history && !options.isIncludePageHistory()) {
+            contentWithheld = true;
+        }
+        if (propertyValue.compactIDs != null && (!history || options.isIncludePageHistory())) {
+            if (history) {
+                versionHistoryDepth++;
             }
-            if (!children.isEmpty()) {
-                propMap.put("children", children);
+            try {
+                for (CompactID compactID : propertyValue.compactIDs) {
+                    FileNodePtr childFileNodePointer =
+                            object(compactID.guid);
+                    walkFileNodePtr(childFileNodePointer, propertyValue.propertyId);
+                }
+            } finally {
+                if (history) {
+                    versionHistoryDepth--;
+                }
             }
         }
         if (propertyValue.propertySet != null && propertyValue.propertySet.rgPridsData != null) {
-            List<Map<String, Object>> propSet =
-                    processPropertySet(propertyValue.propertySet, parentPropertyId, objectType);
-            if (!propSet.isEmpty()) {
-                propMap.put("propertySet", propSet);
-            }
+            processPropertySet(propertyValue.propertySet, parentPropertyId, objectType);
         }
-        return propMap;
+    }
+
+    /** @return the next {@code length} bytes at {@code dif}'s position, decoded */
+    private String readString(int length, Charset charset) throws IOException {
+        ByteBuffer buf = ByteBuffer.allocate(length);
+        dif.read(buf);
+        return new String(buf.array(), charset);
+    }
+
+    /** Reads a UTF-16LE author string, without its NUL terminator. */
+    private String getAuthor(PropertyValue propertyValue)
+            throws IOException, TikaException {
+        int size = positionAt(propertyValue);
+        if (size > 2 * (OneNoteText.MAX_AUTHOR_CHARS + 1)) {
+            return "";
+        }
+        return readString(size, StandardCharsets.UTF_16LE).replace("\u0000", "");
     }
 
     /**
-     * returns a UTF-16LE author string.
-     *
-     * @param propertyValue The property value of an author.
-     * @return Resulting author string in UTF-16LE format.
+     * Whether text at the current {@code dif} position should be written: not already written,
+     * as the walk can reach shared objects more than once.
      */
-    private String getAuthor(PropertyValue propertyValue)
-            throws IOException, TikaMemoryLimitException {
-        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-        content.reposition(propertyValue.rawData);
-        if (content.size() > dif.size()) {
-            throw new TikaMemoryLimitException(
-                    "File data store cb " + content.size() + " exceeds document size: " +
-                            dif.size());
+    private boolean shouldEmitText(int length)
+            throws IOException {
+        if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
+            return false;
         }
-        ByteBuffer buf = ByteBuffer.allocate(content.size());
-        dif.read(buf);
-        return new String(buf.array(), StandardCharsets.UTF_16LE);
+        return takeTextBytes(length);
+    }
+
+    private boolean takeTextBytes(long length) throws IOException {
+        if (textBytesRemaining == Long.MIN_VALUE) {
+            textBytesRemaining = 2 * dif.size();
+        }
+        textBytesRemaining -= length;
+        if (textBytesRemaining < 0) {
+            // overlapping text regions or repeated ink in a crafted file
+            recordTextBudgetWarning();
+            return false;
+        }
+        return true;
+    }
+
+    private void recordTextBudgetWarning() {
+        if (textBudgetWarningRecorded) {
+            return;
+        }
+        textBudgetWarningRecorded = true;
+        String warning = "OneNote text exceeds twice the file size; the rest is skipped";
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
     }
 
     private void handleRichEditTextUnicode(int length)
             throws SAXException, IOException {
-        if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
-            // do not revisit already visited text, as you may encounter references to the same file nodes
-            // while walking the tree.
-            return;
-        }
-        //this is a null-ended UTF-16LE string
         ByteBuffer buf = ByteBuffer.allocate(length);
         dif.read(buf);
-        byte[] arr = buf.array();
-        //look for the first null
-        int firstNull = 0;
-        for (int i = 0; i < arr.length - 1; i += 2) {
-            if (arr[i] == 0 && arr[i + 1] == 0) {
-                firstNull = (i > 0) ? i : 0;
-                break;
-            }
-        }
-
-        if (firstNull == 0) {
+        String txt = OneNoteText.richEditText(buf.array());
+        if (txt.isEmpty()) {
             return;
         }
-        String txt = new String(arr, 0, firstNull, StandardCharsets.UTF_16LE);
-        Matcher m = HYPERLINK_PATTERN.matcher(txt);
-        if (m.find()) {
-            xhtml.startElement("a", "href", m.group(1));
-            try {
-                xhtml.characters(m.group(2));
-            } finally {
-                xhtml.endElement("a");
+        if (OneNoteText.isRichText(txt, inkWords)) {
+            if (OneNoteText.emitRichText(xhtml, txt, textRuns, inkWords)) {
+                contentEmitted = true;
             }
         } else {
-            xhtml.startElement(P);
-            try {
-                xhtml.characters(txt);
-            } finally {
-                xhtml.endElement(P);
-            }
+            emitParagraph(txt);
         }
     }
 
@@ -748,17 +1154,6 @@ class OneNoteTreeWalker {
         }
     }
 
-    // revisit-heavy graphs decode the same GUID many times; pool the canonical string so the
-    // retained per-node maps share one instance instead of one string per visit
-    final Map<String, String> guidStringPool = new HashMap<>();
-
-    String pooledGuid(String guid) {
-        if (guidStringPool.size() >= OneNoteGuidCollector.MAX_GUID_COUNT) {
-            return guid;
-        }
-        String pooled = guidStringPool.putIfAbsent(guid, guid);
-        return pooled != null ? pooled : guid;
-    }
 
     static int jcidIndex(FileNode fileNode) {
         if (fileNode == null || fileNode.subType == null
@@ -786,10 +1181,6 @@ class OneNoteTreeWalker {
         return lastModifiedTimestamp;
     }
 
-    public void setLastModifiedTimestamp(Instant lastModifiedTimestamp) {
-        this.lastModifiedTimestamp = lastModifiedTimestamp;
-    }
-
     public long getLastModified() {
         return lastModified;
     }
@@ -800,9 +1191,5 @@ class OneNoteTreeWalker {
 
     public long getCreationTimestamp() {
         return creationTimestamp;
-    }
-
-    public void setCreationTimestamp(long creationTimestamp) {
-        this.creationTimestamp = creationTimestamp;
     }
 }

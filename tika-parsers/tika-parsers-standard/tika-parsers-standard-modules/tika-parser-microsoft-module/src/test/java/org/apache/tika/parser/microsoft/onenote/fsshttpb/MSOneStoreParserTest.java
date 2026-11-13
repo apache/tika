@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,13 +35,14 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
+import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestCurrentRevision;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionManifestObjectGroupReferences;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionManifestRootDeclare;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreCell;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexCellMapping;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexDataElementData;
@@ -123,6 +125,21 @@ public class MSOneStoreParserTest {
     }
 
     @Test
+    public void testDeletedVersionContextIsSkippedWithoutWarning() throws Exception {
+        CellID cellID = cell(10);
+        MSOneStorePackage pkg = packageWithCellMapping(cellID, new ExGuid(0, new UUID(0, 0)));
+        assertNull(parseCell(parserWithEmptyIndexes(), cellID, pkg));
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(), metadata,
+                context);
+        xhtml.startDocument();
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
+        xhtml.endDocument();
+        assertEquals(0, metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+    }
+
+    @Test
     public void testRevisionChainStopsCyclesAndDeduplicatesObjectGroups() throws Exception {
         MSOneStoreParser parser = new MSOneStoreParser();
         set(parser, "cellManifestDataElements", new java.util.ArrayList<>());
@@ -145,6 +162,14 @@ public class MSOneStoreParserTest {
         cellMapping.cellID = cellID;
         cellMapping.cellMappingExGuid = cellMappingID;
         pkg.storageIndex.storageIndexCellMappingList.add(cellMapping);
+        StorageIndexCellMapping sameManifest = new StorageIndexCellMapping();
+        sameManifest.cellID = cell(30);
+        sameManifest.cellMappingExGuid = cellMappingID;
+        pkg.storageIndex.storageIndexCellMappingList.add(sameManifest);
+        StorageIndexCellMapping sameRevision = new StorageIndexCellMapping();
+        sameRevision.cellID = cell(40);
+        sameRevision.cellMappingExGuid = id(41);
+        pkg.storageIndex.storageIndexCellMappingList.add(sameRevision);
         StorageIndexRevisionMapping currentMapping = new StorageIndexRevisionMapping();
         currentMapping.revisionMappingExGuid = currentMappingID;
         currentMapping.revisionExGuid = currentRevisionID;
@@ -159,10 +184,13 @@ public class MSOneStoreParserTest {
         CellManifestDataElementData cellManifest = new CellManifestDataElementData();
         cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid = currentRevisionID;
         cellManifestElement.data = cellManifest;
-        set(parser, "cellManifestDataElements", Arrays.asList(cellManifestElement));
-        set(parser, "cellManifestDataElementsById",
-                Collections.singletonMap(cellManifestElement.dataElementExGuid,
-                        cellManifestElement));
+        DataElement otherCellManifest = cellManifest(id(41), currentRevisionID);
+        set(parser, "cellManifestDataElements",
+                Arrays.asList(cellManifestElement, otherCellManifest));
+        Map<ExGuid, DataElement> cellManifests = new HashMap<>();
+        cellManifests.put(cellMappingID, cellManifestElement);
+        cellManifests.put(id(41), otherCellManifest);
+        set(parser, "cellManifestDataElementsById", cellManifests);
 
         RevisionManifestDataElementData current = revision(currentRevisionID, oldRevisionID,
                 currentGroupID, currentGroupID, id(99));
@@ -194,10 +222,25 @@ public class MSOneStoreParserTest {
 
         RevisionStoreCell result = parseCell(parser, cellID, pkg);
         assertEquals(2, result.objectGroups.size());
+        // a second cell mapped to the same manifest would walk the same content again, as
+        // would one whose own cell manifest names the same current revision
+        assertNull(parseCell(parser, sameManifest.cellID, pkg));
+        assertParseWarning(parser, pkg, sameRevision.cellID,
+                "its current revision belongs to another cell",
+                "its cell manifest belongs to another cell");
 
         old.revisionManifest.baseRevisionID = id(1001);
         RevisionStoreCell missingBaseResult = parseCell(parser, cellID, pkg);
         assertEquals(2, missingBaseResult.objectGroups.size());
+        assertFalse(pkg.isEncrypted());
+
+        RevisionManifestRootDeclare keyRoot = new RevisionManifestRootDeclare();
+        keyRoot.rootExGuid =
+                new ExGuid(3, UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"));
+        keyRoot.objectExGuid = id(1002);
+        current.revisionManifestRootDeclareList.add(keyRoot);
+        parseCell(parser, cellID, pkg);
+        assertTrue(pkg.isEncrypted());
     }
 
     private static MSOneStoreParser parserWithEmptyIndexes() throws Exception {
@@ -234,17 +277,20 @@ public class MSOneStoreParserTest {
     }
 
     private static void assertParseWarning(MSOneStoreParser parser, MSOneStorePackage pkg,
-                                           CellID cellID, String expected) throws Exception {
+                                           CellID cellID, String... expected) throws Exception {
         assertNull(parseCell(parser, cellID, pkg));
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(), metadata,
                 context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
-        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                .anyMatch(warning -> warning.contains(expected)), expected);
+        for (String e : expected) {
+            assertTrue(Arrays.stream(
+                            metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                    .anyMatch(warning -> warning.contains(e)), e);
+        }
     }
 
     private static RevisionManifestDataElementData revision(ExGuid revisionID,

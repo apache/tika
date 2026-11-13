@@ -33,7 +33,7 @@ class OneNotePropertyId {
         type = pid >> 26 & 0x1f;
         inlineBool = false;
         if (type == 0x2) {
-            inlineBool = ((pid >> 31) & 0x1) > 0; // set the bool value from header
+            inlineBool = ((pid >> 31) & 0x1) > 0;
         } else {
             if (((pid >> 31) & 0x1) > 0) {
                 throw new TikaException("Reserved non-zero");
@@ -41,21 +41,8 @@ class OneNotePropertyId {
         }
     }
 
-    public OneNotePropertyEnum getPropertyEnum() {
-        return propertyEnum;
-    }
-
     public OneNotePropertyId setPropertyEnum(OneNotePropertyEnum propertyEnum) {
         this.propertyEnum = propertyEnum;
-        return this;
-    }
-
-    public long getPid() {
-        return pid;
-    }
-
-    public OneNotePropertyId setPid(long pid) {
-        this.pid = pid;
         return this;
     }
 
@@ -65,15 +52,6 @@ class OneNotePropertyId {
 
     public OneNotePropertyId setType(long type) {
         this.type = type;
-        return this;
-    }
-
-    public boolean isInlineBool() {
-        return inlineBool;
-    }
-
-    public OneNotePropertyId setInlineBool(boolean inlineBool) {
-        this.inlineBool = inlineBool;
         return this;
     }
 

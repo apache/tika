@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -28,20 +27,10 @@ public class RevisionManifest extends StreamObject {
     public ExGuid revisionID;
     public ExGuid baseRevisionID;
 
-    /**
-     * Initializes a new instance of the RevisionManifest class.
-     */
     public RevisionManifest() {
         super(StreamObjectTypeHeaderStart.RevisionManifest);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -50,25 +39,6 @@ public class RevisionManifest extends StreamObject {
         this.revisionID = BasicObject.parse(byteArray, index, ExGuid.class);
         this.baseRevisionID = BasicObject.parse(byteArray, index, ExGuid.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "RevisionManifest",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The length of list
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.revisionID.serializeToByteList());
-        byteList.addAll(this.baseRevisionID.serializeToByteList());
-        return byteList.size() - itemsIndex;
+        endItems(currentIndex, index, lengthOfItems, "RevisionManifest");
     }
 }

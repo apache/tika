@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class BinaryItemTest {
 
@@ -41,7 +40,7 @@ public class BinaryItemTest {
     @Test
     public void testDeserializedContentIsExactAndDetached() throws Exception {
         byte[] payload = {10, 20, 30, 40, 50};
-        byte[] item = serialize(new BinaryItem(payload.clone()));
+        byte[] item = encode(payload);
         byte[] buffer = new byte[item.length + 6];
         Arrays.fill(buffer, (byte) 99);
         System.arraycopy(item, 0, buffer, 3, item.length);
@@ -65,33 +64,27 @@ public class BinaryItemTest {
     }
 
     /**
-     * Replacing the content of a deserialized item must drop the view of the parsed buffer,
-     * keep {@code length} in step, and serialize the new bytes; a deserialized item must also
-     * reserialize to exactly the bytes it was parsed from.
+     * Replacing the content of a deserialized item must drop the view of the parsed buffer
+     * and keep {@code length} in step.
      */
     @Test
-    public void testSetContentAfterDeserializeAndRoundTrip() throws Exception {
-        byte[] item = serialize(new BinaryItem(new byte[]{1, 2, 3, 4}));
+    public void testSetContentAfterDeserialize() throws Exception {
+        byte[] item = encode(new byte[]{1, 2, 3, 4});
         byte[] buffer = new byte[item.length + 2];
         System.arraycopy(item, 0, buffer, 1, item.length);
         BinaryItem parsed = BasicObject.parse(buffer, new AtomicInteger(1), BinaryItem.class);
-        assertArrayEquals(item, serialize(parsed));
+        assertArrayEquals(new byte[]{1, 2, 3, 4}, parsed.copyContent());
 
         byte[] replacement = {7, 8};
         parsed.setContent(replacement);
         assertSame(replacement, parsed.getContent());
         assertEquals(2, parsed.getContentLength());
         assertEquals(2, parsed.length.getDecodedValue());
-
-        byte[] reserialized = serialize(parsed);
-        BinaryItem reparsed =
-                BasicObject.parse(reserialized, new AtomicInteger(0), BinaryItem.class);
-        assertArrayEquals(replacement, reparsed.getContent());
     }
 
     @Test
     public void testLengthPastBufferEndFails() throws Exception {
-        byte[] item = serialize(new BinaryItem(new byte[]{1, 2, 3, 4}));
+        byte[] item = encode(new byte[]{1, 2, 3, 4});
         byte[] truncated = Arrays.copyOf(item, item.length - 1);
         assertThrows(TikaException.class,
                 () -> BasicObject.parse(truncated, new AtomicInteger(0), BinaryItem.class));
@@ -120,10 +113,14 @@ public class BinaryItemTest {
         BinaryItem constructed = new BinaryItem((byte[]) null);
         assertNull(constructed.getContent());
         assertEquals(0, constructed.length.getDecodedValue());
-        assertArrayEquals(serialize(new BinaryItem()), serialize(constructed));
+        assertEquals(new BinaryItem().getContentLength(), constructed.getContentLength());
     }
 
-    private static byte[] serialize(BinaryItem item) throws Exception {
-        return ByteUtil.toByteArray(item.serializeToByteList());
+    // compact length (one byte below 128: n << 1 | 1, or 0 for empty), then the content
+    private static byte[] encode(byte[] content) {
+        byte[] item = new byte[content.length + 1];
+        item[0] = (byte) (content.length == 0 ? 0 : content.length << 1 | 1);
+        System.arraycopy(content, 0, item, 1, content.length);
+        return item;
     }
 }

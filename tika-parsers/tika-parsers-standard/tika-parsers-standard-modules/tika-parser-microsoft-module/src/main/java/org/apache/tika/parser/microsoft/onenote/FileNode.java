@@ -16,83 +16,43 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-import java.io.IOException;
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.tika.exception.TikaException;
-
 /**
- * A FileNode structure is the basic unit for holding and referencing data in the file.
- * FileNode structures are organized into file node lists
- * <p>
- * A FileNode structure is divided into header fields and a data field, fnd. The header fields
- * specify what type of FileNode structure it
- * is,
- * and what format the fnd field is in.
- * <p>
- * The fnd field can be empty, or it can contain data directly, or it can contain a reference to
- * another block of the file by
- * byte position and byte count, or it can contain both data and a reference.
+ * Basic unit of data in a file node list: header fields plus a data field (fnd) that may be
+ * empty, hold data, reference another block of the file, or both.
  */
 class FileNode {
-    private static final Logger LOG = LoggerFactory.getLogger(FileNode.class);
-
-    /**
-     * An unsigned integer that specifies the type of this FileNode structure. The meaning of
-     * this value is specified by the fnd field.
-     */
     long id;
     long size;
 
     /**
-     * An unsigned integer that specifies whether the structure specified by fnd contains a
-     * FileNodeChunkReference structure.
-     * 0 - This FileNode structure does not reference other data. The data structure specified
-     * by fnd MUST NOT contain a
-     * FileNodeChunkReference structure. The StpFormat and CbFormat fields MUST be ignored.
-     * 1 - This FileNode structure contains a reference to data. The first field in the data
-     * structure specified by an fnd field MUST be a
-     * FileNodeChunkReference structure that specifies the location and size of the referenced
-     * data.
-     * The type of the FileNodeChunkReference structure is specified by the StpFormat and
-     * CbFormat fields.
-     * 2 - This FileNode structure contains a reference to a file node list.
-     * The first field in the data structure specified by the fnd field MUST be a
-     * FileNodeChunkReference structure that specifies the
-     * location and size of a file node list. The type of the FileNodeChunkReference is
-     * specified by the StpFormat and CbFormat fields.
+     * 0: no reference; 1: fnd starts with a FileNodeChunkReference to data; 2: fnd starts with
+     * a FileNodeChunkReference to a file node list.
      */
     long baseType;
 
     /**
-     * The ExtendedGUID for this FileNode.
-     * Specified for ObjectSpaceManifestRoot
-     * ObjectSpaceManifestStart
-     * ObjectSpaceManifestList
-     * RevisionManifestListStart
-     * ObjectGroupStartFND
-     * ObjectGroupID
-     * ObjectGroupListReferenceFND
-     * <p>
-     * RID for RevisionManifestStart4FND
-     * DataSignatureGroup for RevisionManifestEndFND
+     * The gosid for ObjectSpaceManifestRoot/Start/List, RevisionManifestListStart and the
+     * ObjectGroup nodes; the rid for RevisionManifestStart4FND; DataSignatureGroup for
+     * RevisionManifestEndFND.
      */
     ExtendedGUID gosid;
 
-    // only present for RevisionManfiest7FND and RevisionRoleAndContextDeclaration
+    // only present for RevisionManifestStart7FND and RevisionRoleAndContextDeclarationFND
     ExtendedGUID gctxid;
-    GUID fileDataStoreReference;
     FileChunkReference ref;
+    // read on first use through OneNoteDocument.propertySet
     PropertySet propertySet;
-    boolean isFileData;
+    // an unread property set: its object ID streams, resolved while parsing, and where its
+    // values start; null once read
+    ObjectSpaceObjectPropSet propertySetStreams;
+    long propertySetValues;
+    // end of the declaration's chunk, which bounds the deferred values
+    long propertySetEnd;
 
-    /**
-     * For ObjectGroupListReference, the children.
-     */
-    FileNodeList childFileNodeList = new FileNodeList();
+    /** For ObjectGroupListReference, the children; null for nodes that reference no list. */
+    FileNodeList childFileNodeList;
 
     FileNodeUnion subType = new FileNodeUnion();
 
@@ -108,9 +68,8 @@ class FileNode {
         }
         FileNode fileNode = (FileNode) o;
         return id == fileNode.id && size == fileNode.size && baseType == fileNode.baseType &&
-                isFileData == fileNode.isFileData && Objects.equals(gosid, fileNode.gosid) &&
+                Objects.equals(gosid, fileNode.gosid) &&
                 Objects.equals(gctxid, fileNode.gctxid) &&
-                Objects.equals(fileDataStoreReference, fileNode.fileDataStoreReference) &&
                 Objects.equals(ref, fileNode.ref) &&
                 Objects.equals(propertySet, fileNode.propertySet) &&
                 Objects.equals(childFileNodeList, fileNode.childFileNodeList) &&
@@ -119,8 +78,8 @@ class FileNode {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref,
-                propertySet, isFileData, childFileNodeList, subType);
+        return Objects.hash(id, size, baseType, gosid, gctxid, ref, propertySet,
+                childFileNodeList, subType);
     }
 
     public boolean hasGctxid() {
@@ -132,11 +91,6 @@ class FileNode {
         return id;
     }
 
-    public FileNode setId(long id) {
-        this.id = id;
-        return this;
-    }
-
     public long getSize() {
         return size;
     }
@@ -146,134 +100,9 @@ class FileNode {
         return this;
     }
 
-    public long getBaseType() {
-        return baseType;
-    }
-
-    public FileNode setBaseType(long baseType) {
-        this.baseType = baseType;
-        return this;
-    }
-
-    public ExtendedGUID getGosid() {
-        return gosid;
-    }
-
     public FileNode setGosid(ExtendedGUID gosid) {
         this.gosid = gosid;
         return this;
-    }
-
-    public ExtendedGUID getGctxid() {
-        return gctxid;
-    }
-
-    public FileNode setGctxid(ExtendedGUID gctxid) {
-        this.gctxid = gctxid;
-        return this;
-    }
-
-    public GUID getFileDataStoreReference() {
-        return fileDataStoreReference;
-    }
-
-    public FileNode setFileDataStoreReference(GUID fileDataStoreReference) {
-        this.fileDataStoreReference = fileDataStoreReference;
-        return this;
-    }
-
-    public FileChunkReference getRef() {
-        return ref;
-    }
-
-    public FileNode setRef(FileChunkReference ref) {
-        this.ref = ref;
-        return this;
-    }
-
-    public PropertySet getPropertySet() {
-        return propertySet;
-    }
-
-    public FileNode setPropertySet(PropertySet propertySet) {
-        this.propertySet = propertySet;
-        return this;
-    }
-
-    public boolean isFileData() {
-        return isFileData;
-    }
-
-    public FileNode setFileData(boolean fileData) {
-        isFileData = fileData;
-        return this;
-    }
-
-    public FileNodeList getChildFileNodeList() {
-        return childFileNodeList;
-    }
-
-    public FileNode setChildFileNodeList(FileNodeList childFileNodeList) {
-        this.childFileNodeList = childFileNodeList;
-        return this;
-    }
-
-    public FileNodeUnion getSubType() {
-        return subType;
-    }
-
-    public FileNode setSubType(FileNodeUnion subType) {
-        this.subType = subType;
-        return this;
-    }
-
-    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaException {
-        boolean shouldPrintHeader = FndStructureConstants.nameOf(id).contains("ObjectDec");
-        if (gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
-            LOG.debug("{}[beg {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
-        }
-        propertySet.print(document, pointer, indentLevel + 1);
-        if (!childFileNodeList.children.isEmpty()) {
-            if (shouldPrintHeader) {
-                LOG.debug("{}children", IndentUtil.getIndent(indentLevel + 1));
-            }
-            for (FileNode child : childFileNodeList.children) {
-                child.print(document, pointer, indentLevel + 1);
-            }
-        }
-        if (id == FndStructureConstants.RevisionRoleDeclarationFND ||
-                id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
-            LOG.debug("{}[Revision Role {}]", IndentUtil.getIndent(indentLevel + 1),
-                    subType.revisionRoleDeclaration.revisionRole);
-
-        }
-        if (id == FndStructureConstants.RevisionManifestStart4FND ||
-                id == FndStructureConstants.RevisionManifestStart6FND ||
-                id == FndStructureConstants.RevisionManifestStart7FND) {
-            LOG.debug("{}[revisionRole {}]", IndentUtil.getIndent(indentLevel + 1),
-                    subType.revisionManifest.revisionRole);
-
-        }
-        if ((!gctxid.equals(ExtendedGUID.nil()) ||
-                id == FndStructureConstants.RevisionManifestStart7FND) && shouldPrintHeader) {
-            LOG.debug("{}[gctxid {}]", IndentUtil.getIndent(indentLevel + 1), gctxid);
-        }
-        if (!gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
-            LOG.debug("{}[end {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
-
-        }
-    }
-
-    /**
-     * A description of what this GUID id means in this context.
-     *
-     * @return A description of what this GUID id means in this context.
-     */
-    public String getIdDesc() {
-        return idDesc;
     }
 
     @Override

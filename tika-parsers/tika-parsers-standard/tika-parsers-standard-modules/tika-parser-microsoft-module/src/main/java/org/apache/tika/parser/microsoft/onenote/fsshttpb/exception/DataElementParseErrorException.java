@@ -16,12 +16,14 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.exception;
 
-public class DataElementParseErrorException extends RuntimeException {
+import org.apache.tika.exception.TikaException;
+
+public class DataElementParseErrorException extends TikaException {
 
     private final int index;
 
     public DataElementParseErrorException(int index, Exception innerException) {
-        super(innerException);
+        super("Failed to parse a data element at " + index, innerException);
         this.index = index;
     }
 

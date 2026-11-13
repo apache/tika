@@ -21,6 +21,15 @@ Release 4.3.0 - ???
      untrained scripts. JunkFilterEncodingDetector takes a HashedJunkModel instead of a
      TextQualityDetector (TIKA-5027).
 
+   * OneNote sections, .one and FSSHTTPB, give each page's current text and metadata
+     only, not every stored revision. Set includePageHistory on one-note-parser, in the
+     config or per request, for earlier revisions and saved page versions, and
+     includeDeletedContent for FSSHTTPB recycle-bin pages. All .one attachments are still
+     extracted. A file over a parse limit throws TikaMemoryLimitException instead of
+     falling back to the legacy text dump. OneNoteTreeWalkerOptions, the public
+     OneNoteLegacyDumpStrings settings and most public classes of the OneNote structure
+     model are removed (TIKA-5057).
+
    * FetcherManager.getFetcher and EmitterManager.getEmitter return a Lease
      (AbstractComponentManager.getComponent is now acquire); close it when done with
      the component and anything it returned. Pipes now closes a
@@ -185,6 +194,57 @@ Release 4.3.0 - ???
 
    * MP4 and QuickTime files with a box over 2 GB, typically an mdat in front of
      moov, keep their metadata: the walk skips such a box instead of stopping (TIKA-5051).
+
+   * OneNote FSSHTTPB sections extract each stored file once, not once per reference
+     to it (TIKA-5057).
+
+   * OneNote attachments and pictures carry their stored file name (resourceName) and,
+     for inserted files, the path they were inserted from (tk:orig-resource-name). .one
+     sections named none before, and an FSSHTTPB file's icon no longer takes the file's
+     name and ATTACHMENT type (TIKA-5057).
+
+   * OneNote note tag labels ("To Do", "Important", custom tags) are written before the
+     paragraphs they tag, as <p class="note-tag"> (TIKA-5057).
+
+   * OneNote pictures that are hyperlinks are written inside <a href>, so their URLs reach
+     link handlers (TIKA-5057).
+
+   * OneNoteParser parses .onetoc2 notebook tables of contents, listing their section
+     names (TIKA-5057).
+
+   * OneNote sections that fell back to the legacy text dump now parse structurally,
+     including OneNote 2007 sections, Aspose.Note files and sections with leftover bytes
+     from earlier saves. OneNote 2003 sections fall back to the dump instead of failing
+     (TIKA-5057).
+
+   * OneNote text that was dropped or garbled is extracted: objects edited in later
+     revisions, text behind element child references, and paragraphs with hyperlinks
+     (now <a href>). Extended ASCII is read as windows-1252, and NULs and U+FFFC
+     placeholders are removed (TIKA-5057).
+
+   * OneNote output adds pictures as <img> with alt text, OneNote's OCR text as
+     <div class="ocr">, and .one handwriting recognition as <span class="handwriting">
+     (TIKA-5057).
+
+   * Password-protected OneNote sections throw EncryptedDocumentException; FSSHTTPB
+     ones were never detected because their GUIDs were MD5-hashed. dc:creator includes
+     original authors. A file shorter than its header throws a TikaException
+     (TIKA-5057).
+
+   * OneNote parsing bounds CPU and memory on crafted files with limits scaled to file
+     size, and rejects more malformed structures up front (TIKA-5057).
+
+   * OneNote .one sections allocate far less and small ones parse much faster, reading
+     through a small page cache instead of one system call per field. Large
+     multi-revision sections can be slower, as every committed revision is now read
+     (TIKA-5057).
+
+   * OneNote legacy text dump: strings crossing a 1 MB read boundary are written once,
+     and strings are judged by the text-quality detector (tika-ml-junkdetect) when it is
+     on the class path (TIKA-5057).
+
+   * tika-ml-junkdetect: JunkDetector has a public no-arg constructor, so ServiceLoader
+     finds it on the class path (TIKA-5057).
      
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary

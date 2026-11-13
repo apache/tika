@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -26,17 +25,11 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellIDA
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGUIDArray;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * object data BLOB reference
- */
 public class ObjectGroupObjectDataBLOBReference extends StreamObject {
     public ExGUIDArray objectExtendedGUIDArray;
     public CellIDArray cellIDArray;
     public ExGuid blobExtendedGUID;
 
-    /**
-     * Initializes a new instance of the ObjectGroupObjectDataBLOBReference class.
-     */
     public ObjectGroupObjectDataBLOBReference() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference);
         this.objectExtendedGUIDArray = new ExGUIDArray();
@@ -44,13 +37,6 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         this.blobExtendedGUID = new ExGuid();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -60,26 +46,6 @@ public class ObjectGroupObjectDataBLOBReference extends StreamObject {
         this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);
         this.blobExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "ObjectGroupObjectDataBLOBReference", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The number of the elements
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.objectExtendedGUIDArray.serializeToByteList());
-        byteList.addAll(cellIDArray.serializeToByteList());
-        byteList.addAll(this.blobExtendedGUID.serializeToByteList());
-        return byteList.size() - itemsIndex;
+        endItems(currentIndex, index, lengthOfItems, "ObjectGroupObjectDataBLOBReference");
     }
 }

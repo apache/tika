@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "one-note-parser": {
+        "includePageHistory": true
+      }
+    }
+  ]
+}

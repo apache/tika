@@ -18,12 +18,15 @@
 = Text Quality Scoring (Junk Detection)
 
 The `tika-ml-junkdetect` module scores how much a string reads like real text, in any
-language it was trained on, without being told the language.  Tika uses it in two places:
+language it was trained on, without being told the language.  Tika uses it in three places:
 
 * **charset detection**: of several decodes of the same bytes, which one is the real text
   (see xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline]);
 * **tika-eval**: the `tika-eval:languageness` score of extracted text, plus the worst window
-  and coverage.
+  and coverage;
+* **OneNote legacy text dump**: which scraped strings to keep when a OneNote file cannot be
+  parsed structurally. Without `tika-ml-junkdetect` on the class path the dump falls back
+  to a letter-ratio check.
 
 == What it detects
 

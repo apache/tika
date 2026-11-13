@@ -1710,7 +1710,6 @@
               <exclude>**/CharsetDetector.java</exclude>
               <exclude>**/CharsetMatch.java</exclude>
               <exclude>**/CharsetRecog*.java</exclude>
-              <exclude>**/onenote/fsshttpb/unsigned/U*.java</exclude>
               <exclude>**/IPTC.java</exclude>
               <exclude>**/Photoshop.java</exclude>
               <exclude>**/QuattroPro.java</exclude>

@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,7 +42,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
+import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.NoData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
@@ -67,7 +67,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -80,11 +79,14 @@ public class MSOneStoreBlobTest {
     private static final byte[] BLOB_BYTES =
             "these are the bytes of an embedded image".getBytes(StandardCharsets.UTF_8);
 
-    /**
-     * An object data BLOB data element must survive a serialization round trip. Before
-     * ObjectDataBLOBDataElementData existed, deserializing a data element of this type threw,
-     * so any OneNote file with an embedded image or file lost its structure entirely.
-     */
+    // an ObjectDataBLOB DataElement (exGuid {1, ...0001}, serial {...0002, 1}) wrapping BLOB_BYTES
+    private static final byte[] BLOB_ELEMENT = HexFormat.of().parseHex(
+            "0c560c00000000000000000000000000000001800000000000000000000000000000000201" +
+                    "000000000000001510525174686573652061726520746865206279746573206f6620616e" +
+                    "20656d62656464656420696d61676505");
+
+    // deserializing this element type once threw, losing all structure of any file with an
+    // embedded image or file
     @Test
     public void testObjectDataBLOBDataElementRoundTrip() throws Exception {
         DataElement reparsed = roundTripBlobElement();
@@ -93,11 +95,6 @@ public class MSOneStoreBlobTest {
                 ((ObjectDataBLOBDataElementData) reparsed.data).objectDataBLOB.getData());
     }
 
-    /**
-     * A revision store object whose BLOB reference resolves to an object data BLOB element
-     * must expose the BLOB bytes and hand them to the embedded document extractor during the
-     * tree walk.
-     */
     @Test
     public void testBlobIsEmittedAsEmbeddedDocument() throws Exception {
         DataElement blobElement = roundTripBlobElement();
@@ -151,13 +148,98 @@ public class MSOneStoreBlobTest {
                 new XHTMLContentHandler(new ToTextContentHandler(new StringWriter()), metadata,
                         context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
 
         assertEquals(1, embedded.size());
         assertArrayEquals(BLOB_BYTES, embedded.get(0));
         assertEquals("picture.png", embeddedNames.get(0));
         assertEquals("INLINE", embeddedTypes.get(0));
+    }
+
+    /**
+     * One stored file referenced by two objects, under a byte limit.
+     *
+     * @param firstName null for no name: the first holder is then an unnamed attachment
+     */
+    private List<byte[]> walkSharedBlob(long byteLimit, Metadata metadata, String firstName,
+                                        List<String> names) throws Exception {
+        DataElement blobElement = roundTripBlobElement();
+        ObjectGroupDataElementData groupData = new ObjectGroupDataElementData();
+        for (int i = 0; i < 2; i++) {
+            ObjectGroupObjectBLOBDataDeclaration declaration =
+                    new ObjectGroupObjectBLOBDataDeclaration();
+            declaration.objectExGUID = new ExGuid(1 + i, UUID.randomUUID());
+            declaration.objectPartitionID.setDecodedValue(2);
+            groupData.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList
+                    .add(declaration);
+            ObjectGroupObjectDataBLOBReference blobReference =
+                    new ObjectGroupObjectDataBLOBReference();
+            blobReference.blobExtendedGUID = blobElement.dataElementExGuid;
+            groupData.objectGroupData.objectGroupObjectDataBLOBReferenceList.add(blobReference);
+        }
+        RevisionStoreObjectGroup objectGroup =
+                RevisionStoreObjectGroup.createInstance(new ExGuid(5, UUID.randomUUID()),
+                        groupData, false,
+                        Collections.singletonMap(blobElement.dataElementExGuid, blobElement));
+        assertEquals(2, objectGroup.objects.size());
+        RevisionStoreObject first = objectGroup.objects.get(0);
+        RevisionStoreObject second = objectGroup.objects.get(1);
+        addImageContainer(objectGroup, second, "second.png");
+        if (firstName != null) {
+            addImageContainer(objectGroup, first, firstName);
+        }
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.OtherFileNodeList.add(objectGroup);
+        pkg.setEmbeddedByteLimit(byteLimit);
+
+        List<byte[]> embedded = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata m, ParseContext parseContext) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata m, ParseContext c, boolean outputHtml)
+                    throws IOException {
+                embedded.add(stream.readAllBytes());
+                names.add(m.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+            }
+        });
+        XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(new ToTextContentHandler(new StringWriter()), metadata,
+                        context);
+        xhtml.startDocument();
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
+        xhtml.endDocument();
+        return embedded;
+    }
+
+    @Test
+    public void testSharedBlobIsEmbeddedOnce() throws Exception {
+        List<String> names = new ArrayList<>();
+        List<byte[]> embedded = walkSharedBlob(Long.MAX_VALUE, new Metadata(), "first.png", names);
+        assertEquals(1, embedded.size());
+        assertArrayEquals(BLOB_BYTES, embedded.get(0));
+    }
+
+    @Test
+    public void testSharedBlobTakesItsNameFromAnyHolder() throws Exception {
+        List<String> names = new ArrayList<>();
+        assertEquals(1, walkSharedBlob(Long.MAX_VALUE, new Metadata(), null, names).size());
+        assertEquals(Collections.singletonList("second.png"), names);
+    }
+
+    @Test
+    public void testEmbeddedBytesAreBoundedByTheLimit() throws Exception {
+        Metadata metadata = new Metadata();
+        assertEquals(0, walkSharedBlob(BLOB_BYTES.length - 1, metadata, "first.png",
+                new ArrayList<>()).size());
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(w -> w.contains("embedded data exceeds the file size")));
     }
 
     private static void addImageContainer(RevisionStoreObjectGroup objectGroup,
@@ -211,12 +293,8 @@ public class MSOneStoreBlobTest {
         blob.data = new BinaryItem();
         blob.data.setContent(null);
         assertNull(blob.getData());
-        blob.data = new BinaryItem(new byte[]{1});
-        assertFalse(blob.serializeToByteList().isEmpty());
-
-        ObjectDataBLOB validBlob = new ObjectDataBLOB();
-        validBlob.data.setContent(new byte[]{1});
-        byte[] itemBytes = ByteUtil.toByteArray(validBlob.data.serializeToByteList());
+        // BinaryItem holding one byte: compact length 1 (0x03), then the byte
+        byte[] itemBytes = new byte[]{0x03, 0x01};
         AtomicInteger index = new AtomicInteger(0);
         java.lang.reflect.Method deserialize = ObjectDataBLOB.class.getDeclaredMethod(
                 "deserializeItemsFromByteArray", byte[].class, AtomicInteger.class, int.class);
@@ -329,16 +407,11 @@ public class MSOneStoreBlobTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 new ToTextContentHandler(new StringWriter()), metadata, context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
     }
 
     private DataElement roundTripBlobElement() throws Exception {
-        ObjectDataBLOBDataElementData blobData = new ObjectDataBLOBDataElementData();
-        blobData.objectDataBLOB.data.setContent(BLOB_BYTES.clone());
-        DataElement blobElement =
-                new DataElement(DataElementType.ObjectDataBLOBDataElementData, blobData);
-        byte[] serialized = ByteUtil.toByteArray(blobElement.serializeToByteList());
-        return StreamObject.getCurrent(serialized, new AtomicInteger(0), DataElement.class);
+        return StreamObject.getCurrent(BLOB_ELEMENT, new AtomicInteger(0), DataElement.class);
     }
 }

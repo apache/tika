@@ -17,41 +17,14 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CompactID;
 
 
-/**
- * This class is used to represent a ObjectSpaceObjectStreamOfOIDs.
- */
 public class ObjectSpaceObjectStreamOfOIDs {
     public ObjectSpaceObjectStreamHeader header;
     public CompactID[] body;
 
-    /**
-     * This method is used to convert the element of ObjectSpaceObjectStreamOfOIDs object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of ObjectSpaceObjectStreamOfOIDs
-     */
-    public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> byteList = new ArrayList<>(this.header.serializeToByteList());
-        for (CompactID compactID : this.body) {
-            byteList.addAll(compactID.serializeToByteList());
-        }
-
-        return byteList;
-    }
-
-    /**
-     * This method is used to deserialize the ObjectSpaceObjectStreamOfOIDs object from the
-     * specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the ObjectSpaceObjectStreamOfOIDs object.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
         int index = startIndex;
         this.header = new ObjectSpaceObjectStreamHeader();

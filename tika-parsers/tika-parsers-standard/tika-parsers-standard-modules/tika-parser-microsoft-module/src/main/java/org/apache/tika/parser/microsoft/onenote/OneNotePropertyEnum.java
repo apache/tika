@@ -68,14 +68,18 @@ public enum OneNotePropertyEnum {
     HasVersionPages(0x08003462), ActionItemType(0x10003463), NoteTagShape(0x10003464),
     NoteTagHighlightColor(0x14003465), NoteTagTextColor(0x14003466),
     NoteTagPropertyStatus(0x14003467), NoteTagLabel(0x1C003468), NoteTagCreated(0x1400346E),
-    NoteTagCompleted(0x1400346F), NoteTagDefinitionOid(0x20003488), NoteTagStates(0x04003489),
+    NoteTagCompleted(0x1400346F), NoteTagDefinitionOid(0x20003488), NoteTagStates(0x40003489),
     ActionItemStatus(0x10003470), ActionItemSchemaVersion(0x0C003473), ReadingOrderRTL(0x08003476),
     ParagraphAlignment(0x0C003477), VersionHistoryGraphSpaceContextNodes(0x3400347B),
     DisplayedPageNumber(0x14003480), SectionDisplayName(0x1C00349B), NextStyle(0x1C00348A),
     WebPictureContainer14(0x200034C8), ImageUploadState(0x140034CB), TextExtendedAscii(0x1C003498),
     PictureWidth(0x140034CD), PictureHeight(0x140034CE), PageMarginOriginX(0x14001D0F),
     PageMarginOriginY(0x14001D10), WzHyperlinkUrl(0x1C001E20), TaskTagDueDate(0x1400346B),
-    NotebookElementOrderingID(0x14001CB9),
+    NotebookElementOrderingID(0x14001CB9), FolderChildFilename(0x1C001D6B),
+    // undocumented: an ink word's handwriting-recognition alternates, NUL-separated, best first
+    InkRecognitionAlternates(0x1C00341E),
+    // undocumented: OneNote 2007 paragraph text, single-byte like TextExtendedAscii
+    TextExtendedAscii2007(0x1C001C40),
     Unknown(0x00000000);
 
     private static final Map<Long, OneNotePropertyEnum> BY_ID = new HashMap<>();
@@ -93,7 +97,8 @@ public enum OneNotePropertyEnum {
     }
 
     public static OneNotePropertyEnum of(Long id) {
-        OneNotePropertyEnum result = BY_ID.get(id);
+        // a Bool property's value is bit 31 of its id
+        OneNotePropertyEnum result = BY_ID.get((id >> 26 & 0x1f) == 0x2 ? id & 0x7FFFFFFFL : id);
         if (result == null) {
             return Unknown;
         }
@@ -112,7 +117,7 @@ public enum OneNotePropertyEnum {
         long type = pid >> 26 & 0x1f;
         boolean inlineBool = false;
         if (type == 0x2) {
-            inlineBool = ((pid >> 31) & 0x1) > 0; // set the bool value from header
+            inlineBool = ((pid >> 31) & 0x1) > 0;
         } else {
             if (((pid >> 31) & 0x1) > 0) {
                 throw new IllegalArgumentException("Reserved non-zero");

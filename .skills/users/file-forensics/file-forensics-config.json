@@ -29,6 +29,12 @@
       }
     },
     {
+      "one-note-parser": {
+        "includePageHistory": true,
+        "includeDeletedContent": true
+      }
+    },
+    {
       "jsoup-parser": {
         "extractScripts": true
       }

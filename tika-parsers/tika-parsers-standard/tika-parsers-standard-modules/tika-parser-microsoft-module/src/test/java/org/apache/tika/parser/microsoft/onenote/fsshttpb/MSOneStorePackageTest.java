@@ -50,9 +50,10 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
 import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
-import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
+import org.apache.tika.parser.microsoft.onenote.OneNoteParserConfig;
+import org.apache.tika.parser.microsoft.onenote.OneNoteText;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FourBytesOfData;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.FixedBytesOfData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.NoData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfPropertyValues;
@@ -70,6 +71,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStore
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreObjectGroup;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CompactID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataElementType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderCell;
@@ -81,6 +83,27 @@ import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MSOneStorePackageTest {
+
+    @Test
+    public void testNilOidsKeepReferenceSlots() {
+        ExGuid a = id(1);
+        ExGuid b = id(2);
+        // ParagraphStyle -> nil, then two TextRunFormatting entries
+        assertEquals(Arrays.asList(null, a, b), MSOneStorePackage.alignToOids(List.of(a, b),
+                new CompactID[]{compactId(0, 0), compactId(16, 1), compactId(31, 1)}));
+        assertEquals(List.of(a, b), MSOneStorePackage.alignToOids(List.of(a, b),
+                new CompactID[]{compactId(16, 1), compactId(31, 1)}));
+        // counts that disagree are left alone
+        assertEquals(List.of(a), MSOneStorePackage.alignToOids(List.of(a),
+                new CompactID[]{compactId(16, 1), compactId(31, 1)}));
+    }
+
+    private static CompactID compactId(long n, long guidIndex) {
+        CompactID id = new CompactID();
+        id.n = n;
+        id.guidIndex = guidIndex;
+        return id;
+    }
 
     @Test
     public void testTableAndListObjectsRetainXhtmlStructure() throws Exception {
@@ -306,10 +329,10 @@ public class MSOneStorePackageTest {
         xhtml.startDocument();
         if (failWalk) {
             SAXException exception = assertThrows(SAXException.class,
-                    () -> pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context));
+                    () -> pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context));
             assertEquals("stop walk", exception.getMessage());
         } else {
-            pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+            pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
             xhtml.endDocument();
         }
         assertEquals(Arrays.asList("cached item", "next cell"), observedText);
@@ -1137,10 +1160,8 @@ public class MSOneStorePackageTest {
                 (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
                 (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
         };
-        // the winning identity is NOT the cap-filling value, so every stop below is
-        // attributable to the sectionCollected short-circuit alone: removing the property
-        // loop or nested-array operand sends the scan into the deep chain, removing the
-        // group-loop operand enters the second group - either way the entry count grows
+        // the winner is not the cap-filling value, so only sectionCollected can stop the scan;
+        // dropping any of its operands lets the scan go further and grows the entry count
         PrtArrayOfPropertyValues array = new PrtArrayOfPropertyValues();
         array.data = new PropertySet[] {
                 fileIdentitySet(sectionGuidBytes()), propertySet()
@@ -1214,11 +1235,9 @@ public class MSOneStorePackageTest {
                 (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
                 (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
         };
-        // a nested property-set chain deeper than MAX_PROPERTY_NESTING: isFull and
-        // sectionCollected both fire at the winning identity here, so the chain is reached
-        // only when BOTH stop conditions are removed (removing one leaves the other
-        // stopping the scan); single-operand attribution is covered by
-        // testSectionShortCircuitStopsWithBudgetToSpare
+        // a property-set chain deeper than MAX_PROPERTY_NESTING, reached only if both isFull
+        // and sectionCollected are removed; testSectionShortCircuitStopsWithBudgetToSpare
+        // covers each alone
         PropertySet deep = propertySet();
         for (int i = 0; i <= PropertySet.MAX_PROPERTY_NESTING; i++) {
             deep = propertySet(new PropertySpec(PropertyType.PropertySet, 0x24000006, deep));
@@ -1289,10 +1308,8 @@ public class MSOneStorePackageTest {
         assertEquals("{10213243-5465-7687-98A9-BACBDCEDFE0F}",
                 fallbackMetadata.get(OneNote.SECTION_GUID));
 
-        // a scan entered after the section GUID was found must stop at the group check
-        // (budget not full, so the short-circuit is the sectionCollected operand): the
-        // assertion pins the collector at exactly one SECTION value, so collecting the
-        // fallback GUID here would fail
+        // entered after the section GUID was found (budget not full): sectionCollected must
+        // stop it at the group check, else the fallback GUID becomes a second SECTION value
         withHeader.collectFileIdentityGuidsFromGroups(withHeader.OtherFileNodeList);
         assertEquals(Collections.singleton("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
                 sectionGuidValues(withHeader));
@@ -1367,8 +1384,7 @@ public class MSOneStorePackageTest {
     @Test
     public void testCellRootsDeduplicatesRootDeclares() throws Exception {
         // two declares of the same object plus MAX_CELL_ROOTS - 1 distinct roots fit the cap
-        // exactly when deduplicated; without dedupe the duplicate consumes a slot and the
-        // last distinct root is truncated, so the absent-truncation assertion fails
+        // exactly when deduplicated; without dedupe the last distinct root is truncated
         RevisionStoreCell cell = new RevisionStoreCell();
         RevisionStoreObject textRoot = object(id(2300), propertySet(
                 new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
@@ -1509,7 +1525,7 @@ public class MSOneStorePackageTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
         xhtml.startDocument();
 
-        pkg.emitPage(cell, new OneNoteTreeWalkerOptions(), metadata, xhtml);
+        pkg.emitPage(cell, metadata, xhtml);
 
         xhtml.endDocument();
         assertEquals(1, pkg.objectIndexBuilds);
@@ -1669,7 +1685,7 @@ public class MSOneStorePackageTest {
         pkg.cells.add(damagedCell);
 
         Metadata metadata = new Metadata();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata,
+        pkg.walkTree(new OneNoteParserConfig(), metadata,
                 new XHTMLContentHandler(new ToTextContentHandler(), metadata, new ParseContext()),
                 new ParseContext());
 
@@ -1766,6 +1782,156 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testDeletedPagesAndOlderVersionsAreOptIn() throws Exception {
+        String current = walkPast(false, false);
+        assertTrue(current.contains(">live page<"));
+        assertTrue(current.contains("unrelated"));
+        assertFalse(current.contains("old live page"));
+        assertFalse(current.contains("deleted page"));
+
+        String history = walkPast(true, false);
+        assertTrue(history.indexOf(">live page<") < history.indexOf("<div class=\"page history\""));
+        assertTrue(history.indexOf("<div class=\"page history\"") <
+                history.indexOf("old live page"));
+        assertFalse(history.contains("deleted page"));
+
+        // a deleted page comes with all its versions: its current one may be empty
+        String deleted = walkPast(false, true);
+        assertTrue(deleted.indexOf("<div class=\"page deleted\"") <
+                deleted.indexOf(">deleted page<"));
+        assertTrue(deleted.indexOf("<div class=\"page deleted history\"") <
+                deleted.indexOf("old deleted page"));
+        assertFalse(deleted.contains("old live page"));
+
+        String all = walkPast(true, true);
+        assertTrue(all.contains("old live page"));
+        assertTrue(all.contains(">deleted page<"));
+        assertTrue(all.contains("old deleted page"));
+    }
+
+    @Test
+    public void testOnlyExcludedPagesIsWithheldNotEmpty() throws Exception {
+        MSOneStorePackage pkg = deletedPagePackage();
+        // drop the live page and the unrelated cell: only the deleted page is left
+        pkg.cells.removeIf(cell -> cell.cellID.extendGUID2.equals(id(100)) ||
+                cell.cellID.extendGUID2.equals(id(300)));
+        String xml = walkXml(pkg, new Metadata(), new ParseContext(), new OneNoteParserConfig());
+        assertFalse(xml.contains("deleted page"));
+        assertFalse(pkg.hasEmittedContent());
+        // so the parser does not dump the excluded text instead
+        assertTrue(pkg.hasWithheldContent());
+    }
+
+    @Test
+    public void testSectionWithEveryPageDeleted() throws Exception {
+        String xml = walkXml(allDeletedPackage(Collections.emptyList()), new Metadata(),
+                new ParseContext(), new OneNoteParserConfig());
+        assertFalse(xml.contains("deleted page"), xml);
+        OneNoteParserConfig deleted = new OneNoteParserConfig();
+        deleted.setIncludeDeletedContent(true);
+        xml = walkXml(allDeletedPackage(Collections.emptyList()), new Metadata(),
+                new ParseContext(), deleted);
+        assertTrue(xml.contains("<div class=\"page deleted\""), xml);
+    }
+
+    @Test
+    public void testIncompleteSectionWalkKeepsUnplacedPages() throws Exception {
+        // the section root names an object that is missing: the page may be live
+        String xml = walkXml(allDeletedPackage(List.of(id(77))), new Metadata(),
+                new ParseContext(), new OneNoteParserConfig());
+        assertTrue(xml.contains("deleted page"), xml);
+    }
+
+    @Test
+    public void testIncompleteSectionWalkKeepsUnplacedPagesBesideLivePages() throws Exception {
+        CellID livePage = cell(10, 100);
+        CellID unplaced = cell(10, 200);
+        // the root reaches one page and names an object that is missing
+        RevisionStoreObject sectionRoot = object(id(1), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData()),
+                        new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData())),
+                List.of(id(77)), List.of(livePage));
+        RevisionStoreObject other = object(id(2), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(unplaced));
+        RevisionStoreCell section = new RevisionStoreCell();
+        section.cellID = cell(10, 1);
+        section.objectGroups.add(group(sectionRoot, other));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = sectionRoot.objectID;
+        section.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = section;
+        pkg.cells.add(cellWithText(livePage, "live page"));
+        pkg.cells.add(cellWithText(unplaced, "maybe live page"));
+        String xml = walkXml(pkg, new Metadata(), new ParseContext(), new OneNoteParserConfig());
+        assertTrue(xml.contains("live page"), xml);
+        assertTrue(xml.contains("maybe live page"), xml);
+    }
+
+    /** A section whose current root references no page; an older object references one. */
+    private static MSOneStorePackage allDeletedPackage(List<ExGuid> rootReferences)
+            throws Exception {
+        CellID deletedPage = cell(10, 200);
+        PropertySet rootBody = rootReferences.isEmpty() ? propertySet() : propertySet(
+                new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()));
+        RevisionStoreObject sectionRoot = object(id(1), rootBody, rootReferences,
+                Collections.emptyList());
+        RevisionStoreObject oldPageSeries = object(id(2), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(deletedPage));
+        RevisionStoreCell section = new RevisionStoreCell();
+        section.cellID = cell(10, 1);
+        section.objectGroups.add(group(sectionRoot, oldPageSeries));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = sectionRoot.objectID;
+        section.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = section;
+        pkg.cells.add(cellWithText(deletedPage, "deleted page"));
+        return pkg;
+    }
+
+    private static String walkPast(boolean history, boolean deleted) throws Exception {
+        OneNoteParserConfig config = new OneNoteParserConfig();
+        config.setIncludePageHistory(history);
+        config.setIncludeDeletedContent(deleted);
+        return walkXml(deletedPagePackage(), new Metadata(), new ParseContext(), config);
+    }
+
+    /**
+     * A section whose current root references one page, next to an object of an older section
+     * revision that references a page since deleted, as OneNote leaves a section after it moves
+     * a page to the recycle bin.
+     */
+    private static MSOneStorePackage deletedPagePackage() throws Exception {
+        CellID livePage = cell(10, 100);
+        CellID deletedPage = cell(10, 200);
+        RevisionStoreObject sectionRoot = object(id(1), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(livePage));
+        RevisionStoreObject oldPageSeries = object(id(2), propertySet(
+                        new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
+                Collections.emptyList(), List.of(deletedPage));
+        RevisionStoreCell section = new RevisionStoreCell();
+        section.cellID = cell(10, 1);
+        section.objectGroups.add(group(sectionRoot, oldPageSeries));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = sectionRoot.objectID;
+        section.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = section;
+        pkg.cells.addAll(List.of(cellWithText(deletedPage, "deleted page"),
+                cellWithText(cell(12, 200), "old deleted page"),
+                cellWithText(cell(11, 100), "old live page"),
+                cellWithText(livePage, "live page"),
+                cellWithText(cell(30, 300), "unrelated")));
+        return pkg;
+    }
+
+    @Test
     public void testUnresolvedRootsFallBackToAllObjects() throws Exception {
         RevisionStoreCell cell = cellWithText(cell(1, 1), "fallback content");
         cell.rootDeclares.clear();
@@ -1858,6 +2024,44 @@ public class MSOneStorePackageTest {
         assertFalse(text.contains("unrelated object"));
         assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .anyMatch(warning -> warning.contains(id(1003).toString())));
+    }
+
+    @Test
+    public void testAuthorsSurviveAWalkThatFailsLater() throws Exception {
+        ExGuid authorId = id(721);
+        RevisionStoreObject root = object(id(720), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001D78, new NoData())),
+                Collections.singletonList(authorId), Collections.emptyList());
+        RevisionStoreObject author = object(authorId, propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D75, utf16Text("Early Author"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell first = new RevisionStoreCell();
+        first.cellID = cell(1, 1);
+        first.objectGroups.add(group(root, author));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        first.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(first);
+        pkg.cells.add(cellWithText(cell(2, 2), "boom"));
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        // fails on the second cell, after the first recorded its author
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler() {
+            @Override
+            public void characters(char[] ch, int start, int length) throws SAXException {
+                if (new String(ch, start, length).contains("boom")) {
+                    throw new SAXException("boom");
+                }
+            }
+        }, metadata, context);
+        xhtml.startDocument();
+        assertThrows(SAXException.class,
+                () -> pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context));
+        assertEquals("Early Author", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Early Author", metadata.get(OneNote.ORIGINAL_AUTHORS));
     }
 
     @Test
@@ -2045,12 +2249,12 @@ public class MSOneStorePackageTest {
     @Test
     public void testSanitizeResourceNameKeepsBasenameOfPathShapedNames() {
         assertEquals("pic 1.png",
-                MSOneStorePackage.sanitizeResourceName("D:\\images\\pic 1.png"));
-        assertEquals("pic.png", MSOneStorePackage.sanitizeResourceName("C:pic.png"));
-        assertEquals("a.png", MSOneStorePackage.sanitizeResourceName("/tmp/a.png"));
-        assertEquals("plain.png", MSOneStorePackage.sanitizeResourceName("plain.png"));
-        assertEquals("", MSOneStorePackage.sanitizeResourceName(".."));
-        assertEquals("", MSOneStorePackage.sanitizeResourceName("D:\\images\\.."));
+                OneNoteText.sanitizeResourceName("D:\\images\\pic 1.png"));
+        assertEquals("pic.png", OneNoteText.sanitizeResourceName("C:pic.png"));
+        assertEquals("a.png", OneNoteText.sanitizeResourceName("/tmp/a.png"));
+        assertEquals("plain.png", OneNoteText.sanitizeResourceName("plain.png"));
+        assertEquals("", OneNoteText.sanitizeResourceName(".."));
+        assertEquals("", OneNoteText.sanitizeResourceName("D:\\images\\.."));
     }
 
     @Test
@@ -2141,7 +2345,7 @@ public class MSOneStorePackageTest {
                 new ParseContext());
         xhtml.startDocument();
 
-        assertThrows(SAXException.class, () -> pkg.walkTree(new OneNoteTreeWalkerOptions(),
+        assertThrows(SAXException.class, () -> pkg.walkTree(new OneNoteParserConfig(),
                 metadata, xhtml, new ParseContext()));
         assertTrue(elements.contains("p"));
         assertTrue(elements.contains("/p"));
@@ -2230,8 +2434,8 @@ public class MSOneStorePackageTest {
         Method walkObject = MSOneStorePackage.class.getDeclaredMethod("walkObject",
                 RevisionStoreObject.class, Map.class, Set.class,
                 Class.forName(MSOneStorePackage.class.getName() + "$AuthorRole"),
-                OneNoteTreeWalkerOptions.class, Metadata.class, XHTMLContentHandler.class,
-                int.class);
+                Metadata.class, XHTMLContentHandler.class, int.class,
+                Class.forName(MSOneStorePackage.class.getName() + "$EmbeddedResourceInfo"));
         walkObject.setAccessible(true);
         // an object that emits text when walked, so the depth-capped walk's blank
         // output proves the cap fired rather than the setup having nothing to emit
@@ -2246,11 +2450,11 @@ public class MSOneStorePackageTest {
         xhtml.startDocument();
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteTreeWalkerOptions(), metadata, xhtml, 1000);
+                metadata, xhtml, 1000, null);
         assertTrue(writer.toString().isBlank());
         walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
-                new OneNoteTreeWalkerOptions(), metadata, xhtml, 0);
+                metadata, xhtml, 0, null);
         xhtml.endDocument();
         assertTrue(writer.toString().contains("depth capped text"));
     }
@@ -2331,6 +2535,171 @@ public class MSOneStorePackageTest {
         assertFalse(walk(pkg).contains("derived picture"));
     }
 
+    /**
+     * A printout's page images each reference the shared source file through a property
+     * other than a picture or file container; the file must not take a page image's name.
+     */
+    @Test
+    public void testSharedSourceFileDoesNotInheritPageImageName() throws Exception {
+        ExGuid sourceID = id(90);
+        RevisionStoreObject source = object(sourceID, propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        source.fileDataObject = fileData("source file");
+        List<RevisionStoreObject> objects = new ArrayList<>(Collections.singletonList(source));
+        List<ExGuid> pages = new ArrayList<>();
+        for (int i = 1; i <= 2; i++) {
+            RevisionStoreObject pageImage = object(id(90 + 2 * i), propertySet(
+                            new PropertySpec(PropertyType.ObjectID, 0x20003FFF, new NoData()),
+                            new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()),
+                            new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                    0x1C001DD7, utf16Text("printout_" + i + ".pdf"))),
+                    Arrays.asList(sourceID, id(91 + 2 * i)), Collections.emptyList());
+            RevisionStoreObject picture = object(id(91 + 2 * i), propertySet(),
+                    Collections.emptyList(), Collections.emptyList());
+            picture.fileDataObject = fileData("page " + i);
+            objects.add(pageImage);
+            objects.add(picture);
+            pages.add(pageImage.objectID);
+        }
+        RevisionStoreObject root = object(id(99), propertySet(
+                        new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                                arrayNumber(2))), pages, Collections.emptyList());
+        objects.add(0, root);
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(objects.toArray(new RevisionStoreObject[0])));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        List<String> names = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata embeddedMetadata, ParseContext c) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(org.apache.tika.io.TikaInputStream stream,
+                                      org.xml.sax.ContentHandler handler,
+                                      Metadata embeddedMetadata, ParseContext c,
+                                      boolean outputHtml) {
+                names.add(embeddedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+            }
+        });
+        walkXml(pkg, new Metadata(), context);
+        assertEquals(Arrays.asList(null, "printout_1.pdf", "printout_2.pdf"), names);
+    }
+
+    @Test
+    public void testNoteTagLabelPrecedesTheTaggedParagraph() throws Exception {
+        RevisionStoreObject definition = object(id(71), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003468, utf16Text("To Do"))),
+                Collections.emptyList(), Collections.emptyList());
+        // NoteTagStates: one state, referencing the shared definition
+        PrtArrayOfPropertyValues states = new PrtArrayOfPropertyValues();
+        states.data = new PropertySet[] {propertySet(
+                new PropertySpec(PropertyType.ObjectID, 0x20003488, new NoData()))};
+        RevisionStoreObject paragraph = object(id(70), propertySet(
+                        new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x40003489, states),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001C22, utf16Text("Buy milk"))),
+                Collections.singletonList(definition.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(paragraph, definition));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = paragraph.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        String xml = walkXml(pkg);
+        assertTrue(xml.replaceAll(">\\s+<", "><")
+                .contains("<p class=\"note-tag\">To Do</p><p>Buy milk</p>"), xml);
+        assertEquals(1, xml.split("To Do", -1).length - 1);
+    }
+
+    @Test
+    public void testPictureHyperlinkWrapsThePicture() throws Exception {
+        RevisionStoreObject named = object(id(61), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001DD7, utf16Text("cat.png")),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001E20, utf16Text("https://example.com/cat\u0000"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject unnamed = object(id(62), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001E20, utf16Text("https://example.com/dog"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject root = object(id(60), propertySet(
+                        new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                                arrayNumber(2))),
+                Arrays.asList(named.objectID, unnamed.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(root, named, unnamed));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        String xml = walkXml(pkg).replaceAll(">\\s+<", "><");
+        assertTrue(xml.contains("<p><a href=\"https://example.com/cat\">" +
+                "<img src=\"embedded:cat.png\" /></a></p>"), xml);
+        assertTrue(xml.contains("<p><a href=\"https://example.com/dog\" /></p>"), xml);
+        assertEquals(1, xml.split("example.com/cat", -1).length - 1, xml);
+    }
+
+    @Test
+    public void testEmbeddedFileHasItsOriginalPathAndItsPrintoutDoesNot() throws Exception {
+        RevisionStoreObject file = object(id(81), propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        file.fileDataObject = fileData("the file");
+        RevisionStoreObject printout = object(id(82), propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        printout.fileDataObject = fileData("its printout");
+        RevisionStoreObject node = object(id(80), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001D9B, new NoData()),
+                        new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D9C, utf16Text("report.docx")),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D9D, utf16Text("C:\\Users\\me\\report.docx"))),
+                Arrays.asList(file.objectID, printout.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(node, file, printout));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = node.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        List<String> rows = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata embeddedMetadata, ParseContext c) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(org.apache.tika.io.TikaInputStream stream,
+                                      org.xml.sax.ContentHandler handler,
+                                      Metadata embeddedMetadata, ParseContext c,
+                                      boolean outputHtml) {
+                rows.add(embeddedMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE) + " " +
+                        embeddedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) + " " +
+                        embeddedMetadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+            }
+        });
+        walkXml(pkg, new Metadata(), context);
+        assertEquals(Arrays.asList("ATTACHMENT report.docx C:\\Users\\me\\report.docx",
+                "INLINE null null"), rows);
+    }
+
     @Test
     public void testNestedPropertySetsAndMissingReferencesAreTraversedSafely() throws Exception {
         ExGuid childId = id(2);
@@ -2369,8 +2738,40 @@ public class MSOneStorePackageTest {
         assertTrue(text.contains("nested text"));
         assertTrue(text.contains("array text"));
         assertTrue(text.contains("child text"));
-        assertTrue(text.contains("u"));
         assertTrue(text.contains("hi"));
+        assertTrue(walkXml(pkg).contains("<img src=\"embedded:u"));
+    }
+
+    @Test
+    public void testTableOfContentsListsEachSectionOnce() throws Exception {
+        // FolderChildFilename entries under TocChildren; a second root stands in for an
+        // older revision of the table of contents that lists the same section again
+        RevisionStoreObject a = object(id(2), propertySet(new PropertySpec(
+                        PropertyType.FourBytesOfLengthFollowedByData, 0x1C001D6B,
+                        utf16Text("Section A.one"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject b = object(id(3), propertySet(new PropertySpec(
+                        PropertyType.FourBytesOfLengthFollowedByData, 0x1C001D6B,
+                        utf16Text("Section B.one"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject oldA = object(id(4), propertySet(new PropertySpec(
+                        PropertyType.FourBytesOfLengthFollowedByData, 0x1C001D6B,
+                        utf16Text("Section A.one"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject toc = object(id(1), propertySet(new PropertySpec(
+                        PropertyType.ArrayOfObjectIDs, 0x24001CF6, arrayNumber(3))),
+                Arrays.asList(a.objectID, b.objectID, oldA.objectID), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(toc, a, b, oldA));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = toc.objectID;
+        cell.rootDeclares.add(rootDeclare);
+
+        // a table of contents has no page cells, only the data root
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.dataRootCell = cell;
+        String text = walk(pkg);
+        assertEquals("Section A.one\nSection B.one\n", text.strip() + "\n");
     }
 
     private static class CountingMSOneStorePackage extends MSOneStorePackage {
@@ -2434,7 +2835,7 @@ public class MSOneStorePackageTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 new ToTextContentHandler(writer), metadata, context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(new OneNoteParserConfig(), metadata, xhtml, context);
         xhtml.endDocument();
         return writer.toString();
     }
@@ -2449,10 +2850,15 @@ public class MSOneStorePackageTest {
 
     private static String walkXml(MSOneStorePackage pkg, Metadata metadata, ParseContext context)
             throws Exception {
+        return walkXml(pkg, metadata, context, new OneNoteParserConfig());
+    }
+
+    private static String walkXml(MSOneStorePackage pkg, Metadata metadata, ParseContext context,
+                                  OneNoteParserConfig options) throws Exception {
         ToXMLContentHandler xml = new ToXMLContentHandler();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        pkg.walkTree(options, metadata, xhtml, context);
         xhtml.endDocument();
         return xml.toString();
     }
@@ -2607,15 +3013,15 @@ public class MSOneStorePackageTest {
         return listItem;
     }
 
-    private static FourBytesOfData fourBytes(int value) {
-        FourBytesOfData data = new FourBytesOfData();
+    private static FixedBytesOfData fourBytes(int value) {
+        FixedBytesOfData data = new FixedBytesOfData(4);
         data.data = new byte[] {(byte) value, (byte) (value >>> 8), (byte) (value >>> 16),
                 (byte) (value >>> 24)};
         return data;
     }
 
-    private static FourBytesOfData fourBytes(byte[] value) {
-        FourBytesOfData data = new FourBytesOfData();
+    private static FixedBytesOfData fourBytes(byte[] value) {
+        FixedBytesOfData data = new FixedBytesOfData(4);
         data.data = value;
         return data;
     }

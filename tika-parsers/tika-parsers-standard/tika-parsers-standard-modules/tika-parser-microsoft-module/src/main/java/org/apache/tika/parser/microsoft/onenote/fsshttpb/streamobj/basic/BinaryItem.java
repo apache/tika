@@ -17,14 +17,10 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 /**
  * A length-prefixed run of bytes.
@@ -34,7 +30,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * may be modified while the item is in use. {@link #getContent()} swaps a range for an array of
  * its own on the first call; {@link #copyContent()} always returns a fresh array.
  *
- * <p>Construction, {@link #setContent} and serialization keep {@link #length} equal to the
+ * <p>Construction and {@link #setContent} keep {@link #length} equal to the
  * content size, which is 0 for content set to null.
  */
 public class BinaryItem extends BasicObject {
@@ -52,29 +48,12 @@ public class BinaryItem extends BasicObject {
     private int offset;
     private int count;
 
-    /**
-     * Initializes a new instance of the BinaryItem class.
-     */
     public BinaryItem() {
         this.length = new Compact64bitInt();
         this.source = EMPTY;
     }
 
-    /**
-     * Initializes a new instance of the BinaryItem class with the specified content.
-     *
-     * @param content Specify the binary content.
-     */
-    public BinaryItem(Collection<Byte> content) {
-        this(ByteUtil.toByteArray(content instanceof List<Byte> list ? list : new ArrayList<>(content)));
-    }
-
-    /**
-     * Initializes a new instance of the BinaryItem class with the specified content. The
-     * array is used as-is, not copied.
-     *
-     * @param content Specify the binary content, or null for none.
-     */
+    /** Uses {@code content} as-is, not copied; null for none. */
     public BinaryItem(byte[] content) {
         this.length = new Compact64bitInt();
         setContent(content);
@@ -118,29 +97,6 @@ public class BinaryItem extends BasicObject {
         this.length.setDecodedValue(this.count);
     }
 
-    /**
-     * This method is used to convert the element of BinaryItem basic object into a byte List.
-     *
-     * @return Return the byte list which store the byte information of BinaryItem.
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws IOException {
-        List<Byte> length = this.length.setDecodedValue(count).serializeToByteList();
-        List<Byte> result = new ArrayList<>(length.size() + count);
-        result.addAll(length);
-        for (int i = offset; i < offset + count; i++) {
-            result.add(source[i]);
-        }
-        return result;
-    }
-
-    /**
-     * This method is used to de-serialize the BinaryItem basic object from the specified byte array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the BinaryItem basic object.
-     */
     @Override
     protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

@@ -18,13 +18,10 @@ package org.apache.tika.parser.microsoft.onenote;
 
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.utils.StringUtils;
 
 public class GUID implements Comparable<GUID> {
@@ -58,14 +55,7 @@ public class GUID implements Comparable<GUID> {
         return new GUID(guid);
     }
 
-    /**
-     * Converts a GUID of format: {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE} (in bytes) to a GUID
-     * object.
-     *
-     * @param guid The bytes that contains string in UTF-16 format of {AAAAAAAA-BBBB-CCCC-DDDD
-     *             -EEEEEEEEEEEE}
-     * @return GUID object parsed from guid bytes.
-     */
+    /** Parses UTF-16LE text of the form {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}. */
     public static GUID fromCurlyBraceUTF16Bytes(byte[] guid) throws TikaException {
         int[] intGuid = new int[16];
         String utf16Str = new String(guid, StandardCharsets.UTF_16LE);
@@ -172,28 +162,5 @@ public class GUID implements Comparable<GUID> {
         }
         sb.append("}");
         return sb.toString().toUpperCase(Locale.US);
-    }
-
-    public int[] getGuid() {
-        return guid;
-    }
-
-    public GUID setGuid(int[] guid) {
-        this.guid = guid;
-        return this;
-    }
-
-    public String getGuidString() {
-        return Arrays.toString(guid);
-    }
-
-    public List<Byte> toByteArray() {
-        List<Byte> byteList = new ArrayList<>();
-        for (int nextInt : guid) {
-            for (byte b : BitConverter.getBytes(nextInt)) {
-                byteList.add(b);
-            }
-        }
-        return byteList;
     }
 }

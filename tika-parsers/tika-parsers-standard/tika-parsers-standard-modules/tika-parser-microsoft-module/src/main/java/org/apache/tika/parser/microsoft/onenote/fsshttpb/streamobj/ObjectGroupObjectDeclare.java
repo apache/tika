@@ -15,12 +15,8 @@
  * limitations under the License.
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
-/**
- * object declaration
- */
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -31,18 +27,11 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 public class ObjectGroupObjectDeclare extends StreamObject {
     public ExGuid objectExtendedGUID;
     public Compact64bitInt objectPartitionID;
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the size in bytes of the object.binary data opaque
-     * to this protocol for the declared object.
-     * This MUST match the size of the binary item in the corresponding object data for this object.
-     */
+    /** MUST match the size of the binary item in the corresponding object data. */
     public Compact64bitInt objectDataSize;
     public Compact64bitInt objectReferencesCount;
     public Compact64bitInt cellReferencesCount;
 
-    /**
-     * Initializes a new instance of the ObjectGroupObjectDeclare class.
-     */
     public ObjectGroupObjectDeclare() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectDeclare);
         this.objectExtendedGUID = new ExGuid();
@@ -56,13 +45,6 @@ public class ObjectGroupObjectDeclare extends StreamObject {
         this.cellReferencesCount.setDecodedValue(0);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -75,28 +57,6 @@ public class ObjectGroupObjectDeclare extends StreamObject {
         this.objectReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
         this.cellReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "ObjectGroupObjectDeclare", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The number of the element
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.objectExtendedGUID.serializeToByteList());
-        byteList.addAll(this.objectPartitionID.serializeToByteList());
-        byteList.addAll(this.objectDataSize.serializeToByteList());
-        byteList.addAll(this.objectReferencesCount.serializeToByteList());
-        byteList.addAll(this.cellReferencesCount.serializeToByteList());
-        return byteList.size() - itemsIndex;
+        endItems(currentIndex, index, lengthOfItems, "ObjectGroupObjectDeclare");
     }
 }

@@ -54,7 +54,19 @@ public final class JunkDetector implements TextQualityDetector {
      */
     public static final float MIN_COVERAGE = 0.9f;
 
+    private static volatile HashedJunkModel bundledModel;
+
     private final HashedJunkModel model;
+
+    /**
+     * Loads the bundled model. {@link java.util.ServiceLoader} needs this constructor on the
+     * class path; {@link #provider()} serves only the module path.
+     *
+     * @throws UncheckedIOException if the bundled model cannot be loaded
+     */
+    public JunkDetector() {
+        this(provider().model);
+    }
 
     public JunkDetector(HashedJunkModel model) {
         if (model == null) {
@@ -63,14 +75,28 @@ public final class JunkDetector implements TextQualityDetector {
         this.model = model;
     }
 
-    /** Loads the bundled model. */
+    /** The bundled model, read once and shared: it is immutable and several megabytes. */
     public static JunkDetector loadFromClasspath() throws IOException {
+        HashedJunkModel model = bundledModel;
+        if (model == null) {
+            synchronized (JunkDetector.class) {
+                model = bundledModel;
+                if (model == null) {
+                    model = readBundledModel();
+                    bundledModel = model;
+                }
+            }
+        }
+        return new JunkDetector(model);
+    }
+
+    private static HashedJunkModel readBundledModel() throws IOException {
         InputStream is = JunkDetector.class.getClassLoader().getResourceAsStream(DEFAULT_MODEL_RESOURCE);
         if (is == null) {
             throw new IOException("Model resource not found on classpath: " + DEFAULT_MODEL_RESOURCE);
         }
         try (InputStream in = is) {
-            return new JunkDetector(HashedJunkModel.load(in));
+            return HashedJunkModel.load(in);
         }
     }
 

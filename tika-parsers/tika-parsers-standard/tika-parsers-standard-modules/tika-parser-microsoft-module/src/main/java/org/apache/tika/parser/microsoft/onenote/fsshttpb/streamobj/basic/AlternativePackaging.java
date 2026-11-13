@@ -41,14 +41,6 @@ public class AlternativePackaging {
     public DataElementPackage dataElementPackage;
     public StreamObjectHeaderEnd packagingEnd;
 
-    /**
-     * This method is used to deserialize the Alternative Packaging object from the specified byte
-     * array and start index.
-     *
-     * @param byteArray  Specify the byte array.
-     * @param startIndex Specify the start index from the byte array.
-     * @return Return the length in byte of the Alternative Packaging object.
-     */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
             throws IOException, TikaException {
         AtomicInteger index = new AtomicInteger(startIndex);
@@ -69,7 +61,9 @@ public class AlternativePackaging {
         this.guidCellSchemaId = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);
         AtomicReference<DataElementPackage> pkg = new AtomicReference<>();
-        StreamObject.tryGetCurrent(byteArray, index, pkg, DataElementPackage.class);
+        if (!StreamObject.tryGetCurrent(byteArray, index, pkg, DataElementPackage.class)) {
+            throw new TikaException("Missing data element package");
+        }
         this.dataElementPackage = pkg.get();
         this.packagingEnd = new StreamObjectHeaderEnd16bit();
         this.packagingEnd.deserializeFromByteArray(byteArray, index.get());

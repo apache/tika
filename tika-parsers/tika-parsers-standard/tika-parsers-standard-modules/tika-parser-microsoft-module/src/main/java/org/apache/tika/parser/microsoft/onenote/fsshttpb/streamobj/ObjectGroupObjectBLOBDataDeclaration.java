@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -25,43 +24,22 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact64bitInt;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * object data BLOB declaration
- */
 public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
     public ExGuid objectExGUID;
     public ExGuid objectDataBLOBExGUID;
     public Compact64bitInt objectPartitionID;
-    /**
-     * Gets or sets a compact unsigned 64-bit integer that specifies the size in bytes of the
-     * object.opaque binary data  for the declared object.
-     * This MUST match the size of the binary item in the corresponding object data BLOB
-     * referenced by the Object Data BLOB reference for this object.
-     */
-    public Compact64bitInt objectDataSize;
     public Compact64bitInt objectReferencesCount;
     public Compact64bitInt cellReferencesCount;
 
-    /**
-     * Initializes a new instance of the ObjectGroupObjectBLOBDataDeclaration class.
-     */
     public ObjectGroupObjectBLOBDataDeclaration() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectBLOBDataDeclaration);
         this.objectExGUID = new ExGuid();
         this.objectDataBLOBExGUID = new ExGuid();
         this.objectPartitionID = new Compact64bitInt();
-        this.objectDataSize = new Compact64bitInt();
         this.objectReferencesCount = new Compact64bitInt();
         this.cellReferencesCount = new Compact64bitInt();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -74,29 +52,6 @@ public class ObjectGroupObjectBLOBDataDeclaration extends StreamObject {
         this.objectReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
         this.cellReferencesCount = BasicObject.parse(byteArray, index, Compact64bitInt.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "ObjectGroupObjectBLOBDataDeclaration", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The number of the element
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.objectExGUID.serializeToByteList());
-        byteList.addAll(this.objectDataBLOBExGUID.serializeToByteList());
-        byteList.addAll(this.objectPartitionID.serializeToByteList());
-        byteList.addAll(this.objectDataSize.serializeToByteList());
-        byteList.addAll(this.objectReferencesCount.serializeToByteList());
-        byteList.addAll(this.cellReferencesCount.serializeToByteList());
-        return byteList.size() - itemsIndex;
+        endItems(currentIndex, index, lengthOfItems, "ObjectGroupObjectBLOBDataDeclaration");
     }
 }

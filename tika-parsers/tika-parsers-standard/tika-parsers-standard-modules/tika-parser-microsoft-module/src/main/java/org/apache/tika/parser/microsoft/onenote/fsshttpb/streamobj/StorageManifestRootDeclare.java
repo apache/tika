@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -25,27 +24,14 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicOb
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * Specifies one or more storage manifest root declare.
- */
 public class StorageManifestRootDeclare extends StreamObject {
     public ExGuid rootExGUID;
     public CellID cellID;
 
-    /**
-     * Initializes a new instance of the StorageManifestRootDeclare class.
-     */
     public StorageManifestRootDeclare() {
         super(StreamObjectTypeHeaderStart.StorageManifestRootDeclare);
     }
 
-    /**
-     * Used to de-serialize the items.
-     *
-     * @param byteArray     Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -54,25 +40,6 @@ public class StorageManifestRootDeclare extends StreamObject {
         this.rootExGUID = BasicObject.parse(byteArray, index, ExGuid.class);
         this.cellID = BasicObject.parse(byteArray, index, CellID.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "StorageManifestRootDeclare", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The length of list
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.rootExGUID.serializeToByteList());
-        byteList.addAll(this.cellID.serializeToByteList());
-        return byteList.size() - itemsIndex;
+        endItems(currentIndex, index, lengthOfItems, "StorageManifestRootDeclare");
     }
 }

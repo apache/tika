@@ -18,11 +18,9 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -30,15 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.IFSSHTTPBSerializable;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 
-public abstract class StreamObject implements IFSSHTTPBSerializable {
+public abstract class StreamObject {
 
-    /**
-     * Hash set contains the StreamObjectTypeHeaderStart type.
-     */
     private static final Set<StreamObjectTypeHeaderStart> compoundTypes = new HashSet<>(
             Arrays.asList(StreamObjectTypeHeaderStart.DataElement,
                     StreamObjectTypeHeaderStart.Knowledge,
@@ -63,9 +57,6 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
                     StreamObjectTypeHeaderStart.IntermediateNodeObject,
                     StreamObjectTypeHeaderStart.TargetPartitionId));
 
-    /**
-     * The dictionary of StreamObjectTypeHeaderStart and type.
-     */
     private static final Map<StreamObjectTypeHeaderStart, Class> streamObjectTypeMapping;
 
     static {
@@ -76,52 +67,28 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
                 streamObjectTypeMapping.put(value,
                         Class.forName(className, false, StreamObject.class.getClassLoader()));
             } catch (ClassNotFoundException e) {
-                // This is OK, we are not pulling over every single class
+                // not every type has a ported class
             }
         }
     }
 
     StreamObjectHeaderEnd streamObjectHeaderEnd;
-    /**
-     * Gets the StreamObjectTypeHeaderStart.
-     */
     private StreamObjectTypeHeaderStart streamObjectType;
-    /**
-     * Gets the length of items.
-     */
     private int lengthOfItems;
     private StreamObjectHeaderStart streamObjectHeaderStart;
 
-    /**
-     * Initializes a new instance of the StreamObject class.
-     *
-     * @param streamObjectType The instance of StreamObjectTypeHeaderStart.
-     */
     protected StreamObject(StreamObjectTypeHeaderStart streamObjectType) {
         this.streamObjectType = streamObjectType;
     }
 
-    /**
-     * Gets the StreamObjectTypeHeaderStart
-     */
     public static Set<StreamObjectTypeHeaderStart> getCompoundTypes() {
         return compoundTypes;
     }
 
-    /**
-     * Gets the StreamObjectTypeMapping
-     */
     public static Map<StreamObjectTypeHeaderStart, Class> getStreamObjectTypeMapping() {
         return streamObjectTypeMapping;
     }
 
-    /**
-     * Get current stream object.
-     *
-     * @param byteArray The byte array which contains message.
-     * @param index     The position where to start.
-     * @return The current object instance.
-     */
     public static <T extends StreamObject> T getCurrent(byte[] byteArray, AtomicInteger index,
                                                         Class<T> clazz)
             throws TikaException, IOException {
@@ -138,34 +105,21 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
 
         tmpIndex.addAndGet(length);
 
-        StreamObject streamObject =
-                parseStreamObject(streamObjectHeader.get(), byteArray, tmpIndex);
-
-        if (!streamObject.getClass().equals(clazz)) {
-            String destClassName = "(null)";
-            if (streamObjectTypeMapping.containsKey(streamObjectHeader.get().type)) {
-                destClassName =
-                        streamObjectTypeMapping.get(streamObjectHeader.get().type).getName();
-            }
+        // checked before parsing: a wrong type nested in itself would recurse without bound
+        Class<?> mapped = streamObjectTypeMapping.get(streamObjectHeader.get().type);
+        if (!clazz.equals(mapped)) {
             throw new StreamObjectParseErrorException(tmpIndex.get(), clazz.getName(),
                     String.format(Locale.US,
                             "Failed to get stream object as expect type %s, actual type is %s",
-                            clazz.getName(), destClassName), null);
+                            clazz.getName(), mapped == null ? "(null)" : mapped.getName()), null);
         }
+        StreamObject streamObject =
+                parseStreamObject(streamObjectHeader.get(), byteArray, tmpIndex);
 
-        // Store the current index to the ref parameter index.
         index.set(tmpIndex.get());
         return (T) streamObject;
     }
 
-    /**
-     * Parse stream object from byte array.
-     *
-     * @param header    The instance of StreamObjectHeaderStart.
-     * @param byteArray The byte array.
-     * @param index     The position where to start.
-     * @return The instance of StreamObject.
-     */
     public static StreamObject parseStreamObject(StreamObjectHeaderStart header, byte[] byteArray,
                                                  AtomicInteger index) throws IOException, TikaException {
         if (streamObjectTypeMapping.containsKey(header.type)) {
@@ -194,15 +148,6 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
                 null);
     }
 
-    /**
-     * Try to get current object, true will returned if success.
-     *
-     * @param byteArray    The byte array.
-     * @param index        The position where to start.
-     * @param streamObject The instance that want to get.
-     * @return The result of whether get success.
-     */
-
     public static <T extends StreamObject> boolean tryGetCurrent(byte[] byteArray,
                                                                  AtomicInteger index,
                                                                  AtomicReference<T> streamObject,
@@ -230,46 +175,6 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         return true;
     }
 
-    /**
-     * Serialize item to byte list.
-     *
-     * @return The byte list.
-     */
-    public List<Byte> serializeToByteList() throws IOException, TikaException {
-        List<Byte> byteList = new ArrayList<>();
-
-        int lengthOfItems = this.serializeItemsToByteList(byteList);
-
-        AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
-        if (this.streamObjectType.getIntVal() <= 0x3F && lengthOfItems <= 127) {
-            header.set(new StreamObjectHeaderStart16bit(this.streamObjectType, lengthOfItems));
-        } else {
-            header.set(new StreamObjectHeaderStart32bit(this.streamObjectType, lengthOfItems));
-        }
-
-        byteList.addAll(0, header.get().serializeToByteList());
-
-        if (compoundTypes.contains(this.streamObjectType)) {
-            if (this.streamObjectType.getIntVal() <= 0x3F) {
-                byteList.addAll(new StreamObjectHeaderEnd8bit(
-                        this.streamObjectType.getIntVal()).serializeToByteList());
-            } else {
-                byteList.addAll(new StreamObjectHeaderEnd16bit(
-                        this.streamObjectType.getIntVal()).serializeToByteList());
-            }
-        }
-
-        return byteList;
-    }
-
-    /**
-     * Used to return the length of this element.
-     *
-     * @param header     Then instance of StreamObjectHeaderStart.
-     * @param byteArray  The byte list
-     * @param startIndex The position where to start.
-     * @return The element length
-     */
     public int deserializeFromByteArray(StreamObjectHeaderStart header, byte[] byteArray,
                                         int startIndex) throws IOException, TikaException {
         this.streamObjectType = header.type;
@@ -297,7 +202,7 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
                 end = BasicObject.parse(byteArray, index, StreamObjectHeaderEnd16bit.class);
             }
 
-            if (end.type.getIntVal() != this.streamObjectType.getIntVal()) {
+            if (end == null || end.type.getIntVal() != this.streamObjectType.getIntVal()) {
                 throw new StreamObjectParseErrorException(index.get(), null,
                         "Unexpected the stream header end value " +
                                 this.streamObjectType.getIntVal(), null);
@@ -309,22 +214,17 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         return index.get() - startIndex;
     }
 
-    /**
-     * Serialize items to byte list.
-     *
-     * @param byteList The byte list need to serialized.
-     * @return The length in bytes for additional data if the current stream object has, otherwise return 0.
-     */
-    protected abstract int serializeItemsToByteList(List<Byte> byteList)
-            throws IOException, TikaException;
+    /** Advances {@code currentIndex} to {@code index}, which must be the items' end. */
+    protected static void endItems(AtomicInteger currentIndex, AtomicInteger index,
+                                   int lengthOfItems, String name)
+            throws StreamObjectParseErrorException {
+        if (index.get() - currentIndex.get() != lengthOfItems) {
+            throw new StreamObjectParseErrorException(currentIndex.get(), name,
+                    "Stream object over-parse error", null);
+        }
+        currentIndex.set(index.get());
+    }
 
-    /**
-     * De-serialize items from byte array.
-     *
-     * @param byteArray     The byte array which contains response message.
-     * @param currentIndex  The index special where to start.
-     * @param lengthOfItems The length of items.
-     */
     protected abstract void deserializeItemsFromByteArray(byte[] byteArray,
                                                           AtomicInteger currentIndex,
                                                           int lengthOfItems)

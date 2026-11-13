@@ -22,11 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
+import java.util.ServiceLoader;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.quality.TextQualityComparison;
+import org.apache.tika.quality.TextQualityDetector;
 import org.apache.tika.quality.TextQualityScore;
 
 /**
@@ -41,6 +43,15 @@ public class JunkDetectorSmokeTest {
     @BeforeAll
     static void loadModel() throws Exception {
         detector = JunkDetector.loadFromClasspath();
+    }
+
+    @Test
+    public void testServiceLoaderFindsTheBundledDetector() {
+        // the registration needs a public no-arg constructor on the class path
+        TextQualityDetector detector = ServiceLoader.load(TextQualityDetector.class)
+                .findFirst().orElseThrow();
+        assertTrue(detector instanceof JunkDetector, detector.getClass().getName());
+        assertFalse(detector.score("The quick brown fox jumps over the lazy dog.").isUnknown());
     }
 
     /**

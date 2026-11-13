@@ -14,22 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.microsoft.onenote.fsshttpb;
+package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
 
-import org.apache.tika.exception.TikaException;
+/** A property value of 1, 2, 4 or 8 bytes. */
+public class FixedBytesOfData implements IProperty {
+    public byte[] data;
+    private final int size;
 
-/**
- * FSSHTTPB Serialize interface.
- */
-public interface IFSSHTTPBSerializable {
+    public FixedBytesOfData(int size) {
+        this.size = size;
+    }
 
-    /**
-     * Serialize to byte list.
-     *
-     * @return The byte list.
-     */
-    List<Byte> serializeToByteList() throws IOException, TikaException;
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
+        if (startIndex < 0 || startIndex > byteArray.length - size) {
+            throw new IOException(size + "-byte property at " + startIndex +
+                    " runs past the " + byteArray.length + "-byte object");
+        }
+        this.data = Arrays.copyOfRange(byteArray, startIndex, startIndex + size);
+        return size;
+    }
 }

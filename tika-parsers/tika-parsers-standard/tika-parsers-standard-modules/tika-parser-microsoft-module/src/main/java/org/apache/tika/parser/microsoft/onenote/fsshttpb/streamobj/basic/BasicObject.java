@@ -18,23 +18,14 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.IFSSHTTPBSerializable;
 
 /**
  * Base object for FSSHTTPB.
  */
-public abstract class BasicObject implements IFSSHTTPBSerializable {
-    /**
-     * Used to parse byte array to special object.
-     *
-     * @param byteArray The byte array contains raw data.
-     * @param index     The index special where to start.
-     * @return The instance of target object.
-     */
+public abstract class BasicObject {
     public static <T extends BasicObject> T parse(byte[] byteArray, AtomicInteger index,
                                                   Class<T> clazz) throws TikaException,
             IOException {
@@ -49,32 +40,11 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
         }
     }
 
-    /**
-     * Used to return the length of this element.
-     *
-     * @param byteArray  The byte list.
-     * @param startIndex The start position.
-     * @return The element length.
-     */
     public int deserializeFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {
         return this.doDeserializeFromByteArray(byteArray, startIndex);
     }
 
-    /**
-     * Used to serialize item to byte list.
-     *
-     * @return The byte list.
-     */
-    public abstract List<Byte> serializeToByteList() throws IOException;
-
-    /**
-     * Used to return the length of this element.
-     *
-     * @param byteArray  The byte list.
-     * @param startIndex The start position.
-     * @return The element length
-     */
     protected abstract int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
             throws IOException, TikaException;
 }

@@ -21,9 +21,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGUIDA
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
 
-/**
- * The class is used to represent the revision store object.
- */
 public class RevisionStoreObject {
 
     public ExGuid objectID;
@@ -35,9 +32,6 @@ public class RevisionStoreObject {
     public ExGUIDArray referencedObjectID;
     public CellIDArray referencedObjectSpacesID;
 
-    /**
-     * Initialize the class.
-     */
     public RevisionStoreObject() {
 
     }
