@@ -56,4 +56,13 @@ public class Pkcs7DetectionTest {
         assertEquals("application/pkcs7-signature", tika.detect(PemFixtures.pem(
                 PemFixtures.resource("testPKCS7_certs_only_def.p7c"), "CMS", "\n")));
     }
+
+    @Test
+    public void testCertsOnlyDetectedByContent() throws Exception {
+        // empty digestAlgorithms + id-data-only encapContentInfo: no signature
+        assertEquals("application/x-pkcs7-certificates", detect("testPKCS7_certs_only_def.p7c"));
+        assertEquals("application/pkcs7-signature", detect("testPKCS7_signature_def.p7s"));
+        assertEquals("application/pkcs7-signature", detect("testDetached.p7s"));
+        assertEquals("application/pkcs7-signature", detect("testPKCS7_signed_data_def.p7m"));
+    }
 }
