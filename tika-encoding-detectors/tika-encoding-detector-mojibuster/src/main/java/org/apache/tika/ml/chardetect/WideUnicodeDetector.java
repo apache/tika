@@ -96,10 +96,11 @@ final class WideUnicodeDetector {
         int[] utf32 = utf32Invalid(bytes, offset, length);
         boolean invalidBe = utf32[0] > 0;
         boolean invalidLe = utf32[1] > 0;
-        if (!invalidBe && utf32[2] >= UTF32_MIN_VALID) {
+        // all-NUL groups are code points under both orders but evidence of nothing (NUL-led logs)
+        if (!invalidBe && utf32[3] >= UTF32_MIN_VALID) {
             return new Result(Charset.forName("UTF-32BE"), false, false, false, invalidLe);
         }
-        if (!invalidLe && utf32[2] >= UTF32_MIN_VALID) {
+        if (!invalidLe && utf32[3] >= UTF32_MIN_VALID) {
             return new Result(Charset.forName("UTF-32LE"), false, false, invalidBe, false);
         }
         Result utf16 = tryUtf16(bytes, offset, length);
@@ -124,7 +125,7 @@ final class WideUnicodeDetector {
     // -----------------------------------------------------------------------
 
     /**
-     * Minimum number of valid codepoints required for detection. At 8 bytes
+     * Minimum number of valid non-NUL codepoints required for detection. At 8 bytes
      * we get exactly 2 groups; the probability that 2 random 4-byte values
      * both fall in 0x000000–0x10FFFF (excluding surrogates) is ~1.6e-11,
      * so 2 is safe against false positives on real-world byte data.
@@ -141,12 +142,17 @@ final class WideUnicodeDetector {
      * immediately disqualify it. No null-byte density threshold is needed,
      * which means non-BMP content (emoji, historic scripts) works perfectly.</p>
      */
-    /** {invalid BE groups, invalid LE groups, groups} over the first 512 bytes. */
+    /**
+     * {invalid BE groups, invalid LE groups, groups, non-NUL groups} over the whole probe. A
+     * 512-byte sample let ar symbol tables (big-endian small ints) and zero-led disk images through
+     * as UTF-32BE.
+     */
     private static int[] utf32Invalid(byte[] bytes, int offset, int length) {
-        int sampleLen = (Math.min(length, 512) / 4) * 4;
+        int sampleLen = (length / 4) * 4;
         int groups = sampleLen / 4;
         int invalidBe = 0;
         int invalidLe = 0;
+        int nonNul = 0;
 
         for (int g = 0; g < groups; g++) {
             int base = offset + g * 4;
@@ -154,6 +160,9 @@ final class WideUnicodeDetector {
             int b1 = bytes[base + 1] & 0xFF;
             int b2 = bytes[base + 2] & 0xFF;
             int b3 = bytes[base + 3] & 0xFF;
+            if ((b0 | b1 | b2 | b3) != 0) {
+                nonNul++;
+            }
 
             int cpBe = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
             if (!(cpBe >= 0 && cpBe <= 0x10FFFF && (cpBe < 0xD800 || cpBe > 0xDFFF))) {
@@ -165,7 +174,7 @@ final class WideUnicodeDetector {
                 invalidLe++;
             }
         }
-        return new int[] {invalidBe, invalidLe, groups};
+        return new int[] {invalidBe, invalidLe, groups, nonNul};
     }
 
     // -----------------------------------------------------------------------
@@ -180,7 +189,7 @@ final class WideUnicodeDetector {
      * the main statistical model on probes that cannot be valid UTF-16.
      */
     private static Result tryUtf16(byte[] bytes, int offset, int length) {
-        int sampleLen = (Math.min(length, 512) / 2) * 2;
+        int sampleLen = (length / 2) * 2;
         if (sampleLen < 8) {
             return Result.EMPTY;
         }
@@ -225,8 +234,8 @@ final class WideUnicodeDetector {
                 }
             }
         }
-        // A high surrogate ending the sample is checked against the next unit; at the
-        // probe end the pair was cut, which is no evidence either way.
+        // A high surrogate ending the scan is checked against an odd trailing byte's unit only when one
+        // exists; at the probe end the pair was cut, which is no evidence either way.
         int next = offset + sampleLen;
         if (next + 1 < offset + length) {
             int even = bytes[next] & 0xFF;
