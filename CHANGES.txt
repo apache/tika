@@ -515,9 +515,11 @@ Release 4.3.0 - ???
 
    * Charset detection no longer reads ASCII text with a few control characters (logs with
      escape or form-feed bytes, IRC colour codes, record separators, banners) as BOM-less
-     UTF-16: the model was retrained with such text, and when it still returns UTF-16 or
-     UTF-32 as its only candidate, the junk filter now compares that decode against
-     windows-1252 and keeps whichever reads as text (TIKA-5052).
+     UTF-16: when the model returns UTF-16 or UTF-32 as its only candidate, the junk filter
+     now compares that decode against windows-1252 and keeps whichever reads as text. A
+     single-byte label whose decode of the probe is identical to windows-1252's (one stray
+     accented byte in English labelled windows-1254 or x-MacRoman) is reported as
+     windows-1252 (TIKA-5052).
 
    * The junk model that arbitrates between charset candidates was retrained with UTF-16
      misreads of every script (text read as UTF-16, and UTF-16 text read as a single-byte
