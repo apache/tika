@@ -20,11 +20,13 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -430,6 +432,11 @@ public class PipesServer implements AutoCloseable {
                     }
                     System.exit(IDLE_EXIT_CODE);
                     return; // unreachable, but needed for compilation
+                } catch (EOFException | SocketException e) {
+                    // idle, so no task is lost: the parent closed or lost the connection
+                    LOG.warn("connection to parent lost while idle ({}); exiting", e.getMessage());
+                    System.exit(PARENT_GONE_EXIT_CODE);
+                    return;
                 }
                 LOG.trace("received message type={}", msg.type());
 
@@ -758,7 +765,7 @@ public class PipesServer implements AutoCloseable {
             return;
         }
         parent.get().onExit().thenRun(() -> {
-            LOG.error("parent pid {} exited; shutting down to avoid orphan",
+            LOG.warn("parent pid {} exited; shutting down to avoid orphan",
                     parentPid);
             exitParentGone();
         });
