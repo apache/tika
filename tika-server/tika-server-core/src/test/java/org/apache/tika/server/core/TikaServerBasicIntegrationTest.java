@@ -20,9 +20,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -73,6 +76,24 @@ public class TikaServerBasicIntegrationTest extends IntegrationTestBase {
         assertEquals(400, response.getStatus());
         String body = new String(((InputStream) response.getEntity()).readAllBytes(), UTF_8);
         assertTrue(body.contains("Valid types"), body);
+    }
+
+    /**
+     * Production wiring pin for LoopbackHostFilter: the server binds localhost here, so a
+     * request naming another host, as a page on a DNS-rebound domain does, gets 403.
+     */
+    @Test
+    public void testForeignHostRefusedOnLoopback() throws Exception {
+        try (Socket socket = new Socket("localhost", integrationTestPort)) {
+            socket.setSoTimeout(30000);
+            OutputStream os = socket.getOutputStream();
+            os.write(("GET " + STATUS_PATH + " HTTP/1.1\r\nHost: rebind.attacker.example:"
+                    + integrationTestPort + "\r\nConnection: close\r\n\r\n").getBytes(UTF_8));
+            os.flush();
+            String statusLine = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), UTF_8)).readLine();
+            assertTrue(statusLine.startsWith("HTTP/1.1 403"), statusLine);
+        }
     }
 
     /** h2c is opt-in (allowHttp2): a client asking to upgrade is answered over HTTP/1.1. */

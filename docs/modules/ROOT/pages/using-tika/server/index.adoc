@@ -87,6 +87,14 @@ server to untrusted callers. tika-grpc is even more exposed by default. See
 xref:security.adoc[Security] for the shared trust model and
 xref:using-tika/grpc/index.adoc[Tika gRPC] for the gRPC specifics.
 
+While the server listens on a loopback address (the default, `localhost`), it answers `403` to a
+request whose `Host` header is not `localhost`, a loopback IP or the configured `host`. A web page
+can point its own domain at 127.0.0.1 (DNS rebinding) and then call the server as its own origin,
+but its requests still carry that domain in `Host`. A reverse proxy on the same machine must send
+a loopback `Host`: nginx does by default, while Caddy, Traefik and Apache with
+`ProxyPreserveHost On` forward the client's. A server bound to any other address, `*` included,
+does not check `Host`.
+
 === `allowPerRequestConfig` — the `/config` endpoints
 
 `/tika/config`, `/tika/config/{text,html,xml,md,json}`, `/rmeta/config`,

@@ -461,6 +461,7 @@ public class TikaServerProcess {
         writers.add(new BadRequestExceptionMapper());
         writers.add(new JSONObjWriter());
 
+        writers.add(new LoopbackHostFilter(tikaServerConfig.getHost()));
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
         writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes(), bodyBudget));

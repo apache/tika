@@ -59,6 +59,11 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * tika-server listening on a loopback address (the default, localhost) answers 403 to a
+     request whose Host header is not localhost, a loopback IP or the configured host, so a
+     web page cannot reach it through DNS rebinding. A reverse proxy on the same machine must
+     send a loopback Host.
+
    * A parse-context block (config file, preset, tika-server /config, gRPC
      parse_context_json, pipes FetchEmitTuple) for a parser, detector, renderer or
      translator that never reads one is logged as a warning instead of being silently
