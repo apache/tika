@@ -75,7 +75,7 @@
         <configuration>
           <flattenMode>bom</flattenMode>
           <pomElements>
-            <properties>remove</properties>
+            <properties>resolve</properties>
           </pomElements>
         </configuration>
         <executions>
@@ -103,475 +103,475 @@
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-core</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-serialization</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-translate</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-xmp</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-java7</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <!-- Tika server components -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-server-core</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-eval-core</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <!-- Tika language detection modules -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-lingo24</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-mitll-text</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-optimaize</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-charsoup-core</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-charsoup</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-ml-junkdetect</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-test-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <!-- Tika parsers package (standard) -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parsers-standard-package</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
         <type>pom</type>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-bundle-standard</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <!-- Individual modules from standard package -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-apple-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-audiovideo-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-cad-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-code-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-crypto-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-font-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-html-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-image-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-mail-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-microsoft-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-miscoffice-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-news-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-ocr-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-ocr-encode-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-pdf-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-pkg-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-text-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-xml-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-datauri-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-digest-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-handler-boilerpipe</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-readability</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-jdbc-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-mail-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-xmp-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-zip-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <!-- Tika parsers package (extended) -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-scientific-package</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-sqlite3-package</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <!-- Tika parsers modules (extended package) -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-scientific-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-sqlite3-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <!-- Tika parsers modules (ML package) -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-nlp-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-transcribe-aws</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-detectors</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
         <type>pom</type>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-detector-siegfried</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <!-- Tika Pipes modules -->
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-core</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-gcs</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-jdbc</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-kafka</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-opensearch</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-s3</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-solr</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-http</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-csv</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
 
 
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-async-cli</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-httpclient-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-detector-magika</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-encoding-detector-html</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-encoding-detector-icu4j</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-encoding-detector-mojibuster</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-encoding-detector-universal</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-http-jdk</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-image-processing</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-inference</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-opennlp</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-metadata-schema</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-ml-chardetect</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-ml-core</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-nlp-package</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-tess4j-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-webarchive-module</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-api</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-atlassian-jwt</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-az-blob</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-config-store-ignite</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-es</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-file-system</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-fork-parser</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-google-drive</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-iterator-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-json</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-microsoft-graph</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-reporter-commons</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-plugins-core</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-vlm</artifactId>
-        <version>${project.version}</version>
+        <version>${revision}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
