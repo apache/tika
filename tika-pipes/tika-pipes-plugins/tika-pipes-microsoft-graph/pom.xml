@@ -32,11 +32,17 @@
     <microsoft-graph.version>6.72.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.26.1</msal4j.version>
-    <microsoft-kiota.version>1.10.4</microsoft-kiota.version>
+    <microsoft-kiota.version>1.10.5</microsoft-kiota.version>
   </properties>
 
   <dependencyManagement>
       <dependencies>
+          <!-- try removing okhttp after updating microsoft-graph -->
+          <dependency>
+              <groupId>com.squareup.okhttp3</groupId>
+              <artifactId>okhttp</artifactId>
+              <version>4.12.1</version>
+          </dependency>
           <dependency>
               <groupId>com.microsoft.kiota</groupId>
               <artifactId>microsoft-kiota-serialization-json</artifactId>
