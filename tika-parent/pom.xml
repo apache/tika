@@ -461,7 +461,7 @@
     <logback.version>1.6.5</logback.version>
     <javacpp.version>1.5.14</javacpp.version>
     <maven.site.version>3.22.0</maven.site.version>
-    <maven.exec.version>3.6.4</maven.exec.version>
+    <maven.exec.version>3.7.0</maven.exec.version>
   </properties>
 
   <dependencyManagement>
