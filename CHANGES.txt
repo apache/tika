@@ -61,8 +61,7 @@ Release 4.3.0 - ???
   SERVER, PIPES AND OPERATIONS
    * An idle pipes fork whose parent closes or drops the connection without asking it
      to shut down, as when tika-server is killed, logs one warning and exits with the
-     parent-gone code (23) instead of a "main loop error" stack trace and exit 19
-     (TIKA-XXXX).
+     parent-gone code (23) instead of a "main loop error" stack trace and exit 19.
 
    * A parse-context block (config file, preset, tika-server /config, gRPC
      parse_context_json, pipes FetchEmitTuple) for a parser, detector, renderer or
