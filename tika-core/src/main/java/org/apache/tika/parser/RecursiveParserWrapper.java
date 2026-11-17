@@ -18,6 +18,8 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -281,6 +283,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             ContentHandler secureContentHandler =
                     new RecursivelySecureContentHandler(localHandler, tis, preParseHandler.handlerCounter,
                     preParseHandler.throwOnWriteLimitReached, context);
+            int prePackageEntryDepth = preParseHandler.handlerCounter.packageEntryDepth;
 
             try {
                 super.parse(stream, secureContentHandler, metadata, context);
@@ -312,6 +315,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     throw e;
                 }
             } finally {
+                //an exception can leave this document's package entries unclosed
+                preParseHandler.handlerCounter.packageEntryDepth = prePackageEntryDepth;
                 context.set(Parser.class, preContextParser);
                 context.set(RecursivelySecureContentHandler.class, preParseHandler);
                 context.set(ParentContentHandler.class, preParseParentHandler);
@@ -350,6 +355,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
         //total chars produced by all handlers, whether or not written
         private long ratioChars = 0;
         private boolean zipBombDetected = false;
+        //open package entries across the tree, as the concatenated path counts them
+        private int packageEntryDepth = 0;
 
         private SecureHandlerCounter(int totalWriteLimit, TikaInputStream rootStream,
                                      AutoDetectParserConfig config) {
@@ -383,6 +390,11 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
         private final int id = COUNTER.getAndIncrement();
 
+        private int elementDepth = 0;
+
+        //element depths of this handler's open package entries
+        private final Deque<Integer> packageEntries = new ArrayDeque<>();
+
         public RecursivelySecureContentHandler(ContentHandler handler, TikaInputStream stream,
                                                SecureHandlerCounter handlerCounter,
                                                boolean throwOnWriteLimitReached, ParseContext parseContext) {
@@ -398,6 +410,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 }
                 if (config.getMaximumCompressionRatio() != null) {
                     setMaximumCompressionRatio(config.getMaximumCompressionRatio());
+                }
+                if (config.getMaximumPackageEntryDepth() != null) {
+                    setMaximumPackageEntryDepth(config.getMaximumPackageEntryDepth());
                 }
             }
         }
@@ -420,12 +435,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
 
         /**
-         * Bypass the SecureContentHandler...
-         * <p>
-         * This handler only looks at zip bomb via zip expansion.
-         * Users should be protected within entries against nested
-         * nested xml entities.  We don't want to carry
-         * those stats _across_ entries.
+         * Bypass the SecureContentHandler's XML depth check: users are protected
+         * against nested xml within entries, and we don't want to carry that
+         * _across_ entries. Package entry depth is carried across entries,
+         * because each embedded document gets its own handler here.
          *
          * @param uri
          * @param localName
@@ -436,12 +449,27 @@ public class RecursiveParserWrapper extends ParserDecorator {
         @Override
         public void startElement(String uri, String localName, String name, Attributes atts)
                 throws SAXException {
+            elementDepth++;
+            if ("div".equals(name) && "package-entry".equals(atts.getValue("class"))) {
+                int depth = handlerCounter.packageEntryDepth + 1;
+                if (depth > getMaximumPackageEntryDepth()) {
+                    throw new SAXException(
+                            "Suspected zip bomb: " + depth + " levels of package entry nesting");
+                }
+                handlerCounter.packageEntryDepth = depth;
+                packageEntries.push(elementDepth);
+            }
             this.handler.startElement(uri, localName, name, atts);
         }
 
         @Override
         public void endElement(String uri, String localName, String name) throws SAXException {
             this.handler.endElement(uri, localName, name);
+            if (!packageEntries.isEmpty() && packageEntries.peek() == elementDepth) {
+                packageEntries.pop();
+                handlerCounter.packageEntryDepth--;
+            }
+            elementDepth--;
         }
 
         @Override

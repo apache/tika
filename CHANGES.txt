@@ -8,6 +8,11 @@ Release 3.4.0 - ???
     directory); Tesseract and ImageMagick refuse input that is not a supported image
     (TIKA-5065).
 
+  * The RecursiveParserWrapper (/rmeta, tika-app -J) applies maximumPackageEntryDepth
+    across embedded documents, as the concatenated path does. maximumPackageEntryDepth now
+    defaults to 20, as in 4.x, and allows that many levels of embedded documents: /rmeta was
+    bounded only at 99 levels, and the concatenated path stopped at 9.
+
   * UTF-8 text that was misdetected as GB18030 is now detected as UTF-8
     (juniversalchardet 2.5.2).
 
