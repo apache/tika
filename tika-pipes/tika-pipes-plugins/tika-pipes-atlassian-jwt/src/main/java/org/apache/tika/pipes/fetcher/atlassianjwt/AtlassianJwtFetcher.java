@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.atlassianjwt;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -69,7 +70,7 @@ import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
-public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetcher {
+public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetcher, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AtlassianJwtFetcher.class);
 
@@ -345,5 +346,15 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
         } finally {
             EntityUtils.consumeQuietly(response.getEntity());
         }
+    }
+
+    /**
+     * Each client owns a connection pool and a "Connection evictor" thread; the fetcher manager
+     * calls this when a runtime save or delete retires this instance.
+     */
+    @Override
+    public void close() throws IOException {
+        IOUtils.close(httpClient instanceof Closeable c ? c : null,
+                noCompressHttpClient instanceof Closeable nc ? nc : null);
     }
 }

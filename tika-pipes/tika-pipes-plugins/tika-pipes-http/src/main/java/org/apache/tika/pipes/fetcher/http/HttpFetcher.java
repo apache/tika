@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.fetcher.http;
 
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -85,7 +86,7 @@ import org.apache.tika.utils.StringUtils;
 /**
  * Based on Apache httpclient
  */
-public class HttpFetcher extends AbstractTikaExtension implements Fetcher, RangeFetcher {
+public class HttpFetcher extends AbstractTikaExtension implements Fetcher, RangeFetcher, Closeable {
 
     public static HttpFetcher build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
         HttpFetcherConfig httpFetcherConfig = HttpFetcherConfig.load(pluginConfig.json());
@@ -575,5 +576,15 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
 
     public JwtGenerator getJwtGenerator() {
         return jwtGenerator;
+    }
+
+    /**
+     * Each client owns a connection pool and a "Connection evictor" thread; the fetcher manager
+     * calls this when a runtime save or delete retires this instance.
+     */
+    @Override
+    public void close() throws IOException {
+        IOUtils.close(httpClient instanceof Closeable c ? c : null,
+                noCompressHttpClient instanceof Closeable nc ? nc : null);
     }
 }
