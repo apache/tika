@@ -18,13 +18,4 @@ package org.apache.tika.parser.microsoft.onenote;
 
 class RootObjectReferenceBase {
     long rootRole;
-
-    public long getRootRole() {
-        return rootRole;
-    }
-
-    public RootObjectReferenceBase setRootRole(long rootRole) {
-        this.rootRole = rootRole;
-        return this;
-    }
 }

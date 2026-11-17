@@ -42,7 +42,9 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.Initializable;
 import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -58,6 +60,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.video.SubtitleTracks;
+import org.apache.tika.parser.video.VideoCaptionScan;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -69,7 +72,7 @@ import org.apache.tika.utils.StringUtils;
  * This uses Drew Noakes' metadata-extractor: https://github.com/drewnoakes/metadata-extractor
  */
 @TikaComponent(name = "mp4-parser")
-public class MP4Parser implements Parser {
+public class MP4Parser implements Parser, Initializable {
     /**
      * Serial version UID
      */
@@ -95,6 +98,8 @@ public class MP4Parser implements Parser {
 
     private long maxBoxSize = DEFAULT_MAX_BOX_SIZE;
     private boolean extractSubtitles = true;
+    private boolean extractClosedCaptions = true;
+    private VideoCaptionScan videoCaptionScan = VideoCaptionScan.NONE;
 
     static {
         // All types should be 4 bytes long, space padded as needed
@@ -146,6 +151,35 @@ public class MP4Parser implements Parser {
         this.extractSubtitles = extractSubtitles;
     }
 
+    /** CEA-608 captions as embedded {@code text/vtt}; default true, needs extractSubtitles. */
+    public boolean isExtractClosedCaptions() {
+        return extractClosedCaptions;
+    }
+
+    public void setExtractClosedCaptions(boolean extractClosedCaptions) {
+        this.extractClosedCaptions = extractClosedCaptions;
+    }
+
+    /** H.264/HEVC SEI caption scan; default NONE, as any other costs reads on every such file. */
+    public VideoCaptionScan getVideoCaptionScan() {
+        return videoCaptionScan;
+    }
+
+    public void setVideoCaptionScan(VideoCaptionScan videoCaptionScan) {
+        this.videoCaptionScan = videoCaptionScan == null ? VideoCaptionScan.NONE
+                : videoCaptionScan;
+    }
+
+    /** A video caption scan that could never run is a configuration error, not a no-op. */
+    @Override
+    public void initialize() throws TikaConfigException {
+        if (videoCaptionScan != VideoCaptionScan.NONE && !(extractSubtitles
+                && extractClosedCaptions)) {
+            throw new TikaConfigException("mp4-parser: videoCaptionScan " + videoCaptionScan
+                    + " needs extractSubtitles and extractClosedCaptions to be true");
+        }
+    }
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
@@ -192,8 +226,8 @@ public class MP4Parser implements Parser {
         xhtml.endDocument();
     }
 
-    private static SubtitleTracks readSubtitles(TikaInputStream tis, Metadata metadata,
-                                                ParseContext context) {
+    private SubtitleTracks readSubtitles(TikaInputStream tis, Metadata metadata,
+                                         ParseContext context) {
         try {
             if (!cheapRandomAccess(tis)) {
                 return null;
@@ -203,7 +237,8 @@ public class MP4Parser implements Parser {
                     new TikaException("subtitles: " + e.getMessage(), e), metadata, context);
             return null;
         }
-        return SubtitleTracks.readMp4(tis, metadata, context);
+        return SubtitleTracks.readMp4(tis, metadata, context, extractClosedCaptions,
+                videoCaptionScan);
     }
 
     //content already on disk or in memory, or a measured length short enough to buffer;

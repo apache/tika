@@ -34,12 +34,7 @@ import java.util.Map;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.core.checksums.RequestChecksumCalculation;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -58,6 +53,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
+import org.apache.tika.pipes.s3.S3Credentials;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
@@ -138,22 +134,8 @@ public class S3Emitter extends AbstractStreamEmitter {
     }
 
     private static AwsCredentialsProvider buildCredentialsProvider(S3EmitterConfig config) throws TikaConfigException {
-        switch (config.credentialsProvider()) {
-            case "instance":
-                return InstanceProfileCredentialsProvider.builder().build();
-            case "web_identity":
-                return WebIdentityTokenFileCredentialsProvider.builder().build();
-            case "profile":
-                return ProfileCredentialsProvider.builder()
-                        .profileName(config.profile())
-                        .build();
-            case "key_secret":
-                AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
-                        config.accessKey(), config.secretKey());
-                return StaticCredentialsProvider.create(awsCreds);
-            default:
-                throw new TikaConfigException("credentialsProvider must be 'instance', 'web_identity', 'profile' or 'key_secret'");
-        }
+        return S3Credentials.build(config.credentialsProvider(), config.profile(), config.accessKey(),
+                config.secretKey());
     }
 
     @Override

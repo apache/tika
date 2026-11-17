@@ -100,6 +100,17 @@ For the upgrade from the former `enableUnsecureFeatures` flag, which is now spli
 `allowPipes` and `allowPerRequestConfig`, see
 xref:migration-to-4x/migrating-tika-server-4x.adoc#_pipes_and_async_require_allowpipes_per_request_config_requires_allowperrequestconfig[Migrating tika-server to 4.x].
 
+=== Extracted Output Is Document Content
+
+Text, links and image references in Tika's output come from the document, so treat them like
+any untrusted input before you display them. XHTML output escapes document text, and markdown
+output escapes it for CommonMark: document text does not become HTML or markdown structure there.
+Links and images the document itself contains are kept, in both formats, with their URLs as
+written. If you render the output, sanitize it the way you would any user-supplied HTML or
+markdown, including URL schemes such as `javascript:`. Markdown dialects with syntax of their own,
+such as MDX expressions or template-engine tags like `{{ }}`, are outside what the escaping
+covers.
+
 == Known Vulnerabilities
 
 Known CVEs in Apache Tika and their remediation are listed on the

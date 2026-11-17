@@ -16,6 +16,7 @@
  */
 package org.apache.tika.ml.junkdetect;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +31,8 @@ import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.ml.chardetect.AdaptiveProbe;
+import org.apache.tika.ml.chardetect.EvidenceProbe;
 import org.apache.tika.parser.ParseContext;
 
 /** {@link JunkFilterEncodingDetector#candidates} reports what {@link JunkFilterEncodingDetector#detect} acts on. */
@@ -129,5 +132,23 @@ public class JunkFilterCandidatesTest {
         JunkFilterEncodingDetector.Candidates c = candidates(b, ctx);
         assertEquals(List.of(UTF8, W1252), c.getBandCharsets());
         assertTrue(c.getTexts().keySet().containsAll(c.getBandCharsets()));
+    }
+
+    /** The filter weighs the same evidence probe as the charset model, not the bare prefix. */
+    @Test
+    public void filterSeesTheEvidenceProbe() throws Exception {
+        byte[] b = ("x".repeat(40_000) + " Съешь же ещё этих мягких французских булок".repeat(10))
+                .getBytes(UTF8);
+        byte[] evidence;
+        try (TikaInputStream tis = TikaInputStream.get(b)) {
+            evidence = EvidenceProbe.read(tis, AdaptiveProbe.DEFAULT_CONTENT_TARGET,
+                    AdaptiveProbe.DEFAULT_RAW_CAP);
+        }
+        EncodingDetectorContext ctx = context(r(UTF8, EncodingResult.ResultType.STATISTICAL),
+                r(W1252, EncodingResult.ResultType.STATISTICAL));
+        assertArrayEquals(evidence, candidates(b, ctx).getProbe());
+        assertArrayEquals(evidence, ctx.getProbeCache().get(EvidenceProbe.KIND,
+                AdaptiveProbe.DEFAULT_CONTENT_TARGET, AdaptiveProbe.DEFAULT_RAW_CAP));
+        assertTrue(candidates(b, ctx).getTexts().get(UTF8).contains("французских"));
     }
 }

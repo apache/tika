@@ -30,22 +30,12 @@ public class RevisionManifestDataElementData extends DataElementData {
     public List<RevisionManifestRootDeclare> revisionManifestRootDeclareList;
     public List<RevisionManifestObjectGroupReferences> revisionManifestObjectGroupReferences;
 
-    /**
-     * Initializes a new instance of the RevisionManifestDataElementData class.
-     */
     public RevisionManifestDataElementData() {
         this.revisionManifest = new RevisionManifest();
         this.revisionManifestRootDeclareList = new ArrayList<>();
         this.revisionManifestObjectGroupReferences = new ArrayList<>();
     }
 
-    /**
-     * Used to return the length of this element.
-     *
-     * @param byteArray  A Byte list
-     * @param startIndex Start position
-     * @return The length of the element
-     */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {
@@ -78,30 +68,5 @@ public class RevisionManifestDataElementData extends DataElementData {
         }
 
         return index.get() - startIndex;
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @return A Byte list
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws TikaException, IOException {
-        List<Byte> byteList = new ArrayList<>(this.revisionManifest.serializeToByteList());
-
-        if (this.revisionManifestRootDeclareList != null) {
-            for (RevisionManifestRootDeclare revisionManifestRootDeclare : this.revisionManifestRootDeclareList) {
-                byteList.addAll(revisionManifestRootDeclare.serializeToByteList());
-            }
-        }
-
-        if (this.revisionManifestObjectGroupReferences != null) {
-            for (RevisionManifestObjectGroupReferences revisionManifestObjectGroupReferences :
-                    this.revisionManifestObjectGroupReferences) {
-                byteList.addAll(revisionManifestObjectGroupReferences.serializeToByteList());
-            }
-        }
-
-        return byteList;
     }
 }

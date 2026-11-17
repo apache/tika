@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,9 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -91,7 +88,8 @@ public class OneNoteTreeWalkerGuidTest {
     public void testJcidIndexRequiresCompleteJcid() {
         assertEquals(-1, OneNoteTreeWalker.jcidIndex(null));
         FileNode fileNode = new FileNode();
-        assertEquals(0, OneNoteTreeWalker.jcidIndex(fileNode));
+        // not an object declaration
+        assertEquals(-1, OneNoteTreeWalker.jcidIndex(fileNode));
         fileNode.subType = null;
         assertEquals(-1, OneNoteTreeWalker.jcidIndex(fileNode));
         fileNode.subType = new FileNodeUnion();
@@ -119,24 +117,23 @@ public class OneNoteTreeWalkerGuidTest {
         Path input = tempDir.resolve("guid-data.bin");
         Files.write(input, guidBytes);
         Metadata metadata = new Metadata();
+        Metadata shortMetadata = new Metadata();
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(input.toFile())) {
             OneNoteTreeWalker walker = newWalker(metadata, false, dif);
-            PropertyValue valid = notebookGuidProperty(guidBytes.length);
-            Map<String, Object> parsed = walker.processPropertyValue(valid,
+            walker.processPropertyValue(notebookGuidProperty(guidBytes.length),
                     parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
                     OneNoteJcid.PAGE_METADATA);
-            assertEquals("{00112233-4455-6677-8899-AABBCCDDEEFF}",
-                    parsed.get("notebookManagementEntityGuid"));
-
-            PropertyValue shortGuid = notebookGuidProperty(15);
-            Map<String, Object> malformed = walker.processPropertyValue(shortGuid,
-                    parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
-                    OneNoteJcid.PAGE_METADATA);
-            assertFalse(malformed.containsKey("notebookManagementEntityGuid"));
             walker.walkTree();
+            // a 15-byte value is not a GUID and adds nothing
+            OneNoteTreeWalker shortWalker = newWalker(shortMetadata, false, dif);
+            shortWalker.processPropertyValue(notebookGuidProperty(15),
+                    parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
+                    OneNoteJcid.PAGE_METADATA);
+            shortWalker.walkTree();
         }
         assertEquals(List.of("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
                 Arrays.asList(metadata.getValues(OneNote.PAGE_GUIDS)));
+        assertEquals(0, shortMetadata.getValues(OneNote.PAGE_GUIDS).length);
     }
 
     @Test
@@ -173,28 +170,11 @@ public class OneNoteTreeWalkerGuidTest {
 
     private static PropertyValue notebookGuidProperty(int length) {
         PropertyValue value = new PropertyValue();
+        value.propertyId = new OneNotePropertyId();
         value.propertyId.propertyEnum = OneNotePropertyEnum.NotebookManagementEntityGuid;
         value.propertyId.type = 7;
-        value.rawData.setStp(0).setCb(length);
+        value.rawData = new FileChunkReference(0, length);
         return value;
-    }
-
-    @Test
-    public void testGuidStringPoolSharesAndBoundsInstances() {
-        OneNoteTreeWalker walker = newWalker(new Metadata(), false, null);
-        // equal-but-distinct instances: an identity implementation would fail assertSame
-        String first = walker.pooledGuid("{A}");
-        String second = walker.pooledGuid(new String("{A}"));
-        assertSame(first, second);
-
-        walker.guidStringPool.clear();
-        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT; i++) {
-            walker.guidStringPool.put("g" + i, "g" + i);
-        }
-        String input = new String("{B}");
-        assertSame(input, walker.pooledGuid(input));
-        // a full pool must not grow: without the size guard this becomes MAX + 1
-        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT, walker.guidStringPool.size());
     }
 
     private static OneNoteTreeWalker newWalker(Metadata metadata, boolean fail,
@@ -203,15 +183,13 @@ public class OneNoteTreeWalkerGuidTest {
         Metadata handlerMetadata = metadata == null ? new Metadata() : metadata;
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 new ToTextContentHandler(), handlerMetadata, context);
-        return new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(), new OneNoteDocument(), dif,
+        return new OneNoteTreeWalker(new OneNoteParserConfig(), new OneNoteDocument(), dif,
                 xhtml, metadata, context, Pair.of(1L, ExtendedGUID.nil())) {
             @Override
-            public List<Map<String, Object>> walkRootFileNodes()
-                    throws IOException, TikaException, SAXException {
+            public void walkRootFileNodes() throws IOException, TikaException, SAXException {
                 if (fail) {
                     throw new TikaException("test walk failure");
                 }
-                return Collections.emptyList();
             }
         };
     }

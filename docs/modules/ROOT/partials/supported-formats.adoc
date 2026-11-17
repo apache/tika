@@ -98,6 +98,7 @@
 ** `application/vnd.mozilla.xul+xml`
 ** `application/vnd.wap.xhtml+xml`
 ** `application/x-asp`
+** `application/x-ms-asx`
 ** `application/xhtml+xml`
 ** `text/html`
 * `org.apache.tika.parser.http.` link:{tika-javadoc-url}/org/apache/tika/parser/http/HttpParser.html[HttpParser]
@@ -107,6 +108,8 @@
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/BPGParser.html[BPGParser]
 ** `image/bpg`
 ** `image/x-bpg`
+* `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/Cr3Parser.html[Cr3Parser]
+** `image/x-canon-cr3`
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/HeifParser.html[HeifParser]
 ** `image/avif`
 ** `image/heic`
@@ -221,6 +224,7 @@
 ** `application/x-chm`
 * `org.apache.tika.parser.microsoft.onenote.` link:{tika-javadoc-url}/org/apache/tika/parser/microsoft/onenote/OneNoteParser.html[OneNoteParser]
 ** `application/onenote; format=one`
+** `application/onenote; format=onetoc2`
 * `org.apache.tika.parser.microsoft.ooxml.` link:{tika-javadoc-url}/org/apache/tika/parser/microsoft/ooxml/OOXMLParser.html[OOXMLParser]
 ** `application/vnd.ms-excel.addin.macroenabled.12`
 ** `application/vnd.ms-excel.sheet.binary.macroenabled.12`
@@ -381,6 +385,8 @@
 ** `application/x-prt`
 * `org.apache.tika.parser.sas.` link:{tika-javadoc-url}/org/apache/tika/parser/sas/SAS7BDATParser.html[SAS7BDATParser]
 ** `application/x-sas-data`
+* `org.apache.tika.parser.sketchup.` link:{tika-javadoc-url}/org/apache/tika/parser/sketchup/SketchUpParser.html[SketchUpParser]
+** `application/vnd.sketchup.skp`
 * `org.apache.tika.parser.subtitle.` link:{tika-javadoc-url}/org/apache/tika/parser/subtitle/SubtitleParser.html[SubtitleParser]
 ** `application/x-subrip`
 ** `text/vtt`

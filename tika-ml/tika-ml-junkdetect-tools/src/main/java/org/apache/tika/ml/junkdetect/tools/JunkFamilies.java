@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.tika.ml.junkdetect.HtmlContentCleaner;
+
 /** Synthetic junk for training: wrong decodes of clean text, and the pointwise junk families. */
 final class JunkFamilies {
 
@@ -49,13 +51,39 @@ final class JunkFamilies {
     static final List<String> CROSS = List.of("UTF-8", "windows-1252", "windows-1250", "windows-1251",
             "GBK", "Shift_JIS", "windows-1253");
 
+    /**
+     * The other ASCII-compatible labels the charset model can return; {@link #EXTRA_DECODES} of
+     * these are added per text, so every candidate the chain offers appears as a wrong decode
+     * (Shift_JIS tables were lost to x-MacCyrillic, which no CJK text was misread with) without
+     * thinning the common pairs above.
+     */
+    static final List<String> EXTRA = List.of("windows-1254", "windows-1255", "windows-1256",
+            "windows-1257", "windows-1258", "x-windows-874", "ISO-8859-2", "ISO-8859-3", "ISO-8859-5",
+            "ISO-8859-6", "ISO-8859-7", "ISO-8859-16", "KOI8-R", "KOI8-U", "IBM437", "IBM850", "IBM852",
+            "IBM855", "IBM866", "x-MacRoman", "x-MacCyrillic", "GB18030", "Big5-HKSCS", "x-EUC-TW",
+            "EUC-JP", "x-windows-949");
+
+    static final int EXTRA_DECODES = 2;
+
+    /**
+     * UTF-16 misreads per text, both directions: its BOM-less UTF-16 bytes read as windows-1252
+     * (what Mojibuster offers against a lone UTF-16 pick: every other char NUL or a C0 control) and
+     * its single-byte/UTF-8 bytes read as UTF-16 (ideograph soup).
+     */
+    static final int WIDE_DECODES = 1;
+
+    private static final List<Charset> WIDE = List.of(StandardCharsets.UTF_16LE, StandardCharsets.UTF_16BE);
+
+    private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
+
     private JunkFamilies() {
     }
 
     /**
      * Misreadings of {@code text}: encode it in one plausible source charset (UTF-8 or a
      * charset of its script that can encode it), decode with every other candidate, keep those
-     * that differ; shuffled, at most {@code max}.
+     * that differ; shuffled, at most {@code max}, plus up to {@link #EXTRA_DECODES} from
+     * {@link #EXTRA}.
      */
     static List<String> wrongDecodes(String text, String script, Random r, int max) {
         List<String> family = SCRIPT_CHARSETS.getOrDefault(script, List.of());
@@ -71,6 +99,28 @@ final class JunkFamilies {
         LinkedHashSet<String> decoders = new LinkedHashSet<>(family);
         decoders.addAll(CROSS);
         decoders.remove(source);
+        List<String> out = misreads(b, text, decoders, r, max);
+        LinkedHashSet<String> extra = new LinkedHashSet<>(EXTRA);
+        extra.removeAll(decoders);
+        extra.remove(source);
+        out.addAll(misreads(b, text, extra, r, EXTRA_DECODES));
+        out.addAll(wideMisreads(b, text, r));
+        return out;
+    }
+
+    /** Cleaned as the runtime cleans a candidate decode (NUL -> U+FFFD), so train and inference match. */
+    private static List<String> wideMisreads(byte[] b, String text, Random r) {
+        List<String> out = new ArrayList<>();
+        for (Charset wide : WIDE) {
+            out.add(HtmlContentCleaner.clean(new String(text.getBytes(wide), WINDOWS_1252)));
+            out.add(HtmlContentCleaner.clean(new String(b, wide)));
+        }
+        out.removeIf(m -> m == null || m.isEmpty() || m.equals(text));
+        Collections.shuffle(out, r);
+        return out.size() > WIDE_DECODES ? new ArrayList<>(out.subList(0, WIDE_DECODES)) : out;
+    }
+
+    private static List<String> misreads(byte[] b, String text, Iterable<String> decoders, Random r, int max) {
         List<String> out = new ArrayList<>();
         for (String d : decoders) {
             String m = new String(b, Charset.forName(d));
@@ -79,7 +129,7 @@ final class JunkFamilies {
             }
         }
         Collections.shuffle(out, r);
-        return out.size() > max ? out.subList(0, max) : out;
+        return out.size() > max ? new ArrayList<>(out.subList(0, max)) : out;
     }
 
     /** One junk version of {@code text} from {@code family}; {@code null} if none applies. */

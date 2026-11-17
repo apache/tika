@@ -51,30 +51,32 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderC
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class MSOneStoreParser {
-    /**
-     * The root role declaration used for the encryption key of encrypted sections.
-     */
+    /** Root role declaring the encryption key of encrypted sections. */
     private static final ExGuid ENCRYPTION_KEY_ROOT_EXGUID =
             new ExGuid(3, UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"));
     private final Set<CellID> storageIndexHashTab = new HashSet<>();
-    // The DataElements of Storage Index
+    // a cell manifest is walked once, however many cells map to it
+    private final Map<ExGuid, CellID> parsedCellManifests = new HashMap<>();
+    // likewise a current revision: another cell naming it would only repeat its content
+    private final Map<ExGuid, CellID> parsedCurrentRevisions = new HashMap<>();
     private List<DataElement> storageIndexDataElements;
-    // The DataElements of Storage Manifest
     private List<DataElement> storageManifestDataElements;
-    // The DataElements of Cell Manifest
     private List<DataElement> cellManifestDataElements;
     private Map<ExGuid, DataElement> cellManifestDataElementsById = new HashMap<>();
-    // The DataElements of Revision Manifest
     private List<DataElement> revisionManifestDataElements;
     private Map<ExGuid, DataElement> revisionManifestDataElementsById = new HashMap<>();
-    // The DataElements of Object Group Data
     private List<DataElement> objectGroupDataElements;
-    // The DataElements of Object Group Data, keyed by their data element extended GUID
     private Map<ExGuid, DataElement> objectGroupDataElementsById;
     private final Map<ObjectGroupCacheKey, RevisionStoreObjectGroup> objectGroupsByDataElementId =
             new HashMap<>();
-    // The DataElements of Object BLOB, keyed by their data element extended GUID
     private Map<ExGuid, DataElement> objectBlobElementsById;
+    // Cells may share revisions and object groups; without a bound, N tiny cells naming one big
+    // revision chain cost N times its content to build, walk and emit.
+    static final long CELL_WORK_PER_UNIT = 64;
+    static final long MIN_CELL_WORK = 1_000_000;
+    private long cellWorkCharged;
+    private long distinctCellWork;
+    private boolean cellWorkExhausted;
 
     private static final class ObjectGroupCacheKey {
         private final ExGuid dataElementId;
@@ -102,8 +104,13 @@ public class MSOneStoreParser {
 
     public MSOneStorePackage parse(DataElementPackage dataElementPackage) throws IOException {
         storageIndexHashTab.clear();
+        parsedCellManifests.clear();
+        parsedCurrentRevisions.clear();
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
         objectGroupsByDataElementId.clear();
+        cellWorkCharged = 0;
+        distinctCellWork = 0;
+        cellWorkExhausted = false;
 
         storageIndexDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.StorageIndexDataElementData)
@@ -123,7 +130,10 @@ public class MSOneStoreParser {
                 .collect(Collectors.toList());
         revisionManifestDataElementsById.clear();
         for (DataElement element : revisionManifestDataElements) {
-            revisionManifestDataElementsById.putIfAbsent(element.dataElementExGuid, element);
+            if (revisionManifestDataElementsById.putIfAbsent(element.dataElementExGuid,
+                    element) == null) {
+                distinctCellWork += manifestWork((RevisionManifestDataElementData) element.data);
+            }
         }
         objectGroupDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.ObjectGroupDataElementData)
@@ -157,7 +167,6 @@ public class MSOneStoreParser {
             throw new IOException("Missing OneNote header or data-root declaration");
         }
 
-        // Parse Header Cell
         CellID headerCellID =
                 msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(0).cellID;
         StorageIndexCellMapping headerCellStorageIndexCellMapping =
@@ -185,8 +194,7 @@ public class MSOneStoreParser {
             }
         }
 
-        // Parse Data root independently of the header-cell metadata. A malformed header cell
-        // should not prevent valid section cells from being parsed.
+        // independent of the header cell, so a malformed one cannot block valid section cells
         CellID dataRootCellID =
                 msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(1).cellID;
         storageIndexHashTab.add(dataRootCellID);
@@ -195,42 +203,40 @@ public class MSOneStoreParser {
             throw new IOException("Could not parse the OneNote data root cell");
         }
         msOneStorePackage.dataRootCell = dataRootCell;
-        // Parse other data
-        for (StorageIndexCellMapping storageIndexCellMapping : msOneStorePackage.storageIndex
-                .storageIndexCellMappingList) {
-            if (!storageIndexHashTab.contains(storageIndexCellMapping.cellID)) {
-                RevisionStoreCell cell =
-                        this.parseCell(storageIndexCellMapping.cellID, msOneStorePackage);
-                // The storage index can retain a mapping for a deleted version context.
-                // Such an entry has no CellManifestDataElementData (often its mapping GUID
-                // is all zero) and therefore cannot contain current document content.
-                if (cell != null) {
-                    msOneStorePackage.OtherFileNodeList.addAll(cell.objectGroups);
-                    msOneStorePackage.cells.add(cell);
+        List<StorageIndexCellMapping> mappings =
+                msOneStorePackage.storageIndex.storageIndexCellMappingList;
+        RevisionStoreCell[] parsed = new RevisionStoreCell[mappings.size()];
+        // current-context cells first, so the work budget drops old page versions, not pages
+        ExGuid currentContext = dataRootCellID == null ? null : dataRootCellID.extendGUID1;
+        for (boolean current : new boolean[]{true, false}) {
+            for (int i = 0; i < mappings.size(); i++) {
+                CellID cellID = mappings.get(i).cellID;
+                boolean inCurrent = cellID != null &&
+                        Objects.equals(currentContext, cellID.extendGUID1);
+                if (storageIndexHashTab.contains(cellID) ||
+                        current != inCurrent) {
+                    continue;
                 }
-                storageIndexHashTab.add(storageIndexCellMapping.cellID);
+                // null for a deleted version context the storage index still maps (no cell
+                // manifest, often an all-zero mapping GUID): no current content
+                parsed[i] = this.parseCell(cellID, msOneStorePackage);
+                storageIndexHashTab.add(cellID);
+            }
+        }
+        for (RevisionStoreCell cell : parsed) {
+            if (cell != null) {
+                msOneStorePackage.OtherFileNodeList.addAll(cell.objectGroups);
+                msOneStorePackage.cells.add(cell);
             }
         }
         return msOneStorePackage;
     }
 
-    /**
-     * Find the CellManifestDataElementData
-     *
-     * @param cellMappingExtendedGUID The ExGuid of Cell Mapping Extended GUID.
-     * @return The CellManifestDataElementData instance, or {@code null} if it is absent.
-     */
     private CellManifestDataElementData findCellManifest(ExGuid cellMappingExtendedGUID) {
         DataElement element = cellManifestDataElementsById.get(cellMappingExtendedGUID);
         return element == null ? null : (CellManifestDataElementData) element.data;
     }
 
-    /**
-     * Find the Revision Manifest from Data Elements.
-     *
-     * @param revisionMappingExtendedGUID The Revision Mapping Extended GUID.
-     * @return The RevisionManifestDataElementData instance, or {@code null} if it is absent.
-     */
     private RevisionManifestDataElementData findRevisionManifestDataElement(
             ExGuid revisionMappingExtendedGUID) {
         DataElement element = revisionManifestDataElementsById.get(revisionMappingExtendedGUID);
@@ -266,8 +272,19 @@ public class MSOneStoreParser {
             msOneStorePackage.recordParseWarning(warning);
             return null;
         }
-        CellManifestDataElementData cellManifest =
-                this.findCellManifest(storageIndexCellMapping.cellMappingExGuid);
+        ExGuid cellMapping = storageIndexCellMapping.cellMappingExGuid;
+        if (cellMapping == null || cellMapping.guid == null ||
+                GuidUtil.emptyGuid().equals(cellMapping.guid)) {
+            // a deleted version context: nothing to parse, nothing wrong
+            return null;
+        }
+        CellID owner = parsedCellManifests.putIfAbsent(cellMapping, objectGroupCellID);
+        if (owner != null && !owner.equals(objectGroupCellID)) {
+            msOneStorePackage.recordParseWarning("Skipping OneNote cell " + objectGroupCellID +
+                    ": its cell manifest belongs to another cell");
+            return null;
+        }
+        CellManifestDataElementData cellManifest = this.findCellManifest(cellMapping);
         if (cellManifest == null || cellManifest.cellManifestCurrentRevision == null) {
             String warning = "Skipping OneNote cell " + objectGroupCellID +
                     ": no current cell manifest";
@@ -293,6 +310,13 @@ public class MSOneStoreParser {
             msOneStorePackage.recordParseWarning(warning);
             return null;
         }
+        CellID revisionOwner = parsedCurrentRevisions.putIfAbsent(
+                revisionMapping.revisionMappingExGuid, objectGroupCellID);
+        if (revisionOwner != null && !revisionOwner.equals(objectGroupCellID)) {
+            msOneStorePackage.recordParseWarning("Skipping OneNote cell " + objectGroupCellID +
+                    ": its current revision belongs to another cell");
+            return null;
+        }
 
         // A revision manifest may only reference the object groups that were created or
         // modified in that revision. The remaining object groups belong to the chain of
@@ -301,9 +325,12 @@ public class MSOneStoreParser {
         Deque<RevisionManifestDataElementData> revisionChain = new ArrayDeque<>();
         Set<ExGuid> seenRevisionIds = new HashSet<>();
         while (revisionManifest != null) {
+            if (!chargeCellWork(1, msOneStorePackage)) {
+                return null;
+            }
             ExGuid revisionId = revisionManifest.revisionManifest.revisionID;
             if (revisionId != null && !seenRevisionIds.add(revisionId)) {
-                // cycle guard - stop if we have already visited this revision
+                // cycle guard
                 break;
             }
             revisionChain.addFirst(revisionManifest);
@@ -322,12 +349,15 @@ public class MSOneStoreParser {
         // for each root role, the declaration made by the most recent revision wins
         Map<ExGuid, RevisionManifestRootDeclare> effectiveRootDeclares = new LinkedHashMap<>();
         for (RevisionManifestDataElementData manifest : revisionChain) {
-            msOneStorePackage.revisionManifests.add(manifest);
+            if (!chargeCellWork(manifestWork(manifest), msOneStorePackage)) {
+                return null;
+            }
             RevisionManifestRootDeclare encryptionKeyRoot =
                     manifest.revisionManifestRootDeclareList.stream()
                             .filter(r -> r.rootExGuid.equals(ENCRYPTION_KEY_ROOT_EXGUID))
                             .findFirst().orElse(null);
             boolean isEncryption = encryptionKeyRoot != null;
+            msOneStorePackage.encrypted |= isEncryption;
             for (RevisionManifestRootDeclare rootDeclare :
                     manifest.revisionManifestRootDeclareList) {
                 if (!rootDeclare.rootExGuid.equals(ENCRYPTION_KEY_ROOT_EXGUID)) {
@@ -358,12 +388,17 @@ public class MSOneStoreParser {
                             objRef.objectGroupExtendedGUID, dataObject, isEncryption,
                             objectBlobElementsById);
                     objectGroupsByDataElementId.put(cacheKey, cachedObjectGroup);
+                    distinctCellWork += cachedObjectGroup.weight;
+                }
+                if (!chargeCellWork(cachedObjectGroup.weight, msOneStorePackage)) {
+                    return null;
                 }
                 objectGroups.add(cachedObjectGroup.copy());
             }
         }
 
         removeSupersededObjects(objectGroups);
+        msOneStorePackage.revisionManifests.addAll(revisionChain);
 
         RevisionStoreCell cell = new RevisionStoreCell();
         cell.cellID = objectGroupCellID;
@@ -372,33 +407,57 @@ public class MSOneStoreParser {
         return cell;
     }
 
+    /** One per manifest, root declare and object-group reference: the loops parseCell runs. */
+    private static long manifestWork(RevisionManifestDataElementData manifest) {
+        if (manifest == null) {
+            return 1;
+        }
+        return 1L + manifest.revisionManifestRootDeclareList.size() +
+                manifest.revisionManifestObjectGroupReferences.size();
+    }
+
+    private boolean chargeCellWork(long work, MSOneStorePackage msOneStorePackage) {
+        if (cellWorkExhausted) {
+            return false;
+        }
+        cellWorkCharged += work;
+        if (cellWorkCharged > MIN_CELL_WORK + CELL_WORK_PER_UNIT * distinctCellWork) {
+            cellWorkExhausted = true;
+            msOneStorePackage.recordParseWarning(
+                    "OneNote cells exceeded the shared-revision work budget; skipping the rest");
+            return false;
+        }
+        return true;
+    }
+
     /**
-     * An object that is modified in a later revision appears again, with the same object ID,
-     * in that revision's object group. Keep only the newest version of each object, replacing
-     * the older version in place so the original object ordering is preserved.
-     *
-     * @param objectGroups The object groups ordered from the oldest revision to the newest.
+     * An object modified in a later revision reappears, with the same object ID, in that
+     * revision's object group. Keeps only the newest version, replacing the older one in place
+     * to preserve ordering. objectGroups must be ordered oldest revision first.
      */
     private void removeSupersededObjects(List<RevisionStoreObjectGroup> objectGroups) {
         Map<ExGuid, List<RevisionStoreObject>> containingList = new HashMap<>();
         Map<ExGuid, Integer> indexInList = new HashMap<>();
+        List<List<RevisionStoreObject>> keptLists = new ArrayList<>(objectGroups.size());
         for (RevisionStoreObjectGroup objectGroup : objectGroups) {
-            List<RevisionStoreObject> objects = objectGroup.objects;
-            for (int i = 0; i < objects.size(); ) {
-                RevisionStoreObject object = objects.get(i);
+            List<RevisionStoreObject> kept = new ArrayList<>(objectGroup.objects.size());
+            keptLists.add(kept);
+            for (RevisionStoreObject object : objectGroup.objects) {
                 ExGuid objectId = object.objectID;
                 if (objectId != null && containingList.containsKey(objectId)) {
-                    // newer version of an already seen object - replace the older one in place
                     containingList.get(objectId).set(indexInList.get(objectId), object);
-                    objects.remove(i);
                 } else {
                     if (objectId != null) {
-                        containingList.put(objectId, objects);
-                        indexInList.put(objectId, i);
+                        containingList.put(objectId, kept);
+                        indexInList.put(objectId, kept.size());
                     }
-                    ++i;
+                    kept.add(object);
                 }
             }
+        }
+        for (int g = 0; g < objectGroups.size(); g++) {
+            objectGroups.get(g).objects.clear();
+            objectGroups.get(g).objects.addAll(keptLists.get(g));
         }
     }
 }

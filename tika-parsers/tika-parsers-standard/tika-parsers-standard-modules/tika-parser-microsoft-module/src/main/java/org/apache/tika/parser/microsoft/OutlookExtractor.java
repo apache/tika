@@ -67,6 +67,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
@@ -80,7 +81,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.microsoft.msg.ExtendedMetadataExtractor;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
@@ -632,14 +632,14 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private void parseHtmlBody(byte[] htmlData, XHTMLContentHandler xhtml,
                                Set<String> contentIdNames)
             throws SAXException, IOException, TikaException {
-        Parser htmlParser = EmbeddedDocumentUtil
+        JSoupParser htmlParser = (JSoupParser) EmbeddedDocumentUtil
                 .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
         if (htmlParser == null) {
             htmlParser = new JSoupParser();
         }
         Metadata htmlMetadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(htmlData)) {
-            htmlParser.parse(tis,
+            htmlParser.parseInline(tis,
                     new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                     htmlMetadata, parseContext);
         }
@@ -868,7 +868,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             try (TikaInputStream tis = TikaInputStream.get(body)) {
                 List<EncodingResult> results = encodingDetector.detect(tis, metadata, context);
                 if (!results.isEmpty() && results.get(0).getConfidence() > 0.35f
-                        && tryToSet7BitEncoding(msg, results.get(0).getDecodeAs().name())) {
+                        && tryToSet7BitEncoding(msg,
+                                CharsetSupersets.jdkDecodeAs(results.get(0).getCharset()).name())) {
                     return;
                 }
             } catch (IOException e) {

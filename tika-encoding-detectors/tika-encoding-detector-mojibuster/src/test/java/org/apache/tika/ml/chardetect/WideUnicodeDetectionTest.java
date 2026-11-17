@@ -180,6 +180,38 @@ public class WideUnicodeDetectionTest {
         assertEquals(0.1f, results.get(0).getConfidence());
     }
 
+    /**
+     * Header {@code 80 37 00 00} then ASCII '0'/'1' (a CC .mtsl2 shader file): the model scores only the
+     * header's NULs and says UTF-32BE, but no 4-byte group is a code point.
+     */
+    @Test
+    public void bitstringWithBinaryHeaderIsNotUtf32() {
+        byte[] bytes = new byte[10240];
+        bytes[0] = (byte) 0x80;
+        bytes[1] = 0x37;
+        Random r = new Random(380107L);
+        for (int i = 4; i < bytes.length; i++) {
+            bytes[i] = (byte) (r.nextBoolean() ? '1' : '0');
+        }
+        WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(bytes);
+        assertTrue(wide.invalidUtf32Be);
+        assertTrue(wide.invalidUtf32Le);
+        String top = top(bytes);
+        assertFalse(top.startsWith("UTF-32") || top.startsWith("UTF-16"), top);
+        // which Latin label the model picks is seed-dependent; its decode must equal windows-1252's
+        assertEquals(new String(bytes, Charset.forName("windows-1252")),
+                new String(bytes, Charset.forName(top)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"UTF-32BE", "UTF-32LE"})
+    public void validUtf32HasNoInvalidFlag(String charset) {
+        WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(
+                "Grüße, мир, 世界".getBytes(Charset.forName(charset)));
+        assertEquals(charset, wide.charset.name());
+        assertFalse("UTF-32BE".equals(charset) ? wide.invalidUtf32Be : wide.invalidUtf32Le);
+    }
+
     /** UTF-16LE of {@code text} with raw code {@code units} inserted at char index {@code at}. */
     private static byte[] le(String text, int at, int... units) {
         byte[] head = text.substring(0, at).getBytes(StandardCharsets.UTF_16LE);

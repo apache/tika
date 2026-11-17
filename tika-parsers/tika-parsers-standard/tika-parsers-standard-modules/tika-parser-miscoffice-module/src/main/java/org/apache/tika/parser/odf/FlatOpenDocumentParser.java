@@ -51,6 +51,7 @@ public class FlatOpenDocumentParser implements Parser {
      */
     public static class Config {
         public boolean extractMacros = false;
+        public boolean includeMissingRows = false;
     }
 
     static final MediaType FLAT_OD =
@@ -68,6 +69,7 @@ public class FlatOpenDocumentParser implements Parser {
             .unmodifiableSet(new HashSet<>(Arrays.asList(FLAT_OD, FLAT_ODT, FLAT_ODP, FLAT_ODS)));
 
     private boolean extractMacros = false;
+    private boolean includeMissingRows = false;
 
     public FlatOpenDocumentParser() {
     }
@@ -79,6 +81,7 @@ public class FlatOpenDocumentParser implements Parser {
      */
     public FlatOpenDocumentParser(Config config) {
         this.extractMacros = config.extractMacros;
+        this.includeMissingRows = config.includeMissingRows;
     }
 
     /**
@@ -144,10 +147,20 @@ public class FlatOpenDocumentParser implements Parser {
     public boolean isExtractMacros() {
         return extractMacros;
     }
+
+    /** See {@link OpenDocumentParser#setIncludeMissingRows(boolean)}. */
+    public void setIncludeMissingRows(boolean includeMissingRows) {
+        this.includeMissingRows = includeMissingRows;
+    }
+
+    public boolean isIncludeMissingRows() {
+        return includeMissingRows;
+    }
     private FlatOpenDocumentParserHandler getContentHandler(ContentHandler handler,
                                                             Metadata metadata,
                                                             ParseContext context) {
-        return new FlatOpenDocumentParserHandler(handler, metadata, context, extractMacros);
+        return new FlatOpenDocumentParserHandler(handler, metadata, context, extractMacros,
+                includeMissingRows);
     }
 
     private static class FlatOpenDocumentParserHandler extends ContentHandlerDecorator {
@@ -181,11 +194,12 @@ public class FlatOpenDocumentParser implements Parser {
         private int outerSectionDepth = 0;
 
         private FlatOpenDocumentParserHandler(ContentHandler baseHandler, Metadata metadata,
-                                              ParseContext parseContext, boolean extractMacros) {
+                                              ParseContext parseContext, boolean extractMacros,
+                                              boolean includeMissingRows) {
             this.extractMacros = extractMacros;
 
             this.bodyHandler = new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler),
-                            parseContext, metadata);
+                            parseContext, metadata, includeMissingRows);
 
             this.metadataHandler = new NSNormalizerContentHandler(
                     OpenDocumentMetaParser.getContentHandler(metadata, parseContext));

@@ -1280,8 +1280,11 @@ public class TestMimeTypes {
 
     @Test
     public void testMIF() throws Exception {
-        assertType("application/vnd.mif", "testMIF.mif");
-        assertTypeByData("application/vnd.mif", "testMIF.mif");
+        // a binary FrameMaker document (<MakerFile), not the MIF text format
+        assertType("application/vnd.framemaker", "testMIF.mif");
+        assertTypeByData("application/vnd.framemaker", "testMIF.mif");
+        assertType("application/vnd.mif", "testFramemakerMif.mif");
+        assertTypeByData("application/vnd.mif", "testFramemakerMif.mif");
     }
 
     @Test

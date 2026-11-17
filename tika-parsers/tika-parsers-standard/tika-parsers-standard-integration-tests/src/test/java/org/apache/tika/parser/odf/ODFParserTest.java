@@ -18,6 +18,7 @@ package org.apache.tika.parser.odf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
@@ -210,5 +212,31 @@ public class ODFParserTest extends TikaTest {
 
     private void assertImageContentType(String expected, String actual) {
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testIncludeMissingRowsConfig() throws Exception {
+        Parser parser = TikaLoaderHelper.getLoader("tika-config-ods-missing-rows.json")
+                .loadAutoDetectParser();
+        String fods = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><office:document"
+                + " xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\""
+                + " xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\""
+                + " xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\""
+                + " office:mimetype=\"application/vnd.oasis.opendocument.spreadsheet\">"
+                + "<office:body><office:spreadsheet><table:table table:name=\"S\">"
+                + "<table:table-row><table:table-cell><text:p>a</text:p></table:table-cell>"
+                + "</table:table-row><table:table-row table:number-rows-repeated=\"3\">"
+                + "<table:table-cell/></table:table-row>"
+                + "<table:table-row><table:table-cell><text:p>b</text:p></table:table-cell>"
+                + "</table:table-row></table:table></office:spreadsheet></office:body>"
+                + "</office:document>";
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "rows.fods");
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(fods.getBytes(StandardCharsets.UTF_8))) {
+            xml = getXML(tis, parser, metadata).xml;
+        }
+        assertEquals(3, xml.split("<tr>\\s*<td />\\s*</tr>", -1).length - 1);
+        assertContains("<p>b</p>", xml);
     }
 }

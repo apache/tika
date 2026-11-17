@@ -402,6 +402,34 @@ public class AutoDetectParserTest extends TikaTest {
     }
 
     @Test
+    public void testMalformedAsx() throws Exception {
+        // shapes from Common Crawl: no declaration, windows-1252, raw '&', unclosed REF, mixed case
+        String asx = "<ASX version=\"3.0\">\n<TITLE>Café radio</TITLE>\n"
+                + "<AUTHOR>TBS RADIO & COMMUNICATIONS,Inc.</AUTHOR>\n<Entry>\n"
+                + "<REF HREF=\"mms://example.com/news/clip.wmv\">\n</ENTRY>\n</asx>\n";
+        Metadata m = new Metadata();
+        XMLResult r = getXML(TikaInputStream.get(asx.getBytes("windows-1252")),
+                AUTO_DETECT_PARSER, m);
+        assertEquals("application/x-ms-asx", m.get(HttpHeaders.CONTENT_TYPE));
+        assertContains("Café radio", r.xml);
+        assertContains("TBS RADIO &amp; COMMUNICATIONS", r.xml);
+        assertContains(JSoupParser.class.getName(),
+                Arrays.asList(m.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+    }
+
+    @Test
+    public void testTexinfoIsText() throws Exception {
+        String texi = "\\input texinfo\n@setfilename diff.info\n"
+                + "@settitle Comparing and Merging Files\n@bye\n";
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "diff.texi");
+        String text = getText(TikaInputStream.get(texi.getBytes(UTF_8)), AUTO_DETECT_PARSER, m);
+        assertTrue(m.get(HttpHeaders.CONTENT_TYPE).startsWith("application/x-texinfo"),
+                m.get(HttpHeaders.CONTENT_TYPE));
+        assertContains("Comparing and Merging Files", text);
+    }
+
+    @Test
     public void testZeroByteFileException() throws Exception {
         String[] exts = new String[]{"xls", "doc", "pdf", "rtf"};
 

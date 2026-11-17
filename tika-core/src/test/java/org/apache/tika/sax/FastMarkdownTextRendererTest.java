@@ -82,7 +82,7 @@ public class FastMarkdownTextRendererTest {
     public void testLineStartEscapes() {
         // Literals whose first char would parse as block structure at line start
         for (String literal : new String[]{
-                "- not a list", "-not a list", "-", "+ plus", "* star",
+                "- not a list", "-not a list", "-", "* star",
                 "# not a heading", "#hash", "#",
                 "= not setext", "=",
                 "1. not ordered", "12. also not", "123456789. limit", "1) paren",
@@ -91,6 +91,17 @@ public class FastMarkdownTextRendererTest {
                 " leading space", "\tleading tab", "  two spaces"}) {
             assertSameRendering(paragraphs(literal), "diverged on literal: " + literal);
         }
+    }
+
+    @Test
+    public void testPlusAtLineStartIsEscaped() {
+        // deliberate divergence: stock commonmark lets "+ x" become a bullet list
+        for (String literal : new String[]{"+ plus", "+", "+1"}) {
+            String md = FAST.render(paragraphs(literal));
+            assertTrue(md.startsWith("\\+"), md);
+            assertTrue(PARSER.parse(md).getFirstChild() instanceof Paragraph, md);
+        }
+        assertSameRendering(paragraphs("mid ", "+ plus"));
     }
 
     @Test

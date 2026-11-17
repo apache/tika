@@ -24,16 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * The ObjectGroupData class.
- */
 public class ObjectGroupData extends StreamObject {
     public List<ObjectGroupObjectData> objectGroupObjectDataList;
     public List<ObjectGroupObjectDataBLOBReference> objectGroupObjectDataBLOBReferenceList;
 
-    /**
-     * Initializes a new instance of the ObjectGroupData class.
-     */
     public ObjectGroupData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupData);
         this.objectGroupObjectDataList = new ArrayList<ObjectGroupObjectData>();
@@ -41,43 +35,12 @@ public class ObjectGroupData extends StreamObject {
                 new ArrayList<ObjectGroupObjectDataBLOBReference>();
     }
 
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return A constant value 0
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
-        if (this.objectGroupObjectDataList != null) {
-            for (ObjectGroupObjectData objectGroupObjectData : this.objectGroupObjectDataList) {
-                byteList.addAll(objectGroupObjectData.serializeToByteList());
-            }
-        }
-
-        if (this.objectGroupObjectDataBLOBReferenceList != null) {
-            for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference :
-                    this.objectGroupObjectDataBLOBReferenceList) {
-                byteList.addAll(objectGroupObjectDataBLOBReference.serializeToByteList());
-            }
-        }
-
-        return 0;
-    }
-
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
             throws TikaException, IOException {
         if (lengthOfItems != 0) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
+            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupData",
                     "Stream object over-parse error", null);
         }
 

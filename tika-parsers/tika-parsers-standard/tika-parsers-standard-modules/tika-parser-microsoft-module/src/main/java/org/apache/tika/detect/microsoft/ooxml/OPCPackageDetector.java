@@ -109,6 +109,15 @@ public class OPCPackageDetector implements ZipContainerDetector {
             "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
     static Map<String, MediaType> OOXML_CONTENT_TYPES = new ConcurrentHashMap<>();
 
+    // package relationship types of non-Office OPC formats
+    static final Map<String, MediaType> PACKAGE_RELATIONSHIP_TYPES = Map.of(
+            "http://schemas.microsoft.com/packaging/2010/07/manifest",
+            MediaType.application("x-nupkg"),
+            "http://www.fictionbook.org/FictionBook3/relationships/Book",
+            MediaType.application("x-fictionbook3"),
+            "http://microsoft.com/schemas/windows/kits/hardware/2010/coredata",
+            MediaType.application("x-ms-hlk-package"));
+
     static {
         OOXML_CONTENT_TYPES.put(XWPFRelation.DOCUMENT.getContentType(), DOCX);
         OOXML_CONTENT_TYPES.put(XWPFRelation.MACRO_DOCUMENT.getContentType(), DOCM);
@@ -193,6 +202,13 @@ public class OPCPackageDetector implements ZipContainerDetector {
                     return THREE_MF;
                 }
             }
+            if (core.size() == 0) {
+                for (Map.Entry<String, MediaType> e : PACKAGE_RELATIONSHIP_TYPES.entrySet()) {
+                    if (pkg.getRelationshipsByType(e.getKey()).size() > 0) {
+                        return e.getValue();
+                    }
+                }
+            }
         }
         // If we didn't find a single core document of any type, skip detection
         if (core.size() != 1) {
@@ -225,6 +241,25 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
         // Build the MediaType object and return
         return MediaType.parse(docType);
+    }
+
+    // POI refuses some non-Office packages (e.g. NuGet's "application/octet" content type)
+    private static MediaType detectByPackageRelationships(ZipEntrySource zipEntrySource) {
+        ZipArchiveEntry relsEntry = zipEntrySource.getEntry("_rels/.rels");
+        if (relsEntry == null) {
+            return null;
+        }
+        try (InputStream is = zipEntrySource.getInputStream(relsEntry)) {
+            for (String rel : parseOOXMLRels(is)) {
+                MediaType mt = PACKAGE_RELATIONSHIP_TYPES.get(rel);
+                if (mt != null) {
+                    return mt;
+                }
+            }
+        } catch (IOException e) {
+            //swallow
+        }
+        return null;
     }
 
     public static Set<String> parseOOXMLRels(InputStream is) {
@@ -288,6 +323,12 @@ public class OPCPackageDetector implements ZipContainerDetector {
         // rels were malformed and POI silently produced an empty relationship
         // collection. Either way, fall back to parsing [Content_Types].xml
         // directly — same approach as the streaming detector.
+        if (type == null) {
+            type = detectByPackageRelationships(zipEntrySource);
+            if (type != null && pkg == null) {
+                return type;
+            }
+        }
         if (type == null) {
             ZipArchiveEntry ctEntry = zipEntrySource.getEntry("[Content_Types].xml");
             if (ctEntry != null) {

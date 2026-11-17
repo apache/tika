@@ -182,6 +182,22 @@ public class TikaCLITest {
         assertTrue(content.contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
     }
 
+    @Test
+    public void testTextMainUsesReadability() throws Exception {
+        String para = "<p>The committee met on Tuesday, and after a long debate, it voted to adopt"
+                + " the proposal, which had been revised twice since the spring.</p>";
+        Path page = extractDir.resolve("article.html");
+        Files.writeString(page, "<html><head><title>Council vote passes after long debate</title></head><body>"
+                + "<nav><a href=\"/\">Most read nav link</a></nav><article>" + para.repeat(8)
+                + "</article></body></html>", UTF_8);
+
+        String main = getParamOutContent("-T", page.toString());
+        assertTrue(main.contains("committee met on Tuesday"), main);
+        assertFalse(main.contains("Most read nav link"), main);
+
+        assertTrue(getParamOutContent("-t", page.toString()).contains("Most read nav link"));
+    }
+
     /**
      * Tests -x option of the cli
      *

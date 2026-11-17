@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -60,6 +61,7 @@ import org.apache.tika.utils.StringUtils;
  * @since Apache Tika 4.0
  */
 // spi = false: VLM parsers are selected by name in config, never auto-registered (TIKA-4871)
+@RequestConfigurable
 @TikaComponent(name = "openai-vlm-parser", spi = false)
 public class OpenAIVLMParser extends AbstractVLMParser {
 

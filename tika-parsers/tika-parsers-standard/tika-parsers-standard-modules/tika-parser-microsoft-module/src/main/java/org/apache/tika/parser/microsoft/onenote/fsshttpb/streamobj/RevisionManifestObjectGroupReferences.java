@@ -17,68 +17,30 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.BasicObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 
-/**
- * Specifies a revision manifest object group references, each followed by object group extended GUIDs
- */
 public class RevisionManifestObjectGroupReferences extends StreamObject {
     public ExGuid objectGroupExtendedGUID;
 
-    /**
-     * Initializes a new instance of the RevisionManifestObjectGroupReferences class.
-     */
     public RevisionManifestObjectGroupReferences() {
         super(StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences);
     }
 
-    /**
-     * Initializes a new instance of the RevisionManifestObjectGroupReferences class.
-     *
-     * @param objectGroupExtendedGUID Extended GUID
-     */
     public RevisionManifestObjectGroupReferences(ExGuid objectGroupExtendedGUID) {
         super(StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences);
         this.objectGroupExtendedGUID = objectGroupExtendedGUID;
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.objectGroupExtendedGUID = BasicObject.parse(byteArray, index, ExGuid.class);
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "RevisionManifestObjectGroupReferences", "Stream object over-parse error",
-                    null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The number of elements actually contained in the list.
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        List<Byte> tmpList = this.objectGroupExtendedGUID.serializeToByteList();
-        byteList.addAll(tmpList);
-        return tmpList.size();
+        endItems(currentIndex, index, lengthOfItems, "RevisionManifestObjectGroupReferences");
     }
 }

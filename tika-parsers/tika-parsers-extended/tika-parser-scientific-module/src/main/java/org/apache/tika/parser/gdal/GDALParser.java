@@ -201,6 +201,14 @@ public class GDALParser implements Parser {
         return args;
     }
 
+    // VRT and GTI open any file whose header merely contains their XML, so a document of a
+    // type routed here can name other files or URLs for gdalinfo to open.
+    static void restrictEnvironment(Map<String, String> env) {
+        env.merge("GDAL_SKIP", "VRT GTI", (operatorSkip, skip) -> operatorSkip + " " + skip);
+        // the input is always a local file, so no /vsicurl/ name needs to open
+        env.put("CPL_VSIL_CURL_ALLOWED_FILENAME", "");
+    }
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -220,7 +228,9 @@ public class GDALParser implements Parser {
 
         String[] runCommand = buildCommandLine(this.command, tis.getFile().getPath());
 
-        FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand), context,
+        ProcessBuilder pb = new ProcessBuilder(runCommand);
+        restrictEnvironment(pb.environment());
+        FileProcessResult result = ProcessUtils.execute(pb, context,
                 timeoutMillis, maxStdOut, maxStdErr);
 
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());

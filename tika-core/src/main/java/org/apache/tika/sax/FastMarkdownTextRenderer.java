@@ -42,9 +42,11 @@ import org.commonmark.text.AsciiMatcher;
  * The escaping semantics replicate {@code CoreMarkdownNodeRenderer#visit(Text)} for
  * the commonmark version pinned in tika-parent exactly: the line-start disambiguation
  * cases, the heading escape variant, the {@code !}-before-link case, and the
- * {@code \n} numeric reference. {@code FastMarkdownTextRendererTest} renders ASTs
- * through this renderer and the stock one and requires byte-identical output; a
- * commonmark upgrade that changes escaping fails there and must be re-synced here.
+ * {@code \n} numeric reference. The one deliberate difference: a {@code +} at line
+ * start is escaped, since it is a bullet marker the stock renderer misses.
+ * {@code FastMarkdownTextRendererTest} renders ASTs through this renderer and the
+ * stock one and requires byte-identical output otherwise; a commonmark upgrade that
+ * changes escaping fails there and must be re-synced here.
  * <p>
  * Text inside a table cell renders through the stock per-char path: the tables extension
  * pushes a raw-escape for {@code |} onto the writer there, and hand-emitted escapes would
@@ -112,6 +114,12 @@ class FastMarkdownTextRenderer implements NodeRenderer {
                 }
                 case '#': {
                     writer.raw("\\#");
+                    literal = literal.substring(1);
+                    break;
+                }
+                case '+': {
+                    // a bullet marker too; commonmark 0.31.0 leaves it unescaped
+                    writer.raw("\\+");
                     literal = literal.substring(1);
                     break;
                 }

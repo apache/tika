@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
@@ -27,6 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Random;
 
 import org.apache.commons.io.ByteOrderMark;
 import org.junit.jupiter.api.BeforeAll;
@@ -204,6 +210,216 @@ public class MimeDetectionTest {
         assertEquals(ani, detect(acon, "pointer.cur"));
     }
 
+    @Test
+    public void testWoffDetection() throws Exception {
+        assertDetected(MediaType.parse("font/woff"), header(0, "wOFF\u0000\u0001\u0000\u0000"));
+        assertDetected(MediaType.parse("font/woff"), header(0, "wOFFOTTO"));
+        assertDetected(MediaType.parse("font/woff2"), header(0, "wOF2\u0000\u0001\u0000\u0000"));
+        assertDetected(MediaType.OCTET_STREAM, header(0, "wOFFxxxx"));
+    }
+
+    @Test
+    public void testSquashfsDetection() throws Exception {
+        MediaType squashfs = MediaType.application("vnd.squashfs");
+        byte[] le = header(0, "hsqs");
+        le[28] = 4;
+        assertDetected(squashfs, le);
+        byte[] be = header(0, "sqsh");
+        be[29] = 3;
+        assertDetected(squashfs, be);
+        // no plausible major version
+        assertDetected(MediaType.OCTET_STREAM, header(0, "hsqs"));
+    }
+
+    @Test
+    public void testAdobeSwatchExchangeDetection() throws Exception {
+        assertDetected(MediaType.application("x-adobe-swatch-exchange"),
+                header(0, "ASEF\u0000\u0001\u0000\u0000"));
+        assertDetected(MediaType.OCTET_STREAM, header(0, "ASEF\u0000\u0002\u0000\u0000"));
+    }
+
+    @Test
+    public void testPalmDocDetection() throws Exception {
+        assertDetected(MediaType.application("x-aportisdoc"), header(60, "TEXtREAd"));
+        assertDetected(MediaType.application("x-mobipocket-ebook"), header(60, "BOOKMOBI"));
+    }
+
+    @Test
+    public void testBinaryPgpSignatureDetection() throws Exception {
+        MediaType sig = MediaType.application("pgp-signature");
+        // v4, binary sig type, RSA, SHA-256; 2-byte length
+        assertDetected(sig, bytes(0x89, 0x01, 0x1c, 0x04, 0x00, 0x01, 0x08, 0x00));
+        // v4, text sig type, EdDSA; 1-byte length
+        assertDetected(sig, bytes(0x88, 0x75, 0x04, 0x01, 0x16, 0x08, 0x00));
+        // v3, hashed length 5
+        assertDetected(sig, bytes(0x88, 0x3f, 0x03, 0x05, 0x00, 0x3f, 0xc0));
+        // unknown public-key algorithm
+        assertDetected(MediaType.OCTET_STREAM, bytes(0x89, 0x01, 0x1c, 0x04, 0x00, 0x07, 0x08));
+        // new-format packets (RFC 9580 4.2): v6 Ed25519 SHA-512 with a 4-byte hashed length; v4 RSA
+        assertDetected(sig, bytes(0xc2, 0x75, 0x06, 0x00, 0x1b, 0x0a, 0x00, 0x00, 0x00, 0x29));
+        assertDetected(sig, bytes(0xc2, 0xc0, 0x1c, 0x04, 0x00, 0x01, 0x08, 0x00));
+        // direct-key self-signature, not a detached one
+        assertDetected(MediaType.OCTET_STREAM, bytes(0xc2, 0x75, 0x06, 0x1f, 0x1b, 0x0a, 0x00));
+        assertDetected(MediaType.image("png"),
+                bytes(0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 'I', 'H', 'D', 'R'));
+    }
+
+    @Test
+    public void testEmbeddedOpenTypeVersions() throws Exception {
+        MediaType eot = MediaType.application("vnd.ms-fontobject");
+        for (int[] version : new int[][]{{0, 0, 1, 0}, {1, 0, 2, 0}, {2, 0, 2, 0}}) {
+            byte[] b = header(34, "LP");
+            for (int i = 0; i < 4; i++) {
+                b[8 + i] = (byte) version[i];
+            }
+            assertDetected(eot, b);
+        }
+    }
+
+    @Test
+    public void testBitTorrentFirstKeys() throws Exception {
+        MediaType torrent = MediaType.application("x-bittorrent");
+        assertDetected(torrent, "d8:announce35:udp://tracker".getBytes(US_ASCII));
+        assertDetected(torrent, "d13:announce-listll35:udp".getBytes(US_ASCII));
+        assertDetected(torrent, "d7:comment5:hello4:infod".getBytes(US_ASCII));
+        assertDetected(torrent, "d4:infod6:lengthi1024e".getBytes(US_ASCII));
+    }
+
+    @Test
+    public void testMxfDetection() throws Exception {
+        assertDetected(MediaType.application("mxf"),
+                bytes(0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01,
+                        0x01, 0x02, 0x04, 0x00));
+    }
+
+    @Test
+    public void testJavaSerializationDetection() throws Exception {
+        MediaType ser = MediaType.application("java-serialized-object");
+        assertDetected(ser, bytes(0xac, 0xed, 0x00, 0x05, 0x73, 0x72, 0x00, 0x10));
+        assertDetected(ser, bytes(0xac, 0xed, 0x00, 0x05, 0x77, 0x04));
+        assertDetected(MediaType.OCTET_STREAM, bytes(0xac, 0xed, 0x53, 0xab, 0x49));
+    }
+
+    @Test
+    public void testHtmlFragmentDetection() throws Exception {
+        for (String s : new String[]{
+                "<meta http-equiv=\"Content-Type\" content=\"text/html\">",
+                "<br />\n<b>Warning</b>:  filesize()",
+                "<p><a href='http://example.com'>x</a>",
+                "</b> <br>\n<font face=Arial>",
+                "<script type='text/javascript'>\nvar x = 1;",
+                "<SMALL>x</SMALL>"}) {
+            assertDetected(MediaType.TEXT_HTML, s.getBytes(US_ASCII));
+        }
+        assertDetected(MediaType.TEXT_PLAIN, "<abbr title=x>".getBytes(US_ASCII));
+        assertDetected(MediaType.TEXT_PLAIN, "<bread> and butter".getBytes(US_ASCII));
+        // injected analytics in front of a real document
+        assertDetected(MediaType.application("pdf"),
+                "<script>\n  (function(i,s,o,g,r,a,m){})\n</script>\n%PDF-1.4\n".getBytes(US_ASCII));
+        assertDetected(MediaType.application("xhtml+xml"),
+                ("<script src=\"urchin.js\"></script>\n" + "<!-- x -->\n".repeat(12)
+                        + "<html xmlns=\"http://www.w3.org/1999/xhtml\">").getBytes(US_ASCII));
+        // a .xml name still picks XML, except for roots text/html claims (TIKA-377)
+        byte[] table = "<table name=\"t\"><row id=\"1\"/></table>".getBytes(US_ASCII);
+        assertEquals(MediaType.APPLICATION_XML, detect(table, "test.xml"));
+        assertEquals(MediaType.TEXT_HTML, detect(table, "test.html"));
+        assertEquals(MediaType.TEXT_HTML, detect(table, null));
+        assertEquals(MediaType.TEXT_HTML, detect("<p>x</p>".getBytes(US_ASCII), "test.xml"));
+        assertEquals(MediaType.TEXT_HTML,
+                detect("<br />\n<b>Warning</b>: x".getBytes(US_ASCII), "test.php"));
+    }
+
+    @Test
+    public void testAsxWithoutXmlDeclaration() throws Exception {
+        MediaType asx = MediaType.application("x-ms-asx");
+        assertDetected(asx, "<ASX version = \"3.0\">\n<Entry>".getBytes(US_ASCII));
+        assertDetected(asx, "<Asx Version=\"3.0\"><Entry>".getBytes(US_ASCII));
+    }
+
+    @Test
+    public void testMpegTransportStream() throws Exception {
+        MediaType ts = MediaType.video("mp2t");
+        assertDetected(ts, packets(0, 188, 5));
+        assertDetected(ts, packets(4, 192, 5));
+        assertDetected(MediaType.OCTET_STREAM, packets(0, 188, 4));
+    }
+
+    @Test
+    public void testMarcWithBlankBibliographicLevel() throws Exception {
+        assertDetected(MediaType.application("marc"),
+                "01252na  a2200325   4500001001300000".getBytes(US_ASCII));
+    }
+
+    @Test
+    public void testDerCrlAndCertificateAnySignatureAlgorithm() throws Exception {
+        // v2 CRL signed with SM2 (OID 1.2.156.10197.1.501), long and short inner lengths
+        assertDetected(MediaType.application("pkix-crl"), bytes(0x30, 0x82, 0x01, 0x17, 0x30, 0x81, 0xbe,
+                0x02, 0x01, 0x01, 0x30, 0x0a, 0x06, 0x08, 0x2a, 0x81, 0x1c, 0xcf, 0x55, 0x01, 0x83, 0x75));
+        assertDetected(MediaType.application("pkix-crl"), bytes(0x30, 0x81, 0xa0, 0x30, 0x48,
+                0x02, 0x01, 0x01, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70));
+        // v1 CRL (no version field) from openssl ca -gencrl, ecdsa-with-SHA256, issuer CN=T
+        byte[] crlV1 = new byte[64];
+        byte[] crlHead = {0x30, (byte) 0x81, (byte) 0x91, 0x30, 0x38, 0x30, 0x0a, 0x06, 0x08, 0x2a,
+                (byte) 0x86, 0x48, (byte) 0xce, 0x3d, 0x04, 0x03, 0x02, 0x30, 0x0c, 0x31, 0x0a, 0x30, 0x08,
+                0x06, 0x03, 0x55, 0x04, 0x03, 0x0c, 0x01, 0x54, 0x17, 0x0d};
+        System.arraycopy(crlHead, 0, crlV1, 0, crlHead.length);
+        System.arraycopy("261105180134Z".getBytes(US_ASCII), 0, crlV1, crlHead.length, 13);
+        assertDetected(MediaType.application("pkix-crl"), crlV1);
+        // v3 certificate, then serialNumber
+        assertDetected(MediaType.parse("application/x-x509-cert;format=der"), bytes(0x30, 0x82, 0x0a, 0x5d,
+                0x30, 0x82, 0x0a, 0x0c, 0xa0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x11, 0x00));
+        // v1 certificate with serial 1 opens like a v2 CRL; its validity tells them apart
+        byte[] v1 = new byte[128];
+        byte[] head = {0x30, (byte) 0x82, 0x02, 0x7c, 0x30, (byte) 0x81, (byte) 0xe5, 0x02, 0x01, 0x01,
+                0x30, 0x0d, 0x06, 0x09, 0x2a, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xf7, 0x0d, 0x01, 0x01,
+                0x0b, 0x05, 0x00, 0x30, 0x0b, 0x31, 0x09, 0x30, 0x07, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0c, 0x00,
+                0x30, 0x1e, 0x17, 0x0d};
+        System.arraycopy(head, 0, v1, 0, head.length);
+        System.arraycopy("250101000000Z\u0017\r260101000000Z".getBytes(US_ASCII), 0, v1, head.length, 28);
+        assertDetected(MediaType.parse("application/x-x509-cert;format=der"), v1);
+        // RFC 3161 reply: granted, "Operation Okay", then the signedData token
+        byte[] tsr = bytes(0x30, 0x82, 0x0a, 0xb5, 0x30, 0x15, 0x02, 0x01, 0x00, 0x30, 0x10, 0x0c, 0x0e);
+        System.arraycopy("Operation Okay".getBytes(US_ASCII), 0, tsr, 13, 14);
+        byte[] token = {0x30, (byte) 0x82, 0x0a, (byte) 0x9a, 0x06, 0x09, 0x2a, (byte) 0x86, 0x48, (byte) 0x86,
+                (byte) 0xf7, 0x0d, 0x01, 0x07, 0x02};
+        System.arraycopy(token, 0, tsr, 27, token.length);
+        assertDetected(MediaType.application("timestamp-reply"), tsr);
+        // PKCS#10 request: version 0, then a Name, not an AlgorithmIdentifier
+        assertDetected(MediaType.OCTET_STREAM, bytes(0x30, 0x82, 0x01, 0x0a, 0x30, 0x81, 0xb1,
+                0x02, 0x01, 0x00, 0x30, 0x46, 0x31, 0x0b));
+    }
+
+    private static byte[] packets(int first, int size, int count) {
+        byte[] b = new byte[1024];
+        for (int i = 0; i < count; i++) {
+            b[first + i * size] = 0x47;
+        }
+        return b;
+    }
+
+    @Test
+    public void testSubRipLineEndings() throws Exception {
+        MediaType srt = MediaType.application("x-subrip");
+        for (String eol : new String[]{"\n", "\r", "\r\n"}) {
+            assertDetected(srt, ("1" + eol + "00:00:01,000 --> 00:00:02,000" + eol + "Hi").getBytes(US_ASCII));
+        }
+    }
+
+    private static byte[] header(int offset, String ascii) {
+        byte[] header = new byte[128];
+        byte[] value = ascii.getBytes(US_ASCII);
+        System.arraycopy(value, 0, header, offset, value.length);
+        return header;
+    }
+
+    private static byte[] bytes(int... values) {
+        byte[] bytes = new byte[64];
+        for (int i = 0; i < values.length; i++) {
+            bytes[i] = (byte) values[i];
+        }
+        return bytes;
+    }
+
     private static byte[] tgaHeader(int idLength, int colourMapType, int imageType,
                                     int colourMapEntrySize, int pixelDepth) {
         byte[] header = new byte[64];
@@ -235,6 +451,169 @@ public class MimeDetectionTest {
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             return MIME_TYPES.detect(tis, metadata, new ParseContext());
         }
+    }
+
+    @Test
+    public void testBinaryContentRefusesTextGlob() throws IOException {
+        // headers copied from real files that a text glob used to claim
+        String[][] cases = {
+                // Mozilla startupCache XDR bytecode, named for its source
+                {"AccountManager.js",
+                        "0000001c000000b9000000c5fcc6bf73b9000000000000000000000000000000"
+                        + "0081030000f0000000b900000031000000c1030000000000003b000000000000"
+                        + "0000000000000000000000000022000000000000000010000000010000016368"},
+                {"overlay.xul", "42c073b9000000002306000096000000b9000000720000002b02000000000000"
+                        + "360000000000000000000000000000005d000000000000000430000001010000"
+                        + "016368726f6d653a2f2f676c6f62616c2f636f6e74656e742f42726f77736572"},
+                // CODESYS project .meta
+                {"1f876365.meta", "02200928000000000000000000000000220000000f01bf0df704c00d0180060f"
+                        + "070504f4010000c10df904000a00e70c236f3456d208"},
+                // BM-E record
+                {"10.T", "424d2d4564312e332d574b0031ff0d1a35460bb1000600000048000600000051"
+                        + "0007006f00b800080075005b000b00080077000d006f00d7000e0075001f000e"
+                        + "000000270117007500080019007500c3001900750005001a0075004a001b0000"}};
+        for (String[] c : cases) {
+            byte[] bytes = hex(c[1]);
+            assertEquals(MediaType.OCTET_STREAM, detect(bytes, c[0]), c[0]);
+            Metadata metadata = new Metadata();
+            metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                assertEquals(MediaType.OCTET_STREAM,
+                        MIME_TYPES.detect(tis, metadata, new ParseContext()), c[0]);
+            }
+        }
+    }
+
+    @Test
+    public void testTerminalRealityPodIsBinary() throws IOException {
+        byte[] pod = terminalRealityPod();
+        assertEquals(MediaType.OCTET_STREAM, detect(pod, "Bulldog.pod"));
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+        try (TikaInputStream tis = TikaInputStream.get(pod)) {
+            assertEquals(MediaType.OCTET_STREAM, MIME_TYPES.detect(tis, metadata, new ParseContext()));
+        }
+    }
+
+    // shaped like real BinEdit .pod archives: entry count, comment, 40-byte directory entries, indexed pixels
+    private static byte[] terminalRealityPod() {
+        ByteBuffer bb = ByteBuffer.allocate(16384).order(ByteOrder.LITTLE_ENDIAN);
+        int entries = 48;
+        bb.putInt(entries);
+        bb.put("Compiled by BinEdit Version 2.2.8 }".getBytes(ISO_8859_1));
+        bb.put(new byte[] {(byte) 0xA6, '-', ')'});
+        bb.position(0x54);
+        Random random = new Random(5029);
+        int offset = 0x54 + 40 * entries;
+        for (int i = 0; i < entries; i++) {
+            String name = String.format(Locale.ROOT, "ART\\%02dBF%02d.%s", random.nextInt(100), i / 2,
+                    i % 2 == 0 ? "ACT" : "RAW");
+            byte[] padded = Arrays.copyOf(name.getBytes(US_ASCII), 32);
+            int size = i % 2 == 0 ? 0x300 : 0x10000;
+            bb.put(padded).putInt(size).putInt(offset);
+            offset += size;
+        }
+        while (bb.hasRemaining()) {
+            byte value = (byte) random.nextInt(256);
+            int run = 1 + random.nextInt(24);
+            for (int k = 0; k < run && bb.hasRemaining(); k++) {
+                bb.put(value);
+            }
+        }
+        return bb.array();
+    }
+
+    @Test
+    public void testTextGlobStillWinsForText() throws IOException {
+        String latin = "The quick brown fox jumps over the lazy dog.\n";
+        // CJK whose code units have low bytes under 0x20: NULs and controls in both columns
+        String cjk = "一丁七万三上下不与专 且"
+                + "世业东两 abc\n";
+        String russian = "Съешь же ещё "
+                + "этих мягких "
+                + "французских.\n";
+        MediaType log = MediaType.text("x-log");
+        assertEquals(MediaType.TEXT_PLAIN, detect(latin.repeat(20).getBytes(UTF_16LE), "a.txt"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(latin.repeat(20).getBytes(UTF_16BE), "a.txt"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(UTF_16LE), "a.txt"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(UTF_16BE), "a.txt"));
+        for (String utf32 : new String[] {"UTF-32LE", "UTF-32BE"}) {
+            assertEquals(MediaType.TEXT_PLAIN, detect(latin.repeat(20).getBytes(utf32), "a.txt"), utf32);
+            assertEquals(MediaType.TEXT_PLAIN, detect(cjk.repeat(20).getBytes(utf32), "a.txt"), utf32);
+            Metadata metadata = new Metadata();
+            metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
+            try (TikaInputStream tis = TikaInputStream.get(russian.repeat(20).getBytes(utf32))) {
+                assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, metadata, new ParseContext()), utf32);
+            }
+        }
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect(russian.repeat(20).getBytes("windows-1251"), "a.txt"));
+        assertEquals(log, detect(("\u001b[32mINFO\u001b[0m started\n").repeat(40)
+                .getBytes(US_ASCII), "server.log"));
+        // a stray control byte per line stays under the binary threshold
+        assertEquals(log, detect(("2026-11-07 12:00:00 ok\u0000\n").repeat(40)
+                .getBytes(US_ASCII), "server.log"));
+        // zero fill after the text, as a crashed or preallocated log leaves
+        byte[] text = "[Mon Oct 26 03:26:03 2015] [notice] SIGHUP received.\n".repeat(18)
+                .getBytes(US_ASCII);
+        byte[] zeroFilled = java.util.Arrays.copyOf(text, 8192);
+        assertEquals(log, detect(zeroFilled, "error_log.log"));
+        assertEquals(MediaType.TEXT_PLAIN, detect(zeroFilled, null));
+    }
+
+    @Test
+    public void testUtf8BomBeforeBinaryMagic() throws IOException {
+        String bom = "efbbbf";
+        assertEquals(MediaType.image("jpeg"),
+                detect(hex(bom + "ffd8ffe000104a46494600010101004800480000ffdb004300080606"), null));
+        assertEquals(MediaType.image("png"),
+                detect(hex(bom + "89504e470d0a1a0a0000000d4948445200000710000004b008060000"), null));
+        assertEquals(MediaType.audio("mpeg"),
+                detect(hex(bom + "49443303000000001f76434f4d4d0000001e000000646575007777"), null));
+        assertEquals(MediaType.image("gif"),
+                detect(hex(bom + "4749463839610a000a00f70000000000800000008000808000000080"), null));
+        assertEquals(MediaType.application("zip"),
+                detect(hex(bom + "504b03041400000008001c3f364d479244b25801000000a3d4b2"), null));
+        // text that merely starts with a magic string stays text
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect("﻿ID3 tags hold the title and artist.\n".getBytes(UTF_8), null));
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect("﻿GIF89a is the animated variant.\n".getBytes(UTF_8), "notes.txt"));
+    }
+
+    @Test
+    public void testTextHeaderOnBinaryBodyIsNotText() throws IOException {
+        // BSB/KAP chart: text header lines, then 0x1A 0x00 and raster bytes
+        StringBuilder header = new StringBuilder("VER/2.0\r\nBSB/NA=Mallorca,NU=1\r\n");
+        for (int i = 0; header.length() < 1900; i++) {
+            header.append("RGB/").append(i).append(',').append(i * 7 % 256).append(',')
+                    .append(i * 13 % 256).append(',').append(i * 3 % 256).append("\r\n");
+        }
+        byte[] text = header.toString().getBytes(US_ASCII);
+        byte[] raster = new byte[4000];
+        new java.util.Random(42).nextBytes(raster);
+        byte[] kap = new byte[text.length + 2 + raster.length];
+        System.arraycopy(text, 0, kap, 0, text.length);
+        kap[text.length] = 0x1A;
+        System.arraycopy(raster, 0, kap, text.length + 2, raster.length);
+        org.apache.tika.detect.Detector detector =
+                new org.apache.tika.detect.DefaultDetector(MIME_TYPES);
+        try (TikaInputStream tis = TikaInputStream.get(kap)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(tis, new Metadata(), new ParseContext()));
+        }
+        try (TikaInputStream tis = TikaInputStream.get(text)) {
+            assertEquals(MediaType.TEXT_PLAIN,
+                    detector.detect(tis, new Metadata(), new ParseContext()));
+        }
+    }
+
+    private static byte[] hex(String hex) {
+        byte[] bytes = new byte[hex.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
+        }
+        return bytes;
     }
 
     @Test

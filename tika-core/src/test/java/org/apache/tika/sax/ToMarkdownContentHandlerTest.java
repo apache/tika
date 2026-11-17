@@ -26,9 +26,14 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Random;
+import java.util.regex.Pattern;
 
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.AttributesImpl;
@@ -436,6 +441,145 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testFenceInCodeBlockCannotCloseIt() throws Exception {
+        for (String container : new String[]{"", "li", "blockquote"}) {
+            for (String fence : new String[]{"```", "````", "   ```", "```js"}) {
+                ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+                handler.startDocument();
+                if (container.equals("li")) {
+                    startElement(handler, "ul");
+                }
+                if (!container.isEmpty()) {
+                    startElement(handler, container);
+                }
+                startElement(handler, "pre");
+                chars(handler, "a\n" + fence + "\n<img src=x onerror=alert(1)>\n");
+                endElement(handler, "pre");
+                if (!container.isEmpty()) {
+                    endElement(handler, container);
+                }
+                if (container.equals("li")) {
+                    endElement(handler, "ul");
+                }
+                handler.endDocument();
+
+                String md = handler.toString();
+                String html = renderHtml(md);
+                assertFalse(html.contains("<img"), md);
+                assertContains("&lt;img src=x onerror=alert(1)&gt;", html);
+            }
+        }
+    }
+
+    @Test
+    public void testPlusAtLineStartIsNotAList() throws Exception {
+        for (String container : new String[]{"p", "li", "blockquote"}) {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            if (container.equals("li")) {
+                startElement(handler, "ul");
+            }
+            startElement(handler, container);
+            chars(handler, "+ not a list");
+            endElement(handler, container);
+            if (container.equals("li")) {
+                endElement(handler, "ul");
+            }
+            handler.endDocument();
+
+            String md = handler.toString();
+            String html = renderHtml(md);
+            assertContains("+ not a list", html);
+            assertFalse(html.contains("<li>not a list"), md);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"blockquote", "ul", "b", "s", "a"})
+    public void testDeepNestingIsCappedWithoutLosingText(String element) throws Exception {
+        int depth = 20_000;
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        boolean inline = !element.equals("blockquote") && !element.equals("ul");
+        if (inline) {
+            startElement(handler, "p");
+        }
+        for (int i = 0; i < depth; i++) {
+            startElement(handler, element);
+            if (element.equals("ul")) {
+                startElement(handler, "li");
+            }
+            chars(handler, "w" + i + " ");
+        }
+        for (int i = 0; i < depth; i++) {
+            if (element.equals("ul")) {
+                endElement(handler, "li");
+            }
+            endElement(handler, element);
+        }
+        if (inline) {
+            endElement(handler, "p");
+        }
+        chars(handler, "after");
+        handler.endDocument();
+
+        String md = handler.toString();
+        // the cap keeps each line's container prefix short: output stays linear in the input
+        assertTrue(md.length() < depth * 400, "markdown length " + md.length());
+        String text = renderHtml(md);
+        for (int i : new int[]{0, 63, 64, 19_999}) {
+            assertContains("w" + i, text);
+        }
+        assertContains("after", text);
+    }
+
+    @Test
+    public void testEmptyFlattenedInlineKeepsLaterText() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        int depth = ToMarkdownContentHandler.MAX_NESTING + 6;
+        for (int i = 0; i < depth; i++) {
+            startElement(handler, "b");
+        }
+        endElement(handler, "b");
+        chars(handler, "kept");
+        for (int i = 1; i < depth; i++) {
+            endElement(handler, "b");
+        }
+        endElement(handler, "p");
+        handler.endDocument();
+
+        assertContains("kept", handler.toString());
+    }
+
+    @Test
+    public void testFlattenedInlineDoesNotSplitParagraph() throws Exception {
+        // sweeps the depths at which the cap lands right on the implicit paragraph
+        for (int depth = ToMarkdownContentHandler.MAX_NESTING - 6;
+                depth <= ToMarkdownContentHandler.MAX_NESTING + 6; depth++) {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            for (int i = 0; i < depth; i++) {
+                startElement(handler, "blockquote");
+            }
+            chars(handler, "x ");
+            startElement(handler, "b");
+            chars(handler, "z");
+            endElement(handler, "b");
+            chars(handler, " y");
+            for (int i = 0; i < depth; i++) {
+                endElement(handler, "blockquote");
+            }
+            handler.endDocument();
+
+            String html = renderHtml(handler.toString());
+            assertTrue(html.matches("(?s).*<p>x (<strong>z</strong>|z) y</p>.*"),
+                    "depth " + depth + ": " + html);
+        }
+    }
+
+    @Test
     public void testInlineCode() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
@@ -525,11 +669,11 @@ public class ToMarkdownContentHandlerTest {
         endElement(handler, "p");
         handler.endDocument();
         String md = handler.toString();
-        assertContains("see u\\_0 and $u_0 \\in \\mathcal{H} *  x$", md);
+        assertContains("see u\\_0 and $`u_0 \\in \\mathcal{H} *  x`$", md);
     }
 
     @Test
-    public void testMathSpanInTableCellEscapesOnlyPipes() throws Exception {
+    public void testMathSpanInTableCellEscapesPipes() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
         handler.startDocument();
         script(handler, "table", "tr", "th", "#h1", "/th", "th", "#h2", "/th", "/tr", "tr", "td");
@@ -538,7 +682,7 @@ public class ToMarkdownContentHandlerTest {
         endElement(handler, "span");
         script(handler, "/td", "td", "#2", "/td", "/tr", "/table");
         handler.endDocument();
-        assertContains("|$\\\\|x\\\\|_1$|2|", handler.toString());
+        assertContains("|$`\\\\|x\\\\|_1`$|2|", handler.toString());
     }
 
     @Test
@@ -552,6 +696,114 @@ public class ToMarkdownContentHandlerTest {
         endElement(handler, "p");
         handler.endDocument();
         assertContains("u\\_0\\*", handler.toString());
+    }
+
+    @Test
+    public void testMathSpanCannotOpenHtmlOrLinks() throws Exception {
+        String md = mathMarkdown("$a<b <img src=x onerror=alert(1)><!-- c --> <http://x.example>"
+                + " [x](javascript:alert(1))$");
+        String html = renderHtml(md);
+        assertFalse(html.contains("<img"), html);
+        assertFalse(html.contains("<!--"), html);
+        assertFalse(html.contains("href"), html);
+        assertContains("$`a<b <img", md);
+    }
+
+    @Test
+    public void testBackticksCannotCloseMathCodeSpan() throws Exception {
+        for (String tex : new String[]{"` <img src=x>", "a`b``c```d <img src=x>", "<img src=x> `"}) {
+            String html = renderHtml(mathMarkdown("$" + tex + "$"));
+            assertContains("<code>" + tex.strip().replace("<", "&lt;").replace(">", "&gt;") + "</code>",
+                    html);
+            assertFalse(html.contains("<img"), html);
+        }
+    }
+
+    @Test
+    public void testUndelimitedMathSpanIsEscaped() throws Exception {
+        String md = mathMarkdown("```u_0 \\", "<img src=x onerror=alert(1)>");
+        assertContains("u\\_0", md);
+        assertFalse(renderHtml(md).contains("<img"), md);
+        assertFalse(renderHtml(md).contains("<pre>"), md);
+    }
+
+    /**
+     * Whatever text and math spans hold, the markdown renders to no element a reader could
+     * act on: no raw HTML, comment, link or image.
+     */
+    @Test
+    public void testRandomMathSpansRenderNoHtmlOrLinks() throws Exception {
+        String[] pieces = {"<", ">", "[", "]", "(", ")", "!", ":", " ", "x", "img src=x",
+                "javascript:alert(1)", "http://e.x", "\\", "$", "\\(", "\\)", "\\[", "\\]", "`",
+                "```", "*", "&", "#", "-", "\"", "|", "<!--", "]:"};
+        Pattern acted = Pattern.compile(
+                "<(?!/?(p|code|em|strong|blockquote|ul|ol|li|pre|h[1-6])>|br ?/?>|hr ?/?>"
+                        + "|ol start=\"[0-9]+\">|pre><code class=\"language-)");
+        long seed = new Random().nextLong();
+        Random r = new Random(seed);
+        for (int iter = 0; iter < 5000; iter++) {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            startElement(handler, "p");
+            for (int k = 1 + r.nextInt(3); k > 0; k--) {
+                chars(handler, randomText(r, pieces, r.nextInt(4)));
+                startElement(handler, "span", "class", "math inline");
+                String tex = randomText(r, pieces, 1 + r.nextInt(8));
+                chars(handler, r.nextBoolean() ? "$" + tex + "$" : tex);
+                endElement(handler, "span");
+            }
+            endElement(handler, "p");
+            handler.endDocument();
+            String md = handler.toString();
+            String html = renderHtml(md);
+            assertFalse(acted.matcher(html).find(), "seed=" + seed + " md=" + md + " html=" + html);
+        }
+    }
+
+    private static String randomText(Random r, String[] pieces, int n) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            sb.append(pieces[r.nextInt(pieces.length)]);
+        }
+        return sb.toString();
+    }
+
+    private static String mathMarkdown(String tex) throws Exception {
+        return mathMarkdown(tex, "");
+    }
+
+    private static String mathMarkdown(String tex, String after) throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "span", "class", "math inline");
+        chars(handler, tex);
+        endElement(handler, "span");
+        if (!after.isEmpty()) {
+            chars(handler, after);
+        }
+        endElement(handler, "p");
+        handler.endDocument();
+        return handler.toString();
+    }
+
+    private static String renderHtml(String md) {
+        return HtmlRenderer.builder().build().render(Parser.builder().build().parse(md));
+    }
+
+    // PDF custom structure types and Word style names become a single class token
+    @ParameterizedTest
+    @ValueSource(strings = {"math", "math_inline", "math-display"})
+    public void testDocumentDerivedMathClassIsEscaped(String cls) throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "span", "class", cls);
+        chars(handler, "$u_0$");
+        endElement(handler, "span");
+        endElement(handler, "p");
+        handler.endDocument();
+        assertContains("u\\_0", handler.toString());
     }
 
     @Test
@@ -661,7 +913,7 @@ public class ToMarkdownContentHandlerTest {
         chars(handler, " is small");
         endElement(handler, "p");
         handler.endDocument();
-        assertContains("$x$ is small", handler.toString());
+        assertContains("$`x`$ is small", handler.toString());
     }
 
     @Test
@@ -1573,6 +1825,77 @@ public class ToMarkdownContentHandlerTest {
         String result = handler.toString();
         assertTrue(result.contains("a\\]b"), result);
         assertFalse(result.contains("](https://evil.example) x)"), result);
+    }
+
+    @Test
+    public void testLineBreakInCodeSpanCannotOpenHtml() throws Exception {
+        for (String lineBreak : new String[]{"\n", "\r", "\r\n"}) {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            startElement(handler, "p");
+            chars(handler, "See ");
+            startElement(handler, "code");
+            chars(handler, "x" + lineBreak + "<details open ontoggle=alert(1)>");
+            endElement(handler, "code");
+            chars(handler, " here");
+            endElement(handler, "p");
+            handler.endDocument();
+
+            String md = handler.toString();
+            String html = renderHtml(md);
+            assertFalse(html.contains("<details"), md);
+            assertContains("&lt;details open ontoggle=alert(1)&gt;</code> here", html);
+        }
+    }
+
+    @Test
+    public void testCarriageReturnInCodeBlockCannotLeaveContainer() throws Exception {
+        for (String container : new String[]{"li", "blockquote"}) {
+            for (String lineBreak : new String[]{"\r", "\r\n"}) {
+                ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+                handler.startDocument();
+                if (container.equals("li")) {
+                    startElement(handler, "ul");
+                }
+                startElement(handler, container);
+                startElement(handler, "pre");
+                chars(handler, "a" + lineBreak + "<img src=x onerror=alert(1)>");
+                endElement(handler, "pre");
+                endElement(handler, container);
+                if (container.equals("li")) {
+                    endElement(handler, "ul");
+                }
+                handler.endDocument();
+
+                String md = handler.toString();
+                String html = renderHtml(md);
+                assertFalse(html.contains("<img"), md);
+                assertContains("<pre><code>a\n&lt;img src=x onerror=alert(1)&gt;\n</code></pre>", html);
+            }
+        }
+    }
+
+    @Test
+    public void testLineBreakInImageAltOrDestinationStaysInline() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "alt", "alt", "CDATA", "a\r# alt");
+        atts.addAttribute("", "src", "src", "CDATA", "i.png\r# src");
+        startElement(handler, "img", atts);
+        endElement(handler, "img");
+        startElement(handler, "a", "href", "http://e\r#href");
+        chars(handler, "link");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String md = handler.toString();
+        String html = renderHtml(md);
+        assertFalse(html.contains("<h1>"), md);
+        assertContains("alt=\"a # alt\"", html);
+        assertContains(">link</a>", html);
     }
 
     @Test

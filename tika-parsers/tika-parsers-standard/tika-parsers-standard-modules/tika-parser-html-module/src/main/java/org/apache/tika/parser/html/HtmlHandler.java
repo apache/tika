@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +31,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -86,6 +89,14 @@ class HtmlHandler extends TextContentHandler {
     private int scriptLevel = 0;
     private Attributes scriptAtts = EMPTY_ATTS;//attributes from outermost script element
     private boolean isTitleSetToMetadata = false;
+    // set when a JsoupFilter runs: inline resources come from the unfiltered page, emitted at body start
+    private List<Inline> deferred;
+    private boolean deferInline = false;
+
+    enum InlineKind { DATA_URI, SRCDOC, SCRIPT }
+
+    record Inline(InlineKind kind, String value, String src) {
+    }
 
     private HtmlHandler(HtmlMapper mapper, XHTMLContentHandler xhtml, Metadata metadata,
                         ParseContext context, boolean extractScripts) {
@@ -130,6 +141,9 @@ class HtmlHandler extends TextContentHandler {
         }
         if ("BODY".equals(name) || ("FRAMESET".equals(name)) || bodyLevel > 0) {
             bodyLevel++;
+            if (bodyLevel == 1) {
+                flushDeferred();
+            }
         }
         if (mapper.isDiscardElement(name) || discardLevel > 0) {
             discardLevel++;
@@ -170,14 +184,14 @@ class HtmlHandler extends TextContentHandler {
 
         title.setLength(0);
         String value = atts.getValue("src");
-        if (value != null && value.startsWith("data:")) {
+        if (value != null && value.startsWith("data:") && !deferInline) {
             //don't extract data if we're in a script
             //and the user doesn't want to extract scripts
             if (scriptLevel == 0 || extractScripts) {
                 handleDataURIScheme(value);
             }
         }
-        if ("IFRAME".equals(name)) {
+        if ("IFRAME".equals(name) && !deferInline) {
             String srcDoc = atts.getValue("srcdoc");
             if (!StringUtils.isBlank(srcDoc)) {
                 handleSrcDoc(srcDoc);
@@ -303,9 +317,11 @@ class HtmlHandler extends TextContentHandler {
                     startElementWithMappedAttributes("script", scriptAtts);
                     xhtml.endElement("script");
                 }
+                String src = scriptAtts.getValue("src");
                 scriptAtts = EMPTY_ATTS;
-                if (extractScripts) {
-                    writeScript();
+                if (extractScripts && !deferInline) {
+                    writeScript(script.toString(), src);
+                    script.setLength(0);
                 }
             }
         }
@@ -381,17 +397,16 @@ class HtmlHandler extends TextContentHandler {
         }
     }
 
-    private void writeScript() throws SAXException {
+    private void writeScript(String scriptText, String src) throws SAXException {
         //don't write an attached macro if there is no content
         //we may want to revisit this behavior
-        if (script.toString().isBlank()) {
+        if (scriptText.isBlank()) {
             return;
         }
         //do anything with attrs?
         Metadata m = Metadata.newInstance(context);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
-        String src = scriptAtts.getValue("src");
         if (src != null) {
             m.set(HTML.SCRIPT_SOURCE, src);
         }
@@ -399,7 +414,7 @@ class HtmlHandler extends TextContentHandler {
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         //try to scrape dataURISchemes from javascript
-        List<DataURIScheme> dataURISchemes = dataURISchemeUtil.extract(script.toString());
+        List<DataURIScheme> dataURISchemes = dataURISchemeUtil.extract(scriptText);
         for (DataURIScheme dataURIScheme : dataURISchemes) {
             Metadata dataUriMetadata = Metadata.newInstance(context);
             dataUriMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
@@ -415,18 +430,66 @@ class HtmlHandler extends TextContentHandler {
             }
         }
 
-        try (TikaInputStream tis = TikaInputStream.get(script.toString().getBytes(StandardCharsets.UTF_8))) {
+        try (TikaInputStream tis = TikaInputStream.get(scriptText.getBytes(StandardCharsets.UTF_8))) {
             embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
         } catch (IOException e) {
             //shouldn't ever happen
-        } finally {
-            script.setLength(0);
+        }
+    }
+
+    /**
+     * Inline resources of {@code document} in document order, as this handler would extract them
+     * while traversing it: data: URIs in {@code src}, iframe {@code srcdoc}, and scripts.
+     */
+    static List<Inline> collectInline(Document document, boolean extractScripts) {
+        List<Inline> out = new ArrayList<>();
+        for (Element e : document.getAllElements()) {
+            boolean isScript = e.normalName().equals("script");
+            String src = e.attr("src");
+            if (src.startsWith("data:") && (!isScript || extractScripts)) {
+                out.add(new Inline(InlineKind.DATA_URI, src, null));
+            }
+            if (e.normalName().equals("iframe") && !StringUtils.isBlank(e.attr("srcdoc"))) {
+                out.add(new Inline(InlineKind.SRCDOC, e.attr("srcdoc"), null));
+            }
+            if (isScript && extractScripts) {
+                out.add(new Inline(InlineKind.SCRIPT, e.data(), e.hasAttr("src") ? src : null));
+            }
+        }
+        return out;
+    }
+
+    /** Extract {@code resources} at body start instead of while traversing. */
+    void deferInline(List<Inline> resources) {
+        deferred = resources;
+        deferInline = true;
+    }
+
+    private void flushDeferred() throws SAXException {
+        if (deferred == null) {
+            return;
+        }
+        List<Inline> resources = deferred;
+        deferred = null;
+        for (Inline r : resources) {
+            switch (r.kind()) {
+                case DATA_URI -> handleDataURIScheme(r.value());
+                case SRCDOC -> handleSrcDoc(r.value());
+                case SCRIPT -> writeScript(r.value(), r.src());
+                default -> throw new IllegalStateException(r.kind().toString());
+            }
         }
     }
 
     @Override
+    public void endDocument() throws SAXException {
+        flushDeferred();
+        super.endDocument();
+    }
+
+    @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
-        if (scriptLevel > 0 && extractScripts) {
+        if (scriptLevel > 0 && extractScripts && !deferInline) {
             script.append(ch, start, length);
         }
         if (titleLevel > 0 && bodyLevel == 0) {

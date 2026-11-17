@@ -17,10 +17,17 @@
 package org.apache.tika.serialization;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
+import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.JsonMergeUtils;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
@@ -52,6 +59,11 @@ import org.apache.tika.parser.ParseContext;
  */
 public class ConfigDeserializer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigDeserializer.class);
+
+    // bounded by the component registry
+    private static final Set<String> WARNED_UNDECLARED = ConcurrentHashMap.newKeySet();
+
     private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
     /**
@@ -82,6 +94,8 @@ public class ConfigDeserializer {
         if (context == null) {
             return defaultConfig;
         }
+        // every call, block or not, so a Tika reader's own -ea tests catch a missing annotation
+        assert declaredOrCustom(configKey) : undeclaredMessage(configKey);
 
         // Check resolved cache first
         T resolved = context.getResolvedConfig(configKey, configClass);
@@ -95,6 +109,7 @@ public class ConfigDeserializer {
             return defaultConfig;
         }
 
+        warnIfUndeclaredCustom(configKey);
         if (!jsonConfig.trusted()) {
             OperatorOnlyGuard.check(MAPPER, configKey, jsonConfig.json(), configClass);
         }
@@ -109,6 +124,39 @@ public class ConfigDeserializer {
         context.setResolvedConfig(configKey, configClass, config);
 
         return config;
+    }
+
+    /**
+     * An undeclared reader gets a false "has no effect" warning. Tika's own components fail an
+     * assertion (tests run with -ea); a custom one gets a warning, once, so upgrading does not
+     * break its tests.
+     */
+    private static boolean declaredOrCustom(String configKey) {
+        return undeclaredReader(configKey)
+                .map(c -> !c.getName().startsWith("org.apache.tika."))
+                .orElse(true);
+    }
+
+    private static void warnIfUndeclaredCustom(String configKey) {
+        undeclaredReader(configKey).ifPresent(c -> {
+            if (!c.getName().startsWith("org.apache.tika.") && WARNED_UNDECLARED.add(c.getName())) {
+                LOG.warn("{}; add the annotation, Tika 5.0 will refuse the block otherwise",
+                        undeclaredMessage(configKey));
+            }
+        });
+    }
+
+    /** The component named {@code configKey} if it is self-configuring and not annotated. */
+    private static Optional<Class<?>> undeclaredReader(String configKey) {
+        return ComponentNameResolver.getComponentInfo(configKey)
+                .filter(info -> !ComponentNameResolver.readsParseContextConfig(info))
+                .map(ComponentInfo::componentClass);
+    }
+
+    private static String undeclaredMessage(String configKey) {
+        return undeclaredReader(configKey).map(Class::getName).orElse("?") + " reads its '"
+                + configKey + "' parse-context block but is not annotated @"
+                + RequestConfigurable.class.getSimpleName();
     }
 
     /**

@@ -181,6 +181,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
         if (charset == null) {
             return Collections.emptyList();
         }
+        charset = asciiReadableCharset(charset);
         return List.of(new EncodingResult(charset, 1.0f, charset.name(),
                 EncodingResult.ResultType.DECLARATIVE));
     }
@@ -216,6 +217,16 @@ public class HtmlEncodingDetector implements EncodingDetector {
             }
         }
         return false;
+    }
+
+    /**
+     * WHATWG prescan: a meta naming UTF-16 means UTF-8. The meta was read as ASCII, so the
+     * bytes cannot be UTF-16 (or UTF-32); a BOM or the byte statistics still speak for those.
+     */
+    static Charset asciiReadableCharset(Charset charset) {
+        String name = charset.name();
+        return name.startsWith("UTF-16") || name.startsWith("UTF-32")
+                ? StandardCharsets.UTF_8 : charset;
     }
 
     //returns null if no charset was found

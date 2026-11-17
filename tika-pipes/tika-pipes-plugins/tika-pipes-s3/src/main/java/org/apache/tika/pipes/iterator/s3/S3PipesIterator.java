@@ -26,12 +26,7 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
@@ -50,6 +45,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.s3.S3Credentials;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -78,26 +74,10 @@ public class S3PipesIterator extends PipesIteratorBase {
         // Initialize S3 client
         String credentialsProvider = config.getCredentialsProvider();
         if (credentialsProvider == null) {
-            credentialsProvider = "instance";
+            credentialsProvider = S3Credentials.INSTANCE;
         }
-        AwsCredentialsProvider provider;
-        switch (credentialsProvider) {
-            case "instance":
-                provider = InstanceProfileCredentialsProvider.builder().build();
-                break;
-            case "web_identity":
-                provider = WebIdentityTokenFileCredentialsProvider.builder().build();
-                break;
-            case "profile":
-                provider = ProfileCredentialsProvider.builder().profileName(config.getProfile()).build();
-                break;
-            case "key_secret":
-                AwsBasicCredentials awsCreds = AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey());
-                provider = StaticCredentialsProvider.create(awsCreds);
-                break;
-            default:
-                throw new TikaConfigException("credentialsProvider must be set and must be either 'instance', 'web_identity', 'profile' or 'key_secret'");
-        }
+        AwsCredentialsProvider provider = S3Credentials.build(credentialsProvider, config.getProfile(),
+                config.getAccessKey(), config.getSecretKey());
 
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(config.getMaxConnections()).build();
         S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(config.isPathStyleAccessEnabled()).build();

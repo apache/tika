@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,18 +39,33 @@ import java.util.Map;
  * <ul>
  *   <li>EUC-KR → x-windows-949 (MS949 is a strict superset: all EUC-KR byte sequences
  *       decode identically, extension chars in x-windows-949 would mojibake under EUC-KR)</li>
- *   <li>Big5 → Big5-HKSCS (HKSCS adds Hong Kong Supplementary Characters)</li>
+ *   <li>Big5 → Big5-HKSCS (HKSCS adds Hong Kong Supplementary Characters), with the pairs
+ *       where the WHATWG big5 decoder differs patched to the WHATWG value (see below)</li>
  *   <li>GB2312 → GB18030 (GB18030 is a strict superset of both GB2312 and GBK)</li>
  *   <li>GBK → GB18030 (GB18030 is a strict superset; enables 4-byte extension sequences)</li>
  *   <li>Shift_JIS → windows-31j (MS932 is a strict superset with NEC/IBM extensions)</li>
  *   <li>EUC-JP → x-eucJP-Open (EUC packing of the NEC/IBM vendor extensions)</li>
+ *   <li>ISO-2022-JP → x-windows-50221 (CP50221 adds the NEC/IBM extensions)</li>
+ *   <li>ISO-8859-1 → windows-1252, ISO-8859-9 → windows-1254, TIS-620 and ISO-8859-11 →
+ *       windows-874 (what browsers do: 0x80-0x9F are punctuation, not C1 controls; the few
+ *       bytes the windows code page leaves undefined decode as U+FFFD)</li>
  * </ul>
+ *
+ * <h3>Browser patches</h3>
+ * <p>Big5-HKSCS and x-eucJP-Open (detected, or reached as a superset) decode as
+ * {@code x-Big5-HKSCS-WHATWG} and {@code x-eucJP-Open-WHATWG}: the JDK charset with the byte
+ * pairs where the WHATWG Encoding Standard differs decoded as browsers do (Big5: A3E1 euro
+ * sign, CP950 punctuation forms; EUC-JP: the Microsoft forms of nine punctuation and symbol
+ * pairs, e.g. A1C1 U+FF5E, as windows-31j gives for Shift_JIS). These charsets are not
+ * resolvable by {@link Charset#forName}; APIs that take a charset name use
+ * {@link #jdkDecodeAs(Charset)}.</p>
  */
 public final class CharsetSupersets {
 
     /**
      * Maps detected charset canonical names (case-sensitive, as returned by
-     * {@link Charset#name()}) to their superset charset canonical name.
+     * {@link Charset#name()}) to their JDK superset charset canonical name, before the
+     * browser patch.
      */
     public static final Map<String, String> SUPERSET_MAP;
 
@@ -61,7 +77,25 @@ public final class CharsetSupersets {
         m.put("GBK",       "GB18030");
         m.put("Shift_JIS", "windows-31j");
         m.put("EUC-JP",    "x-eucJP-Open");
+        m.put("ISO-2022-JP", "x-windows-50221");
+        m.put("ISO-8859-1", "windows-1252");
+        m.put("ISO-8859-9", "windows-1254");
+        m.put("TIS-620",    "x-windows-874");
+        m.put("x-iso-8859-11", "x-windows-874");
         SUPERSET_MAP = Collections.unmodifiableMap(m);
+    }
+
+    /** Browser patches, by the JDK charset they patch. */
+    private static final Map<String, Charset> PATCHED;
+
+    static {
+        Map<String, Charset> m = new HashMap<>();
+        for (String table : new String[]{"x-Big5-HKSCS-WHATWG.tsv",
+                "x-eucJP-Open-WHATWG.tsv"}) {
+            PatchedCharset cs = PatchedCharset.load(table);
+            m.put(cs.base().name(), cs);
+        }
+        PATCHED = Collections.unmodifiableMap(m);
     }
 
     private CharsetSupersets() {
@@ -75,6 +109,34 @@ public final class CharsetSupersets {
      * @return superset charset, or {@code null} if none is defined
      */
     public static Charset supersetOf(Charset detected) {
+        if (detected == null) {
+            return null;
+        }
+        Charset jdk = jdkSupersetOf(detected);
+        Charset patched = PATCHED.get(jdk != null ? jdk.name() : detected.name());
+        return patched != null ? patched : jdk;
+    }
+
+    /**
+     * As {@link #decodeAs(Charset)}, but always a JDK charset that {@link Charset#forName}
+     * resolves (the browser patch left off): for APIs that take a charset name.
+     */
+    public static Charset jdkDecodeAs(Charset detected) {
+        Charset jdk = jdkSupersetOf(detected);
+        return jdk != null ? jdk : detected;
+    }
+
+    /** The browser-patched charsets. */
+    static Collection<Charset> patched() {
+        return PATCHED.values();
+    }
+
+    /** {@code decodeAs} itself, or the JDK base of a browser-patched charset. */
+    static Charset jdkCharset(Charset decodeAs) {
+        return decodeAs instanceof PatchedCharset ? ((PatchedCharset) decodeAs).base() : decodeAs;
+    }
+
+    private static Charset jdkSupersetOf(Charset detected) {
         if (detected == null) {
             return null;
         }

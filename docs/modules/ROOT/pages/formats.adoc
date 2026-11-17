@@ -70,7 +70,11 @@ and
 link:{api}/org/apache/tika/parser/microsoft/ooxml/xwpf/ml2006/Word2006MLParser.html[Word2006MLParser].
 
 link:{api}/org/apache/tika/parser/microsoft/onenote/OneNoteParser.html[OneNoteParser]
-extracts text from OneNote notebooks, and
+extracts text from OneNote sections (`.one`) and notebook tables of contents
+(`.onetoc2`); by default only each page's current version. Set
+`includePageHistory` on `one-note-parser` for earlier versions and
+`includeDeletedContent` for pages in the recycle bin (newer, FSSHTTPB
+sections only), in the config or per request.
 link:{api}/org/apache/tika/parser/microsoft/MSOwnerFileParser.html[MSOwnerFileParser]
 pulls basic metadata from the temporary lock ("owner") files Office leaves
 beside open documents.
@@ -84,6 +88,24 @@ supports the packaged format and the earlier OpenOffice 1.0 format on which
 ODF is based;
 link:{api}/org/apache/tika/parser/odf/FlatOpenDocumentParser.html[FlatOpenDocumentParser]
 handles the single-file flat XML variants (`.fodt`, `.fods`, `.fodp`).
+
+Both write spreadsheet tables as the Excel parsers do: empty rows are dropped,
+empty cells are written only to pad out to the next value in their row, and
+the filler at the end of a row or sheet is dropped. Set `includeMissingRows`
+to write each empty row before a row with content, as `includeMissingRows`
+does for Excel; at most 100,000 are written per document. Set `extractMacros`
+to extract Basic macros.
+
+[source,json]
+----
+{
+  "parsers": [
+    { "default-parser": {} },
+    { "open-document-parser": { "includeMissingRows": true } },
+    { "flat-open-document-parser": { "includeMissingRows": true } }
+  ]
+}
+----
 
 == iWork document formats
 
@@ -124,7 +146,8 @@ and tar parsers, which emit the first page in name order as the cover thumbnail.
 RAR and GNU tar comics are recognized by their name or declared type together with
 their container's magic. The zip parser also emits the
 stored preview of Krita (`.kra`), OpenRaster (`.ora`), FreeCAD (`.FCStd`),
-Procreate (`.procreate`) and Sketch (`.sketch`) files as their thumbnail.
+Procreate (`.procreate`) and Sketch (`.sketch`) files as their thumbnail, and of 3MF
+(`.3mf`) packages the image their thumbnail relationship names.
 
 link:{api}/org/apache/tika/parser/mobi/MobiParser.html[MobiParser] reads Mobipocket
 books and their Kindle descendants (`.mobi`, `.prc`, `.azw`, and the KF8 generation
@@ -236,6 +259,9 @@ link:{api}/org/apache/tika/parser/image/TiffParser.html[TiffParser], which use
 the metadata-extractor library for Exif, IPTC and XMP; and from
 link:{api}/org/apache/tika/parser/image/RawTiffParser.html[RawTiffParser] for
 camera RAW files built on TIFF.
+link:{api}/org/apache/tika/parser/image/Cr3Parser.html[Cr3Parser] reads Canon CR3
+raw files, which are built on the ISO base media file format: their Exif data and
+their stored JPEG previews.
 link:{api}/org/apache/tika/parser/image/HeifParser.html[HeifParser] (HEIF/HEIC,
 AVIF),
 link:{api}/org/apache/tika/parser/image/JXLParser.html[JXLParser] (JPEG XL),
@@ -272,6 +298,25 @@ or larger within the cache memory budget. Any other input, including a
 stream with only a declared `Content-Length`, is silently not searched. Set
 `extractSubtitles` to false on `mp4-parser` to turn it off.
 `extractSubtitles` is read from tika-config.json only, not from a per-request config.
+CEA-608 closed captions come out the same way, one document per channel
+(`track-<id>-cc1.vtt` ... `cc4`, with `dc:title` `CC1` ... `CC4`), and are turned off
+with the subtitles. QuickTime `c608` caption tracks are read by default;
+`extractClosedCaptions` set to false skips all captions, `c608` and SEI alike.
+Captions carried in the SEI messages of H.264 and HEVC video are read only when
+`videoCaptionScan` is `PROBE` or `FULL` (default `NONE`), since every such video file
+then pays for some reads; either fails the config load unless `extractSubtitles` and
+`extractClosedCaptions` are true. `PROBE` reads the first 300 frames, then 8 frames every
+5 seconds, and the whole track once a caption character turns up (XDS data and lone
+control codes do not count), so a caption run between two probes in an otherwise
+uncaptioned track is missed; `FULL` reads every frame. Only the NAL units before each
+frame's first slice are read; no video is decoded. CEA-708 captions are not decoded, and
+a file with both a `c608` track and SEI captions yields both. These settings, too, are
+read from tika-config.json only, and captions are MP4/QuickTime only. Caption reads stop
+at one million frames walked, 128 MB read or two million caption byte pairs per file;
+the cues they yield also count toward the track and character limits below. A `PROBE`
+reread counts its frames again, so captions first found late in a very long video
+(roughly half a million frames in) may be cut short; it collects its pairs anew while
+the probe's are still held, so up to four million pairs may be in memory.
 link:{api}/org/apache/tika/parser/mkv/MatroskaParser.html[MatroskaParser] does the
 same for Matroska and WebM: SubRip, ASS/SSA and WebVTT text tracks (also when
 zlib-compressed or header-stripped), with the track's `Name` as `dc:title`. It reads in
@@ -341,6 +386,12 @@ preview Blender stores in a `.blend` file as the THUMBNAIL embedded document. Fi
 compressed with gzip are read as they are; files compressed with zstd, as Blender 3.0 and
 later save them with "Compress" on, need zstd-jni on the classpath, as the compressor
 formats do.
+
+link:{api}/org/apache/tika/parser/sketchup/SketchUpParser.html[SketchUpParser] emits the
+preview SketchUp stores in a `.skp` file as the THUMBNAIL embedded document: the PNG in
+the file's preview record up to SketchUp 2020, the model thumbnail in its zip from 2021.
+SketchUp files are detected by their header; the `.skp` extension alone still means an
+SSEYO Koan file.
 
 == Font formats
 

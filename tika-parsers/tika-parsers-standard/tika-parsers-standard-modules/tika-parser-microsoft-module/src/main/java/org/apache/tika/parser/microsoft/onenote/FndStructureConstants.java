@@ -16,14 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-/**
- * Some types of FileNodes have an "fnd" variable.
- * FND stands for "File Node Data"
- * <p>
- * These are the different types of FND variables there are.
- * <p>
- * The value of each constant corresponds to the FileNodeID property for the file node.
- */
+/** FileNodeID values; each names the node's fnd (File Node Data) structure. */
 final class FndStructureConstants {
     static final long ObjectSpaceManifestRootFND = 0x04;
     static final long ObjectSpaceManifestListReferenceFND = 0x08;
@@ -41,7 +34,7 @@ final class FndStructureConstants {
     static final long GlobalIdTableEntry3FNDX = 0x26;
     static final long GlobalIdTableEndFNDX = 0x28;
     static final long RootObjectReference2FNDX = 0x59;
-    static final long RootObjectReference3FND = 0x5a; // each root object must have a differe
+    static final long RootObjectReference3FND = 0x5a;
     static final long RevisionRoleDeclarationFND = 0x5c;
     static final long RevisionRoleAndContextDeclarationFND = 0x5d;
     static final long ObjectDataEncryptionKeyV2FNDX = 0x7c;

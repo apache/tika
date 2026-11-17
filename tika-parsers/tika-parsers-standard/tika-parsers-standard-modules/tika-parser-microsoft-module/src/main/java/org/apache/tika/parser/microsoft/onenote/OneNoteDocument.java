@@ -16,38 +16,80 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tika.exception.TikaException;
+
 
 class OneNoteDocument {
     OneNoteHeader header;
     List<ExtendedGUID> revisionListOrder = new ArrayList<>();
     Map<ExtendedGUID, Revision> revisionMap = new HashMap<>();
     Map<ExtendedGUID, FileNodePtr> revisionManifestLists = new HashMap<>();
-    Map<ExtendedGUID, FileChunkReference> guidToRef = new HashMap<>();
     Map<ExtendedGUID, FileNodePtr> guidToObject = new HashMap<>();
+    // each revision's own declarations; guidToObject holds the last one in the file
+    Map<ExtendedGUID, Map<ExtendedGUID, FileNodePtr>> revisionObjects = new HashMap<>();
+    // declared JCIDs, for object revisions that do not repeat them
+    Map<ExtendedGUID, JCID> objectJcids = new HashMap<>();
 
-    Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap = new HashMap<>();
     ExtendedGUID currentRevision = ExtendedGUID.nil();
     FileNodeList root = new FileNodeList();
-    // set when the root file node list could not be fully parsed (e.g. a truncated file);
-    // the header and any structure parsed so far remain usable
-    Exception structureParseException;
+    // set when the transaction log could not be fully read; counts committed before it stay
+    String transactionLogWarning;
+    // file nodes committed while parsing; sizes the tree walker's visit budget
+    long fileNodeCount;
+    // committed FileNode count per FileNodeListID from the transaction log; nodes past it
+    // are uncommitted leftovers. Partial or empty when the log could not be read.
+    Map<Long, Long> committedFileNodeCounts = new HashMap<>();
+
+    // reads deferred property sets; set by the pointer that parses the document
+    OneNotePtr propertySetReader;
 
     public OneNoteDocument() {
 
     }
 
-    FileChunkReference getAssocGuidToRef(ExtendedGUID guid) {
-        return guidToRef.get(guid);
+    /** @return the node's property set, read from the file on first use */
+    PropertySet propertySet(FileNode node) throws IOException, TikaException {
+        if (node.propertySetStreams != null) {
+            node.propertySet = propertySetReader.readPropertySet(node);
+            node.propertySetStreams = null;
+        }
+        return node.propertySet;
     }
 
-    void setAssocGuidToRef(ExtendedGUID guid, FileChunkReference ref) {
-        guidToRef.put(guid, ref);
+    void putObject(ExtendedGUID oid, FileNodePtr ptr) {
+        guidToObject.put(oid, ptr);
+        revisionObjects.computeIfAbsent(currentRevision, k -> new HashMap<>()).put(oid, ptr);
+    }
+
+    /** The object as revision {@code rid} has it: declared there or in a dependency. */
+    FileNodePtr objectIn(ExtendedGUID rid, ExtendedGUID oid) {
+        return objectIn(rid, oid, () -> true);
+    }
+
+    /** As above; each revision checked takes a {@code step}, and none left gives null. */
+    FileNodePtr objectIn(ExtendedGUID rid, ExtendedGUID oid, BooleanSupplier step) {
+        ExtendedGUID r = rid;
+        for (int i = 0; r != null && i <= revisionMap.size(); i++) {
+            if (!step.getAsBoolean()) {
+                return null;
+            }
+            Map<ExtendedGUID, FileNodePtr> objects = revisionObjects.get(r);
+            FileNodePtr ptr = objects == null ? null : objects.get(oid);
+            if (ptr != null) {
+                return ptr;
+            }
+            Revision revision = revisionMap.get(r);
+            r = revision == null || r.equals(revision.dependent) ? null : revision.dependent;
+        }
+        // outside the dependency chain, e.g. in Aspose-written sections: the last declaration
+        return guidToObject.get(oid);
     }
 
     void registerRevisionManifestList(ExtendedGUID guid, FileNodePtr ptr) {
@@ -59,86 +101,17 @@ class OneNoteDocument {
         revisionMap.putIfAbsent(fn.gosid, new Revision());
         Revision toModify = revisionMap.get(fn.gosid);
         toModify.gosid = fn.gosid;
-        toModify.dependent = fn.subType.revisionManifest.ridDependent;
+        // a revision cannot depend on itself
+        toModify.dependent = fn.gosid.equals(fn.subType.revisionManifest.ridDependent) ?
+                ExtendedGUID.nil() : fn.subType.revisionManifest.ridDependent;
         currentRevision = fn.gosid;
-    }
-
-    public void registerAdditionalRevisionRole(ExtendedGUID gosid, long revisionRole,
-                                               ExtendedGUID gctxid) {
-        revisionRoleMap.put(gosid, Pair.of(revisionRole, gctxid));
-    }
-
-    public List<ExtendedGUID> getRevisionListOrder() {
-        return revisionListOrder;
-    }
-
-    public OneNoteDocument setRevisionListOrder(List<ExtendedGUID> revisionListOrder) {
-        this.revisionListOrder = revisionListOrder;
-        return this;
-    }
-
-    public Map<ExtendedGUID, Revision> getRevisionMap() {
-        return revisionMap;
-    }
-
-    public OneNoteDocument setRevisionMap(Map<ExtendedGUID, Revision> revisionMap) {
-        this.revisionMap = revisionMap;
-        return this;
-    }
-
-    public Map<ExtendedGUID, FileNodePtr> getRevisionManifestLists() {
-        return revisionManifestLists;
-    }
-
-    public OneNoteDocument setRevisionManifestLists(
-            Map<ExtendedGUID, FileNodePtr> revisionManifestLists) {
-        this.revisionManifestLists = revisionManifestLists;
-        return this;
-    }
-
-    public Map<ExtendedGUID, FileChunkReference> getGuidToRef() {
-        return guidToRef;
-    }
-
-    public OneNoteDocument setGuidToRef(Map<ExtendedGUID, FileChunkReference> guidToRef) {
-        this.guidToRef = guidToRef;
-        return this;
-    }
-
-    public Map<ExtendedGUID, FileNodePtr> getGuidToObject() {
-        return guidToObject;
-    }
-
-    public OneNoteDocument setGuidToObject(Map<ExtendedGUID, FileNodePtr> guidToObject) {
-        this.guidToObject = guidToObject;
-        return this;
-    }
-
-    public Map<ExtendedGUID, Pair<Long, ExtendedGUID>> getRevisionRoleMap() {
-        return revisionRoleMap;
-    }
-
-    public OneNoteDocument setRevisionRoleMap(
-            Map<ExtendedGUID, Pair<Long, ExtendedGUID>> revisionRoleMap) {
-        this.revisionRoleMap = revisionRoleMap;
-        return this;
     }
 
     public ExtendedGUID getCurrentRevision() {
         return currentRevision;
     }
 
-    public OneNoteDocument setCurrentRevision(ExtendedGUID currentRevision) {
-        this.currentRevision = currentRevision;
-        return this;
-    }
-
     public FileNodeList getRoot() {
         return root;
-    }
-
-    public OneNoteDocument setRoot(FileNodeList root) {
-        this.root = root;
-        return this;
     }
 }

@@ -189,6 +189,7 @@ it needs it. `Parser` extends `SelfConfiguring`, so every parser is self-configu
 
 [source,java]
 ----
+@RequestConfigurable
 @TikaComponent
 public class PDFParser implements Parser, RenderingParser {
 
@@ -204,6 +205,16 @@ public class PDFParser implements Parser, RenderingParser {
     }
 }
 ----
+
+A component that reads such a block must also carry `@RequestConfigurable`. It is not
+inherited: a subclass registered under its own name carries it too if it reads that name's block.
+A `parse-context` block for a self-configuring component without it is logged as a warning when
+the context is read, because nothing reads it, and Tika 5.0 will refuse it. A custom component
+that reads its block without the annotation still gets it, and Tika logs a warning, once, naming
+the class; add the annotation before 5.0. (For Tika's own components a missing annotation fails
+an assertion on every `ParseContextConfig.getConfig` call, block or not, so any test that reaches
+that call catches it; a component that calls it only when a block is present is caught only by a
+test that sends one.)
 
 Benefits:
 

@@ -45,6 +45,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -90,6 +91,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * ones are {@link TikaCoreProperties.EmbeddedResourceType#INLINE} images
  * (TIKA-4851).
  */
+@RequestConfigurable
 @TikaComponent
 public class RawTiffParser extends TiffParser {
 

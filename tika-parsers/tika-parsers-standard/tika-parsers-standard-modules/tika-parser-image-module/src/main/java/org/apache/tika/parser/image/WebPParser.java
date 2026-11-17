@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
@@ -35,6 +36,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
+@RequestConfigurable
 @TikaComponent
 public class WebPParser implements Parser {
 

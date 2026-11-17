@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -56,6 +57,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link TikaCoreProperties.EmbeddedResourceType#RENDERING} embedded document,
  * the way the PDF parser emits page renderings.
  */
+@RequestConfigurable
 @TikaComponent
 public class WMFParser extends AbstractMetafileParser {
 

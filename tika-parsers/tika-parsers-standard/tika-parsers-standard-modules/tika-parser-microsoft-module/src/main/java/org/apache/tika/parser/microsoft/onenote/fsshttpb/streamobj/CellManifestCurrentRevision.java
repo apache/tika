@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -27,20 +26,10 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 public class CellManifestCurrentRevision extends StreamObject {
     public ExGuid cellManifestCurrentRevisionExGuid;
 
-    /**
-     * Initializes a new instance of the CellManifestCurrentRevision class.
-     */
     public CellManifestCurrentRevision() {
         super(StreamObjectTypeHeaderStart.CellManifestCurrentRevision);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -48,24 +37,6 @@ public class CellManifestCurrentRevision extends StreamObject {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.cellManifestCurrentRevisionExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "CellManifestCurrentRevision", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The number of elements actually contained in the list.
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        List<Byte> tmpList = this.cellManifestCurrentRevisionExGuid.serializeToByteList();
-        byteList.addAll(tmpList);
-        return tmpList.size();
+        endItems(currentIndex, index, lengthOfItems, "CellManifestCurrentRevision");
     }
 }

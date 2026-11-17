@@ -72,7 +72,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     // Probe sized by tag-stripped content (16 KB target), capped at 512 KB raw.
     // Markup-heavy pages whose distinguishing bytes (esp. UTF-8 multi-byte
     // sequences) sit past a fixed 16 KB raw window would otherwise starve the
-    // structural UTF-8 check and the model. See AdaptiveProbe.
+    // structural UTF-8 check and the model. See AdaptiveProbe; EvidenceProbe adds
+    // windows from past this prefix when it is not decisive.
     private static final int PROBE_CONTENT_TARGET = AdaptiveProbe.DEFAULT_CONTENT_TARGET;
     private static final int PROBE_RAW_CAP = AdaptiveProbe.DEFAULT_RAW_CAP;
 
@@ -133,6 +134,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes: an "I don't know". */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
+
+    /** Confidence of the windows-1252 alternative added behind a lone statistical UTF-16/32 pick.
+     *  Kept at JunkFilter's tail band (0.5) so it survives when both endiannesses are listed. */
+    private static final float LONE_WIDE_ALTERNATIVE_CONF = 0.5f;
 
     /**
      * Maximum fraction of malformed-UTF-8 bytes we tolerate before
@@ -249,10 +254,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         java.util.List<EncodingResult> pool = new java.util.ArrayList<>();
 
-        // UTF-32 codepoint validity, plus UTF-16 surrogate validity for the model's UTF-16 picks.
+        // UTF-32 codepoint validity, plus UTF-16/UTF-32 validity for the model's wide picks.
         WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(withBom);
-        LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={}",
-                wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be);
+        LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={} invalid32LE={} invalid32BE={}",
+                wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be,
+                wide.invalidUtf32Le, wide.invalidUtf32Be);
         if (wide.charset != null) {
             pool.add(new EncodingResult(wide.charset, UTF32_STRUCTURAL_CONF,
                     wide.charset.name(), EncodingResult.ResultType.STRUCTURAL));
@@ -346,6 +352,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 LOG.trace("mojibuster veto {} (broken surrogates)", name);
                 continue;
             }
+            if (("UTF-32LE".equals(name) && wide.invalidUtf32Le)
+                    || ("UTF-32BE".equals(name) && wide.invalidUtf32Be)) {
+                LOG.trace("mojibuster veto {} (invalid code points)", name);
+                continue;
+            }
             // False-CJK veto: a legacy multi-byte CJK pick whose bytes don't
             // validate (high decode-failure on the UTF-8-stripped remainder) is
             // Latin/Cyrillic/garbage mis-read as CJK.  Drop it — if it was the model's
@@ -395,6 +406,18 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // JunkFilter can arbitrate within-family ambiguities (e.g. GB18030 vs
         // x-windows-949), using its language-quality scoring.
         EncodingResult top = finalResults.get(0);
+        // A statistical UTF-16/32 pick with no single-byte alternative gives JunkFilter nothing to
+        // weigh it against, and a wrong wide pick turns readable text into ideographs.  Offer
+        // windows-1252 as the alternative decode (7-bit bytes decode the same under every ASCII
+        // superset); JunkFilter's text-quality model then decides between the two decodes.
+        if (top.getResultType() == EncodingResult.ResultType.STATISTICAL
+                && isWideUnicode(top.getCharset()) && allWide(finalResults)) {
+            finalResults = new java.util.ArrayList<>(finalResults);
+            finalResults.add(new EncodingResult(Charset.forName(WIN1252), LONE_WIDE_ALTERNATIVE_CONF,
+                    WIN1252, EncodingResult.ResultType.STATISTICAL));
+            LOG.trace("mojibuster lone wide pick {}: windows-1252 added as the alternative decode",
+                    top.getCharset().name());
+        }
         List<EncodingResult> toReturn = (top.getResultType() == EncodingResult.ResultType.STRUCTURAL)
                 ? List.of(top) : finalResults;
         if (LOG.isTraceEnabled()) {
@@ -498,6 +521,15 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         return true;
     }
 
+    private static boolean allWide(List<EncodingResult> results) {
+        for (EncodingResult r : results) {
+            if (!isWideUnicode(r.getCharset())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static boolean isWideUnicode(Charset cs) {
         String name = cs.name();
         return name.startsWith("UTF-16") || name.startsWith("UTF-32");
@@ -544,7 +576,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // letter-count compare ties on most of their Latin letters
         // because Unicode classifies both decodings as Letters,
         // misleading the rule into a wrong flip).
-        if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName)) {
+        // MacRoman's curly quotes (0xD2-0xD5) are letters under windows-1252, so the count
+        // below always favours windows-1252 on real MacRoman.
+        if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName) || "x-MacRoman".equals(topName)) {
             return ranked;
         }
         Charset win1252 = Charset.forName(WIN1252);
@@ -673,14 +707,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 parseContext == null ? null : parseContext.get(EncodingDetectorContext.class);
         EncodingProbeCache cache = context == null ? null : context.getProbeCache();
         if (cache != null) {
-            byte[] cached = cache.get(PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+            byte[] cached = cache.get(EvidenceProbe.KIND, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
             if (cached != null) {
                 return cached;
             }
         }
-        byte[] probe = AdaptiveProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+        byte[] probe = EvidenceProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
         if (cache != null) {
-            cache.put(probe, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+            cache.put(probe, EvidenceProbe.KIND, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
         }
         return probe;
     }

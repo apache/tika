@@ -24,44 +24,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * Object Metadata Declaration
- */
 public class ObjectGroupMetadataDeclarations extends StreamObject {
     public List<ObjectGroupMetadata> objectGroupMetadataList;
 
-    /**
-     * Initializes a new instance of the ObjectGroupMetadataDeclarations class.
-     */
     public ObjectGroupMetadataDeclarations() {
         super(StreamObjectTypeHeaderStart.ObjectGroupMetadataDeclarations);
         this.objectGroupMetadataList = new ArrayList<>();
     }
 
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return A constant value 0
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
-        if (this.objectGroupMetadataList != null) {
-            for (ObjectGroupMetadata objectGroupMetadata : this.objectGroupMetadataList) {
-                byteList.addAll(objectGroupMetadata.serializeToByteList());
-            }
-        }
-
-        return 0;
-    }
-
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)

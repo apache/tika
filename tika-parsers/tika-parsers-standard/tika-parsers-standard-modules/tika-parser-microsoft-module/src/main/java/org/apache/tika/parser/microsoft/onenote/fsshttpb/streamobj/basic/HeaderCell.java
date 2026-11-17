@@ -22,18 +22,11 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupDa
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectDeclare;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class HeaderCell {
     public ObjectGroupObjectDeclare objectDeclaration;
     public ObjectSpaceObjectPropSet objectData;
 
-    /**
-     * Create the instance of Header Cell.
-     *
-     * @param objectElement The instance of ObjectGroupDataElementData.
-     * @return Returns the instacne of HeaderCell.
-     */
     public static HeaderCell createInstance(ObjectGroupDataElementData objectElement)
             throws IOException {
         HeaderCell instance = new HeaderCell();
@@ -44,13 +37,15 @@ public class HeaderCell {
                     i).objectPartitionID != null &&
                     objectElement.objectGroupDeclarations.objectDeclarationList.get(
                             i).objectPartitionID.getDecodedValue() == 1) {
+                if (i >= objectElement.objectGroupData.objectGroupObjectDataList.size()) {
+                    throw new IOException("Header cell declaration has no object data");
+                }
                 instance.objectDeclaration =
                         objectElement.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
                         objectElement.objectGroupData.objectGroupObjectDataList.get(i);
                 instance.objectData = new ObjectSpaceObjectPropSet();
-                instance.objectData.doDeserializeFromByteArray(
-                        ByteUtil.toByteArray(objectData.data.content), 0);
+                instance.objectData.doDeserializeFromByteArray(objectData.data.getContent(), 0);
                 break;
             }
         }

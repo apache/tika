@@ -78,6 +78,7 @@ public class OpenDocumentParser implements Parser {
      */
     public static class Config {
         public boolean extractMacros = false;
+        public boolean includeMissingRows = false;
     }
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
@@ -122,6 +123,7 @@ public class OpenDocumentParser implements Parser {
 
     private Parser content = new OpenDocumentContentParser();
     private boolean extractMacros = false;
+    private boolean includeMissingRows = false;
 
     public OpenDocumentParser() {
     }
@@ -133,6 +135,7 @@ public class OpenDocumentParser implements Parser {
      */
     public OpenDocumentParser(Config config) {
         this.extractMacros = config.extractMacros;
+        this.includeMissingRows = config.includeMissingRows;
     }
 
     /**
@@ -207,6 +210,19 @@ public class OpenDocumentParser implements Parser {
 
     public boolean isExtractMacros() {
         return extractMacros;
+    }
+
+    /**
+     * As in the Excel parsers: whether each empty spreadsheet row before a row with
+     * content is written as an empty row; default false. Trailing empty rows are always
+     * dropped, and at most 100,000 are written per document.
+     */
+    public void setIncludeMissingRows(boolean includeMissingRows) {
+        this.includeMissingRows = includeMissingRows;
+    }
+
+    public boolean isIncludeMissingRows() {
+        return includeMissingRows;
     }
 
     /** Re-opened from the zip on rewind rather than cached: the entry is in the container already. */
@@ -300,14 +316,16 @@ public class OpenDocumentParser implements Parser {
                 meta.parse(tisZip, new DefaultHandler(), metadata, context);
         } else if (entry.getName().endsWith("content.xml")) {
             if (content instanceof OpenDocumentContentParser) {
-                    ((OpenDocumentContentParser) content).parseInternal(tisZip, handler, metadata, context);
+                    ((OpenDocumentContentParser) content).parseInternal(tisZip, handler, metadata, context,
+                            includeMissingRows);
             } else {
                 // Foreign content parser was set:
                 content.parse(TikaInputStream.get(tisZip), handler, metadata, context);
             }
         } else if (entry.getName().endsWith("styles.xml")) {
             if (content instanceof OpenDocumentContentParser) {
-                    ((OpenDocumentContentParser) content).parseInternal(tisZip, handler, metadata, context);
+                    ((OpenDocumentContentParser) content).parseInternal(tisZip, handler, metadata, context,
+                            includeMissingRows);
             } else {
                 // Foreign content parser was set:
                 content.parse(TikaInputStream.get(tisZip), handler, metadata, context);

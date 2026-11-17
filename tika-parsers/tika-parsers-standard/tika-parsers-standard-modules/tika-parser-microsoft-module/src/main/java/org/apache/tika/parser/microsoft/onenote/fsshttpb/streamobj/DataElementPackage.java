@@ -29,20 +29,10 @@ public class DataElementPackage extends StreamObject {
     public List<DataElement> dataElements = new ArrayList<>();
     public byte reserved;
 
-    /**
-     * Initializes a new instance of the DataElementHash class.
-     */
     public DataElementPackage() {
         super(StreamObjectTypeHeaderStart.DataElementPackage);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -60,21 +50,5 @@ public class DataElementPackage extends StreamObject {
                 DataElement.class)) {
             this.dataElements.add(dataElement.get());
         }
-    }
-
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return The number of elements actually contained in the list
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
-        // Add the reserved byte
-        byteList.add((byte) 0);
-        for (DataElement dataElement : dataElements) {
-            byteList.addAll(dataElement.serializeToByteList());
-        }
-        return 1;
     }
 }

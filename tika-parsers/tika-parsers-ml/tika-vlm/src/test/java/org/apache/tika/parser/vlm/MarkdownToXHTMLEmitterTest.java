@@ -411,9 +411,9 @@ public class MarkdownToXHTMLEmitterTest {
         MarkdownToXHTMLEmitter.emit(md, out);
         out.endDocument();
         String written = out.toString();
-        assertContains("norm $\\|\\cdot\\|$ with $u_0 \\in \\mathcal{H}$", written);
-        // GFM unescapes \| in a cell before math, so a renderer sees $\|x\|$
-        assertContains("|$\\\\|x\\\\|$|2|", written);
+        assertContains("norm $`\\|\\cdot\\|`$ with $`u_0 \\in \\mathcal{H}`$", written);
+        // GFM unescapes \| in a cell before the code span, so a renderer sees \|x\|
+        assertContains("|$`\\\\|x\\\\|`$|2|", written);
     }
 
     @Test

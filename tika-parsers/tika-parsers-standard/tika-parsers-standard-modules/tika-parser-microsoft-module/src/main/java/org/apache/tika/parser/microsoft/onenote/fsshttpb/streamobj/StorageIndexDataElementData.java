@@ -30,51 +30,12 @@ public class StorageIndexDataElementData extends DataElementData {
     public List<StorageIndexCellMapping> storageIndexCellMappingList;
     public List<StorageIndexRevisionMapping> storageIndexRevisionMappingList;
 
-    /**
-     * Initializes a new instance of the StorageIndexDataElementData class.
-     */
     public StorageIndexDataElementData() {
         this.storageIndexManifestMapping = new StorageIndexManifestMapping();
         this.storageIndexCellMappingList = new ArrayList<>();
         this.storageIndexRevisionMappingList = new ArrayList<>();
     }
 
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @return A Byte list
-     */
-    @Override
-    public List<Byte> serializeToByteList() throws TikaException, IOException {
-        List<Byte> byteList = new ArrayList<>();
-
-        if (this.storageIndexManifestMapping != null) {
-            byteList.addAll(this.storageIndexManifestMapping.serializeToByteList());
-        }
-
-        if (this.storageIndexCellMappingList != null) {
-            for (StorageIndexCellMapping cellMapping : this.storageIndexCellMappingList) {
-                byteList.addAll(cellMapping.serializeToByteList());
-            }
-        }
-
-        // Storage Index Revision Mapping
-        if (this.storageIndexRevisionMappingList != null) {
-            for (StorageIndexRevisionMapping revisionMapping : this.storageIndexRevisionMappingList) {
-                byteList.addAll(revisionMapping.serializeToByteList());
-            }
-        }
-
-        return byteList;
-    }
-
-    /**
-     * Used to de-serialize the data element.
-     *
-     * @param byteArray  Byte array
-     * @param startIndex Start position
-     * @return The length of the element
-     */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {

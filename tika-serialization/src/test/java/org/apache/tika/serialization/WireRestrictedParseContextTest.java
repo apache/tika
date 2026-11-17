@@ -122,9 +122,9 @@ public class WireRestrictedParseContextTest {
         // Per-request tuning of an already-loaded self-configuring parser is config, not
         // instantiation: stored as an inert jsonConfig, never bound, so it must be allowed
         // (mirrors the real pdf-parser sortByPosition / OCR-strategy use case).
-        String json = "{\"configurable-test-parser\":{\"maxItems\":5}}";
+        String json = "{\"request-config-test-parser\":{\"maxItems\":5}}";
         ParseContext ctx = restrictedMapper().readValue(json, ParseContext.class);
-        assertTrue(ctx.hasJsonConfig("configurable-test-parser"));
+        assertTrue(ctx.hasJsonConfig("request-config-test-parser"));
     }
 
     @Test

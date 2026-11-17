@@ -38,11 +38,17 @@ import org.apache.tika.sax.ContentHandlerDecorator;
  * ODF stores runs of identical cells or rows once with a count. One with content is
  * replayed. Empty ones, repeated or not, are held back and written only if a sibling
  * with content follows before the parent closes, so the filler that pads a sheet out to
- * its last column or row (often thousands of cells, a million rows) is dropped.
+ * its last column or row (often thousands of cells, a million rows) is dropped. Gaps
+ * before content are written up to {@code maxEmptyWritten} empty elements per document:
+ * cells pad out to the next value's column, as the Excel parsers do, and empty rows are
+ * dropped unless asked for.
+ * <p>
+ * Padding and every replayed copy are charged to a shared {@link Budget} at one unit per
+ * character and per element (each element writes a tab or newline).
  */
 class RepeatedElementHandler extends ContentHandlerDecorator {
 
-    /** Characters a document may add by replaying, beyond each element's first copy. */
+    /** Characters and elements a document may add by padding and replaying. */
     static final long MAX_REPLAYED_CHARS = 10_000_000L;
 
     /** Replay budget shared by the cell and row handlers of one document. */
@@ -61,13 +67,27 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
                 replayedChars += extra;
                 return true;
             }
+            warn();
+            return false;
+        }
+
+        /** Takes as much of {@code extra} as fits; warns once when not all of it does. */
+        long takeUpTo(long extra) {
+            long granted = Math.min(extra, MAX_REPLAYED_CHARS - replayedChars);
+            replayedChars += granted;
+            if (granted < extra) {
+                warn();
+            }
+            return granted;
+        }
+
+        private void warn() {
             if (!warned && metadata != null) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         "OpenDocument repeated cells/rows exceeded " + MAX_REPLAYED_CHARS
                                 + " replayed characters; the rest were written once");
             }
             warned = true;
-            return false;
         }
     }
 
@@ -88,6 +108,8 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
         }
     }
 
+    private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
+
     private interface Event {
         void replay(ContentHandler h) throws SAXException;
     }
@@ -96,6 +118,8 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
     private final String element;
     private final String parent;
     private final int maxRepeat;
+    private long emptyLeft;
+    private final String emptyChild;
     private final Budget budget;
 
     private int nextRepeat;
@@ -107,20 +131,25 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
     private int repeat;
     private boolean hasContent;
     private long chars;
+    private long elements;
     private final Deque<EmptyRun> pendingEmpty = new ArrayDeque<>();
     private long pendingCount;
 
     /**
      * @param element the XHTML element that repeats ({@code td} or {@code tr})
      * @param parent  the element whose end drops pending empty copies
+     * @param maxEmptyWritten most empty elements written before content, per document
+     * @param emptyChild      element written inside each empty one, or null
      */
     RepeatedElementHandler(ContentHandler out, String element, String parent, int maxRepeat,
-                           Budget budget) {
+                           long maxEmptyWritten, String emptyChild, Budget budget) {
         super(out);
         this.out = out;
         this.element = element;
         this.parent = parent;
         this.maxRepeat = maxRepeat;
+        this.emptyLeft = maxEmptyWritten;
+        this.emptyChild = emptyChild;
         this.budget = budget;
     }
 
@@ -151,6 +180,7 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
             throws SAXException {
         if (buffer != null) {
             depth++;
+            elements++;
             if (localName.equals("img")) {
                 hasContent = true;
             }
@@ -164,6 +194,7 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
             repeat = Math.max(1, nextRepeat);
             hasContent = false;
             chars = 0;
+            elements = 1;
             nextRepeat = 0;
             AttributesImpl copy = new AttributesImpl(atts);
             bufferUri = uri;
@@ -193,7 +224,7 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
             }
             writePendingEmpty();
             int copies = repeat;
-            if (copies > 1 && !budget.take(chars * (copies - 1))) {
+            if (copies > 1 && !budget.take((chars + elements) * (copies - 1))) {
                 copies = 1;
             }
             for (int i = 0; i < copies; i++) {
@@ -241,7 +272,7 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
     }
 
     private void hold(String uri, String localName, String name, Attributes atts, int count) {
-        int n = (int) Math.min(count, maxRepeat - pendingCount);
+        int n = (int) Math.min(count, Math.min(maxRepeat, emptyLeft) - pendingCount);
         if (n <= 0) {
             return;
         }
@@ -260,9 +291,16 @@ class RepeatedElementHandler extends ContentHandlerDecorator {
     }
 
     private void writePendingEmpty() throws SAXException {
+        int units = emptyChild == null ? 1 : 2;
+        long n = budget.takeUpTo(pendingCount * units) / units;
+        emptyLeft -= n;
         for (EmptyRun run : pendingEmpty) {
-            for (int i = 0; i < run.count; i++) {
+            for (int i = 0; i < run.count && n > 0; i++, n--) {
                 super.startElement(run.uri, run.localName, run.name, run.atts);
+                if (emptyChild != null) {
+                    super.startElement(run.uri, emptyChild, emptyChild, EMPTY_ATTRIBUTES);
+                    super.endElement(run.uri, emptyChild, emptyChild);
+                }
                 super.endElement(run.uri, run.localName, run.name);
             }
         }

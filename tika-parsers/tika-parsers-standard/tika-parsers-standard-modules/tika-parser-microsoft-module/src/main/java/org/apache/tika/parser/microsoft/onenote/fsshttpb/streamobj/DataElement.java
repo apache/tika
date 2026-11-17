@@ -19,10 +19,8 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -32,18 +30,11 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Compact
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataElementType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.SerialNumber;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.SequenceNumberGenerator;
 
 public class DataElement extends StreamObject {
 
-    /**
-     * Data Element Data Type Mapping
-     */
     private static final Map<DataElementType, Class> DATA_ELEMENT_DATA_TYPE_MAPPING;
 
-    /**
-     *  Initializes static members of the DataElement class
-     */
     static {
         DATA_ELEMENT_DATA_TYPE_MAPPING = new HashMap<>();
         for (DataElementType value : DataElementType.values()) {
@@ -53,7 +44,7 @@ public class DataElement extends StreamObject {
                 DATA_ELEMENT_DATA_TYPE_MAPPING.put(value,
                         Class.forName(className, false, DataElement.class.getClassLoader()));
             } catch (ClassNotFoundException e) {
-                // This is OK, we are not pulling over every single class
+                // not every type has a ported class
             }
         }
     }
@@ -63,46 +54,10 @@ public class DataElement extends StreamObject {
     public DataElementType dataElementType;
     public DataElementData data;
 
-    /**
-     * Initializes a new instance of the DataElement class.
-     *
-     * @param type data
-     *             element type
-     *             *
-     * @param data Specifies
-     *             the data
-     *             of the
-     *             element .
-     */
-
-
-    public DataElement(DataElementType type, DataElementData data) {
-        super(StreamObjectTypeHeaderStart.DataElement);
-        if (!DATA_ELEMENT_DATA_TYPE_MAPPING.containsKey(type)) {
-            throw new IllegalArgumentException("Invalid argument type value" + type.getIntVal());
-        }
-
-        this.dataElementType = type;
-        this.data = data;
-        this.dataElementExGuid =
-                new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
-        this.serialNumber = new SerialNumber(UUID.randomUUID(),
-                SequenceNumberGenerator.GetCurrentSerialNumber());
-    }
-
-    /**
-     * Initializes a new instance of the DataElement class.
-     */
     public DataElement() {
         super(StreamObjectTypeHeaderStart.DataElement);
     }
 
-    /**
-     * Used to get data.
-     *
-     * @return Data of
-     * the element
-     */
     public <T extends DataElementData> T getData(Class<T> clazz) throws TikaException {
         if (this.data.getClass().equals(clazz)) {
             return (T) this.data;
@@ -113,17 +68,6 @@ public class DataElement extends StreamObject {
         }
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A
-     *                      Byte array
-     * @param currentIndex  Start
-     *                      position
-     * @param lengthOfItems The
-     *                      length of
-     *                      the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems) throws TikaException {
@@ -135,7 +79,7 @@ public class DataElement extends StreamObject {
             this.dataElementType = DataElementType.fromIntVal(
                     (int) BasicObject.parse(byteArray, index, Compact64bitInt.class)
                             .getDecodedValue());
-        } catch (Exception e) {
+        } catch (TikaException | IOException e) {
             throw new DataElementParseErrorException(index.get(), e);
         }
 
@@ -157,7 +101,7 @@ public class DataElement extends StreamObject {
             try {
                 index.addAndGet(
                         this.data.deserializeDataElementDataFromByteArray(byteArray, index.get()));
-            } catch (Exception e) {
+            } catch (TikaException | IOException e) {
                 throw new DataElementParseErrorException(index.get(), e);
             }
         } else {
@@ -167,25 +111,5 @@ public class DataElement extends StreamObject {
         }
 
         currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return The element length
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException, TikaException {
-        int startIndex = byteList.size();
-        byteList.addAll(this.dataElementExGuid.serializeToByteList());
-        byteList.addAll(this.serialNumber.serializeToByteList());
-        byteList.addAll(
-                new Compact64bitInt(this.dataElementType.getIntVal()).serializeToByteList());
-
-        int headerLength = byteList.size() - startIndex;
-        byteList.addAll(this.data.serializeToByteList());
-
-        return headerLength;
     }
 }

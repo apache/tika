@@ -1,0 +1,3 @@
+# Upstream test pages the port does not yet match. A listed page that passes fails the build.
+# page  reason
+invalid-attributes  harness artifact: the output keeps the attribute named '"', but jsoup serializes it as '_' and the re-parse sees a different name

@@ -75,7 +75,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     final NumberFormat currencyFormatter;
     final DateFormat shortDateTimeFormatter;
 
-    final Parser htmlParser;
+    final JSoupParser htmlParser;
 
     protected JackcessExtractor(Metadata metadata, ParseContext context, Locale locale) {
         super(context, metadata);
@@ -86,7 +86,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         if (tmpHtmlParser == null) {
             htmlParser = new JSoupParser();
         } else {
-            htmlParser = tmpHtmlParser;
+            htmlParser = (JSoupParser) tmpHtmlParser;
         }
     }
 
@@ -218,7 +218,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 Metadata m = Metadata.newInstance(context);
                 m.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try (TikaInputStream tis = TikaInputStream.get(v.getBytes(UTF_8))) {
-                    htmlParser.parse(tis, h, m, context);
+                    htmlParser.parseInline(tis, h, m, context);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);

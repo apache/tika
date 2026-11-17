@@ -143,12 +143,9 @@ threshold is meaningful for a short snippet and a full document. Per-class
 === Tuning
 
 `CharSoupLanguageDetector` is registered as
-`@TikaComponent(name = "charsoup-language-detector")` and implements
-`SelfConfiguring`, so it resolves by friendly name in the `parse-context` JSON
-section — see
-xref:migration-to-4x/serialization-4x.adoc#discovering-friendly-names[Discovering the friendly name for a component].
-It exposes no config record yet; the programmatic knobs are `setMaxLength(int)`
-for the rolling buffer and `setPriors(Map)` for language priors.
+`@TikaComponent(name = "charsoup-language-detector")`. It exposes no config record
+yet, so a `parse-context` block for it has no effect; the programmatic knobs are
+`setMaxLength(int)` for the rolling buffer and `setPriors(Map)` for language priors.
 
 == Training the model
 

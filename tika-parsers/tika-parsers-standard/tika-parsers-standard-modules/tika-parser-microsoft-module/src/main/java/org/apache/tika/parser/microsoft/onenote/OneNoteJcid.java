@@ -30,6 +30,7 @@ public final class OneNoteJcid {
     public static final int TABLE_CELL_NODE = 0x24;
     public static final int PAGE_METADATA = 0x30;
     public static final int CONFLICT_PAGE_METADATA = 0x38;
+    public static final int VERSION_HISTORY_CONTENT = 0x3C;
 
     private OneNoteJcid() {
     }

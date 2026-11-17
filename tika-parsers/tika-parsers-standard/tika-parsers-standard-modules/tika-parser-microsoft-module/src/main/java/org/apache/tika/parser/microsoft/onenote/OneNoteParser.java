@@ -23,8 +23,10 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -34,13 +36,20 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.RequestConfigurable;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -50,21 +59,17 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStoreParser;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.AlternativePackaging;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-/**
- * OneNote tika parser capable of parsing Microsoft OneNote files.
- * <p>
- * Based on the Microsoft specs MS-ONE and MS-ONESTORE.
- */
+/** Microsoft OneNote parser, based on the MS-ONE and MS-ONESTORE specs. */
 @TikaComponent
+@RequestConfigurable
 public class OneNoteParser implements Parser {
 
     public static final String ONE_NOTE_PREFIX = "onenote:";
+    // MS-ONESTORE 2.3.1
+    private static final int HEADER_SIZE = 1024;
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final Map<MediaType, List<String>> TYPES_MAP = new HashMap<>();
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = -5504243905998074168L;
+    private static final long serialVersionUID = 3937286094553180342L;
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(TYPES_MAP.keySet());
 
@@ -72,10 +77,27 @@ public class OneNoteParser implements Parser {
         // All types should be 4 bytes long, space padded as needed
         TYPES_MAP.put(MediaType.application("onenote; format=one"),
                 Collections.singletonList("ONE "));
-        // TODO - add onetoc and other onenote mime types
+        TYPES_MAP.put(MediaType.application("onenote; format=onetoc2"),
+                Collections.singletonList("TOC2"));
     }
 
-    private final OneNoteTreeWalkerOptions options = new OneNoteTreeWalkerOptions();
+    private final OneNoteParserConfig defaultConfig;
+
+    public OneNoteParser() {
+        this(new OneNoteParserConfig());
+    }
+
+    public OneNoteParser(OneNoteParserConfig config) {
+        this.defaultConfig = Objects.requireNonNull(config, "config");
+    }
+
+    public OneNoteParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, OneNoteParserConfig.class));
+    }
+
+    public OneNoteParserConfig getDefaultConfig() {
+        return defaultConfig;
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -86,6 +108,8 @@ public class OneNoteParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
+        OneNoteParserConfig options = ParseContextConfig.getConfig(context, "one-note-parser",
+                OneNoteParserConfig.class, defaultConfig);
         try (OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
                         tis.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
@@ -96,113 +120,138 @@ public class OneNoteParser implements Parser {
             OneNoteHeader header = oneNoteDocument.header;
 
             if (header.isMsOneStoreFormat()) {
-                metadata.set(OneNote.BUILD_NUMBER_CREATED,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
-                metadata.set(OneNote.BUILD_NUMBER_LAST_WROTE_TO_FILE,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberLastWroteToFile));
-                metadata.set(OneNote.BUILD_NUMBER_NEWEST_WRITTEN,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberNewestWritten));
-                metadata.set(OneNote.BUILD_NUMBER_OLDEST_WRITTEN,
-                        "0x" + Long.toHexString(oneNoteDocument.header.buildNumberOldestWritten));
-                metadata.set(OneNote.CB_EXPECTED_FILE_LENGTH,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cbExpectedFileLength));
-                metadata.set(OneNote.CB_FREE_SPACE_IN_FREE_CHUNK_LIST,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cbFreeSpaceInFreeChunkList));
-                metadata.set(OneNote.CB_LEGACY_EXPECTED_FILE_LENGTH,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cbLegacyExpectedFileLength));
-                metadata.set(OneNote.CB_LEGACY_FREE_SPACE_IN_FREE_CHUNK_LIST, "0x" +
-                        Long.toHexString(oneNoteDocument.header.cbLegacyFreeSpaceInFreeChunkList));
-                metadata.set(OneNote.CRC_NAME, "0x" + Long.toHexString(oneNoteDocument.header.crcName));
-                metadata.set(OneNote.C_TRANSACTIONS_IN_LOG,
-                        "0x" + Long.toHexString(oneNoteDocument.header.cTransactionsInLog));
-                metadata.set(OneNote.FFV_LAST_CODE_THAT_WROTE_TO_THIS_FILE, "0x" +
-                        Long.toHexString(oneNoteDocument.header.ffvLastCodeThatWroteToThisFile));
-                metadata.set(OneNote.FFV_NEWEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE, "0x" + Long.toHexString(
-                        oneNoteDocument.header.ffvNewestCodeThatHasWrittenToThisFile));
-                metadata.set(OneNote.FFV_OLDEST_CODE_THAT_MAY_READ_THIS_FILE, "0x" +
-                        Long.toHexString(oneNoteDocument.header.ffvOldestCodeThatMayReadThisFile));
-                metadata.set(OneNote.FFV_OLDEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE, "0x" + Long.toHexString(
-                        oneNoteDocument.header.ffvOldestCodeThatHasWrittenToThisFile));
-                metadata.set(OneNote.GRF_DEBUG_LOG_FLAGS,
-                        "0x" + Long.toHexString(oneNoteDocument.header.grfDebugLogFlags));
-                metadata.set(OneNote.N_FILE_VERSION_GENERATION,
-                        "0x" + Long.toHexString(oneNoteDocument.header.nFileVersionGeneration));
-                metadata.set(OneNote.RGB_PLACEHOLDER,
-                        "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
+                setHex(metadata, OneNote.BUILD_NUMBER_CREATED, header.buildNumberCreated);
+                setHex(metadata, OneNote.BUILD_NUMBER_LAST_WROTE_TO_FILE,
+                        header.buildNumberLastWroteToFile);
+                setHex(metadata, OneNote.BUILD_NUMBER_NEWEST_WRITTEN,
+                        header.buildNumberNewestWritten);
+                setHex(metadata, OneNote.BUILD_NUMBER_OLDEST_WRITTEN,
+                        header.buildNumberOldestWritten);
+                setHex(metadata, OneNote.CB_EXPECTED_FILE_LENGTH, header.cbExpectedFileLength);
+                setHex(metadata, OneNote.CB_FREE_SPACE_IN_FREE_CHUNK_LIST,
+                        header.cbFreeSpaceInFreeChunkList);
+                setHex(metadata, OneNote.CB_LEGACY_EXPECTED_FILE_LENGTH,
+                        header.cbLegacyExpectedFileLength);
+                setHex(metadata, OneNote.CB_LEGACY_FREE_SPACE_IN_FREE_CHUNK_LIST,
+                        header.cbLegacyFreeSpaceInFreeChunkList);
+                setHex(metadata, OneNote.CRC_NAME, header.crcName);
+                setHex(metadata, OneNote.C_TRANSACTIONS_IN_LOG, header.cTransactionsInLog);
+                setHex(metadata, OneNote.FFV_LAST_CODE_THAT_WROTE_TO_THIS_FILE,
+                        header.ffvLastCodeThatWroteToThisFile);
+                setHex(metadata, OneNote.FFV_NEWEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE,
+                        header.ffvNewestCodeThatHasWrittenToThisFile);
+                setHex(metadata, OneNote.FFV_OLDEST_CODE_THAT_MAY_READ_THIS_FILE,
+                        header.ffvOldestCodeThatMayReadThisFile);
+                setHex(metadata, OneNote.FFV_OLDEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE,
+                        header.ffvOldestCodeThatHasWrittenToThisFile);
+                setHex(metadata, OneNote.GRF_DEBUG_LOG_FLAGS, header.grfDebugLogFlags);
+                setHex(metadata, OneNote.N_FILE_VERSION_GENERATION, header.nFileVersionGeneration);
+                setHex(metadata, OneNote.RGB_PLACEHOLDER, header.rgbPlaceholder);
                 emitSectionFileGuid(header, metadata);
 
-                Exception structureFailure = oneNoteDocument.structureParseException;
+                if (oneNoteDocument.transactionLogWarning != null) {
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            oneNoteDocument.transactionLogWarning);
+                }
+                Exception structureFailure = null;
+                try {
+                    deserializeRootFileNodeList(oneNoteDocument);
+                } catch (EncryptedDocumentException | TikaMemoryLimitException e) {
+                    throw e;
+                } catch (TikaException | IOException e) {
+                    // a truncated or malformed root list: the dump can still recover text
+                    structureFailure = e;
+                }
                 boolean walked = false;
+                boolean outputComplete = false;
                 if (structureFailure == null) {
+                    OneNoteTreeWalker oneNoteTreeWalker = new OneNoteTreeWalker(options,
+                            oneNoteDocument, oneNoteDirectFileResource, xhtml, metadata, context,
+                            Pair.of(1L, ExtendedGUID.nil()));
                     try {
-                        Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
-                        OneNoteTreeWalker oneNoteTreeWalker =
-                                new OneNoteTreeWalker(options, oneNoteDocument,
-                                        oneNoteDirectFileResource, xhtml, metadata, context,
-                                        roleAndContext);
-
                         oneNoteTreeWalker.walkTree();
-
-                        if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
-                            metadata.set(TikaCoreProperties.CREATOR,
-                                    sortedValues(oneNoteTreeWalker.getAuthors()));
-                        }
-                        if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
-                            metadata.set(OneNote.MOST_RECENT_AUTHORS,
-                                    sortedValues(oneNoteTreeWalker.getMostRecentAuthors()));
-                        }
-                        if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
-                            metadata.set(OneNote.ORIGINAL_AUTHORS,
-                                    sortedValues(oneNoteTreeWalker.getOriginalAuthors()));
-                        }
-                        if (!Instant.MAX.equals(
-                                Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
-                            metadata.set(OneNote.CREATION_TIMESTAMP,
-                                    String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
-                        }
-                        if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
-                            metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP, String.valueOf(
-                                    oneNoteTreeWalker.getLastModifiedTimestamp().toEpochMilli()));
-                        }
-                        if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {
-                            metadata.set(TikaCoreProperties.MODIFIED,
-                                    String.valueOf(oneNoteTreeWalker.getLastModified()));
-                        }
                         walked = true;
-                    } catch (Exception e) {
+                    } catch (TikaException | IOException e) {
                         rethrowIfLimitReached(e);
-                        structureFailure = e;
+                        if (oneNoteTreeWalker.hasEmittedContent()) {
+                            // keep what was written; a dump would repeat it
+                            recordWalkFailure(e, metadata, context);
+                            walked = true;
+                        } else {
+                            structureFailure = e;
+                        }
+                    }
+                    if (walked) {
+                        setWalkMetadata(oneNoteTreeWalker, metadata);
+                        // nothing written because the rest was excluded is the right output;
+                        // the dump would write the excluded text
+                        outputComplete = oneNoteTreeWalker.hasEmittedContent() ||
+                                oneNoteTreeWalker.hasWithheldContent();
                     }
                 }
                 if (!walked) {
                     legacyFallbackDump("OneNote parse failed; falling back to legacy text dump",
                             structureFailure, metadata, xhtml, oneNoteDirectFileResource,
                             context);
+                } else if (!outputComplete) {
+                    // a walk that found no text, e.g. a property layout the walker does not
+                    // know, still has text the dump can recover (including TOC section names)
+                    legacyFallbackDump("OneNote parse produced no content; " +
+                                    "falling back to legacy text dump", null, metadata, xhtml,
+                            oneNoteDirectFileResource, context);
                 }
             } else if (header.isLegacyOrAlternativePackaging()) {
+                byte[] bytes;
+                try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
+                    bytes = is.readAllBytes();
+                }
                 MSOneStorePackage pkg = null;
+                Exception parseFailure = null;
                 try {
                     AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
-                    byte[] bytes;
-                    try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
-                        bytes = is.readAllBytes();
-                    }
-                    //enable streaming deserialization
                     alternatePackageOneStoreFile.doDeserializeFromByteArray(bytes, 0);
-
-                    MSOneStoreParser onenoteParser = new MSOneStoreParser();
-                    pkg = onenoteParser.parse(alternatePackageOneStoreFile.dataElementPackage);
-
-                    pkg.walkTree(options, metadata, xhtml, context);
-                } catch (Exception e) {
-                    rethrowIfLimitReached(e);
+                    pkg = new MSOneStoreParser().parse(
+                            alternatePackageOneStoreFile.dataElementPackage);
+                } catch (TikaMemoryLimitException e) {
+                    throw e;
+                } catch (TikaException | IOException e) {
+                    parseFailure = e;
+                }
+                if (pkg == null) {
                     legacyFallbackDump(
                             "OneNote FSSHTTPB parse failed; falling back to legacy text dump",
-                            e, metadata, xhtml, oneNoteDirectFileResource, context);
-                    pkg = null;
+                            parseFailure, metadata, xhtml, oneNoteDirectFileResource, context);
+                } else {
+                    if (pkg.isEncrypted()) {
+                        throw new EncryptedDocumentException(
+                                "OneNote section is password protected");
+                    }
+                    pkg.setEmbeddedByteLimit(bytes.length);
+                    pkg.setTextByteLimit(2L * bytes.length);
+                    boolean walked = true;
+                    try {
+                        pkg.walkTree(options, metadata, xhtml, context);
+                    } catch (TikaException | IOException e) {
+                        rethrowIfLimitReached(e);
+                        walked = false;
+                        if (pkg.hasEmittedContent()) {
+                            recordWalkFailure(e, metadata, context);
+                        } else {
+                            legacyFallbackDump("OneNote FSSHTTPB parse failed; " +
+                                            "falling back to legacy text dump", e, metadata, xhtml,
+                                    oneNoteDirectFileResource, context);
+                        }
+                    }
+                    if (walked) {
+                        legacyFallbackIfNoContent(pkg, metadata, xhtml,
+                                oneNoteDirectFileResource, context);
+                    }
                 }
-                legacyFallbackIfNoContent(pkg, metadata, xhtml, oneNoteDirectFileResource,
-                        context);
+            } else if (isSection(header)) {
+                // a OneNote 2003 section: a .one header with a legacy file version and an
+                // undocumented layout
+                legacyFallbackDump("OneNote 2003 section; falling back to legacy text dump",
+                        null, metadata, xhtml, oneNoteDirectFileResource, context);
             } else {
                 throw new TikaException("Invalid OneStore document - could not parse headers");
             }
@@ -225,10 +274,21 @@ public class OneNoteParser implements Parser {
         return sorted;
     }
 
+    private static final String SECTION_FILE_TYPE = "{7B5C52E4-D88C-4DA7-AEB1-5378D02996D3}";
+
+    static boolean isSection(OneNoteHeader header) {
+        GUID fileType = header.getGuidFileType();
+        return fileType != null && SECTION_FILE_TYPE.equalsIgnoreCase(fileType.toString());
+    }
+
+    // limits are the caller's to see; only malformed structure falls back to the dump
     private static void rethrowIfLimitReached(Exception e) throws TikaException, SAXException {
         WriteLimitReachedException.throwIfWriteLimitReached(e);
         if (e instanceof EmbeddedLimitReachedException) {
             throw (EmbeddedLimitReachedException) e;
+        }
+        if (e instanceof TikaMemoryLimitException) {
+            throw (TikaMemoryLimitException) e;
         }
     }
 
@@ -239,11 +299,47 @@ public class OneNoteParser implements Parser {
                                           OneNoteDirectFileResource oneNoteDirectFileResource,
                                           ParseContext context)
             throws TikaException, SAXException {
-        if (pkg != null && !pkg.hasEmittedContent()) {
+        if (pkg != null && !pkg.hasEmittedContent() && !pkg.hasWithheldContent()) {
             legacyFallbackDump("OneNote FSSHTTPB parse produced no content; " +
                             "falling back to legacy text dump", null, metadata, xhtml,
                     oneNoteDirectFileResource, context);
         }
+    }
+
+    private static void setHex(Metadata metadata, Property property, long value) {
+        metadata.set(property, "0x" + Long.toHexString(value));
+    }
+
+    static void setWalkMetadata(OneNoteTreeWalker walker, Metadata metadata) {
+        // the original authors are the creators of the content, as in FSSHTTPB sections
+        Set<String> creators = new HashSet<>(walker.getAuthors());
+        creators.addAll(walker.getOriginalAuthors());
+        if (!creators.isEmpty()) {
+            metadata.set(TikaCoreProperties.CREATOR, sortedValues(creators));
+        }
+        if (!walker.getMostRecentAuthors().isEmpty()) {
+            metadata.set(OneNote.MOST_RECENT_AUTHORS, sortedValues(walker.getMostRecentAuthors()));
+        }
+        if (!walker.getOriginalAuthors().isEmpty()) {
+            metadata.set(OneNote.ORIGINAL_AUTHORS, sortedValues(walker.getOriginalAuthors()));
+        }
+        if (walker.getCreationTimestamp() != Long.MAX_VALUE) {
+            metadata.set(OneNote.CREATION_TIMESTAMP, String.valueOf(walker.getCreationTimestamp()));
+        }
+        if (!Instant.MIN.equals(walker.getLastModifiedTimestamp())) {
+            metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP,
+                    String.valueOf(walker.getLastModifiedTimestamp().toEpochMilli()));
+        }
+        if (walker.getLastModified() > Long.MIN_VALUE) {
+            metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(walker.getLastModified()));
+        }
+    }
+
+    static void recordWalkFailure(Exception e, Metadata metadata, ParseContext context) {
+        String warning = "OneNote parse stopped early; output is partial";
+        LOG.warn(warning, e);
+        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        EmbeddedDocumentUtil.recordException(e, metadata, context);
     }
 
     private static void legacyFallbackDump(String warning, Exception cause, Metadata metadata,
@@ -255,68 +351,48 @@ public class OneNoteParser implements Parser {
         metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         if (cause != null) {
             LOG.debug("OneNote parse failure", cause);
-            //the failure text is the policy's business, so it goes through format, not here
+            // the exception text is recorded as ExceptionReporting allows, not in the warning
             EmbeddedDocumentUtil.recordException(cause, metadata, context);
         }
         new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml).dump();
     }
 
     /**
-     * Create a OneNoteDocument object.
-     * <p>
-     * This won't actually have the binary data of the sections, but it's more of a
-     * metadata structure that contains
-     * the general structure of the container and contains offset positions of where to find the
-     * binary data we care about.
-     * <p>
-     * OneNote files are of format:
-     * <p>
-     * The header (section 2.3.1 in MS-ONESTORE) is the first 1024 bytes of the file. It contains
-     * references to the other structures in the
-     * file as well as metadata about the file.
-     * The free chunk list (section 2.3.2 in MS-ONESTORE) defines where there are free spaces in
-     * the file where data can be written.
-     * The transaction log (section 2.3.3 in MS-ONESTORE) stores the state and length of each
-     * file node list (section 2.4 in MS-ONESTORE)
-     * in the file.
-     * The hashed chunk list (section 2.3.4 in MS-ONESTORE) stores read-only objects in the file
-     * that can be referenced by multiple
-     * revisions (section 2.1.8 in MS-ONESTORE).
-     * The root file node list (section 2.1.14 in MS-ONESTORE) is the file node list that is the
-     * root of the tree of all file node lists in
-     * the file.
-     * <p>
-     * In this method we first parse the header.
-     * <p>
-     * After parsing the header, this results in header.fcrFileNodeListRoot that points to the first
-     *
-     * @param oneNoteDirectFileResource A random access file resource used as the source of the
-     *                                  content.
-     * @return A parsed one note document. This document does not contain any of the binary data,
-     * rather it just contains
-     * the data pointers and metadata. A failure while parsing the root file node list is not
-     * thrown; it is recorded in the returned document's {@code structureParseException}.
-     * @throws IOException Will throw IOException in typical IO issue situations.
+     * Reads the header (MS-ONESTORE 2.3.1) and transaction log (2.3.3). A malformed log is
+     * recorded in the document's {@code transactionLogWarning}; the root file node list is read
+     * by {@link #deserializeRootFileNodeList}.
      */
     public OneNoteDocument createOneNoteDocumentFromDirectFileResource(
             OneNoteDirectFileResource oneNoteDirectFileResource) throws IOException, TikaException {
         OneNoteDocument oneNoteDocument = new OneNoteDocument();
         OneNotePtr oneNotePtr = new OneNotePtr(oneNoteDocument, oneNoteDirectFileResource);
-        // First parse out the header.
+        if (oneNoteDirectFileResource.size() < HEADER_SIZE) {
+            throw new TikaException("Truncated OneNote file: " + oneNoteDirectFileResource.size() +
+                    " bytes, shorter than its " + HEADER_SIZE + "-byte header");
+        }
         oneNoteDocument.header = oneNotePtr.deserializeHeader();
 
         if (oneNoteDocument.header.isMsOneStoreFormat()) {
-            // Now that we parsed the header, the "root file node list"
             try {
-                oneNotePtr.reposition(oneNoteDocument.header.fcrFileNodeListRoot);
-                FileNodePtr curPath = new FileNodePtr();
-                oneNotePtr.deserializeFileNodeList(oneNoteDocument.root, curPath);
-            } catch (TikaException | IOException | RuntimeException e) {
-                // a truncated or malformed root list is recorded, not thrown, so the
-                // caller can fall back to the legacy string dump
-                oneNoteDocument.structureParseException = e;
+                oneNotePtr.deserializeTransactionLog(oneNoteDocument.header.fcrTransactionLog,
+                        oneNoteDocument.header.cTransactionsInLog,
+                        oneNoteDocument.committedFileNodeCounts);
+            } catch (TikaException | IOException e) {
+                // later lists end at a terminator or the end of their fragments
+                LOG.debug("Could not read the OneNote transaction log", e);
+                oneNoteDocument.transactionLogWarning =
+                        "OneNote transaction log is malformed: " + e.getMessage();
             }
         }
         return oneNoteDocument;
+    }
+
+    /** Reads the root file node list (MS-ONESTORE 2.1.14) and the lists it references. */
+    void deserializeRootFileNodeList(OneNoteDocument oneNoteDocument)
+            throws IOException, TikaException {
+        // shares the document's budgets with the property-set reader
+        OneNotePtr oneNotePtr = new OneNotePtr(oneNoteDocument.propertySetReader);
+        oneNotePtr.reposition(oneNoteDocument.header.fcrFileNodeListRoot);
+        oneNotePtr.deserializeFileNodeList(oneNoteDocument.root, new FileNodePtr());
     }
 }

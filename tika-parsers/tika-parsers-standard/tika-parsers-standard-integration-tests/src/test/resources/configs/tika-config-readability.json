@@ -1,0 +1,11 @@
+{
+  "parse-context": {
+    "jsoup-filters": [
+      {
+        "readability-jsoup-filter": {
+          "maxElements": 5000
+        }
+      }
+    ]
+  }
+}

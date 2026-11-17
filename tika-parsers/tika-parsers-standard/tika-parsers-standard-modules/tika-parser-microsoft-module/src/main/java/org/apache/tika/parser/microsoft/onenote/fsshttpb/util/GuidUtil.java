@@ -19,7 +19,28 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 import java.util.UUID;
 
 public class GuidUtil {
+    private static final UUID EMPTY = new UUID(0, 0);
+
     public static UUID emptyGuid() {
-        return UUID.fromString("00000000-0000-0000-0000-000000000000");
+        return EMPTY;
+    }
+
+    /** Reads a GUID stored in Microsoft byte order: the first three fields little-endian. */
+    public static UUID fromMicrosoftBytes(byte[] b, int offset) {
+        long high = ((long) le(b, offset, 4) << 32) | ((long) le(b, offset + 4, 2) << 16) |
+                le(b, offset + 6, 2);
+        long low = 0;
+        for (int i = 8; i < 16; i++) {
+            low = (low << 8) | (b[offset + i] & 0xff);
+        }
+        return new UUID(high, low);
+    }
+
+    private static long le(byte[] b, int offset, int n) {
+        long v = 0;
+        for (int i = n - 1; i >= 0; i--) {
+            v = (v << 8) | (b[offset + i] & 0xff);
+        }
+        return v;
     }
 }

@@ -186,7 +186,7 @@ the defaults are NOT the same everywhere:
   config (it prints a banner saying so) that already enables the marquee
   items — `parseIncrementalUpdates`, `extractMacros`, `extractActions`,
   `extractInlineImages`. On tika-app, `file-forensics-config.json` still adds
-  `extractFontNames`, `extractScripts`, `includeMissingRows`,
+  `extractFontNames`, `extractScripts`, `includeMissingRows`, OneNote page history,
   deleted/moved-content for legacy `.doc` (on `.docx` the convenience
   config already includes it, so testing this switch on a docx shows no
   diff — that's expected), and pins `accessCheckMode` to
@@ -212,6 +212,19 @@ The full switch list:
   embedded entries), `includeDeletedContent` and `includeMoveFromContent`
   (tracked-change deletions and moved-away text in the output),
   `includeMissingRows` (spreadsheet row gaps)
+- `one-note-parser.includePageHistory` — OneNote text and metadata
+  (authors, timestamps, page GUIDs) include every earlier revision and saved
+  page version, not only each page's current content. Off, earlier authors
+  and dates are absent, as for the final state of an incrementally updated
+  PDF. Exception: `.one` (2010–2016) attachments come out either way,
+  including files only an earlier page version used. In `.one` files saved
+  by OneNote 2010–2016, history is not marked as such; it is mixed in with
+  the current text. In newer (FSSHTTPB) sections each saved page version is
+  its own `<div class="page history">`; edits within a version are merged.
+- `one-note-parser.includeDeletedContent` — newer (FSSHTTPB) OneNote
+  sections still store pages moved to the recycle bin; with this set they
+  come out as `<div class="page deleted">`, each older version as
+  `<div class="page deleted history">` (the text may be only in those).
 - `jsoup-parser.extractScripts` — script bodies in HTML (including HTML
   email bodies and HTML attachments) become their own `MACRO`-typed embedded
   entries instead of being silently dropped: JavaScript in a document is
@@ -268,7 +281,9 @@ The file's own story about its origin — read it as testimony, not fact:
   (`Normal.dotm` = stock Word), total edit time, claimed created/modified
   timestamps
 - **`tk:orig-resource-name`** — for xlsx, the absolute path where the file
-  was last saved (Excel records it in the workbook): drive letters, network
+  was last saved (Excel records it in the workbook); on an embedded entry
+  (OLE packages, OneNote attachments and inserted pictures), the path the
+  file had where it was inserted: drive letters, network
   shares, and `C:\Users\<name>\...` usernames leak here. (The `tk:` prefix
   here means Tika surfaced it; the *value* is still the file's own record —
   treat it as a claim like the rest of this section.)

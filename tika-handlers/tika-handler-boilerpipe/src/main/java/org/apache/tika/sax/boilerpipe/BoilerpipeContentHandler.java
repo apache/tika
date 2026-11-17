@@ -47,7 +47,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Use this as a {@link ContentHandler} object passed to
  * {@link HtmlParser#parse(java.io.InputStream, ContentHandler, Metadata,
  * org.apache.tika.parser.ParseContext)}
+ *
+ * @deprecated since 4.3: boilerpipe 1.1.0 is unmaintained. Use the {@code readability-jsoup-filter}
+ * (in {@code tika-parser-html-module}) via the parse-context's {@code jsoup-filters}, or tika-app
+ * {@code -T}. To be removed in a later release.
  */
+@Deprecated
 public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     /**
      * The newline character that gets inserted after block elements.

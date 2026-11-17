@@ -24,29 +24,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tika.exception.TikaException;
 
-/**
- * Object Group Declarations
- */
 public class ObjectGroupDeclarations extends StreamObject {
     public List<ObjectGroupObjectDeclare> objectDeclarationList;
     public List<ObjectGroupObjectBLOBDataDeclaration> objectGroupObjectBLOBDataDeclarationList;
 
-    /**
-     * Initializes a new instance of the ObjectGroupDeclarations class.
-     */
     public ObjectGroupDeclarations() {
         super(StreamObjectTypeHeaderStart.ObjectGroupDeclarations);
         this.objectDeclarationList = new ArrayList<>();
         this.objectGroupObjectBLOBDataDeclarationList = new ArrayList<>();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -83,29 +70,5 @@ public class ObjectGroupDeclarations extends StreamObject {
         }
 
         currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList The Byte list
-     * @return A constant value 0
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws TikaException, IOException {
-        if (this.objectDeclarationList != null) {
-            for (ObjectGroupObjectDeclare objectGroupObjectDeclare : this.objectDeclarationList) {
-                byteList.addAll(objectGroupObjectDeclare.serializeToByteList());
-            }
-        }
-
-        if (this.objectGroupObjectBLOBDataDeclarationList != null) {
-            for (ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration :
-                    this.objectGroupObjectBLOBDataDeclarationList) {
-                byteList.addAll(objectGroupObjectBLOBDataDeclaration.serializeToByteList());
-            }
-        }
-
-        return 0;
     }
 }

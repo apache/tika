@@ -17,9 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 
-/**
- * The class is used to represent the encryption revision store object.
- */
 class EncryptionObject {
     public ObjectGroupObjectDeclare objectDeclaration;
     public byte[] objectData;

@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -31,9 +30,6 @@ public class ObjectGroupObjectData extends StreamObject {
     public CellIDArray cellIDArray;
     public BinaryItem data;
 
-    /**
-     * Initializes a new instance of the ObjectGroupObjectData class.
-     */
     public ObjectGroupObjectData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupObjectData);
         this.objectExGUIDArray = new ExGUIDArray();
@@ -41,13 +37,6 @@ public class ObjectGroupObjectData extends StreamObject {
         this.data = new BinaryItem();
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -57,26 +46,6 @@ public class ObjectGroupObjectData extends StreamObject {
         this.cellIDArray = BasicObject.parse(byteArray, index, CellIDArray.class);
         this.data = BasicObject.parse(byteArray, index, BinaryItem.class);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupObjectData",
-                    "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return The number of the element
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
-        int itemsIndex = byteList.size();
-        byteList.addAll(this.objectExGUIDArray.serializeToByteList());
-        byteList.addAll(this.cellIDArray.serializeToByteList());
-        byteList.addAll(this.data.serializeToByteList());
-        return byteList.size() - itemsIndex;
+        endItems(currentIndex, index, lengthOfItems, "ObjectGroupObjectData");
     }
 }

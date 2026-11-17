@@ -16,61 +16,33 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
-/**
- * Specifies a storage manifest schema GUID
- */
+
 public class StorageManifestSchemaGUID extends StreamObject {
     public UUID guid;
 
-    /**
-     * Initializes a new instance of the StorageManifestSchemaGUID class.
-     */
     public StorageManifestSchemaGUID() {
         super(StreamObjectTypeHeaderStart.StorageManifestSchemaGUID);
-        // this.GUID = DataElementExGuids.StorageManifestGUID;
     }
 
-    /**
-     * Used to de-serialize the items.
-     *
-     * @param byteArray     Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+                                                 int lengthOfItems)
+            throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
-        byte[] temp = Arrays.copyOf(byteArray, 16);
-        this.guid = UUID.nameUUIDFromBytes(temp);
+        if (index.get() < 0 || index.get() > byteArray.length - 16) {
+            throw new StreamObjectParseErrorException(currentIndex.get(),
+                    "StorageManifestSchemaGUID", "Not enough bytes for the GUID", null);
+        }
+        this.guid = GuidUtil.fromMicrosoftBytes(byteArray, index.get());
         index.addAndGet(16);
 
-        if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "StorageManifestSchemaGUID", "Stream object over-parse error", null);
-        }
-
-        currentIndex.set(index.get());
-    }
-
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @param byteList A Byte list
-     * @return A constant value 16
-     */
-    @Override
-    protected int serializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(
-                ByteUtil.toListOfByte(this.guid.toString().getBytes(StandardCharsets.UTF_8)));
-        return 16;
+        endItems(currentIndex, index, lengthOfItems, "StorageManifestSchemaGUID");
     }
 }

@@ -88,7 +88,7 @@ public class TikaDetectionTest {
         assertEquals("application/octet-stream", tika.detect("x.pkg"));
         assertEquals("application/octet-stream", tika.detect("x.bpk"));
         assertEquals("application/octet-stream", tika.detect("x.dump"));
-        assertEquals("application/octet-stream", tika.detect("x.elc"));
+        assertEquals("application/x-elc", tika.detect("x.elc"));
         assertEquals("application/octet-stream", tika.detect("x.deploy"));
         assertEquals("application/oda", tika.detect("x.oda"));
         assertEquals("application/oebps-package+xml", tika.detect("x.opf"));

@@ -16,49 +16,14 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 
-import org.apache.tika.parser.microsoft.onenote.ExtendedGUID;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
+
 
 public class AdapterHelper {
 
-    /**
-     * This method is used to read the Guid for byte array.
-     *
-     * @param byteArray  The byte array.
-     * @param startIndex The offset of the Guid value.
-     * @return Return the value of Guid.
-     */
     public static UUID readGuid(byte[] byteArray, int startIndex) {
-        byte[] bytes = Arrays.copyOfRange(byteArray, startIndex, startIndex + 16);
-        return UUID.nameUUIDFromBytes(bytes);
-    }
-
-    /**
-     * XOR two ExtendedGUID instances.
-     *
-     * @param exGuid1 The first ExtendedGUID instance.
-     * @param exGuid2 The second ExtendedGUID instance.
-     * @return Returns the result of XOR two ExtendedGUID instances.
-     */
-    public static ExGuid xorExtendedGUID(ExtendedGUID exGuid1, ExtendedGUID exGuid2)
-            throws IOException {
-        List<Byte> exGuid1Buffer = exGuid1.SerializeToByteList();
-        List<Byte> exGuid2Buffer = exGuid2.SerializeToByteList();
-        List<Byte> resultBuffer = new ArrayList<>(exGuid1Buffer.size());
-
-        for (int i = 0; i < exGuid1Buffer.size(); i++) {
-            byte fromExGuid1 = exGuid1Buffer.get(i);
-            byte fromExGuid2 = exGuid2Buffer.get(i);
-            resultBuffer.set(i, (byte) (fromExGuid1 ^ fromExGuid2));
-        }
-        ExGuid resultExGuid = new ExGuid();
-        resultExGuid.doDeserializeFromByteArray(ByteUtil.toByteArray(resultBuffer), 0);
-        return resultExGuid;
+        return GuidUtil.fromMicrosoftBytes(byteArray, startIndex);
     }
 }

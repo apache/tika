@@ -19,27 +19,16 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 import java.io.IOException;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
-import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 
-/**
- * This class is used to represent the property set.
- */
 public class PropertySetObject {
     public ObjectGroupObjectDeclare objectDeclaration;
     public ObjectSpaceObjectPropSet objectSpaceObjectPropSet;
 
-    /**
-     * Construct the PropertySetObject instance.
-     *
-     * @param objectDeclaration The Object Declaration structure.
-     * @param objectData        The Object Data structure.
-     */
     public PropertySetObject(ObjectGroupObjectDeclare objectDeclaration,
                              ObjectGroupObjectData objectData) throws IOException {
         this.objectDeclaration = objectDeclaration;
         this.objectSpaceObjectPropSet = new ObjectSpaceObjectPropSet();
-        this.objectSpaceObjectPropSet.doDeserializeFromByteArray(
-                ByteUtil.toByteArray(objectData.data.content), 0);
+        this.objectSpaceObjectPropSet.doDeserializeFromByteArray(objectData.data.getContent(), 0);
     }
 }
