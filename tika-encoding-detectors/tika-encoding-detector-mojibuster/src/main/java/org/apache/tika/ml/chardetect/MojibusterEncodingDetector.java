@@ -556,9 +556,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * <p>Replaces the prior strict gates ({@code countHighBytes &lt; 5}
      * AND {@code byteIdenticalOnProbe(top, win-1252)}) which left
      * ≥ 5-high-byte Western European pages unprotected.</p>
+     *
+     * <p>First, any single-byte label whose decode of the probe is identical to
+     * windows-1252's is relabeled: the model is choosing between indistinguishable
+     * decodes (one stray accented byte in English labeled windows-1254), and the WHATWG
+     * default is the stable answer.</p>
      */
-    private static List<EncodingResult> applyLatinSiblingFallback(byte[] probe,
-                                                                  List<EncodingResult> ranked) {
+    static List<EncodingResult> applyLatinSiblingFallback(byte[] probe,
+                                                          List<EncodingResult> ranked) {
         if (ranked.isEmpty()) {
             return ranked;
         }
@@ -566,6 +571,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         String topName = top.getCharset().name();
         if (WIN1252.equals(topName)) {
             return ranked;
+        }
+        Charset win1252 = Charset.forName(WIN1252);
+        if (!isWideUnicode(top.getCharset())
+                && DecodeEquivalence.byteIdenticalOnProbe(probe, top.getCharset(), win1252)) {
+            return relabelTop(ranked, win1252);
         }
         // Scoped to Western European Latin family only.  Central
         // European (win-1250 / ISO-8859-2 / IBM852), Baltic (win-1257 /
@@ -581,16 +591,19 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName) || "x-MacRoman".equals(topName)) {
             return ranked;
         }
-        Charset win1252 = Charset.forName(WIN1252);
         int winLetters = HighByteLetterStats.countCasedHighByteLetters(probe, win1252);
         int topLetters = HighByteLetterStats.countCasedHighByteLetters(probe, top.getCharset());
         // Tie goes to windows-1252 (WHATWG-canonical default).
         if (winLetters < topLetters) {
             return ranked;
         }
+        return relabelTop(ranked, win1252);
+    }
+
+    private static List<EncodingResult> relabelTop(List<EncodingResult> ranked, Charset cs) {
+        EncodingResult top = ranked.get(0);
         List<EncodingResult> out = new java.util.ArrayList<>(ranked.size());
-        out.add(new EncodingResult(win1252, top.getConfidence(), WIN1252,
-                top.getResultType()));
+        out.add(new EncodingResult(cs, top.getConfidence(), cs.name(), top.getResultType()));
         for (int i = 1; i < ranked.size(); i++) {
             out.add(ranked.get(i));
         }

@@ -16,13 +16,18 @@
  */
 package org.apache.tika.ml.chardetect;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.detect.EncodingResult;
 
 /**
  * Tests for the byte-walk decode-equivalence helper and the narrow
@@ -87,5 +92,35 @@ public class LatinFallbackTest {
     public void emptyProbeIsEquivalentEverywhere() {
         assertTrue(DecodeEquivalence.byteIdenticalOnProbe(new byte[0], WIN1257, WIN1252));
         assertTrue(DecodeEquivalence.byteIdenticalOnProbe(new byte[0], IBM852, WIN1252));
+    }
+
+    @Test
+    public void multiByteCharsetsNeverLookByteIdentical() {
+        // a lone high byte decodes to one U+FFFD under UTF-8 and UTF-16 as well
+        byte[] probe = new byte[]{'a', (byte) 0x81};
+        assertFalse(DecodeEquivalence.byteIdenticalOnProbe(probe, StandardCharsets.UTF_8, WIN1252));
+        assertFalse(DecodeEquivalence.byteIdenticalOnProbe(probe, StandardCharsets.UTF_16LE, WIN1252));
+        assertFalse(DecodeEquivalence.byteIdenticalOnProbe(probe, Charset.forName("GB18030"), WIN1252));
+    }
+
+    @Test
+    public void identicalDecodeSiblingIsRelabeledWindows1252() {
+        Charset win1254 = Charset.forName("windows-1254");
+        byte[] english = "The caf\u00E9 on the corner opens at nine.".getBytes(ISO8859_1);
+        List<EncodingResult> ranked = Arrays.asList(
+                new EncodingResult(win1254, 1.0f, "windows-1254", EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(WIN1252, 0.4f, "windows-1252", EncodingResult.ResultType.STATISTICAL));
+        List<EncodingResult> out = MojibusterEncodingDetector.applyLatinSiblingFallback(english, ranked);
+        assertEquals(WIN1252, out.get(0).getCharset());
+        assertEquals(1.0f, out.get(0).getConfidence(), 0);
+        assertEquals(2, out.size());
+        // 0xF0 is \u011F in windows-1254 and \u00F0 in windows-1252: a real Turkish byte keeps its label
+        byte[] turkish = "Do\u011Fu".getBytes(win1254);
+        assertEquals(win1254, MojibusterEncodingDetector.applyLatinSiblingFallback(turkish, ranked)
+                .get(0).getCharset());
+        List<EncodingResult> cjk = Arrays.asList(
+                new EncodingResult(Charset.forName("GB18030"), 1.0f, "GB18030", EncodingResult.ResultType.STATISTICAL));
+        assertEquals("GB18030", MojibusterEncodingDetector.applyLatinSiblingFallback(english, cjk)
+                .get(0).getCharset().name());
     }
 }
