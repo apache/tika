@@ -23,13 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.io.InputFileProbe;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -38,17 +36,16 @@ import org.apache.tika.parser.external.ExternalParser;
 public class ExternalEmbedderInputTest {
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     public void testInputIsGivenAsInputInItsOwnDirectory(@TempDir Path dir) throws Exception {
         Path doc = Files.write(dir.resolve("report.txt"), "hello".getBytes(UTF_8));
         ExternalEmbedder embedder = new ExternalEmbedder();
-        embedder.setCommand("echo", ExternalParser.INPUT_FILE_TOKEN);
+        embedder.setCommand(InputFileProbe.command(ExternalParser.INPUT_FILE_TOKEN));
         embedder.setMetadataCommandArguments(null);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (TikaInputStream tis = TikaInputStream.get(doc)) {
             embedder.embed(new Metadata(), tis, out, new ParseContext());
         }
-        Path given = Paths.get(out.toString(UTF_8).trim());
+        Path given = InputFileProbe.arg(out.toString(UTF_8));
         assertEquals("input", given.getFileName().toString().replaceFirst("\\..*", ""));
         assertFalse(given.startsWith(dir));
         assertFalse(Files.exists(given.getParent()));

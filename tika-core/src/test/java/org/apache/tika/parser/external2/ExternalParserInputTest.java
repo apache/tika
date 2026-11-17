@@ -21,17 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.io.InputFileProbe;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -42,7 +40,6 @@ public class ExternalParserInputTest {
 
     /** The program is given the document under a fixed name in a directory of its own. */
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     public void testInputFileNameAndDirectory(@TempDir Path tmp)
             throws Exception {
         Path document = tmp.resolve("document.bin");
@@ -51,8 +48,7 @@ public class ExternalParserInputTest {
 
         ExternalParser parser = new ExternalParser();
         parser.setSupportedTypes(List.of("audio/vnd.wave"));
-        parser.setCommandLine(List.of("sh", "-c",
-                "echo \"arg=$0\"; ls \"$(dirname \"$0\")\"; cat \"$0\"", "${INPUT_FILE}"));
+        parser.setCommandLine(List.of(InputFileProbe.command(ExternalParser.INPUT_FILE_TOKEN)));
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "audio/vnd.wave");
         BodyContentHandler handler = new BodyContentHandler();
@@ -60,11 +56,11 @@ public class ExternalParserInputTest {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
         String stdout = handler.toString();
-        assertTrue(stdout.contains("content"), stdout);
-        assertTrue(stdout.contains("/input.wav\n"), stdout);
-        assertFalse(stdout.contains("document"), stdout);
-        assertFalse(stdout.contains("other"), stdout);
-        assertFalse(stdout.contains(tmp.toString()), stdout);
+        Path given = InputFileProbe.arg(stdout);
+        assertEquals("input.wav", given.getFileName().toString(), stdout);
+        assertFalse(given.startsWith(tmp), stdout);
+        assertEquals(List.of("input.wav"), InputFileProbe.entries(stdout), stdout);
+        assertEquals("content", InputFileProbe.content(stdout), stdout);
     }
 
     @Test
