@@ -41,7 +41,7 @@
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
     <cxf.version>4.2.4</cxf.version>
-    <jetty.version>12.1.14</jetty.version>
+    <jetty.version>12.1.15</jetty.version>
     <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
   </properties>
 
