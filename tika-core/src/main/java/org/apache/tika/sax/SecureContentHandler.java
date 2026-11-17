@@ -74,7 +74,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * Maximum package entry nesting level.
      */
-    private int maxPackageEntryDepth = 10;
+    private int maxPackageEntryDepth = 20;
 
     /**
      * Decorates the given content handler with zip bomb prevention based
@@ -240,7 +240,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
 
         if ("div".equals(name) && "package-entry".equals(atts.getValue("class"))) {
             packageEntryDepths.addLast(currentDepth);
-            if (packageEntryDepths.size() >= maxPackageEntryDepth) {
+            if (packageEntryDepths.size() > maxPackageEntryDepth) {
                 throw new SecureSAXException("Suspected zip bomb: " + packageEntryDepths.size() +
                         " levels of package entry nesting");
             }

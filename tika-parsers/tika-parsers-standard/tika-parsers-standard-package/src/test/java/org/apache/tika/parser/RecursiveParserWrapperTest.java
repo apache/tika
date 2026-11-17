@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ClosedInputStream;
@@ -546,6 +548,69 @@ public class RecursiveParserWrapperTest extends TikaTest {
         assertEquals(2, metadataList.size());
         assertNull(metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
         assertTrue(metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT).length() > 1_000_000);
+    }
+
+    @Test
+    public void testPackageEntryDepthAcrossEmbedded() throws Exception {
+        AutoDetectParserConfig config = new AutoDetectParserConfig();
+        config.setMaximumPackageEntryDepth(5);
+        AutoDetectParser parser = new AutoDetectParser();
+        parser.setAutoDetectParserConfig(config);
+        List<Metadata> metadataList = parseNestedZips(parser, 12);
+        assertEquals(6, metadataList.size());
+        assertEquals(5, maxEmbeddedDepth(metadataList));
+        Metadata deepest = metadataList.stream()
+                .filter(m -> Integer.valueOf(5).equals(m.getInt(TikaCoreProperties.EMBEDDED_DEPTH)))
+                .findFirst().get();
+        assertContains("6 levels of package entry nesting",
+                deepest.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        assertFalse(metadataList.stream().anyMatch(m ->
+                String.valueOf(m.get(TikaCoreProperties.TIKA_CONTENT)).contains("deepest")));
+    }
+
+    @Test
+    public void testPackageEntryDepthDefault() throws Exception {
+        List<Metadata> metadataList = parseNestedZips(AUTO_DETECT_PARSER, 25);
+        assertEquals(20, maxEmbeddedDepth(metadataList));
+
+        metadataList = parseNestedZips(AUTO_DETECT_PARSER, 20);
+        assertEquals(20, maxEmbeddedDepth(metadataList));
+        assertTrue(metadataList.stream().anyMatch(m ->
+                String.valueOf(m.get(TikaCoreProperties.TIKA_CONTENT)).contains("deepest")));
+    }
+
+    private static List<Metadata> parseNestedZips(Parser parser, int depth) throws Exception {
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        try (TikaInputStream tis = TikaInputStream.get(nestedZips(depth))) {
+            wrapper.parse(tis, handler, new Metadata(), new ParseContext());
+        }
+        return handler.getMetadataList();
+    }
+
+    private static int maxEmbeddedDepth(List<Metadata> metadataList) {
+        return metadataList.stream()
+                .mapToInt(m -> m.getInt(TikaCoreProperties.EMBEDDED_DEPTH) == null ? 0 :
+                        m.getInt(TikaCoreProperties.EMBEDDED_DEPTH))
+                .max().getAsInt();
+    }
+
+    //each zip holds the next; the innermost holds a text file
+    private static byte[] nestedZips(int depth) throws IOException {
+        byte[] bytes = "deepest text".getBytes(StandardCharsets.US_ASCII);
+        String name = "inner.txt";
+        for (int i = depth; i > 0; i--) {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            try (ZipOutputStream zos = new ZipOutputStream(bos)) {
+                zos.putNextEntry(new ZipEntry(name));
+                zos.write(bytes);
+                zos.closeEntry();
+            }
+            bytes = bos.toByteArray();
+            name = "level" + i + ".zip";
+        }
+        return bytes;
     }
 
     //~2 MB of text, a few KB compressed: a ratio between 100 and 1000
