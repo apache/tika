@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,13 +29,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.io.InputFileProbe;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.utils.ProcessUtils;
 
 public class ExternalParserInputTest {
 
@@ -45,15 +43,13 @@ public class ExternalParserInputTest {
     @Test
     public void testInputFileNameAndDirectory(@TempDir Path tmp)
             throws Exception {
-        assumeTrue(ProcessUtils.checkCommand(new String[]{"sh", "-c", "exit 0"}));
         Path document = tmp.resolve("document.bin");
         Files.write(document, "content".getBytes(UTF_8));
         Files.write(tmp.resolve("other.bin"), "other".getBytes(UTF_8));
 
         ExternalParserConfig config = new ExternalParserConfig();
         config.setSupportedTypes(List.of("audio/vnd.wave"));
-        config.setCommandLine(List.of("sh", "-c",
-                "echo \"arg=$0\"; ls \"$(dirname \"$0\")\"; cat \"$0\"", "${INPUT_FILE}"));
+        config.setCommandLine(List.of(InputFileProbe.command(ExternalParser.INPUT_FILE_TOKEN)));
         config.setReturnStdout(true);
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "audio/vnd.wave");
@@ -62,11 +58,11 @@ public class ExternalParserInputTest {
                     new ParseContext());
         }
         String stdout = metadata.get(ExternalProcess.STD_OUT);
-        assertTrue(stdout.contains("content"), stdout);
-        assertTrue(stdout.contains("/input.wav\n"), stdout);
-        assertFalse(stdout.contains("document"), stdout);
-        assertFalse(stdout.contains("other"), stdout);
-        assertFalse(stdout.contains(tmp.toString()), stdout);
+        Path given = InputFileProbe.arg(stdout);
+        assertEquals("input.wav", given.getFileName().toString(), stdout);
+        assertFalse(given.startsWith(tmp), stdout);
+        assertEquals(List.of("input.wav"), InputFileProbe.entries(stdout), stdout);
+        assertEquals("content", InputFileProbe.content(stdout), stdout);
     }
 
     @Test
