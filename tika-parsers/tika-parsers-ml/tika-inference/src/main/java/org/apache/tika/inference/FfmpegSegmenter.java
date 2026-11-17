@@ -22,9 +22,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.inference.MediaFormats;
 import org.apache.tika.parser.inference.Modality;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
@@ -41,6 +44,9 @@ final class FfmpegSegmenter implements MediaSegmenter {
     // ffprobe prints every stream before the format's duration: room for thousands
     private static final int PROBE_BUFFER = 1_000_000;
     private static final int CUT_BUFFER = 20_000;
+
+    private static final Pattern NOT_ALLOWED =
+            Pattern.compile("\\[([A-Za-z0-9_,]+) @ [^\\]]*\\] Format not on whitelist");
 
     private static volatile Boolean available;
 
@@ -66,8 +72,11 @@ final class FfmpegSegmenter implements MediaSegmenter {
     }
 
     @Override
-    public Probe probe(Path media, ParseContext context) throws IOException, TikaException {
-        ProcessBuilder pb = new ProcessBuilder("ffprobe", "-v", "error", "-show_entries",
+    public Probe probe(Path media, MediaFormats formats, ParseContext context)
+            throws IOException, TikaException {
+        ProcessBuilder pb = new ProcessBuilder("ffprobe", "-v", "error",
+                "-format_whitelist", String.join(",", formats.getAllowedFormats()),
+                "-show_entries",
                 "format=duration:stream=codec_type:stream_disposition=attached_pic",
                 "-of", "default=nw=1", media.toAbsolutePath().toString());
         FileProcessResult r = ProcessUtils.execute(pb, context, PROBE_TIMEOUT_MS, PROBE_BUFFER,
@@ -77,6 +86,7 @@ final class FfmpegSegmenter implements MediaSegmenter {
                     + r.getProcessTimeMillis() + " ms");
         }
         if (r.getExitValue() != 0) {
+            checkFormatAllowed(r.getStderr());
             throw new TikaException("ffprobe failed: " + r.getStderr());
         }
         if (r.isStdoutTruncated()) {
@@ -116,7 +126,8 @@ final class FfmpegSegmenter implements MediaSegmenter {
     }
 
     @Override
-    public Path cut(Path media, Cell cell, Modality modality, Path dir, ParseContext context)
+    public Path cut(Path media, Cell cell, Modality modality, Path dir, MediaFormats formats,
+                    ParseContext context)
             throws IOException, TikaException {
         boolean audio = modality == Modality.AUDIO;
         Path out = dir.resolve(cell.index() + (audio ? ".ogg" : ".mp4"));
@@ -125,6 +136,7 @@ final class FfmpegSegmenter implements MediaSegmenter {
         }
         List<String> cmd = new ArrayList<>(List.of("ffmpeg", "-hide_banner", "-loglevel", "error",
                 "-y", "-ss", ms(cell.startMs()), "-t", ms(cell.endMs() - cell.startMs()),
+                "-format_whitelist", String.join(",", formats.getAllowedFormats()),
                 "-i", media.toAbsolutePath().toString()));
         if (audio) {
             cmd.addAll(List.of("-vn", "-ac", "1", "-c:a", "libopus", "-b:a", "32k"));
@@ -144,10 +156,20 @@ final class FfmpegSegmenter implements MediaSegmenter {
                     + cell.index() + " after " + r.getProcessTimeMillis() + " ms");
         }
         if (r.getExitValue() != 0 || !Files.exists(out)) {
+            checkFormatAllowed(r.getStderr());
             throw new TikaException("ffmpeg failed on segment " + cell.index() + ": "
                     + r.getStderr());
         }
         return out;
+    }
+
+    // the name is one of ffmpeg's own demuxer names, not text from the file
+    private static void checkFormatAllowed(String stderr) throws TikaException {
+        Matcher m = NOT_ALLOWED.matcher(stderr);
+        if (m.find()) {
+            throw new TikaException("ffmpeg format '" + m.group(1)
+                    + "' is not in media-formats.allowedFormats");
+        }
     }
 
     private static String ms(long millis) {

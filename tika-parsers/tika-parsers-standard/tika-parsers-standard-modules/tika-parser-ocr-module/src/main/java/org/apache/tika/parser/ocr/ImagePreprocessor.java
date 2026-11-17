@@ -76,8 +76,13 @@ class ImagePreprocessor implements Serializable {
             final List<String> filter = Arrays.asList("-filter", config.getFilter());
             final List<String> resize = Arrays.asList("-resize", config.getResize() + "%");
             final List<String> rotate = Arrays.asList("-rotate", Double.toString(-angle));
+            // names the format explicitly
+            String format = TesseractInput.format(sourceFile);
+            if (format == null) {
+                throw new IOException("not an image ImageMagick should be given");
+            }
             final List<String> sourceFileArg =
-                    Collections.singletonList(sourceFile.toAbsolutePath().toString());
+                    Collections.singletonList(format + ":" + sourceFile.toAbsolutePath());
             final List<String> targFileArg =
                     Collections.singletonList(targFile.toAbsolutePath().toString());
 

@@ -45,6 +45,7 @@ import org.apache.tika.parser.inference.InferenceTask;
 import org.apache.tika.parser.inference.InferenceUnit;
 import org.apache.tika.parser.inference.InputKind;
 import org.apache.tika.parser.inference.MediaConfig;
+import org.apache.tika.parser.inference.MediaFormats;
 import org.apache.tika.parser.inference.Modality;
 
 /**
@@ -253,6 +254,7 @@ public class EmbedTask implements InferenceTask {
                                    EmbeddingEngine embedder, ParseContext context)
             throws IOException, TikaException {
         MediaConfig config;
+        MediaFormats formats;
         try {
             config = ParseContextConfig.getConfig(context, "media", MediaConfig.class,
                     new MediaConfig());
@@ -260,6 +262,12 @@ public class EmbedTask implements InferenceTask {
             config.initialize();
         } catch (TikaConfigException e) {
             throw new TikaException("invalid \"media\" in parse-context", e);
+        }
+        try {
+            formats = MediaFormats.get(context);
+            formats.initialize();
+        } catch (TikaConfigException e) {
+            throw new TikaException("invalid \"media-formats\" in parse-context", e);
         }
         if (!segmenter.available()) {
             for (InferenceUnit unit : units) {
@@ -279,7 +287,7 @@ public class EmbedTask implements InferenceTask {
         for (InferenceUnit unit : units) {
             MediaSegmenter.Probe probe;
             try {
-                probe = segmenter.probe(unit.getPath(), context);
+                probe = segmenter.probe(unit.getPath(), formats, context);
             } catch (MediaSegmenter.Timeout t) {
                 throw t;
             } catch (TikaException e) {
@@ -299,7 +307,7 @@ public class EmbedTask implements InferenceTask {
                             cells.subList(start, Math.min(start + batchSize, cells.size()));
                     try {
                         chunks.addAll(embedCells(binding, unit, batch, modality, dir, embedder,
-                                context));
+                                formats, context));
                     } catch (MediaSegmenter.Timeout t) {
                         throw t;
                     } catch (TikaException e) {
@@ -310,7 +318,7 @@ public class EmbedTask implements InferenceTask {
                         for (MediaSegmenter.Cell cell : batch) {
                             try {
                                 chunks.addAll(embedCells(binding, unit, List.of(cell), modality,
-                                        dir, embedder, context));
+                                        dir, embedder, formats, context));
                             } catch (MediaSegmenter.Timeout t) {
                                 throw t;
                             } catch (TikaException single) {
@@ -370,13 +378,13 @@ public class EmbedTask implements InferenceTask {
     private static List<Chunk> embedCells(InferenceBinding binding, InferenceUnit unit,
                                           List<MediaSegmenter.Cell> cells, Modality modality,
                                           Path dir, EmbeddingEngine embedder,
-                                          ParseContext context)
+                                          MediaFormats formats, ParseContext context)
             throws IOException, TikaException {
         List<MediaInput> inputs = new ArrayList<>(cells.size());
         List<Path> cuts = new ArrayList<>(cells.size());
         String mime = MediaSegmenter.mimeType(modality);
         for (MediaSegmenter.Cell cell : cells) {
-            Path cut = segmenter.cut(unit.getPath(), cell, modality, dir, context);
+            Path cut = segmenter.cut(unit.getPath(), cell, modality, dir, formats, context);
             if (binding.getMaxBytes() >= 0 && Files.size(cut) > binding.getMaxBytes()) {
                 Files.deleteIfExists(cut);
                 throw new TikaException("segment " + cell.index() + " is over maxBytes");

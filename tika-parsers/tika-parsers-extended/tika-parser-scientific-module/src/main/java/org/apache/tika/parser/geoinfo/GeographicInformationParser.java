@@ -61,6 +61,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -112,8 +113,9 @@ public class GeographicInformationParser implements Parser {
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata, parseContext);
 
         TemporaryResources tmp = null;
-        try (tis) {
-            File file = tis.getFile();
+        // under a fixed name, in a directory of its own
+        try (tis; IsolatedInput input = IsolatedInput.of(tis.getPath(), ".xml")) {
+            File file = input.getPath().toFile();
             try (DataStore dataStore = DataStores.open(file)) {
                 DefaultMetadata defaultMetadata = new DefaultMetadata(dataStore.getMetadata());
                 extract(xhtmlContentHandler, metadata, defaultMetadata);

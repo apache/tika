@@ -7,7 +7,9 @@
           "video/mpeg",
           "video/x-msvideo"
         ],
-        "commandLine": ["ffmpeg", "-i", "${INPUT_FILE}"],
+        "commandLine": ["ffmpeg", "-format_whitelist",
+            "mov,matroska,avi,asf,flv,mpegts,mpeg,mp3,wav,w64,aiff,flac,ogg,aac,ac3,eac3,amr,caf,au,wv,ape,mxf,rm,dv,m4v,mpegvideo,h264,hevc",
+            "-i", "${INPUT_FILE}"],
         "checkCommandLine": ["ffmpeg", "-version"],
         "checkErrorCodes": [126, 127],
         "contentSource": "none",

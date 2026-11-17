@@ -39,6 +39,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
@@ -160,9 +161,13 @@ public class ExternalParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        try (TemporaryResources tmp = new TemporaryResources()) {
+        // under a fixed name, in a directory of its own
+        try (TemporaryResources tmp = new TemporaryResources();
+             IsolatedInput input = config.getInputFileExtension() == null
+                     ? IsolatedInput.of(tis.getPath(), metadata)
+                     : IsolatedInput.of(tis.getPath(), config.getInputFileExtension())) {
             Path outFile = null;
-            Path p = tis.getPath();
+            Path p = input.getPath();
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");
             Matcher outputMatcher = OUTPUT_TOKEN_MATCHER.matcher("");

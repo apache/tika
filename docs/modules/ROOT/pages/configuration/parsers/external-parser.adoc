@@ -69,6 +69,13 @@ decorators, not specific to `ExternalParser`.)
 |`List<String>`
 |The command and arguments to run. Use `$\{INPUT_FILE}` and `$\{OUTPUT_FILE}` tokens for file paths.
 
+|`inputFileExtension`
+|`String`
+|Optional. The program is given the document as a file named `input` in a temporary directory
+of its own. By default the file keeps the document's extension when that is an extension of the media type Tika detected, and
+otherwise gets that type's usual extension (`input.wav` for `audio/vnd.wave`). Set this to use
+one fixed extension instead, or `""` for none.
+
 |`checkCommandLine`
 |`List<String>`
 |Optional. Command to verify the tool is installed (e.g., `["ffmpeg", "-version"]`).
@@ -131,6 +138,8 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-serialization/src/te
 
 Extracts audio/video metadata from `ffmpeg -i` output. FFmpeg writes metadata
 to stderr, so this uses `stderrHandler`.
+
+The `-format_whitelist` option limits FFmpeg to the container formats listed.
 
 [source,json]
 ----

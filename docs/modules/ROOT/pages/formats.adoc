@@ -435,6 +435,16 @@ link:{api}/org/apache/tika/parser/isatab/ISArchiveParser.html[ISArchiveParser]
 link:{api}/org/apache/tika/parser/netcdf/NetCDFParser.html[NetCDFParser]. These
 pull in large native and scientific dependencies and are not in `tika-app`.
 
+`ISArchiveParser` parses the study file it is given. An ISA-Tab archive is a directory, and
+the investigation file beside a study names assay files to read; the parser reads those only
+when its `readSiblingFiles` setting is on (default: off).
+
+`GDALParser` runs the `gdalinfo` program. It lets `gdalinfo` try only the drivers in its
+`allowedFormats` setting, and takes only the media types of those drivers. The default is
+`GTiff`, `netCDF`, `GRIB`, `FITS`, `NITF` and `DTED`. Setting `allowedFormats` (GDAL
+driver names, as `gdalinfo --formats` prints them) replaces that list. The setting needs a
+GDAL whose `gdalinfo` has the `-if` option.
+
 == Executable programs and libraries
 
 link:{api}/org/apache/tika/parser/executable/ExecutableParser.html[ExecutableParser]

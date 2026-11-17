@@ -16,14 +16,17 @@
  */
 package org.apache.tika.parser.pkg;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -111,16 +114,20 @@ public class UnrarParser implements Parser {
         xhtml.endDocument();
     }
 
+    // regular files and directories only
     private void processDirectory(Path baseDir, Path path,
                                XHTMLContentHandler xhtml,
                                EmbeddedDocumentExtractor extractor, ParseContext context)
             throws IOException, SAXException {
-        for (File f : path.toFile().listFiles()) {
-            if (f.isDirectory()) {
-                processDirectory(baseDir, f.toPath(), xhtml, extractor,
-                        context);
-            } else {
-                processFile(baseDir, f.toPath(), xhtml, extractor, context);
+        List<Path> children;
+        try (Stream<Path> stream = Files.list(path)) {
+            children = stream.sorted().collect(Collectors.toList());
+        }
+        for (Path child : children) {
+            if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
+                processDirectory(baseDir, child, xhtml, extractor, context);
+            } else if (Files.isRegularFile(child, LinkOption.NOFOLLOW_LINKS)) {
+                processFile(baseDir, child, xhtml, extractor, context);
             }
         }
     }
