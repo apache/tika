@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -376,6 +377,31 @@ class HttpFetcherTest extends TikaTest {
         fetcher.getHttpFetcherConfig().setVerifySsl(false);
         fetcher.initialize();
         assertFalse(factory.isVerifySsl(), "the explicit opt-out must reach the factory");
+    }
+
+    /**
+     * A runtime save retires the old fetcher by closing it. Unclosed, each save leaked one
+     * "Connection evictor" thread per client until the process could not start threads.
+     */
+    @Test
+    public void testCloseStopsEvictorThreads() throws Exception {
+        Set<Thread> before = evictorThreads();
+        HttpFetcher fetcher = (HttpFetcher) new HttpFetcherFactory().buildExtension(
+                new ExtensionConfig("id", "http-fetcher", "{}"));
+        Set<Thread> started = evictorThreads();
+        started.removeAll(before);
+        assertEquals(2, started.size(), "one evictor per client");
+
+        fetcher.close();
+        for (Thread t : started) {
+            assertFalse(t.isAlive(), "close must stop the evictor");
+        }
+    }
+
+    private static Set<Thread> evictorThreads() {
+        return Thread.getAllStackTraces().keySet().stream()
+                .filter(t -> "Connection evictor".equals(t.getName()))
+                .collect(Collectors.toSet());
     }
 
     private void mockClientResponse(final HttpResponse response) throws Exception {

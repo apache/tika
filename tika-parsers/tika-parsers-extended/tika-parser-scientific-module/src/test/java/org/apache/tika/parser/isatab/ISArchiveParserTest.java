@@ -19,6 +19,7 @@ package org.apache.tika.parser.isatab;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +46,8 @@ public class ISArchiveParserTest extends TikaTest {
         // the parser reads the investigation file next to the study, so open the file itself
         Path study = Paths.get(ISArchiveParserTest.class
                 .getResource("/test-documents/testISATab_BII-I-1/s_BII-S-1.txt").toURI());
-        Parser parser = new ISArchiveParser();
+        ISArchiveParser parser = new ISArchiveParser();
+        parser.setReadSiblingFiles(true);
 
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -94,7 +96,8 @@ public class ISArchiveParserTest extends TikaTest {
         Path study = isaDir.resolve("s_test.txt");
         Files.write(study, "\"Source Name\"\n\"culture1\"\n".getBytes(StandardCharsets.UTF_8));
 
-        Parser parser = new ISArchiveParser();
+        ISArchiveParser parser = new ISArchiveParser();
+        parser.setReadSiblingFiles(true);
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "s_test.txt");
@@ -110,7 +113,8 @@ public class ISArchiveParserTest extends TikaTest {
 
     @Test
     public void testDirectoryNotCachedAcrossParses(@TempDir Path root) throws Exception {
-        Parser parser = new ISArchiveParser();
+        ISArchiveParser parser = new ISArchiveParser();
+        parser.setReadSiblingFiles(true);
         assertEquals("FIRST", parseInvestigationId(parser, writeArchive(root, "first", "FIRST")));
         assertEquals("SECOND", parseInvestigationId(parser, writeArchive(root, "second", "SECOND")));
     }
@@ -136,5 +140,37 @@ public class ISArchiveParserTest extends TikaTest {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
         return metadata.get("isatab:Investigation Identifier");
+    }
+
+    @Test
+    public void testSiblingFilesAreNotReadByDefault(@TempDir Path root) throws Exception {
+        Files.write(root.resolve("i_test.txt"),
+                ("STUDY\n"
+                        + "Study File Name\t\"s_test.txt\"\n"
+                        + "Study Assay File Name\t\"a_test.txt\"\n")
+                        .getBytes(StandardCharsets.UTF_8));
+        Files.write(root.resolve("a_test.txt"),
+                "\"ASSAY_CONTENT\"\n".getBytes(StandardCharsets.UTF_8));
+        Path study = root.resolve("s_test.txt");
+        Files.write(study, "\"Source Name\"\n\"culture1\"\n".getBytes(StandardCharsets.UTF_8));
+
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "s_test.txt");
+        try (TikaInputStream tis = TikaInputStream.get(study)) {
+            new ISArchiveParser().parse(tis, handler, metadata, new ParseContext());
+        }
+        assertTrue(handler.toString().contains("culture1"), handler.toString());
+        assertFalse(handler.toString().contains("ASSAY_CONTENT"), handler.toString());
+
+        ISArchiveParser optedIn = new ISArchiveParser();
+        optedIn.setReadSiblingFiles(true);
+        ContentHandler withSiblings = new BodyContentHandler();
+        Metadata optedInMetadata = new Metadata();
+        optedInMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "s_test.txt");
+        try (TikaInputStream tis = TikaInputStream.get(study)) {
+            optedIn.parse(tis, withSiblings, optedInMetadata, new ParseContext());
+        }
+        assertTrue(withSiblings.toString().contains("ASSAY_CONTENT"), withSiblings.toString());
     }
 }

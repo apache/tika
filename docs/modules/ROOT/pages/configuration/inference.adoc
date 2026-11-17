@@ -361,7 +361,24 @@ Those are the defaults: 25 s windows, each starting 20 s after the last, so any 
 5 s or less is whole in at least one segment, and no audio item reaches the 30 s cap the
 hosted omni engines enforce (see <<jina-omni>>); `maxSegments` caps a document, the rest of the
 file is not embedded. A block with `overlap` outside `[0, seconds)`, or `maxSegments` of 0
-or below -1, fails at config load and per request. The segmenter defines the unit and every binding on the document sees
+or below -1, fails at config load and per request.
+
+ffmpeg reads a file only as one of the formats in `allowedFormats`, a list of ffmpeg demuxer
+names in a parse-context block of its own:
+
+[source,json]
+----
+{ "parse-context": { "media-formats": { "allowedFormats": ["mov", "matroska", "wav"] } } }
+----
+
+A file in any other format fails with an error that names the format. The default is
+`mov`, `matroska`, `avi`, `asf`, `flv`, `mpegts`, `mpeg`, `mp3`, `wav`, `w64`, `aiff`,
+`flac`, `ogg`, `aac`, `ac3`, `eac3`, `amr`, `caf`, `au`, `wv`, `ape`, `mxf`, `rm`, `dv`,
+`m4v`, `mpegvideo`, `h264` and `hevc` (`mov` covers MP4, M4A and 3GP; `matroska` covers
+WebM). Setting `allowedFormats` replaces that list, so restate the defaults you want to
+keep. Only the operator's configuration can set `media-formats`, not a request.
+
+The segmenter defines the unit and every binding on the document sees
 the same segments, so each segment's chunks share the segment's id: a chunk carries a
 `temporal` locator (`start_ms`, `end_ms` on the container's presentation timeline), its
 `producer` (the binding), its `modality` (`visual` or `audio`) and a `correlator`, the

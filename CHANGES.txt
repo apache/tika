@@ -2,6 +2,12 @@ Release 4.3.0 - ???
 
   BREAKING CHANGES AND DEPRECATIONS
 
+   * External tools and libraries are told which formats to read. GDALParser reads and
+     claims only the drivers in allowedFormats; media embedding reads only the ffmpeg
+     formats in media-formats.allowedFormats; ExternalParser passes its input as "input" plus the
+     detected type's extension (inputFileExtension overrides); ISArchiveParser reads files
+     beside the study only with readSiblingFiles (TIKA-5065).
+
    * tika-pipes-* and two tika-langdetect modules no longer pull in a log4j backend;
      embedding apps (and their PipesServer forks) must add an slf4j binding, e.g.
      log4j-slf4j2-impl (TIKA-5058).
@@ -517,11 +523,19 @@ Release 4.3.0 - ???
      UTF-32 code points: binary with a few NULs in its header (a shader file of ASCII 0/1
      after an 80 37 00 00 header) was reported as UTF-32BE (TIKA-5052).
 
+   * The structural UTF-32 check and the UTF-16 surrogate check read the whole detection
+     sample, not its first 512 bytes, and an all-NUL sample is not UTF-32: ar symbol
+     tables, zero-led disk images and NUL-led logs were reported as UTF-32BE and decoded
+     to replacement characters, and binary with a text-like head kept a UTF-16 label
+     (TIKA-5052).
+
    * Charset detection no longer reads ASCII text with a few control characters (logs with
      escape or form-feed bytes, IRC colour codes, record separators, banners) as BOM-less
-     UTF-16: the model was retrained with such text, and when it still returns UTF-16 or
-     UTF-32 as its only candidate, the junk filter now compares that decode against
-     windows-1252 and keeps whichever reads as text (TIKA-5052).
+     UTF-16: when the model returns UTF-16 or UTF-32 as its only candidate, the junk filter
+     now compares that decode against windows-1252 and keeps whichever reads as text. A
+     single-byte label whose decode of the probe is identical to windows-1252's (one stray
+     accented byte in English labelled windows-1254 or x-MacRoman) is reported as
+     windows-1252 (TIKA-5052).
 
    * The junk model that arbitrates between charset candidates was retrained with UTF-16
      misreads of every script (text read as UTF-16, and UTF-16 text read as a single-byte

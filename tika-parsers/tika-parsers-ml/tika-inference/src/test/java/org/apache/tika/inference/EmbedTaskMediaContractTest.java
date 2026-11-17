@@ -43,6 +43,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.inference.InferenceBinding;
 import org.apache.tika.parser.inference.InferenceUnit;
 import org.apache.tika.parser.inference.InputKind;
+import org.apache.tika.parser.inference.MediaFormats;
 import org.apache.tika.parser.inference.Modality;
 
 /**
@@ -71,7 +72,8 @@ public class EmbedTaskMediaContractTest {
         }
 
         @Override
-        public Probe probe(Path media, ParseContext context) throws TikaException {
+        public Probe probe(Path media, MediaFormats formats, ParseContext context)
+                throws TikaException {
             if (media.equals(failProbe)) {
                 throw new TikaException("ffprobe failed: not a media file");
             }
@@ -79,7 +81,8 @@ public class EmbedTaskMediaContractTest {
         }
 
         @Override
-        public Path cut(Path media, Cell cell, Modality modality, Path dir, ParseContext context)
+        public Path cut(Path media, Cell cell, Modality modality, Path dir, MediaFormats formats,
+                        ParseContext context)
                 throws IOException, TikaException {
             if (!cutDirs.contains(dir)) {
                 cutDirs.add(dir);

@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.inference.MediaConfig;
+import org.apache.tika.parser.inference.MediaFormats;
 import org.apache.tika.parser.inference.Modality;
 
 /**
@@ -51,13 +52,15 @@ interface MediaSegmenter {
     /** Whether the tool answers; a MEDIA binding stands by without it. */
     boolean available();
 
-    Probe probe(Path media, ParseContext context) throws IOException, TikaException;
+    Probe probe(Path media, MediaFormats formats, ParseContext context)
+            throws IOException, TikaException;
 
     /**
      * Writes one cell's audio or picture into {@code dir} and returns the file. Idempotent
      * per cell: an existing cut is returned, not redone, so a retried request re-reads it.
      */
-    Path cut(Path media, Cell cell, Modality modality, Path dir, ParseContext context)
+    Path cut(Path media, Cell cell, Modality modality, Path dir, MediaFormats formats,
+             ParseContext context)
             throws IOException, TikaException;
 
     /**

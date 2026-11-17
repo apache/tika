@@ -45,6 +45,7 @@ public class ExternalParserConfig implements Serializable {
     private long timeoutMillis = ExternalParser.DEFAULT_TIMEOUT_MILLIS;
     private int maxStdErr = 10000;
     private int maxStdOut = 10000;
+    private String inputFileExtension;
 
     public ExternalParserConfig() {
     }
@@ -159,5 +160,23 @@ public class ExternalParserConfig implements Serializable {
 
     public void setMaxStdOut(int maxStdOut) {
         this.maxStdOut = maxStdOut;
+    }
+
+    public String getInputFileExtension() {
+        return inputFileExtension;
+    }
+
+    /**
+     * The program is given the document as a file named {@code input} in a directory of its
+     * own. By default the file keeps the document's extension if that is one of the detected
+     * media type's, and otherwise gets that type's usual extension. Set this to use one fixed
+     * extension instead, such as {@code ".wav"}, or the empty string for none.
+     */
+    public void setInputFileExtension(String inputFileExtension) {
+        if (inputFileExtension != null && !inputFileExtension.matches("(\\.[A-Za-z0-9]{1,16})?")) {
+            throw new IllegalArgumentException(
+                    "inputFileExtension must be empty or a dot and letters or digits");
+        }
+        this.inputFileExtension = inputFileExtension;
     }
 }

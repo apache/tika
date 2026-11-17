@@ -111,6 +111,15 @@ public final class DecodeEquivalence {
 
     private static char[] buildTable(Charset cs) {
         try {
+            // a lone high byte decodes to one U+FFFD under UTF-8/UTF-16 too, so the per-byte
+            // check below cannot exclude them on its own
+            try {
+                if (cs.newEncoder().maxBytesPerChar() != 1f) {
+                    return null;
+                }
+            } catch (UnsupportedOperationException e) {
+                // decode-only charset: rely on the per-byte check
+            }
             CharsetDecoder dec = cs.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE)

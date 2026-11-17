@@ -18,7 +18,9 @@ package org.apache.tika.parser.gdal;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -29,15 +31,19 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.utils.ProcessUtils;
@@ -169,8 +175,21 @@ public class TestGDALParser extends TikaTest {
     @Test
     public void testInputPathWithWhitespaceIsOneArgument() {
         String path = "/data/survey 2024/tile.tif --config GDAL_HTTP_PROXY attacker:8080";
-        assertArrayEquals(new String[]{"gdalinfo", path},
-                GDALParser.buildCommandLine(new GDALParser().getCommand(), path));
+        assertArrayEquals(new String[]{"gdalinfo", "-if", "GTiff", "-if", "FITS", path},
+                GDALParser.buildCommandLine(new GDALParser().getCommand(), path,
+                        List.of("GTiff", "FITS")));
+    }
+
+    @Test
+    public void testFormatsPrecedeTheInputInAWrappedCommand() {
+        assertArrayEquals(new String[]{"docker", "run", "img", "gdalinfo", "-if", "GTiff", "/in.tif",
+                        "-json"},
+                GDALParser.buildCommandLine("docker run img gdalinfo ${INPUT_FILE} -json", "/in.tif",
+                        List.of("GTiff")));
+        // not before an argument that only contains the input
+        assertArrayEquals(new String[]{"docker", "-if", "GTiff", "run", "-v", "/in.tif:/in", "img"},
+                GDALParser.buildCommandLine("docker run -v ${INPUT_FILE}:/in img", "/in.tif",
+                        List.of("GTiff")));
     }
 
     @Test
@@ -219,5 +238,29 @@ public class TestGDALParser extends TikaTest {
         GDALParser.restrictEnvironment(env);
         assertEquals("JPEG VRT GTI", env.get("GDAL_SKIP"));
         assertEquals("", env.get("CPL_VSIL_CURL_ALLOWED_FILENAME"));
+    }
+
+    @Test
+    public void testDefaultFormatsAreASmallSet() {
+        GDALParser parser = new GDALParser();
+        assertEquals(GDALParser.DEFAULT_ALLOWED_FORMATS, parser.getAllowedFormats());
+        Set<MediaType> types = parser.getSupportedTypes(new ParseContext());
+        assertTrue(types.contains(MediaType.application("x-netcdf")));
+        assertTrue(types.contains(MediaType.image("fits")));
+        // not in the default formats
+        assertFalse(types.contains(MediaType.image("png")));
+    }
+
+    @Test
+    public void testAllowedFormatsReplacesTheDefault() throws Exception {
+        GDALParser parser = new GDALParser();
+        parser.setAllowedFormats(List.of("PNG"));
+        assertEquals(Set.of(MediaType.image("png")), parser.getSupportedTypes(new ParseContext()));
+        assertThrows(TikaConfigException.class, () -> parser.setAllowedFormats(List.of()));
+        assertThrows(TikaConfigException.class,
+                () -> parser.setAllowedFormats(List.of("GTiff HFA")));
+        assertThrows(TikaConfigException.class, () -> parser.setAllowedFormats(List.of("gtiff")));
+        // a driver with no media type here is allowed
+        parser.setAllowedFormats(List.of("GTiff", "AAIGrid"));
     }
 }

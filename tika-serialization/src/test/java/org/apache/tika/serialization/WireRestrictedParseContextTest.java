@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.inference.MediaFormats;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 /**
@@ -102,6 +104,30 @@ public class WireRestrictedParseContextTest {
                 () -> restrictedMapper().readValue(json, ParseContext.class));
         assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + rootMessage(e));
+    }
+
+    @Test
+    public void restrictedRejectsMediaFormats() {
+        String json = "{\"media-formats\":{\"allowedFormats\":[\"wav\"]}}";
+        Exception e = assertThrows(Exception.class,
+                () -> restrictedMapper().readValue(json, ParseContext.class));
+        assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
+                "expected wire-blocked rejection, got: " + rootMessage(e));
+    }
+
+    @Test
+    public void trustedAllowsMediaFormatsAndARequestMediaBlockKeepsThem() throws Exception {
+        ObjectMapper mapper = TikaObjectMapperFactory.createMapper();
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ParseContext.class, new ParseContextDeserializer(false));
+        mapper.registerModule(module);
+        ParseContext merged = mapper.readValue(
+                "{\"media-formats\":{\"allowedFormats\":[\"wav\"]}}", ParseContext.class);
+        // what a request may send: its own media block, laid over the operator's context
+        merged.copyFrom(restrictedMapper().readValue(
+                "{\"media\":{\"maxSegments\":3}}", ParseContext.class));
+        ParseContextUtils.resolveAll(merged, ParseContextUtils.class.getClassLoader());
+        assertEquals(List.of("wav"), MediaFormats.get(merged).getAllowedFormats());
     }
 
     @Test

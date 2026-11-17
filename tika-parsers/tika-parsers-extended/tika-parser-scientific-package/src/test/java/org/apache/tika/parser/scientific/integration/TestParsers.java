@@ -17,6 +17,7 @@
 package org.apache.tika.parser.scientific.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
@@ -24,14 +25,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.gdal.GDALParser;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 
 /**
@@ -46,6 +51,8 @@ import org.apache.tika.parser.ocr.TesseractOCRParser;
  */
 public class TestParsers {
 
+    private static final String GDAL = GDALParser.class.toString();
+
     @Test
     public void testDiffsFrom241() throws Exception {
 
@@ -53,6 +60,11 @@ public class TestParsers {
         String path241 = "/2.4.1-no-tesseract.txt";
         if (new TesseractOCRParser().hasTesseract()) {
             path241 = "/2.4.1-tesseract.txt";
+        }
+
+        Set<String> gdalTypes = new HashSet<>();
+        for (MediaType type : new GDALParser().getSupportedTypes(new ParseContext())) {
+            gdalTypes.add(type.toString());
         }
 
         int checked = 0;
@@ -66,8 +78,14 @@ public class TestParsers {
                 String mediaType = data[0];
                 String parserClass = data[1];
 
-                assertEquals(parserClass, currentDefault.get(mediaType),
-                        "for mediaType '" + mediaType + "'");
+                if (parserClass.equals(GDAL) && !gdalTypes.contains(mediaType)) {
+                    // GDAL takes only the types of its allowedFormats; 2.4.1 gave it these too
+                    assertNotEquals(GDAL, currentDefault.get(mediaType),
+                            "for mediaType '" + mediaType + "'");
+                } else {
+                    assertEquals(parserClass, currentDefault.get(mediaType),
+                            "for mediaType '" + mediaType + "'");
+                }
                 checked++;
                 line = reader.readLine();
             }
