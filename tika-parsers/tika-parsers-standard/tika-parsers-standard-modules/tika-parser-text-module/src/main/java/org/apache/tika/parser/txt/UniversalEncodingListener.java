@@ -56,6 +56,10 @@ class UniversalEncodingListener implements CharsetListener {
     }
 
     public void report(String name) {
+        // juniversalchardet 2.5.2 reports US-ASCII; bytes past the probe may not be
+        if (Constants.CHARSET_US_ASCII.equals(name)) {
+            name = Constants.CHARSET_WINDOWS_1252;
+        }
         if (Constants.CHARSET_WINDOWS_1252.equals(name)) {
             if (hint != null) {
                 // Use the encoding hint when available

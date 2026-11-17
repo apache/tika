@@ -112,6 +112,49 @@ public class MimeDetectionTest {
         }
     }
 
+    /** An uppercase html tag past the first 128 bytes counts only if the file starts like markup. */
+    @Test
+    public void testDeepUppercaseHtml() throws Exception {
+        String pad = "x = 1;\n".repeat(30);
+        String js = "var w = window.open();\n" + pad + "w.document.write(\"<HTML><BODY>\");\n";
+        assertEquals(MediaType.TEXT_PLAIN, detect(js, null));
+        assertEquals(MediaType.text("javascript"), detect(js, "popup.js"));
+
+        String perl = "package Foo;\n" + pad + "print <<EOF;\n<HTML>\n<HEAD><TITLE>x</TITLE>\n";
+        assertEquals(MediaType.text("x-perl"), detect(perl, "Foo.pm"));
+
+        String php = "<?\n" + pad + "?>\n<HTML>\n<TITLE>x</TITLE>\n";
+        assertEquals(MediaType.text("x-php"), detect(php, "index.php"));
+
+        // within the first 128 bytes too
+        String perlNear = "#\n# Sort hosts\n#\n&make_info();\n\nprint CLIENT <<EOF;\n" +
+                "    ".repeat(5) + "<HTML>\n<HEAD><TITLE>x</TITLE>\n";
+        assertEquals(MediaType.text("x-perl"), detect(perlNear, "satan_counts.pl"));
+        String phpNear = "<? include(\"dbconnect.php3\"); ?>\n<? $sitename = doins_var(\"name\");\n" +
+                "print \"<HTML> <HEAD><TITLE>About</TITLE> </HEAD>\";";
+        assertEquals(MediaType.text("x-php"), detect(phpNear, "about.php3"));
+        assertEquals(MediaType.TEXT_HTML,
+                detect("<!-- top.src START -->" + " ".repeat(60) + "<HTML>\n<HEAD>", null));
+
+        String[] pages = {
+                "\r\n\t".repeat(100) + "<HTML>\n<BODY>x</BODY></HTML>",
+                "<SCRIPT SRC=\"/cookie.js\"></SCRIPT>\n" + " ".repeat(200) + "<HTML>\n<BODY>x</BODY>",
+                "﻿" + " ".repeat(200) + "<HTML>\n<BODY>x</BODY>"
+        };
+        for (String p : pages) {
+            assertEquals(MediaType.TEXT_HTML, detect(p, null), p);
+        }
+    }
+
+    /** A bare html tag must not outrank xhtml's "html xmlns=" match, and a .html name still wins. */
+    @Test
+    public void testXhtmlNamespaceWithoutDoctype() throws Exception {
+        String xhtml = "<!DOCTYPE PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n" +
+                "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head><meta charset=utf-8></head>";
+        assertEquals(MediaType.application("xhtml+xml"), detect(xhtml, null));
+        assertEquals(MediaType.TEXT_HTML, detect(xhtml, "page.html"));
+    }
+
     private static MediaType detect(String content, String name) throws IOException {
         Metadata metadata = new Metadata();
         if (name != null) {
