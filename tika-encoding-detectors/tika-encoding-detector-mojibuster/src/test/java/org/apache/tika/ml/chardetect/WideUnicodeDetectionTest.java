@@ -18,6 +18,7 @@ package org.apache.tika.ml.chardetect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.Charset;
@@ -210,6 +211,79 @@ public class WideUnicodeDetectionTest {
                 "Grüße, мир, 世界".getBytes(Charset.forName(charset)));
         assertEquals(charset, wide.charset.name());
         assertFalse("UTF-32BE".equals(charset) ? wide.invalidUtf32Be : wide.invalidUtf32Le);
+        // longer than any sample window, with a group cut at the probe end
+        byte[] longer = "Grüße, мир, 世界. ".repeat(60).getBytes(Charset.forName(charset));
+        assertEquals(charset, top(Arrays.copyOf(longer, longer.length - 2)));
+    }
+
+    /**
+     * GNU ar symbol table ({@code /} member of a {@code gcc -c; ar rcs} archive): big-endian count and
+     * offsets, then NUL-terminated names. Every header int is a code point, so a check over the first
+     * bytes only called the 1.2M corpus's .a/.deb members UTF-32BE and decoded the names to U+FFFD.
+     */
+    @Test
+    public void arSymbolTableIsNotUtf32() {
+        int[] header = {7, 0xcc, 0xcc, 0xcc, 0xcc, 0x6e8, 0x6e8, 0x6e8};
+        String names = "alpha_function\0beta_function\0gamma_function\0delta_variable\0"
+                + "epsilon_function\0zeta_function\0eta_variable\0\0";
+        byte[] bytes = new byte[header.length * 4 + names.length()];
+        for (int i = 0; i < header.length; i++) {
+            bytes[i * 4 + 2] = (byte) (header[i] >>> 8);
+            bytes[i * 4 + 3] = (byte) header[i];
+        }
+        System.arraycopy(names.getBytes(StandardCharsets.US_ASCII), 0, bytes, header.length * 4,
+                names.length());
+        WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(bytes);
+        assertTrue(wide.invalidUtf32Be);
+        assertTrue(wide.invalidUtf32Le);
+        assertFalse(top(bytes).startsWith("UTF-32"));
+        // 128 header ints fill the old 512-byte sample on their own
+        byte[] big = new byte[128 * 4 + names.length()];
+        for (int i = 0; i < 128; i++) {
+            big[i * 4 + 2] = (byte) (i >>> 6);
+            big[i * 4 + 3] = (byte) (i * 24);
+        }
+        System.arraycopy(names.getBytes(StandardCharsets.US_ASCII), 0, big, 512, names.length());
+        assertTrue(WideUnicodeDetector.analyze(big).invalidUtf32Be);
+        assertFalse(top(big).startsWith("UTF-32"));
+    }
+
+    /** A zero-led partition image: 512 NUL bytes, then data no 4-byte group of which is a code point. */
+    @Test
+    public void zeroLedImageIsNotUtf32() {
+        byte[] bytes = new byte[8192];
+        Random r = new Random(5062L);
+        for (int i = 512; i < bytes.length; i++) {
+            bytes[i] = (byte) (0x80 | r.nextInt(128));
+        }
+        WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(bytes);
+        assertTrue(wide.invalidUtf32Be);
+        assertTrue(wide.invalidUtf32Le);
+        String top = top(bytes);
+        assertFalse(top.startsWith("UTF-32") || top.startsWith("UTF-16"), top);
+    }
+
+    /** 17 KB of NUL then an ASCII log (a 1.2M MOZILLA .zip member): the all-NUL prefix is not UTF-32. */
+    @Test
+    public void nulLedLogIsNotUtf32() {
+        byte[] nuls = new byte[17412];
+        assertNull(WideUnicodeDetector.analyze(nuls).charset);
+        assertFalse(top(nuls).startsWith("UTF-32"), top(nuls));
+        byte[] log = "1074222328[40404160]: http request [\n".repeat(400).getBytes(StandardCharsets.US_ASCII);
+        byte[] bytes = Arrays.copyOf(nuls, nuls.length + log.length);
+        System.arraycopy(log, 0, bytes, nuls.length, log.length);
+        assertTrue(WideUnicodeDetector.analyze(bytes).invalidUtf32Be);
+        assertFalse(top(bytes).startsWith("UTF-32"), top(bytes));
+    }
+
+    /** A lone surrogate past byte 512 (binary with a text-like head) still vetoes UTF-16. */
+    @Test
+    public void loneSurrogateDeepInTheProbeIsInvalid() {
+        String prefix = "Full thread dump Java HotSpot(TM) 64-Bit Server VM ".repeat(12);
+        assertTrue(prefix.length() > 512);
+        assertTrue(WideUnicodeDetector.analyze(le(prefix + "x", prefix.length(), 0xD83D)).invalidUtf16Le);
+        assertFalse(WideUnicodeDetector.analyze(le(prefix + "x", prefix.length(), 0xD83D, 0xDE00))
+                .invalidUtf16Le);
     }
 
     /** UTF-16LE of {@code text} with raw code {@code units} inserted at char index {@code at}. */
@@ -235,9 +309,9 @@ public class WideUnicodeDetectionTest {
         assertTrue(WideUnicodeDetector.analyze(le("abcdefghx", 8, 0xD83D)).invalidUtf16Le);
     }
 
-    /** The surrogate check samples 512 bytes; a pair cut there is checked against the next unit. */
+    /** A pair straddling byte 512 is one pair; a lone high surrogate there is still invalid. */
     @Test
-    public void surrogateCutAtSampleEndLooksAhead() {
+    public void surrogateStraddlingByte512() {
         String prefix = "x".repeat(255);
         assertFalse(WideUnicodeDetector.analyze(le(prefix + " tail", 255, 0xD83D, 0xDE00))
                 .invalidUtf16Le);

@@ -519,6 +519,12 @@ Release 4.3.0 - ???
      UTF-32 code points: binary with a few NULs in its header (a shader file of ASCII 0/1
      after an 80 37 00 00 header) was reported as UTF-32BE (TIKA-5052).
 
+   * The structural UTF-32 check and the UTF-16 surrogate check read the whole detection
+     sample, not its first 512 bytes, and an all-NUL sample is not UTF-32: ar symbol
+     tables, zero-led disk images and NUL-led logs were reported as UTF-32BE and decoded
+     to replacement characters, and binary with a text-like head kept a UTF-16 label
+     (TIKA-5052).
+
    * Charset detection no longer reads ASCII text with a few control characters (logs with
      escape or form-feed bytes, IRC colour codes, record separators, banners) as BOM-less
      UTF-16: when the model returns UTF-16 or UTF-32 as its only candidate, the junk filter
