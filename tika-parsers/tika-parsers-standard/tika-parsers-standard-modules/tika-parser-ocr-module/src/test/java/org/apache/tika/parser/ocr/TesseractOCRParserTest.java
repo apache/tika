@@ -18,12 +18,14 @@ package org.apache.tika.parser.ocr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,6 +39,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -51,6 +54,7 @@ import org.apache.tika.parser.image.JpegParser;
 import org.apache.tika.parser.image.PSDParser;
 import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.parser.image.WebPParser;
+import org.apache.tika.sax.BodyContentHandler;
 
 public class TesseractOCRParserTest extends TikaTest {
 
@@ -60,6 +64,19 @@ public class TesseractOCRParserTest extends TikaTest {
         return p.hasTesseract();
     }
 
+
+    @Test
+    public void testNonImageIsRefused() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
+        byte[] notAnImage = "this is not an image".getBytes(StandardCharsets.UTF_8);
+        try (TikaInputStream tis = TikaInputStream.get(notAnImage)) {
+            TikaException e = assertThrows(TikaException.class,
+                    () -> new TesseractOCRParser().parse(tis, new BodyContentHandler(),
+                            new Metadata(), new ParseContext()));
+            assertEquals("TesseractOCRParser input is not an image tesseract accepts",
+                    e.getMessage());
+        }
+    }
 
     @Test
     public void testInterwordSpacing() throws Exception {

@@ -34,6 +34,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -345,6 +346,7 @@ public class ExternalEmbedder implements Embedder {
 
         TikaInputStream tikaInputStream = TikaInputStream.get(inputStream);
         File tempOutputFile = null;
+        IsolatedInput isolated = null;
 
         List<String> commandMetadataSegments = null;
         if (hasMetadataCommandArguments) {
@@ -356,12 +358,21 @@ public class ExternalEmbedder implements Embedder {
         List<String> cmd = new ArrayList<>();
         for (String commandSegment : origCmd) {
             if (commandSegment.contains(ExternalParser.INPUT_FILE_TOKEN)) {
+                if (isolated == null) {
+                    isolated = metadata == null ? IsolatedInput.of(tikaInputStream.getPath())
+                            : IsolatedInput.of(tikaInputStream.getPath(), metadata);
+                }
                 commandSegment = commandSegment.replace(ExternalParser.INPUT_FILE_TOKEN,
-                        tikaInputStream.getFile().toString());
+                        isolated.getPath().toString());
                 inputToStdIn = false;
             }
             if (commandSegment.contains(ExternalParser.OUTPUT_FILE_TOKEN)) {
-                tempOutputFile = tmp.createTemporaryFile();
+                try {
+                    tempOutputFile = tmp.createTemporaryFile();
+                } catch (IOException | RuntimeException e) {
+                    IOUtils.closeQuietly(isolated);
+                    throw e;
+                }
                 commandSegment = commandSegment
                         .replace(ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
                 outputFromStdOut = false;
@@ -400,10 +411,15 @@ public class ExternalEmbedder implements Embedder {
 
         // Execute
         Process process;
-        if (cmd.toArray().length == 1) {
-            process = Runtime.getRuntime().exec(cmd.toArray(String[]::new)[0]);
-        } else {
-            process = Runtime.getRuntime().exec(cmd.toArray(String[]::new));
+        try {
+            if (cmd.toArray().length == 1) {
+                process = Runtime.getRuntime().exec(cmd.toArray(String[]::new)[0]);
+            } else {
+                process = Runtime.getRuntime().exec(cmd.toArray(String[]::new));
+            }
+        } catch (IOException | RuntimeException e) {
+            IOUtils.closeQuietly(isolated);
+            throw e;
         }
 
         UnsynchronizedByteArrayOutputStream stdErrOutputStream = UnsynchronizedByteArrayOutputStream.builder().get();
@@ -449,6 +465,7 @@ public class ExternalEmbedder implements Embedder {
                 // TemporaryResources.createTemporaryFile)
                 IOUtils.closeQuietly(tikaInputStream);
             }
+            IOUtils.closeQuietly(isolated);
             IOUtils.closeQuietly(outputStream);
             IOUtils.closeQuietly(stdErrOutputStream);
             if (process.exitValue() != 0) {

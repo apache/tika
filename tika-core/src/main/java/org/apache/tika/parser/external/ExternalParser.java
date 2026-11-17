@@ -44,6 +44,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -284,6 +285,7 @@ public class ExternalParser implements Parser {
         boolean hasPatterns = (metadataPatterns != null && !metadataPatterns.isEmpty());
 
         File output = null;
+        IsolatedInput input = null;
 
         // Build our command
         String[] cmd;
@@ -295,7 +297,12 @@ public class ExternalParser implements Parser {
         }
         for (int i = 0; i < cmd.length; i++) {
             if (cmd[i].contains(INPUT_FILE_TOKEN)) {
-                cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
+                if (input == null) {
+                    // under a fixed name, in a directory of its own
+                    input = IsolatedInput.of(stream.getPath(), metadata);
+                    tmp.addResource(input);
+                }
+                cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, input.getPath().toString());
                 inputToStdIn = false;
             }
             if (cmd[i].contains(OUTPUT_FILE_TOKEN)) {

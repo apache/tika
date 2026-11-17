@@ -1,5 +1,13 @@
 Release 3.4.0 - ???
 
+  * External tools and libraries are told which formats to read, and get the document as
+    "input" plus an extension of its detected type, in a directory of its own. GDALParser reads
+    and claims only the drivers in allowedFormats (default GTiff, netCDF, GRIB, FITS, NITF,
+    DTED); the external2 ExternalParser's inputFileExtension overrides the extension;
+    ISArchiveParser reads files beside the study only with readSiblingFiles (or when given a
+    directory); Tesseract and ImageMagick refuse input that is not a supported image
+    (TIKA-5065).
+
   * UTF-8 text that was misdetected as GB18030 is now detected as UTF-8
     (juniversalchardet 2.5.2).
 

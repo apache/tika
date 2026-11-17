@@ -48,6 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -116,6 +117,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
     private static final Object[] LOCK = new Object[0];
+    private static final long STREAM_JOIN_MILLIS = 10000;
     private static final long serialVersionUID = -8167538283213097265L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList(
@@ -182,10 +184,10 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         Map<String, String> env = pb.environment();
 
         if (!StringUtils.isBlank(getTessdataPath())) {
-            env.put(TESSDATA_PREFIX, getTessdataPath());
+            env.put(TESSDATA_PREFIX, absoluteDir(getTessdataPath()));
         } else if (!StringUtils.isBlank(getTesseractPath())) {
             //adding tessdata is required for at least >= 4.x
-            env.put(TESSDATA_PREFIX, getTesseractPath() + "tessdata");
+            env.put(TESSDATA_PREFIX, absoluteDir(getTesseractPath()) + "tessdata");
         }
     }
 
@@ -336,12 +338,16 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         warnOnFirstParse();
         validateLangString(config.getLanguage());
 
-        File tmpTxtOutput = null;
+        String extension = config.getPageSegMode().equals("0") ? "osd" :
+                config.getOutputType().toString().toLowerCase(Locale.US);
+        // Tesseract appends the output type (.txt or .hocr or .osd) to output file name
+        File tmpTxtOutput = new File(tmpOCROutputFile.getAbsolutePath() + "." + extension);
         try {
             Path input = tikaInputStream.getPath();
             long size = tikaInputStream.getLength();
 
             if (size >= config.getMinFileSizeToOcr() && size <= config.getMaxFileSizeToOcr()) {
+                requireAccepted(input);
 
                 // Process image
                 if (config.isEnableImagePreprocessing() || config.isApplyRotation()) {
@@ -366,12 +372,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                     doOCR(input.toFile(), tmpOCROutputFile, config, parseContext);
                 }
 
-                String extension = config.getPageSegMode().equals("0") ? "osd" :
-                        config.getOutputType().toString().toLowerCase(Locale.US);
-                // Tesseract appends the output type (.txt or .hocr or .osd) to output file name
-                tmpTxtOutput = new File(tmpOCROutputFile.getAbsolutePath() +
-                        "." + extension);
-
                 if (tmpTxtOutput.exists()) {
                     try (InputStream is = new FileInputStream(tmpTxtOutput)) {
                         if (config.getPageSegMode().equals("0")) {
@@ -385,9 +385,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                 }
             }
         } finally {
-            if (tmpTxtOutput != null) {
-                tmpTxtOutput.delete();
-            }
+            tmpTxtOutput.delete();
         }
     }
 
@@ -444,10 +442,23 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      */
     private void doOCR(File input, File output, TesseractOCRConfig config, ParseContext parseContext)
             throws IOException, TikaException {
+        // rechecked here: with preprocessing this is ImageMagick's output
+        requireAccepted(input.toPath());
+        runTesseract(input, output, config, parseContext);
+    }
+
+    private static void requireAccepted(Path input) throws IOException, TikaException {
+        if (!TesseractInput.isAccepted(input)) {
+            throw new TikaException("TesseractOCRParser input is not an image tesseract accepts");
+        }
+    }
+
+    private void runTesseract(File input, File output, TesseractOCRConfig config,
+                              ParseContext parseContext) throws IOException, TikaException {
 
         ArrayList<String> cmd = new ArrayList<>(
-                Arrays.asList(getTesseractPath() + getTesseractProg(), input.getPath(),
-                        output.getPath(), "--psm", config.getPageSegMode()));
+                Arrays.asList(tesseractCommand(), input.getAbsolutePath(),
+                        output.getAbsolutePath(), "--psm", config.getPageSegMode()));
         //if --psm == 0, don't add anything else to the command line
         if (! "0".equals(config.getPageSegMode())) {
             if (!StringUtils.isBlank(config.getLanguage())) {
@@ -467,6 +478,9 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(pb);
+        // runs in a directory of its own
+        Path workingDir = Files.createTempDirectory("tika-ocr-");
+        pb.directory(workingDir.toFile());
 
         Process process = null;
         String id = null;
@@ -483,7 +497,21 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             if (id != null) {
                 release(id);
             }
+            FileUtils.deleteQuietly(workingDir.toFile());
         }
+    }
+
+    // absolute: the process does not run in this JVM's working directory
+    private String tesseractCommand() {
+        String dir = getTesseractPath();
+        if (StringUtils.isBlank(dir)) {
+            return getTesseractProg();
+        }
+        return Paths.get(dir, getTesseractProg()).toAbsolutePath().toString();
+    }
+
+    private static String absoluteDir(String dir) {
+        return Paths.get(dir).toAbsolutePath() + File.separator;
     }
 
     private void runOCRProcess(Process process, long timeoutMillis) throws IOException,
@@ -512,13 +540,17 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             //this _should_ never be thrown
             throw new TikaException("TesseractOCRParser timeout");
         }
+        try {
+            outThread.join(STREAM_JOIN_MILLIS);
+            errThread.join(STREAM_JOIN_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TikaException("TesseractOCRParser interrupted", e);
+        }
+        if (outThread.isAlive() || errThread.isAlive()) {
+            throw new TikaException("TesseractOCRParser could not read the process output");
+        }
         if (exitValue > 0) {
-            try {
-                //make sure this thread is actually done
-                errThread.join(1000);
-            } catch (InterruptedException e) {
-                //swallow
-            }
             throw new TikaException(
                     "TesseractOCRParser bad exit value " + exitValue + " err msg: " +
                             errBuilder.toString());

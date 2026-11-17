@@ -42,6 +42,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
@@ -92,6 +93,8 @@ public class ExternalParser implements Parser, Initializable {
 
     private int maxStdOut = 10000;
 
+    private String inputFileExtension;
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return supportedTypes;
@@ -104,7 +107,12 @@ public class ExternalParser implements Parser, Initializable {
         Path outFile = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
-            Path p = tis.getPath();
+            // under a fixed name, in a directory of its own
+            IsolatedInput input = inputFileExtension == null
+                    ? IsolatedInput.of(tis.getPath(), metadata)
+                    : IsolatedInput.of(tis.getPath(), inputFileExtension);
+            tmp.addResource(input);
+            Path p = input.getPath();
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");
             Matcher outputMatcher = OUTPUT_TOKEN_MATCHER.matcher("");
@@ -277,6 +285,25 @@ public class ExternalParser implements Parser, Initializable {
 
     public Parser getOutputParser() {
         return outputParser;
+    }
+
+    public String getInputFileExtension() {
+        return inputFileExtension;
+    }
+
+    /**
+     * The program is given the document as a file named {@code input} in a directory of its
+     * own. By default the file keeps the document's extension if that is one of the detected
+     * media type's, and otherwise gets that type's usual extension. Set this to use one fixed
+     * extension instead, such as {@code ".wav"}, or the empty string for none.
+     */
+    @Field
+    public void setInputFileExtension(String inputFileExtension) {
+        if (inputFileExtension != null && !inputFileExtension.matches("(\\.[A-Za-z0-9]{1,16})?")) {
+            throw new IllegalArgumentException(
+                    "inputFileExtension must be empty or a dot and letters or digits");
+        }
+        this.inputFileExtension = inputFileExtension;
     }
 
     @Override
