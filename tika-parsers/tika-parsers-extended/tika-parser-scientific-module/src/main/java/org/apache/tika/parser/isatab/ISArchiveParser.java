@@ -26,6 +26,7 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
@@ -46,6 +47,8 @@ public class ISArchiveParser implements Parser {
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-isatab"));
     private final String location;
+
+    private boolean readSiblingFiles;
 
     /**
      * Default constructor.
@@ -68,6 +71,21 @@ public class ISArchiveParser implements Parser {
             location += File.separator;
         }
         this.location = location;
+        // an explicit directory is the operator's choice to read it
+        this.readSiblingFiles = location != null;
+    }
+
+    public boolean isReadSiblingFiles() {
+        return readSiblingFiles;
+    }
+
+    /**
+     * An ISA-Tab archive is a directory: the investigation file beside a study names the
+     * assay files to read. Off by default, so only the study itself is parsed.
+     */
+    @Field
+    public void setReadSiblingFiles(boolean readSiblingFiles) {
+        this.readSiblingFiles = readSiblingFiles;
     }
 
     @Override
@@ -91,15 +109,19 @@ public class ISArchiveParser implements Parser {
             }
             String studyFileName = tis.getFile().getName();
 
-            File locationFile = new File(location);
-            String[] investigationList = locationFile.list((dir, name) -> name.matches("i_.+\\.txt"));
-
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
 
-            parseInvestigation(location, studyFileName, investigationList, xhtml, metadata, context);
+            if (readSiblingFiles) {
+                String[] investigationList =
+                        new File(location).list((dir, name) -> name.matches("i_.+\\.txt"));
+                parseInvestigation(location, studyFileName, investigationList, xhtml, metadata,
+                        context);
+            }
             parseStudy(stream, xhtml, metadata, context);
-            parseAssay(location, xhtml, metadata, context);
+            if (readSiblingFiles) {
+                parseAssay(location, xhtml, metadata, context);
+            }
 
             xhtml.endDocument();
         } finally {
@@ -131,7 +153,8 @@ public class ISArchiveParser implements Parser {
 
     private void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
                             ParseContext context) throws IOException, SAXException, TikaException {
-        xhtml.element("h2", "STUDY " + metadata.get("Study Identifier"));
+        String id = metadata.get("Study Identifier");
+        xhtml.element("h2", id == null ? "STUDY" : "STUDY " + id);
 
         ISATabUtils.parseStudy(stream, xhtml, metadata, context);
     }

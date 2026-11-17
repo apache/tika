@@ -24,13 +24,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +42,9 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
@@ -80,67 +83,36 @@ public class GDALParser implements Parser {
 
     public static final long DEFAULT_TIMEOUT_MS = 60000;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(MediaType.application("x-netcdf"), MediaType.application("vrt"),
-                    MediaType.image("geotiff"), MediaType.image("nitf"),
-                    MediaType.application("x-rpf-toc"), MediaType.application("x-ecrg-toc"),
-                    MediaType.image("hfa"), MediaType.image("sar-ceos"), MediaType.image("ceos"),
-                    MediaType.application("jaxa-pal-sar"), MediaType.application("gff"),
-                    MediaType.application("elas"), MediaType.application("aig"),
-                    MediaType.application("aaigrid"), MediaType.application("grass-ascii-grid"),
-                    MediaType.application("sdts-raster"), MediaType.application("dted"),
-                    MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("raster"),
-                    MediaType.application("jdem"), MediaType.image("gif"),
-                    MediaType.image("big-gif"), MediaType.image("envisat"), MediaType.image("fits"),
-                    MediaType.application("fits"), MediaType.image("bsb"),
-                    MediaType.application("xpm"), MediaType.image("bmp"),
-                    MediaType.image("x-dimap"), MediaType.image("x-airsar"),
-                    MediaType.application("x-rs2"), MediaType.application("x-pcidsk"),
-                    MediaType.application("pcisdk"), MediaType.image("x-pcraster"),
-                    MediaType.image("ilwis"), MediaType.image("sgi"),
-                    MediaType.application("x-srtmhgt"), MediaType.application("leveller"),
-                    MediaType.application("terragen"), MediaType.application("x-gmt"),
-                    MediaType.application("x-isis3"), MediaType.application("x-isis2"),
-                    MediaType.application("x-pds"), MediaType.application("x-til"),
-                    MediaType.application("x-ers"), MediaType.application("x-l1b"),
-                    MediaType.image("fit"), MediaType.application("x-grib"), MediaType.image("jp2"),
-                    MediaType.application("x-rmf"), MediaType.application("x-wcs"),
-                    MediaType.application("x-wms"), MediaType.application("x-msgn"),
-                    MediaType.application("x-wms"), MediaType.application("x-wms"),
-                    MediaType.application("x-rst"), MediaType.application("x-ingr"),
-                    MediaType.application("x-gsag"), MediaType.application("x-gsbg"),
-                    MediaType.application("x-gs7bg"), MediaType.application("x-cosar"),
-                    MediaType.application("x-tsx"), MediaType.application("x-coasp"),
-                    MediaType.application("x-r"), MediaType.application("x-map"),
-                    MediaType.application("x-pnm"), MediaType.application("x-doq1"),
-                    MediaType.application("x-doq2"), MediaType.application("x-envi"),
-                    MediaType.application("x-envi-hdr"), MediaType.application("x-generic-bin"),
-                    MediaType.application("x-p-aux"), MediaType.image("x-mff"),
-                    MediaType.image("x-mff2"), MediaType.image("x-fujibas"),
-                    MediaType.application("x-gsc"), MediaType.application("x-fast"),
-                    MediaType.application("x-bt"), MediaType.application("x-lan"),
-                    MediaType.application("x-cpg"), MediaType.image("ida"),
-                    MediaType.application("x-ndf"), MediaType.image("eir"),
-                    MediaType.application("x-dipex"), MediaType.application("x-lcp"),
-                    MediaType.application("x-gtx"), MediaType.application("x-los-las"),
-                    MediaType.application("x-ntv2"), MediaType.application("x-ctable2"),
-                    MediaType.application("x-ace2"), MediaType.application("x-snodas"),
-                    MediaType.application("x-kro"), MediaType.image("arg"),
-                    MediaType.application("x-rik"), MediaType.application("x-usgs-dem"),
-                    MediaType.application("x-gxf"), MediaType.application("x-dods"),
-                    MediaType.application("x-http"), MediaType.application("x-bag"),
-                    MediaType.application("x-hdf"), MediaType.image("x-hdf5-image"),
-                    MediaType.application("x-nwt-grd"), MediaType.application("x-nwt-grc"),
-                    MediaType.image("adrg"), MediaType.image("x-srp"),
-                    MediaType.application("x-blx"), MediaType.application("x-rasterlite"),
-                    MediaType.application("x-epsilon"), MediaType.application("x-sdat"),
-                    MediaType.application("x-kml"), MediaType.application("x-xyz"),
-                    MediaType.application("x-geo-pdf"), MediaType.image("x-ozi"),
-                    MediaType.application("x-ctg"), MediaType.application("x-e00-grid"),
-                    MediaType.application("x-zmap"), MediaType.application("x-webp"),
-                    MediaType.application("x-ngs-geoid"), MediaType.application("x-mbtiles"),
-                    MediaType.application("x-ppi"), MediaType.application("x-cappi"))));
+    /**
+     * The GDAL drivers gdalinfo may open a file with, unless configured otherwise.
+     */
+    public static final List<String> DEFAULT_ALLOWED_FORMATS =
+            List.of("GTiff", "netCDF", "GRIB", "FITS", "NITF", "DTED");
 
+    // the types this parser takes for each driver; a driver not listed here adds none
+    private static final Map<String, Set<MediaType>> FORMAT_TYPES = Map.ofEntries(
+            Map.entry("GTiff", Set.of(MediaType.image("geotiff"))),
+            Map.entry("netCDF", Set.of(MediaType.application("x-netcdf"))),
+            Map.entry("GRIB", Set.of(MediaType.application("x-grib"))),
+            Map.entry("FITS", Set.of(MediaType.image("fits"), MediaType.application("fits"))),
+            Map.entry("NITF", Set.of(MediaType.image("nitf"))),
+            Map.entry("HFA", Set.of(MediaType.image("hfa"))),
+            Map.entry("DTED", Set.of(MediaType.application("dted"))),
+            Map.entry("HDF4", Set.of(MediaType.application("x-hdf"))),
+            Map.entry("HDF5", Set.of(MediaType.application("x-hdf"),
+                    MediaType.image("x-hdf5-image"))),
+            Map.entry("ENVI", Set.of(MediaType.application("x-envi"),
+                    MediaType.application("x-envi-hdr"))),
+            Map.entry("PNG", Set.of(MediaType.image("png"))),
+            Map.entry("JPEG", Set.of(MediaType.image("jpeg"))),
+            Map.entry("GIF", Set.of(MediaType.image("gif"))),
+            Map.entry("BMP", Set.of(MediaType.image("bmp"))),
+            Map.entry("WMS", Set.of(MediaType.application("x-wms"))),
+            Map.entry("WCS", Set.of(MediaType.application("x-wcs"))));
+
+    private static final Pattern FORMAT_NAME = Pattern.compile("[A-Za-z0-9_]+");
+
+    private List<String> allowedFormats = DEFAULT_ALLOWED_FORMATS;
 
     private String command;
 
@@ -176,13 +148,60 @@ public class GDALParser implements Parser {
         return pCommand;
     }
 
-    // Split before substituting so whitespace in the input path stays inside one argument.
-    static String[] buildCommandLine(String command, String inputPath) {
-        String[] args = command.split("\\s+", -1);
-        for (int i = 0; i < args.length; i++) {
-            args[i] = args[i].replace(INPUT_FILE_TOKEN, inputPath);
+    public List<String> getAllowedFormats() {
+        return allowedFormats;
+    }
+
+    /**
+     * GDAL driver names (as <code>gdalinfo --formats</code> prints them) that gdalinfo may
+     * open a file with. This replaces {@link #DEFAULT_ALLOWED_FORMATS}, it does not add to
+     * it.
+     */
+    @Field
+    public void setAllowedFormats(List<String> allowedFormats) throws TikaConfigException {
+        if (allowedFormats == null || allowedFormats.isEmpty()) {
+            throw new TikaConfigException("allowedFormats must name at least one GDAL driver");
         }
-        return args;
+        for (String format : allowedFormats) {
+            if (!FORMAT_NAME.matcher(format).matches()) {
+                throw new TikaConfigException("allowedFormats: not a GDAL driver name: "
+                        + format);
+            }
+            if (!FORMAT_TYPES.containsKey(format)) {
+                for (String known : FORMAT_TYPES.keySet()) {
+                    if (known.equalsIgnoreCase(format)) {
+                        throw new TikaConfigException(
+                                "allowedFormats: " + format + " should be " + known);
+                    }
+                }
+                LOG.warn("allowedFormats: {} adds no media type; the names with types are {}",
+                        format, new TreeSet<>(FORMAT_TYPES.keySet()));
+            }
+        }
+        this.allowedFormats = List.copyOf(allowedFormats);
+    }
+
+    // Split before substituting so whitespace in the input path stays inside one argument.
+    // Each -if names a driver gdalinfo may try; with any present it tries no others.
+    static String[] buildCommandLine(String command, String inputPath,
+                                     List<String> allowedFormats) {
+        String[] split = command.split("\\s+", -1);
+        List<String> args = new ArrayList<>();
+        // before the input argument, or after the program if no argument is the input alone
+        int formatsAt = 1;
+        for (int i = 0; i < split.length; i++) {
+            if (i > 0 && formatsAt == 1 && split[i].equals(INPUT_FILE_TOKEN)) {
+                formatsAt = i;
+            }
+            args.add(split[i].replace(INPUT_FILE_TOKEN, inputPath));
+        }
+        List<String> formats = new ArrayList<>();
+        for (String format : allowedFormats) {
+            formats.add("-if");
+            formats.add(format);
+        }
+        args.addAll(formatsAt, formats);
+        return args.toArray(new String[0]);
     }
 
     // VRT and GTI open any file whose header merely contains their XML, so a document of a
@@ -195,7 +214,11 @@ public class GDALParser implements Parser {
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return SUPPORTED_TYPES;
+        Set<MediaType> types = new HashSet<>();
+        for (String format : allowedFormats) {
+            types.addAll(FORMAT_TYPES.getOrDefault(format, Set.of()));
+        }
+        return types;
     }
 
     @Override
@@ -206,18 +229,18 @@ public class GDALParser implements Parser {
             return;
         }
 
-        // first set up and run GDAL
-        // process the command
-        TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
-
-        String[] runCommand = buildCommandLine(this.command, tis.getFile().getPath());
-
+        FileProcessResult result;
         long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
-        ProcessBuilder pb = new ProcessBuilder(runCommand);
-        restrictEnvironment(pb.environment());
-        FileProcessResult result = ProcessUtils.execute(pb,
-                localTimeoutMillis, maxStdOut, maxStdErr);
+        // under a fixed name, in a directory of its own
+        try (TemporaryResources tmp = new TemporaryResources();
+             IsolatedInput input = IsolatedInput.of(
+                     TikaInputStream.get(stream, tmp, metadata).getPath(), metadata)) {
+            String[] runCommand =
+                    buildCommandLine(this.command, input.getPath().toString(), allowedFormats);
+            ProcessBuilder pb = new ProcessBuilder(runCommand);
+            restrictEnvironment(pb.environment());
+            result = ProcessUtils.execute(pb, localTimeoutMillis, maxStdOut, maxStdErr);
+        }
 
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
@@ -228,6 +251,10 @@ public class GDALParser implements Parser {
 
         metadata.set(ExternalProcess.STD_OUT, result.getStdout());
         metadata.set(ExternalProcess.STD_ERR, result.getStderr());
+        if (result.getExitValue() != 0) {
+            throw new TikaException("GDALParser bad exit value " + result.getExitValue()
+                    + " err msg: " + result.getStderr());
+        }
 
         String output = result.getStdout();
 

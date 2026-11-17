@@ -1,5 +1,13 @@
 Release 3.4.0 - ???
 
+  * External tools and libraries are told which formats to read, and get the document as
+    "input" plus an extension of its detected type, in a directory of its own. GDALParser reads
+    and claims only the drivers in allowedFormats (default GTiff, netCDF, GRIB, FITS, NITF,
+    DTED); the external2 ExternalParser's inputFileExtension overrides the extension;
+    ISArchiveParser reads files beside the study only with readSiblingFiles (or when given a
+    directory); Tesseract and ImageMagick refuse input that is not a supported image
+    (TIKA-5065).
+
   * The http fetcher, the Solr and OpenSearch emitters and the Solr pipes iterator no longer
     send Authorization or Cookie headers, or answer a 401 with the configured password,
     after a redirect to another host, port or scheme. That includes http to https, so use

@@ -33,6 +33,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -70,9 +71,12 @@ public class RarParser implements Parser {
             throw new UnsupportedFormatException("Tika does not yet support rar version 5.");
         }
         Archive rar = null;
+        IsolatedInput input = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
-            rar = new Archive(tis.getFile());
+            // under a fixed name, in a directory of its own
+            input = IsolatedInput.of(tis.getPath(), ".rar");
+            rar = new Archive(input.getPath().toFile());
 
             if (rar.isEncrypted()) {
                 throw new EncryptedDocumentException();
@@ -105,10 +109,15 @@ public class RarParser implements Parser {
         } catch (RarException e) {
             throw new TikaException("RarParser Exception", e);
         } finally {
-            if (rar != null) {
-                rar.close();
+            try {
+                if (rar != null) {
+                    rar.close();
+                }
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
             }
-
         }
 
         xhtml.endDocument();

@@ -33,11 +33,11 @@ import ucar.nc2.NetcdfFile;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.netcdf.NetCDFParser;
+import org.apache.tika.parser.netcdf.NetcdfReaders;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -81,12 +81,9 @@ public class HDFParser implements Parser {
         UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
         IOUtils.copy(stream, os);
 
-        String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (name == null) {
-            name = "";
-        }
         try {
-            NetcdfFile ncFile = NetcdfFile.openInMemory(name, os.toByteArray());
+            NetcdfFile ncFile = NetcdfReaders.openInMemory(os.toByteArray(),
+                    NetcdfReaders.HDF5, NetcdfReaders.HDF4);
             unravelStringMet(ncFile, null, metadata);
         } catch (IOException e) {
             throw new TikaException("HDF parse error", e);
