@@ -304,7 +304,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
-            <version>{maven.exec.version}</version>
+            <version>${maven.exec.version}</version>
             <executions>
               <execution>
                 <phase>test</phase>

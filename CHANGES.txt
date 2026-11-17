@@ -1,5 +1,8 @@
 Release 3.4.0 - ???
 
+  * UTF-8 text that was misdetected as GB18030 is now detected as UTF-8
+    (juniversalchardet 2.5.2).
+
   * The http fetcher, the Solr and OpenSearch emitters and the Solr pipes iterator no longer
     send Authorization or Cookie headers, or answer a 401 with the configured password,
     after a redirect to another host, port or scheme. That includes http to https, so use

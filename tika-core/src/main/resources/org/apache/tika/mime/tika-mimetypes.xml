@@ -7752,8 +7752,45 @@
       <match value="&lt;head" type="string" offset="0:64"/>
       <match value="&lt;TITLE" type="string" offset="0:64"/>
       <match value="&lt;title" type="string" offset="0:64"/>
-      <!-- the tag must end: <htmlPath> in an XML file is not HTML -->
-      <match value="(?i)&lt;html[\\s>]" type="regex" offset="0:128"/>
+      <!-- the tag must end: <htmlPath> in an XML file is not HTML. Short strings
+           rather than a regex: a pattern longer than xhtml's "<html xmlns=" would
+           sort ahead of it at this priority. -->
+      <match value="&lt;html " type="string" offset="0:128"/>
+      <match value="&lt;html>" type="string" offset="0:128"/>
+      <match value="&lt;html\n" type="string" offset="0:128"/>
+      <match value="&lt;html\r" type="string" offset="0:128"/>
+      <match value="&lt;html\x09" type="string" offset="0:128"/>
+      <match value="&lt;HTML " type="string" offset="0:64"/>
+      <match value="&lt;HTML>" type="string" offset="0:64"/>
+      <match value="&lt;HTML\n" type="string" offset="0:64"/>
+      <match value="&lt;HTML\r" type="string" offset="0:64"/>
+      <match value="&lt;HTML\x09" type="string" offset="0:64"/>
+      <!-- past 64 bytes, uppercase only when the file starts like markup (see below) -->
+      <match value="&lt;HTML " type="string" offset="64:128">
+        <match value="&lt;[^?]" type="regex" offset="0"/>
+        <match value="\\s" type="regex" offset="0"/>
+        <match value="0xEFBBBF" type="string" offset="0"/>
+      </match>
+      <match value="&lt;HTML>" type="string" offset="64:128">
+        <match value="&lt;[^?]" type="regex" offset="0"/>
+        <match value="\\s" type="regex" offset="0"/>
+        <match value="0xEFBBBF" type="string" offset="0"/>
+      </match>
+      <match value="&lt;HTML\n" type="string" offset="64:128">
+        <match value="&lt;[^?]" type="regex" offset="0"/>
+        <match value="\\s" type="regex" offset="0"/>
+        <match value="0xEFBBBF" type="string" offset="0"/>
+      </match>
+      <match value="&lt;HTML\r" type="string" offset="64:128">
+        <match value="&lt;[^?]" type="regex" offset="0"/>
+        <match value="\\s" type="regex" offset="0"/>
+        <match value="0xEFBBBF" type="string" offset="0"/>
+      </match>
+      <match value="&lt;HTML\x09" type="string" offset="64:128">
+        <match value="&lt;[^?]" type="regex" offset="0"/>
+        <match value="\\s" type="regex" offset="0"/>
+        <match value="0xEFBBBF" type="string" offset="0"/>
+      </match>
     </magic>
     <magic priority="20">
       <!-- Lower priority match for <html anywhere near the top of the file -->
@@ -7763,7 +7800,14 @@
            MimeTypes#getMinLength() bytes. It should also only start after
            the higher priority "start of file" one above
        -->
-      <match value="(?i)&lt;html[\\s>]" type="regex" offset="128:8192"/>
+      <match value="&lt;html[\\s>]" type="regex" offset="128:8192"/>
+      <!-- other cases only when the file starts like markup, so that code
+           building "<HTML>" strings or heredocs is not taken for html -->
+      <match value="(?i)&lt;html[\\s>]" type="regex" offset="128:8192">
+        <match value="&lt;[^?]" type="regex" offset="0"/>
+        <match value="\\s" type="regex" offset="0"/>
+        <match value="0xEFBBBF" type="string" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.html"/>
     <glob pattern="*.htm"/>

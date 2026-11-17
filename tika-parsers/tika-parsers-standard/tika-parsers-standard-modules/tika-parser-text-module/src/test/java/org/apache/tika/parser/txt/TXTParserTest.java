@@ -87,6 +87,22 @@ public class TXTParserTest extends TikaTest {
         assertEquals("\n", handler.toString());
     }
 
+    // juniversalchardet reports US-ASCII from the probe alone; the tail must still decode
+    @Test
+    public void testAsciiPrefixLatin1Tail() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        while (sb.length() < 20000) {
+            sb.append("plain ascii text\n");
+        }
+        sb.append("caf\u00e9\n");
+        Metadata metadata = new Metadata();
+        BodyContentHandler handler = new BodyContentHandler(-1);
+        parser.parse(new ByteArrayInputStream(sb.toString().getBytes(ISO_8859_1)), handler,
+                metadata, new ParseContext());
+        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("caf\u00e9", handler.toString());
+    }
+
     /**
      * Test for the heuristics that we use to assign an eight-bit character
      * encoding to mostly ASCII sequences. If a more specific match can not
