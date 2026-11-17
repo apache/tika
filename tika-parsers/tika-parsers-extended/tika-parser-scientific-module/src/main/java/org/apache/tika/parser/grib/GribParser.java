@@ -30,7 +30,6 @@ import ucar.nc2.Attribute;
 import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
-import ucar.nc2.dataset.NetcdfDataset;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
@@ -44,6 +43,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.climate.ClimateForecast;
+import org.apache.tika.parser.netcdf.NetcdfReaders;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 @TikaComponent
@@ -75,7 +75,8 @@ public class GribParser implements Parser {
             Path gribFile = Files.createTempFile(tmpDir, "tika-file", ".grib2");
             Files.copy(tis, gribFile, StandardCopyOption.REPLACE_EXISTING);
 
-            try (NetcdfFile ncFile = NetcdfDataset.openFile(gribFile.toString(), null)) {
+            try (NetcdfFile ncFile = NetcdfReaders.open(gribFile, NetcdfReaders.GRIB1,
+                    NetcdfReaders.GRIB2)) {
 
                 // first parse out the set of global attributes
                 for (Attribute attr : ncFile.getGlobalAttributes()) {

@@ -28,9 +28,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.inference.MediaConfig;
+import org.apache.tika.parser.inference.MediaFormats;
 import org.apache.tika.parser.inference.Modality;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -112,9 +114,34 @@ public class FfmpegSegmenterTest {
                 "-y", "-i", plain.toString(), "-i", cover.toString(), "-map", "0:a", "-map", "1:v",
                 "-c:a", "copy", "-c:v", "mjpeg", "-disposition:v", "attached_pic",
                 tagged.toString()), 60_000, 10_000, 10_000).getExitValue());
-        MediaSegmenter.Probe probe = segmenter.probe(tagged, new ParseContext());
+        MediaSegmenter.Probe probe = segmenter.probe(tagged, new MediaFormats(), new ParseContext());
         assertTrue(probe.hasAudio());
         assertFalse(probe.hasVideo());
         assertTrue(probe.durationMs() >= 5000);
+    }
+
+    @Test
+    public void testAllowedFormatsReplacesTheDefault() throws Exception {
+        FfmpegSegmenter segmenter = new FfmpegSegmenter();
+        assumeTrue(segmenter.available(), "ffmpeg not on the PATH");
+        Path wav = tmp.resolve("a.wav");
+        assertEquals(0, ProcessUtils.execute(new ProcessBuilder("ffmpeg", "-loglevel", "error",
+                "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=5",
+                wav.toString()), 60_000, 10_000, 10_000).getExitValue());
+        MediaFormats formats = new MediaFormats();
+        formats.setAllowedFormats(List.of("mp3"));
+        TikaException e = assertThrows(TikaException.class,
+                () -> segmenter.probe(wav, formats, new ParseContext()));
+        assertEquals("ffmpeg format 'wav' is not in media-formats.allowedFormats",
+                e.getMessage());
+    }
+
+    @Test
+    public void testAllowedFormatsAreNames() {
+        MediaFormats formats = new MediaFormats();
+        formats.setAllowedFormats(List.of("wav,mp3"));
+        assertThrows(TikaConfigException.class, formats::initialize);
+        formats.setAllowedFormats(List.of());
+        assertThrows(TikaConfigException.class, formats::initialize);
     }
 }

@@ -35,7 +35,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.Metadata;
@@ -75,8 +75,10 @@ public class RarParser implements Parser {
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         Archive rar = null;
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            rar = new Archive(tis.getFile(),
+        // under a fixed name, in a directory of its own
+        IsolatedInput input = IsolatedInput.of(tis.getPath(), ".rar");
+        try {
+            rar = new Archive(input.getPath().toFile(),
                     ArchiveOptions.builder().maxDictionarySize(MAX_DICTIONARY_SIZE).build());
 
             if (rar.isEncrypted()) {
@@ -121,10 +123,13 @@ public class RarParser implements Parser {
         } catch (RarException e) {
             throw new TikaException("RarParser Exception", e);
         } finally {
-            if (rar != null) {
-                rar.close();
+            try {
+                if (rar != null) {
+                    rar.close();
+                }
+            } finally {
+                input.close();
             }
-
         }
 
         xhtml.endDocument();
