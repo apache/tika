@@ -1334,6 +1334,10 @@
                 <requireMavenVersion>
                   <version>3.9</version>
                 </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>[17,)</version>
+                  <message>Building Tika requires JDK 17+. tika-core, tika-app, the parsers and tika-server-client still target Java 11; -Ptest-on-target-jdk runs each module's tests on its target JDK (TIKA-5069).</message>
+                </requireJavaVersion>
               </rules>
             </configuration>
             <goals>
@@ -1620,6 +1624,34 @@
         <!-- Override the Spotless goal when this profile is active -->
         <spotless.goal>check</spotless.goal>
       </properties>
+    </profile>
+    <!-- runs each module's tests on the JDK it targets (maven.compiler.release), via toolchains -->
+    <profile>
+      <id>test-on-target-jdk</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <configuration>
+                <jdkToolchain>
+                  <version>[${maven.compiler.release},${maven.compiler.release}.999]</version>
+                </jdkToolchain>
+              </configuration>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-failsafe-plugin</artifactId>
+              <configuration>
+                <jdkToolchain>
+                  <version>[${maven.compiler.release},${maven.compiler.release}.999]</version>
+                </jdkToolchain>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
     </profile>
     <profile>
       <id>fast</id>
