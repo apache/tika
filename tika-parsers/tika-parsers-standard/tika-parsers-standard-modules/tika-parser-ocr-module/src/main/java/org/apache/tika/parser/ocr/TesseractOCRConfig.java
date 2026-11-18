@@ -88,6 +88,7 @@ public class TesseractOCRConfig implements Serializable {
     private HashMap<String, String> otherTesseractConfig = new HashMap<>();
     private boolean inlineContent = false;
     private boolean preloadLangs = false;
+    private boolean inputNameOnStdin = true;
 
     private String tesseractPath = "";
     private String tessdataPath = "";
@@ -539,6 +540,19 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("Value contains illegal characters: " + value);
         }
         otherTesseractConfig.put(key.trim(), value.trim());
+    }
+
+    public boolean isInputNameOnStdin() {
+        return inputNameOnStdin;
+    }
+
+    /**
+     * Whether tesseract is given the input file's name on standard input (the default) or as
+     * an argument. Set to false only if that fails on this system.
+     */
+    @OperatorOnly
+    public void setInputNameOnStdin(boolean inputNameOnStdin) {
+        this.inputNameOnStdin = inputNameOnStdin;
     }
 
     public String getTesseractPath() {

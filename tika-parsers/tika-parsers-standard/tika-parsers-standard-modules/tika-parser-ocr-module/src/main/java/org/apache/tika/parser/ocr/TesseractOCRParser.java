@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.ocr;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
@@ -48,7 +49,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +69,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.ParentContentHandler;
+import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -109,6 +110,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
     public static final Property IMAGE_MAGICK =
             Property.externalBooleanSeq(TESS_META + "image-magick-processed");
     private static final String TESSDATA_PREFIX = "TESSDATA_PREFIX";
+    private static final String NOT_ACCEPTED = "TesseractOCRParser input is not an image tesseract accepts";
+    private static final String STDIN = "-";
 
     public static final Property
             PSM0_PAGE_NUMBER = Property.externalInteger(TESS_META + "page-number");
@@ -457,21 +460,36 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
     private void doOCR(File input, File output, TesseractOCRConfig config, ParseContext parseContext)
             throws IOException, TikaException {
         // rechecked here: with preprocessing this is ImageMagick's output
-        requireAccepted(input.toPath());
-        runTesseract(input, output, config, parseContext);
+        String format = TesseractInput.format(input.toPath());
+        if (format == null) {
+            throw new TikaException(NOT_ACCEPTED);
+        }
+        // a tiff named on stdin yields only its first page
+        boolean nameOnStdin = defaultConfig.isInputNameOnStdin() && !TesseractInput.TIFF.equals(format);
+        try (IsolatedInput isolated = IsolatedInput.of(input.toPath())) {
+            runTesseract(isolated.getPath(), nameOnStdin, output, config, parseContext);
+        }
     }
 
     private static void requireAccepted(Path input) throws IOException, TikaException {
         if (!TesseractInput.isAccepted(input)) {
-            throw new TikaException("TesseractOCRParser input is not an image tesseract accepts");
+            throw new TikaException(NOT_ACCEPTED);
         }
     }
 
-    private void runTesseract(File input, File output, TesseractOCRConfig config, ParseContext parseContext)
+    /**
+     * @param image       the image, alone in its directory
+     * @param nameOnStdin whether tesseract reads the image's name from stdin, or as an argument
+     */
+    private void runTesseract(Path image, boolean nameOnStdin, File output, TesseractOCRConfig config,
+                              ParseContext parseContext)
             throws IOException, TikaException {
+        // relative to the working directory
+        String name = image.getFileName().toString();
+        byte[] stdin = nameOnStdin ? (name + "\n").getBytes(US_ASCII) : null;
 
         ArrayList<String> cmd = new ArrayList<>(
-                Arrays.asList(tesseractCommand(), input.getAbsolutePath(),
+                Arrays.asList(tesseractCommand(), nameOnStdin ? STDIN : name,
                         output.getAbsolutePath(), "--psm", config.getPageSegMode()));
         //if --psm == 0, don't add anything else to the command line
         if (! "0".equals(config.getPageSegMode())) {
@@ -488,13 +506,16 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
                             "preserve_interword_spaces=0",
                     config.getOutputType().name().toLowerCase(Locale.US)));
         }
+        if (nameOnStdin) {
+            // the name is read from stdin; a page number would not apply to it
+            cmd.addAll(Arrays.asList("-c", "stream_filelist=1", "-c", "tessedit_page_number=-1"));
+        }
         LOG.debug("Tesseract command: " + String.join(" ", cmd));
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(pb);
-        // runs in a directory of its own
-        Path workingDir = Files.createTempDirectory("tika-ocr-");
-        pb.directory(workingDir.toFile());
+        // runs in the image's directory, which holds nothing else
+        pb.directory(image.getParent().toFile());
 
         Process process = null;
         String id = null;
@@ -503,7 +524,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
         try {
             process = pb.start();
             id = register(process);
-            runOCRProcess(process, parseContext, requestedMillis, timeoutMillis);
+            runOCRProcess(process, stdin, parseContext, requestedMillis, timeoutMillis);
             ParseTimeout.checkpoint(parseContext);
         } finally {
             if (process != null) {
@@ -512,7 +533,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
             if (id != null) {
                 release(id);
             }
-            FileUtils.deleteQuietly(workingDir.toFile());
         }
     }
 
@@ -529,9 +549,13 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
         return Paths.get(dir).toAbsolutePath() + File.separator;
     }
 
-    private void runOCRProcess(Process process, ParseContext parseContext, long requestedMillis,
-                               long timeoutMillis) throws IOException, TikaException {
-        process.getOutputStream().close();
+    private void runOCRProcess(Process process, byte[] stdin, ParseContext parseContext,
+                               long requestedMillis, long timeoutMillis) throws IOException, TikaException {
+        try (OutputStream os = process.getOutputStream()) {
+            if (stdin != null) {
+                os.write(stdin);
+            }
+        }
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
         StringBuilder outBuilder = new StringBuilder();
