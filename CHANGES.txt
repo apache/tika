@@ -1,4 +1,4 @@
-Release 3.4.0 - ???
+Release 3.4.0 - 11/18/2026
 
   * tika-server requires Java 17 (CXF 4.2, Jetty 12.1, Jakarta REST 4.0): the last lines that
     ran on Java 11 are end of life (Jetty 11 since January 2025; CXF 4.0.11, in February 2026,
@@ -9,7 +9,7 @@ Release 3.4.0 - ???
 
   * External tools and libraries get the document as "input" plus its type's extension, in
     a directory of their own, and are told which formats to read. GDALParser reads and claims
-    only the drivers in allowedFormats (default GTiff, netCDF, GRIB, FITS, NITF, DTED); the
+    only the drivers in `allowedFormats` (default GTiff, netCDF, GRIB, FITS, NITF, DTED); the
     external2 ExternalParser's inputFileExtension overrides the extension; ISArchiveParser
     reads files beside the study only with readSiblingFiles; RarParser no longer opens other
     volumes of a multi-volume archive; Tesseract and ImageMagick refuse non-image input
