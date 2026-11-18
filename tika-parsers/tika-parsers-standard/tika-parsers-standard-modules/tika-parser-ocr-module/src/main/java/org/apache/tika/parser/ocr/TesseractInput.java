@@ -29,6 +29,8 @@ import org.apache.commons.io.IOUtils;
  */
 final class TesseractInput {
 
+    static final String TIFF = "tiff";
+
     // the longest signature below
     private static final int HEAD_LENGTH = 12;
 
