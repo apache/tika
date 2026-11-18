@@ -1,136 +1,100 @@
-Release 3.4.0 - ???
+Release 3.4.0 - 11/18/2026
 
-  * External tools and libraries are told which formats to read, and get the document as
-    "input" plus an extension of its detected type, in a directory of its own. GDALParser reads
-    and claims only the drivers in allowedFormats (default GTiff, netCDF, GRIB, FITS, NITF,
-    DTED); the external2 ExternalParser's inputFileExtension overrides the extension;
-    ISArchiveParser reads files beside the study only with readSiblingFiles (or when given a
-    directory); Tesseract and ImageMagick refuse input that is not a supported image
+  * tika-server requires Java 17 (CXF 4.2, Jetty 12.1, Jakarta REST 4.0): the last lines that
+    ran on Java 11 are end of life (Jetty 11 since January 2025; CXF 4.0.11, in February 2026,
+    was the last planned 4.0.x release). tika-core, tika-app, the parsers and
+    tika-server-client still run on Java 11. The translators, Lingo24 and MIT-LL language
+    detectors and Grobid/NLTK NER clients use java.net.http instead of CXF; the Solr emitter
+    and iterator no longer pull in Jetty (TIKA-4979).
+
+  * External tools and libraries get the document as "input" plus its type's extension, in
+    a directory of their own, and are told which formats to read. GDALParser reads and claims
+    only the drivers in `allowedFormats` (default GTiff, netCDF, GRIB, FITS, NITF, DTED); the
+    external2 ExternalParser's inputFileExtension overrides the extension; ISArchiveParser
+    reads files beside the study only with readSiblingFiles; RarParser no longer opens other
+    volumes of a multi-volume archive; Tesseract and ImageMagick refuse non-image input
     (TIKA-5065).
 
-  * The RecursiveParserWrapper (/rmeta, tika-app -J) applies maximumPackageEntryDepth
-    across embedded documents, as the concatenated path does. maximumPackageEntryDepth now
-    defaults to 20, as in 4.x, and allows that many levels of embedded documents: /rmeta was
-    bounded only at 99 levels, and the concatenated path stopped at 9.
+  * /rmeta and tika-app -J apply maximumPackageEntryDepth across embedded documents, as the
+    concatenated path does. The default is now 20 levels, as in 4.x (was 99 on /rmeta, 9 on
+    the concatenated path).
 
-  * UTF-8 text that was misdetected as GB18030 is now detected as UTF-8
-    (juniversalchardet 2.5.2).
-
-  * The http fetcher, the Solr and OpenSearch emitters and the Solr pipes iterator no longer
-    send Authorization or Cookie headers, or answer a 401 with the configured password,
-    after a redirect to another host, port or scheme. That includes http to https, so use
-    the https URL in the fetch key. Applies only with maxRedirects > 0 (TIKA-XXXX).
-
-  * The http fetcher with authScheme basic or ntlm no longer fails to initialize with
-    "Username may not be null" (TIKA-XXXX).
-
-  * tika-age-recogniser is deprecated and will be removed in 3.5.0; it depends on the
-    unmaintained age-predictor-api on Spark 2.2 / Scala 2.10. It was removed in 4.0.0
-    (TIKA-4343).
-    
-  * FLVParser bounds AMF metadata nesting (64) and element counts (100,000): a crafted FLV
-    no longer overflows the stack or exhausts memory. A truncated ID3v2 frame yields only the
-    bytes present instead of zero padding, and a partial frame header at the end of a tag
-    no longer throws ArrayIndexOutOfBoundsException (TIKA-4812).
-
-  * The http fetcher, the Solr and OpenSearch emitters, the Solr pipes iterator and the
-    OpenSearch reporter accept verifySsl: true checks TLS certificates and hostnames against
-    the JVM trust store. The default stays false (no verification), as before.
-
-  * tika-age-recogniser runs on Java 11 again: hadoop is back on 3.4.3 (3.5.0, in 3.3.3, needs
-    Java 17). The build now fails if a shipped dependency targets a newer Java than its
-    module (enforceBytecodeVersion) (TIKA-5021).
-    
-  * The SQLite and GeoPackage parsers quote table names when reading each table; a
-    name that needed quoting failed the parse, and a crafted name ran as SQL.
-    
-  * The Outlook .msg parser falls back to the Date: transport header when a message has
-    no MAPI date; the header was never matched, so such messages had no created or
-    modified date (TIKA-4959).
-    
-  * The text/html magic now requires the html tag to end, so an XML file with an
-    element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
-    to the HTML parser (TIKA-4962).
-    
-  * JSoupParser emits the text of CDATA sections again. jsoup 1.23 tokenizes CDATA in
-    HTML content as a bogus comment, which silently dropped every CDATA value in XML
-    that reaches the HTML parser (TIKA-4963).
-    
-  * MP4Parser no longer allocates a box's declared size up front: a box larger than
-    maxBoxSize (default 100 MB, configurable) or than the file is skipped and recorded as
-    a warning, so a crafted box header cannot force a multi-GB allocation. A malformed
-    udta sub-box length no longer throws IllegalArgumentException (TIKA-4812).
-    
-  * The tika-app GUI's Formatted Text view no longer lets a document make Swing
-    construct classes or fetch URLs: only plain elements and attributes reach it, and
-    remote images are not loaded (TIKA-4992).
-    
-  * IptcAnpaParser no longer carries the wire format across parses: an unmarked wire
-    parsed after a Reuters/AP/NYT/Bloomberg one inherited that agency's format rules
-    and publisher (TIKA-4995).
-
-  * EnviHeaderParser and IDMLParser keep per-document state local to the parse:
-    EnviHeaderParser reported a second multi-line field under the first field's key and
-    carried a previous document's description; IDMLParser's page counts accumulated
-    across parses.
-    
-  * GDALParser passes the input path to gdalinfo as one argument; a path containing
-    whitespace was split into several arguments.
-    
-  * The Kafka emitter reports success only once Kafka has acknowledged every record
-    (per acks); a rejected or timed-out record fails the emit instead of being lost
-    silently. lingerMs now defaults to 5 (was 5000), since each emit waits for its acks.
-    transactionalId is refused at load: the emitter never opened a transaction, so the
-    producer rejected every send (TIKA-5008).
-    
-  * HttpFetcher applies its configured connect, socket and connection-request timeouts
-    to fetches. A per-request config replaced the client default instead of merging
-    with it, so no timeout applied to a non-range fetch; connectTimeout set the socket
-    timeout; and the client never set a connect timeout.
-
-  * HttpFetcher refuses request headers whose name is not an RFC 7230 token or whose
-    value holds a control character, from the fetcher config, per-request fetcher config
-    or the httpRequestHeaders metadata; a CRLF in a header name injected request lines.
-    
-  * PPTX slides are extracted in presentation order (p:sldIdLst in presentation.xml)
-    instead of relationship-id order, which put rId10 before rId2; embedded resources
-    follow the same order. Slides that are related but missing from the list are
-    extracted last and counted in msoffice:ppt:num-unlisted-slides (TIKA-5017).
-
-  * The default zip-bomb ratio (AutoDetectParserConfig maximumCompressionRatio) is 1000,
-    up from 100. The ratio is now measured across the whole embedded tree against the
-    container's bytes, so nested compression is still caught; at 100, ordinary compressed
-    logs and text tripped it. Set maximumCompressionRatio to 100 to restore the old limit
+  * The default zip-bomb ratio (maximumCompressionRatio) is 1000, up from 100, and is measured
+    across the whole document tree against the container's bytes, on /rmeta and -J as well.
+    Inputs that expand more than 1000:1, such as large compressed logs, now fail there as
+    they already did on the concatenated path; raise maximumCompressionRatio if needed
     (TIKA-4985).
 
-  * A RAR entry junrar fails to extract is recorded as
-    X-TIKA:EXCEPTION:embedded_stream_exception on the container; what was extracted
-    before the failure is kept and the rest of the archive is parsed (junrar 8.1.2,
-    TIKA-4985).
+  * UTF-8 text misdetected as GB18030 is detected as UTF-8 (juniversalchardet 2.5.2).
 
-  * ISArchiveParser resolves the ISA-Tab directory on each parse instead of reading every
-    later document's investigation and assay files from the first document's directory,
-    and concurrent parses no longer share the study file name (TIKA-4986).
+  * The text/html magic requires the html tag to end, so XML with an element such as
+    <htmlPath> in its first 8K is no longer detected as HTML (TIKA-4962).
 
-  * ISArchiveParser(String location) is deprecated and removed in 4.x: the ISA-Tab
-    directory is always the parent directory of the study file, so pass a file-backed
-    TikaInputStream (TikaInputStream.get(Path)) (TIKA-4986).
-    
-  * The file-system emitter can gzip its output (param "compression": "gzip"), and tika-eval
-    finds gzipped extracts (.json.gz) when comparing against a plain extract set, measuring
-    their extract lengths and min/max length limits on uncompressed size (TIKA-4989).
+  * JSoupParser emits CDATA text again; jsoup 1.23 dropped it (TIKA-4963).
 
-  * tika-server caps attachments on the multipart/form-data endpoints at 50 MB by
-    default; set <maxAttachmentBytes> in the server config to raise it or -1 to
-    remove it (CVE-2026-54225). The form-parameter cap from CVE-2026-57819
-    is set as well (TIKA-4964).
+  * RarParser records an entry junrar can't extract as
+    X-TIKA:EXCEPTION:embedded_stream_exception, keeps what was extracted, and parses the rest
+    of the archive (junrar 8.1.2, TIKA-4985).
 
-  * tika-server (tika-server-core, tika-server-standard, tika-server-eval)
-    now requires Java 17 and moves to CXF 4.2, Jetty 12.1 and Jakarta REST 4.0.
-    tika-core, tika-app, the parsers and tika-server-client still run on
-    Java 11. The translators, the Lingo24 and MIT-LL language detectors and
-    the Grobid/NLTK NER clients now use java.net.http instead of CXF, and
-    the solr emitter/iterator no longer pull in jetty (TIKA-4979).
+  * ISArchiveParser resolves the ISA-Tab directory per parse; it reused the first document's
+    directory, and concurrent parses shared the study file name. ISArchiveParser(String
+    location) is deprecated and removed in 4.x: pass a file-backed TikaInputStream
+    (TIKA-4986).
+
+  * Parsers no longer carry per-document state across parses: IptcAnpaParser's wire format,
+    EnviHeaderParser's field keys and description, IDMLParser's page counts (TIKA-4995).
+
+  * FLVParser bounds AMF nesting (64) and element counts (100,000); truncated ID3v2 frames and
+    partial frame headers no longer throw (TIKA-4812).
+
+  * MP4Parser skips, with a warning, any box larger than maxBoxSize (default 100 MB) or the
+    file, instead of allocating it; a malformed udta sub-box no longer throws (TIKA-4812).
+
+  * The SQLite and GeoPackage parsers quote table names; a name that needed quoting failed
+    the parse, and a crafted name ran as SQL.
+
+  * GDALParser passes the input path to gdalinfo as one argument.
+
+  * The .msg parser falls back to the Date: transport header when there is no MAPI date
+    (TIKA-4959).
+
+  * PPTX slides are extracted in presentation order (p:sldIdLst), as are their embedded
+    resources; unlisted slides come last, counted in msoffice:ppt:num-unlisted-slides
+    (TIKA-5017).
+
+  * The tika-app GUI's Formatted Text view passes only plain elements and attributes and
+    loads no remote images (TIKA-4992).
+
+  * The http fetcher, Solr and OpenSearch emitters and Solr pipes iterator no longer send
+    Authorization or Cookie headers, or answer a 401, after a redirect to another host, port
+    or scheme (including http to https; use the https URL). Applies only with
+    maxRedirects > 0 (TIKA-XXXX).
+
+  * The http fetcher, Solr and OpenSearch emitters, Solr pipes iterator and OpenSearch
+    reporter accept verifySsl: true to check certificates and hostnames against the JVM trust
+    store. The default stays false.
+
+  * HttpFetcher applies its connect, socket and connection-request timeouts (a per-request
+    config replaced the defaults, so none applied), and refuses header names that aren't
+    RFC 7230 tokens and values with control characters.
+
+  * The http fetcher with authScheme basic or ntlm initializes again ("Username may not be
+    null").
+
+  * The Kafka emitter succeeds only once every record is acknowledged (per acks); lingerMs
+    defaults to 5 (was 5000); transactionalId is refused at load (TIKA-5008).
+
+  * The file-system emitter can gzip its output ("compression": "gzip"), and tika-eval reads
+    .json.gz extracts, measuring lengths uncompressed (TIKA-4989).
+
+  * tika-server caps multipart/form-data attachments at 50 MB by default (maxAttachmentBytes;
+    -1 removes it) (CVE-2026-54225), and sets the form-parameter cap from CVE-2026-57819
+    (TIKA-4964).
+
+  * tika-age-recogniser is deprecated, for removal in 3.5.0 (removed in 4.0.0); it depends on
+    the unmaintained age-predictor-api on Spark 2.2 / Scala 2.10 (TIKA-4343). It runs on
+    Java 11 again (hadoop 3.4.3), and the build fails if a shipped dependency targets a newer
+    Java than its module (TIKA-5021).
 
 Release 3.3.3 - 10/09/2026
 
