@@ -24,8 +24,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,6 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -76,6 +81,50 @@ public class TesseractOCRParserTest extends TikaTest {
             assertEquals("TesseractOCRParser input is not an image tesseract accepts",
                     e.getMessage());
         }
+    }
+
+    @Test
+    public void testInputNameOnStdinOff() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
+        TesseractOCRParser p = new TesseractOCRParser();
+        p.setInputNameOnStdin(false);
+        p.initialize(Collections.emptyMap());
+        BodyContentHandler handler = new BodyContentHandler();
+        try (InputStream is = getResourceAsStream("/test-documents/testOCR_spacing.png")) {
+            p.parse(is, handler, new Metadata(), new ParseContext());
+        }
+        assertContains("The quick", handler.toString());
+    }
+
+    @Test
+    public void testFileNameOutsideAscii(@TempDir Path tmp) throws Exception {
+        assumeTrue(canRun(), "can run OCR");
+        Path image;
+        try (InputStream is = getResourceAsStream("/test-documents/testOCR_spacing.png")) {
+            image = tmp.resolve("\u00e9\u6587.png");
+            Files.copy(is, image);
+        } catch (InvalidPathException | IOException e) {
+            assumeTrue(false, "file system does not allow the name");
+            return;
+        }
+        TesseractOCRParser p = new TesseractOCRParser();
+        p.initialize(Collections.emptyMap());
+        BodyContentHandler handler = new BodyContentHandler();
+        try (TikaInputStream tis = TikaInputStream.get(image)) {
+            p.parse(tis, handler, new Metadata(), new ParseContext());
+        }
+        assertContains("The quick", handler.toString());
+    }
+
+    @Test
+    public void testPageNumberIsIgnoredForSinglePageImage() throws Exception {
+        assumeTrue(canRun(), "can run OCR");
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.addOtherTesseractConfig("tessedit_page_number", "1");
+        ParseContext context = new ParseContext();
+        context.set(TesseractOCRConfig.class, config);
+        assertContains("The quick",
+                getXML("testOCR_spacing.png", getMetadata(MediaType.image("png")), context).xml);
     }
 
     @Test
