@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+    <parsers>
+        <parser class="org.apache.tika.parser.ntfs.NTFSParser">
+            <mime>application/x-ntfs</mime>
+        </parser>
+    </parsers>
+    <mime-types>
+        <mime-type type="application/x-ntfs">
+            <glob pattern="*.img"/>
+        </mime-type>
+    </mime-types>
+</properties>
