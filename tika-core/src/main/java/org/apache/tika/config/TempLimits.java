@@ -28,9 +28,11 @@ import org.apache.tika.parser.ParseContext;
  * Limit on the temp files Tika writes for one task.
  * <p>
  * {@code maxTempBytes} bounds the bytes held at one time in the temp files Tika itself
- * writes while parsing: spooled streams above all. Reaching it fails the write with a
- * {@link org.apache.tika.exception.TempLimitReachedException}. Temp files written by a
- * library or an external program are not counted. Default 50 GB; {@code -1} for no limit.
+ * writes for a task: spooled streams, parsers' own temp files, a document a fetcher
+ * downloads to temp, and the output of external programs once they have written it.
+ * Reaching it fails the write with a
+ * {@link org.apache.tika.exception.TempLimitReachedException}. Temp files written inside
+ * a library are not counted. Default 50 GiB; {@code -1} for no limit.
  * <p>
  * Applied by tika-pipes, which turns it into one {@link TempBytesBudget} per task. Parsing
  * in-process, nothing is limited unless the caller puts a budget in the context.

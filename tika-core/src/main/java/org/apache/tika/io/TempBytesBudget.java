@@ -26,8 +26,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * deletes its files, so a container's entries spooled one after another each see the
  * whole budget.
  * <p>
- * It covers only temp files written through that method. A library or an external
- * program that writes its own temp files is not counted.
+ * It covers only temp files written through that method, and files something else wrote
+ * that are reported afterwards through {@link TemporaryResources#chargeTempFile}, as Tika
+ * does for the output of the external programs it runs. Temp files written inside a
+ * library are not counted.
  * <p>
  * Thread-safe.
  *

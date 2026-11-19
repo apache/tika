@@ -66,10 +66,12 @@ Release 4.3.0 - ???
 
   SERVER, PIPES AND OPERATIONS
    * New temp-limits setting: tika-pipes bounds the bytes a task holds at once in the
-     temp files Tika spools streams to (maxTempBytes, 50 GiB by default, -1 for none);
-     the write past it fails with TempLimitReachedException and the fork keeps running.
-     It covers only temp files Tika itself writes, not those of its dependencies or of
-     external programs, so it is not a bound on disk use (TIKA-5075).
+     temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none):
+     spooled streams, parsers' own temp files, a document a fetcher downloads to temp,
+     and external programs' output once written. The write past it fails with
+     TempLimitReachedException and the fork keeps running; a fetched document larger
+     than the limit now fails. Temp files written inside third-party libraries are not
+     counted, so it is not a bound on disk use (TIKA-5075).
 
    * A pipes fork that times out, crashes or runs out of memory is killed and its temp
      directory deleted at once, not when that client's next request arrives; an idle

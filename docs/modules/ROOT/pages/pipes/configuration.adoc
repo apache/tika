@@ -89,8 +89,8 @@ spooled byte is RAM, outside the forks' `-Xmx`, so the heap limit no longer boun
 document can make the host hold in memory.
 
 `temp-limits` (xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits])
-bounds the streams Tika spools, 50 GiB per task by default, but not the temp files its
-libraries and external programs write: one large archive expanding
+bounds the temp files Tika itself writes, 50 GiB per task by default, but not those its
+libraries write, nor an external program's output while it is being written: one large archive expanding
 into tmpfs can exhaust memory for every process on the host or get a container evicted,
 and a fork directory orphaned by a killed parent pins that RAM until someone deletes it.
 A slow run is recoverable; a lost host is not. If you must, give tmpfs a dedicated mount
