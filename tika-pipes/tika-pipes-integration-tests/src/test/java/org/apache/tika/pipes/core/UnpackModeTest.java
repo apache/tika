@@ -36,12 +36,14 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -391,6 +393,46 @@ public class UnpackModeTest {
         // testMaxUnpackBytesUnlimited shows these files otherwise total 4 x 146 bytes
         assertTrue(totalBytesWritten <= 10,
                 "Total bytes written should be limited by maxUnpackBytes. Got: " + totalBytesWritten);
+    }
+
+    @Test
+    public void testMaxTempBytesStopsTheSpool() throws Exception {
+        // 5 KB of zip, 20 MB once inflated: UNPACK spools each embedded file to temp
+        String bomb = "zeros.zip";
+        try (ZipOutputStream zip = new ZipOutputStream(
+                Files.newOutputStream(tmp.resolve("input").resolve(bomb)))) {
+            zip.putNextEntry(new ZipEntry("zeros.bin"));
+            byte[] chunk = new byte[1024 * 1024];
+            for (int i = 0; i < 20; i++) {
+                zip.write(chunk);
+            }
+            zip.closeEntry();
+        }
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+        parseContext.set(TempLimits.class, new TempLimits(2 * 1024 * 1024));
+
+        PipesResult pipesResult = process("temp-limit", bomb, bomb, parseContext);
+        assertFalse(pipesResult.isProcessCrash(), "Status: " + pipesResult.status() +
+                ", Message: " + pipesResult.message());
+
+        List<Metadata> metadataList = readMetadataList(outputDir("temp-limit"), bomb);
+        boolean reported = false;
+        for (Metadata m : metadataList) {
+            for (String name : m.names()) {
+                reported |= String.join(" ", m.getValues(name)).contains("TempLimitReachedException");
+            }
+        }
+        assertTrue(reported, "no TempLimitReachedException in " + metadataList);
+        long unpacked = embeddedFiles(outputDir("temp-limit"), bomb).values().stream()
+                .mapToLong(Long::longValue).sum();
+        assertEquals(0, unpacked, "nothing past the limit is extracted");
+
+        // the fork survived and the budget was given back
+        ParseContext next = new ParseContext();
+        next.set(ParseMode.class, ParseMode.UNPACK);
+        assertTrue(process("temp-limit-next", testDocWithEmbedded, testDocWithEmbedded, next)
+                .isSuccess());
     }
 
     @Test

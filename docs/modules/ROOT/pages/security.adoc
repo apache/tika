@@ -58,6 +58,15 @@ limits — escaping the memory, timeout, or process bounds that sandboxing is su
 enforce — is a bug in Tika, and the project does treat that as a security issue. Report it
 privately to mailto:security@apache.org[security@apache.org], not in a public issue.
 
+IMPORTANT: Disk is not one of those bounds. Tika can only limit the temp files Tika itself
+writes (`temp-limits`, see xref:advanced/setting-limits.adoc#temp-file-limits[Temp file
+limits]); it cannot limit the temp files written by the third-party libraries and external
+programs it parses with. That limit is hardening, not containment: a document can still
+fill the volume `java.io.tmpdir` is on, and keeping that volume from taking out the host is
+the operator's responsibility. Where that volume is tmpfs, which the default `/tmp` is on some
+systems, temp files use RAM outside the forks' heap limit, so the memory bound does not hold
+either: put `java.io.tmpdir` on disk (xref:pipes/configuration.adoc[Pipes configuration]).
+
 === Tika Server and gRPC Trust Model
 
 IMPORTANT: Neither `tika-server` nor `tika-grpc` is a security boundary. They perform no

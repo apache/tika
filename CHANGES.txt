@@ -65,6 +65,12 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * New temp-limits setting: tika-pipes bounds the bytes a task holds at once in the
+     temp files Tika spools streams to (maxTempBytes, 50 GiB by default, -1 for none);
+     the write past it fails with TempLimitReachedException and the fork keeps running.
+     It covers only temp files Tika itself writes, not those of its dependencies or of
+     external programs, so it is not a bound on disk use (TIKA-5075).
+
    * An idle pipes fork whose parent closes or drops the connection without asking it
      to shut down, as when tika-server is killed, logs one warning and exits with the
      parent-gone code (23) instead of a "main loop error" stack trace and exit 19.

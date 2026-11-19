@@ -187,6 +187,7 @@ public class SharedServerResources implements Closeable {
         PipesServer.overlayRequest(requestContext, mergedContext, pipesConfig,
                 defaultContentHandlerFactory);
         PipesServer.seedCacheMemoryBudget(mergedContext);
+        PipesServer.seedTempBudget(mergedContext);
         return mergedContext;
     }
 

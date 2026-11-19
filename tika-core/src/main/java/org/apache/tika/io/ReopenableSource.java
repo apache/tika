@@ -179,7 +179,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     public Path getPath(String suffix) throws IOException {
         if (spilledPath == null) {
             Path p = tmp.createTempFile(suffix == null ? this.suffix : suffix);
-            try (OutputStream out = Files.newOutputStream(p)) {
+            try (OutputStream out = tmp.newOutputStream(p)) {
                 if (retainedBuffer != null) {
                     out.write(retainedBuffer, 0, retainedLength);
                     if (channelPins == 0) {

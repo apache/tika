@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -115,7 +114,7 @@ class ByteArraySource extends InputStream implements TikaInputSource {
             // assign only on success: a failed write must not leave a truncated file that
             // a later getPath() would hand back as if it were complete
             Path p = tmp.createTempFile(suffix);
-            try (OutputStream out = Files.newOutputStream(p)) {
+            try (OutputStream out = tmp.newOutputStream(p)) {
                 out.write(data, 0, length);
             }
             spilledPath = p;

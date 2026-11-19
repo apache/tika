@@ -35,6 +35,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -107,6 +108,7 @@ public class PopplerRenderer implements Renderer {
                                 RenderRequest... requests)
             throws IOException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, parseContext);
         PageBasedRenderResults results = new PageBasedRenderResults(tmp);
         Path path = tis.getPath();
         PDDocument open = tis.getOpenContainer() instanceof PDDocument d ? d : null;
@@ -123,7 +125,7 @@ public class PopplerRenderer implements Renderer {
                 int from = range == PageRangeRequest.RENDER_ALL ? 1 : range.getFrom();
                 int to = range == PageRangeRequest.RENDER_ALL ? last : Math.min(range.getTo(), last);
                 for (int page = from; page <= to; page++) {
-                    results.add(renderPage(path, dir, document, page, parseContext));
+                    results.add(renderPage(path, dir, document, page, parseContext, tmp));
                 }
             }
         } catch (Throwable t) {
@@ -139,7 +141,8 @@ public class PopplerRenderer implements Renderer {
     }
 
     private RenderResult renderPage(Path pdf, Path dir, PDDocument document, int page,
-                                    ParseContext parseContext) throws IOException, TikaException {
+                                    ParseContext parseContext, TemporaryResources tmp)
+            throws IOException, TikaException {
         RenderingTracker tracker = parseContext.get(RenderingTracker.class);
         if (tracker == null) {
             tracker = new RenderingTracker();
@@ -177,7 +180,14 @@ public class PopplerRenderer implements Renderer {
         File[] files = dir.toFile().listFiles();
         for (File f : files == null ? new File[0] : files) {
             if (matcher.reset(f.getName()).find() && Integer.parseInt(matcher.group(1)) == page) {
-                return new RenderResult(RenderResult.STATUS.SUCCESS, id, f.toPath(), m);
+                RenderResult rendered = new RenderResult(RenderResult.STATUS.SUCCESS, id, f.toPath(), m);
+                try {
+                    tmp.chargeTempFile(f.toPath());
+                } catch (IOException e) {
+                    rendered.close();
+                    throw e;
+                }
+                return rendered;
             }
         }
         throw new TikaException("pdftoppm wrote no image for page " + page + ": "

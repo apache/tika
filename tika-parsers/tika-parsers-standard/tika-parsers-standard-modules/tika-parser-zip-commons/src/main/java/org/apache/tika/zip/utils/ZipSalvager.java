@@ -33,6 +33,7 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Zip;
@@ -168,13 +169,15 @@ public class ZipSalvager {
      * if retry on DATA_DESCRIPTOR is needed.
      *
      * @param tis               the TikaInputStream to read from (not closed by this method)
-     * @param salvagedZip       the output path for the salvaged ZIP
+     * @param salvagedZip       the output path for the salvaged ZIP; what is written counts
+     *                          against {@code tis}'s temp budget, if it has one, until
+     *                          {@code tis} is closed
      * @param allowStoredEntries whether to allow stored entries with data descriptors
      * @throws IOException if salvaging fails
      */
     public static void salvageCopy(TikaInputStream tis, Path salvagedZip,
                                    boolean allowStoredEntries) throws IOException {
-        try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(Files.newOutputStream(salvagedZip));
+        try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(tis.newTempOutputStream(salvagedZip));
                 ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
                         CloseShieldInputStream.wrap(tis), "UTF8", false,
                         allowStoredEntries)) {
@@ -193,6 +196,8 @@ public class ZipSalvager {
             }
             outputStream.flush();
             outputStream.finish();
+        } catch (TempLimitReachedException e) {
+            throw e;
         } catch (UnsupportedZipFeatureException e) {
             //now retry with data descriptor support
             if (!allowStoredEntries &&
@@ -238,6 +243,8 @@ public class ZipSalvager {
                 try {
                     IOUtils.copy(zipArchiveInputStream, outputStream);
                     successfullyCopied = true;
+                } catch (TempLimitReachedException e) {
+                    throw e;
                 } catch (IOException e) {
                     //this can hit a "truncated ZipFile" IOException
                 }

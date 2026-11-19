@@ -19,6 +19,7 @@ package org.apache.tika.pipes.fetcher.googledrive;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
@@ -31,10 +32,12 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -104,9 +107,12 @@ public class GoogleDriveFetcher extends AbstractTikaExtension implements Fetcher
 
                 if (config.isSpoolToTemp()) {
                     TemporaryResources tmp = new TemporaryResources();
+                    TempLimits.apply(tmp, parseContext);
                     try {
                         Path tmpPath = tmp.createTempFile(metadata);
-                        FileUtils.copyInputStreamToFile(is, tmpPath.toFile());
+                        try (InputStream in = is; OutputStream os = tmp.newOutputStream(tmpPath)) {
+                            IOUtils.copy(in, os);
+                        }
                         // the 3-arg form registers tmp for cleanup
                         return TikaInputStream.get(tmpPath, metadata, tmp);
                     } catch (Throwable t) {
@@ -121,6 +127,9 @@ public class GoogleDriveFetcher extends AbstractTikaExtension implements Fetcher
                 }
                 return TikaInputStream.get(is);
 
+            } catch (TempLimitReachedException e) {
+                // a retry would only fill the same budget again
+                throw e;
             } catch (Exception e) {
                 LOG.warn("Exception fetching on retry=" + tries, e);
                 ex = e;

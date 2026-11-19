@@ -30,11 +30,13 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.inference.locator.TemporalLocator;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
@@ -383,18 +385,24 @@ public class EmbedTask implements InferenceTask {
         List<MediaInput> inputs = new ArrayList<>(cells.size());
         List<Path> cuts = new ArrayList<>(cells.size());
         String mime = MediaSegmenter.mimeType(modality);
-        for (MediaSegmenter.Cell cell : cells) {
-            Path cut = segmenter.cut(unit.getPath(), cell, modality, dir, formats, context);
-            if (binding.getMaxBytes() >= 0 && Files.size(cut) > binding.getMaxBytes()) {
-                Files.deleteIfExists(cut);
-                throw new TikaException("segment " + cell.index() + " is over maxBytes");
+        List<float[]> vectors;
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            TempLimits.apply(tmp, context);
+            for (MediaSegmenter.Cell cell : cells) {
+                Path cut = segmenter.cut(unit.getPath(), cell, modality, dir, formats, context);
+                if (binding.getMaxBytes() >= 0 && Files.size(cut) > binding.getMaxBytes()) {
+                    Files.deleteIfExists(cut);
+                    throw new TikaException("segment " + cell.index() + " is over maxBytes");
+                }
+                // ffmpeg wrote it; all we can do is count it once it is done
+                tmp.chargeTempFile(cut);
+                inputs.add(new MediaInput(Files.readAllBytes(cut), mime, modality));
+                cuts.add(cut);
             }
-            inputs.add(new MediaInput(Files.readAllBytes(cut), mime, modality));
-            cuts.add(cut);
-        }
-        List<float[]> vectors = embedder.embedMedia(inputs, context);
-        for (Path cut : cuts) {
-            Files.deleteIfExists(cut);
+            vectors = embedder.embedMedia(inputs, context);
+            for (Path cut : cuts) {
+                Files.deleteIfExists(cut);
+            }
         }
         List<Chunk> chunks = new ArrayList<>(cells.size());
         for (int i = 0; i < cells.size(); i++) {

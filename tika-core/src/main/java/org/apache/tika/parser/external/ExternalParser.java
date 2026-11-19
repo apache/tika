@@ -38,6 +38,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TemporaryResources;
@@ -194,6 +195,11 @@ public class ExternalParser implements Parser {
             FileProcessResult result = ProcessUtils.execute(
                     new ProcessBuilder(thisCommandLine), context,
                     config.getTimeoutMillis(), config.getMaxStdOut(), config.getMaxStdErr());
+
+            if (outFile != null) {
+                TempLimits.apply(tmp, context);
+                tmp.chargeTempFile(outFile);
+            }
 
             // Set process metadata
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());

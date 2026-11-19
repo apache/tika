@@ -25,7 +25,6 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,7 +33,6 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,6 +63,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.RequestConfigurable;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
@@ -246,11 +245,12 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         try (TemporaryResources tmp = new TemporaryResources()) {
+            TempLimits.apply(tmp, context);
             int w = image.getWidth(null);
             int h = image.getHeight(null);
             BufferedImage bImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
             File file = tmp.createTemporaryFile();
-            try (OutputStream fos = new FileOutputStream(file)) {
+            try (OutputStream fos = tmp.newOutputStream(file.toPath())) {
                 ImageIO.write(bImage, "png", fos);
             }
             try (TikaInputStream tis = TikaInputStream.get(file.toPath())) {
@@ -282,6 +282,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
+            TempLimits.apply(tmp, parseContext);
             TikaInputStream tikaStream = TikaInputStream.get(tis, tmp, metadata);
 
             //trigger the spooling to a tmp file if the stream wasn't
@@ -379,8 +380,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
                         // which will be preprocessed for OCR
 
                         try (TemporaryResources tmp = new TemporaryResources()) {
+                            TempLimits.apply(tmp, parseContext);
                             Path tmpFile = tmp.createTempFile();
-                            Files.copy(input, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                            try (OutputStream os = tmp.newOutputStream(tmpFile)) {
+                                Files.copy(input, os);
+                            }
                             imagePreprocessor.process(tmpFile, tmpFile, metadata, config);
                             doOCR(tmpFile.toFile(), tmpOCROutputFile, config, parseContext);
                         }
@@ -390,6 +394,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
                 }
 
                 if (tmpTxtOutput.exists()) {
+                    tikaInputStream.chargeTempFile(tmpTxtOutput.toPath());
                     try (InputStream is = new FileInputStream(tmpTxtOutput)) {
                         if (config.getPageSegMode().equals("0")) {
                             extractOSD(is, metadata);

@@ -34,9 +34,11 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -92,11 +94,14 @@ public class LibPstParser implements Parser, Initializable {
         LibPstParserConfig activeConfig = parseContext.get(LibPstParserConfig.class, defaultConfig);
         Path outDir = Files.createTempDirectory("libpst-");
         Path debugFile = activeConfig.isDebug() ? Files.createTempFile("tika-libpst-debug", ".txt") : null;
+        TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, parseContext);
         try {
             ProcessBuilder pb = getProcessBuilder(pst, activeConfig, outDir, debugFile);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata, parseContext);
             FileProcessResult fileProcessResult = ProcessUtils.execute(pb, parseContext,
                     activeConfig.getTimeoutMillis(), MAX_STDOUT, MAX_STDERR);
+            tmp.chargeTempFile(outDir);
             xhtml.startDocument();
             processContents(outDir, activeConfig, xhtml, metadata, parseContext);
             if (fileProcessResult.isTimeout()) {
@@ -110,6 +115,7 @@ public class LibPstParser implements Parser, Initializable {
             }
             xhtml.endDocument();
         } finally {
+            tmp.close();
             try {
                 FileUtils.deleteDirectory(outDir.toFile());
             } catch (IOException e) {

@@ -31,7 +31,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -100,6 +99,7 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -1435,10 +1435,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private void parseIncrementalUpdate(int count, Path path, StartXRefOffset xRefOffset)
             throws SAXException, IOException {
         TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, context);
         try {
             Path update = tmp.createTempFile();
             try (InputStream input = Files.newInputStream(path);
-                    OutputStream outputStream = Files.newOutputStream(update, StandardOpenOption.WRITE)) {
+                    OutputStream outputStream = tmp.newOutputStream(update)) {
                 IOUtils.copyLarge(input, outputStream, 0, xRefOffset.getEndEofOffset());
             }
             Metadata updateMetadata = Metadata.newInstance(context);

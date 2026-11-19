@@ -18,14 +18,18 @@ package org.apache.tika.io;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -52,6 +56,11 @@ public class TemporaryResources implements Closeable {
      * Directory for temporary files, <code>null</code> for the system default.
      */
     private Path tempFileDir = null;
+
+    private TempBytesBudget tempBudget;
+
+    // charged to tempBudget and not yet given back
+    private long tempBytesCharged;
 
     /**
      * Sets the directory to be used for the temporary files created by
@@ -102,6 +111,79 @@ public class TemporaryResources implements Closeable {
 
     public Path createTempFile() throws IOException {
         return createTempFile(StringUtils.EMPTY);
+    }
+
+    /**
+     * Sets the budget that {@link #newOutputStream(Path)} charges. The first budget set
+     * wins; {@code null} is ignored. Bytes written before a budget is set are not counted.
+     *
+     * @since Apache Tika 4.3
+     */
+    public void setTempBudget(TempBytesBudget tempBudget) {
+        if (this.tempBudget == null) {
+            this.tempBudget = tempBudget;
+        }
+    }
+
+    /**
+     * Opens a temp file from {@link #createTempFile(String)} for writing, charging each
+     * write to the {@link TempBytesBudget}, if one is set. What was charged is given back
+     * when {@link #close()} deletes the files. Use this, not {@code Files.newOutputStream},
+     * for any temp file whose size the document decides.
+     *
+     * @throws TempLimitReachedException from a write that would exceed the budget
+     * @since Apache Tika 4.3
+     */
+    public OutputStream newOutputStream(Path tempFile) throws IOException {
+        return new ChargingOutputStream(Files.newOutputStream(tempFile));
+    }
+
+    /**
+     * Charges a temp file, or everything under a temp directory, that something else
+     * wrote: an external program or a library. That cannot stop the writer early; it
+     * makes what it wrote count, and fails once the total is past the budget.
+     *
+     * @throws TempLimitReachedException if the budget cannot cover it
+     * @since Apache Tika 4.3
+     */
+    public void chargeTempFile(Path fileOrDirectory) throws IOException {
+        if (tempBudget == null || !Files.exists(fileOrDirectory)) {
+            return;
+        }
+        long bytes;
+        try (Stream<Path> paths = Files.walk(fileOrDirectory)) {
+            bytes = paths.filter(Files::isRegularFile).mapToLong(p -> p.toFile().length()).sum();
+        }
+        charge(bytes);
+    }
+
+    private void charge(long n) throws TempLimitReachedException {
+        if (tempBudget == null) {
+            return;
+        }
+        if (!tempBudget.tryReserve(n)) {
+            throw new TempLimitReachedException(tempBudget.getMaxBytes());
+        }
+        tempBytesCharged += n;
+    }
+
+    private final class ChargingOutputStream extends FilterOutputStream {
+
+        ChargingOutputStream(OutputStream out) {
+            super(out);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            charge(1);
+            out.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            charge(len);
+            out.write(b, off, len);
+        }
     }
 
     /**
@@ -173,6 +255,10 @@ public class TemporaryResources implements Closeable {
             closeAll(resources.toArray(new Closeable[0]));
         } finally {
             resources.clear();
+            if (tempBudget != null) {
+                tempBudget.release(tempBytesCharged);
+            }
+            tempBytesCharged = 0;
         }
     }
 

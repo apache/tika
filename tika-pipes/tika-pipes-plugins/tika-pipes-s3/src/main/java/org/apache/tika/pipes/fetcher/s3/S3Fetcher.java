@@ -17,16 +17,16 @@
 package org.apache.tika.pipes.fetcher.s3;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -44,7 +44,9 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 import org.apache.tika.config.ConfigValidator;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.FileTooLongException;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.FilenameUtils;
@@ -168,7 +170,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
         do {
             try {
                 long start = System.currentTimeMillis();
-                TikaInputStream tis = _fetch(theFetchKey, metadata, startRange, endRange);
+                TikaInputStream tis = _fetch(theFetchKey, metadata, startRange, endRange, parseContext);
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("total to fetch {}", elapsed);
                 return tis;
@@ -185,6 +187,9 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
             } catch (SdkClientException e) {
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = new IOException(e);
+            } catch (TempLimitReachedException e) {
+                // a retry would only fill the same budget again
+                throw e;
             } catch (IOException e) {
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = e;
@@ -202,8 +207,8 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
         throw ex;
     }
 
-    private TikaInputStream _fetch(String fetchKey, Metadata metadata,
-                               Long startRange, Long endRange) throws IOException {
+    private TikaInputStream _fetch(String fetchKey, Metadata metadata, Long startRange,
+                               Long endRange, ParseContext parseContext) throws IOException {
         TemporaryResources tmp = null;
         ResponseInputStream<GetObjectResponse> s3Object = null;
         try {
@@ -238,9 +243,12 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
             } else {
                 start = System.currentTimeMillis();
                 tmp = new TemporaryResources();
+                TempLimits.apply(tmp, parseContext);
                 Path tmpPath = tmp.createTempFile(FilenameUtils.getSuffixFromPath(fetchKey));
-                Files.copy(s3Object, tmpPath, StandardCopyOption.REPLACE_EXISTING);
-                // Files.copy does not close its input; the success path must
+                try (OutputStream os = tmp.newOutputStream(tmpPath)) {
+                    IOUtils.copyLarge(s3Object, os);
+                }
+                // the copy does not close its input; the success path must
                 s3Object.close();
                 TikaInputStream tis = TikaInputStream.get(tmpPath, metadata, tmp);
                 LOGGER.debug("took {} ms to fetch metadata and copy to local tmp file",

@@ -20,14 +20,15 @@ import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Streams decoded bytes from an RTF {@code \pict} group to a temp file.
@@ -49,9 +50,18 @@ public class RTFPictStreamParser implements Closeable {
      * @param maxBytes maximum number of bytes to accept (-1 for unlimited)
      */
     public RTFPictStreamParser(long maxBytes) throws IOException {
+        this(maxBytes, null);
+    }
+
+    /**
+     * @param maxBytes maximum number of bytes to accept (-1 for unlimited)
+     * @param context  source of the temp budget; may be null
+     */
+    public RTFPictStreamParser(long maxBytes, ParseContext context) throws IOException {
         this.maxBytes = maxBytes;
+        TempLimits.apply(tmp, context);
         this.tempFile = tmp.createTempFile(".bin");
-        this.out = new BufferedOutputStream(Files.newOutputStream(tempFile));
+        this.out = new BufferedOutputStream(tmp.newOutputStream(tempFile));
     }
 
     /**

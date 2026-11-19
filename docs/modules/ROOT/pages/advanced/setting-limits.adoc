@@ -42,7 +42,12 @@ throughout the parse.
 
 |`unpack-config`
 |`UnpackConfig`
-|Total bytes written by `ParseMode.UNPACK`. Pipes only.
+|Total bytes extracted by `ParseMode.UNPACK`. Pipes only.
+
+|`temp-limits`
+|`TempLimits`
+|Bytes held at once in the temp files Tika itself spools streams to; not those of
+its dependencies. Pipes only.
 
 |`standard-metadata-limiter-factory`
 |`StandardMetadataLimiterFactory`
@@ -271,7 +276,9 @@ scenarios and how each outcome is reported, see xref:pipes/timeouts.adoc[Timeout
 == Embedded byte extraction limits
 
 `ParseMode.UNPACK` writes embedded bytes out; `UnpackConfig.maxUnpackBytes`
-caps the total.
+caps the total extracted. It does not cap the temp space used on the way: each
+embedded file is spooled to a temp file before it is extracted, and that is what
+<<temp-file-limits,`temp-limits`>> bounds.
 
 [cols="2,1,3"]
 |===
@@ -300,6 +307,62 @@ shows up only as a WARN in the fork's log, not in the metadata or the result sta
 See xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] for the rest of
 `UnpackConfig`, and `UnpackModeTest` in
 `tika-pipes/tika-pipes-integration-tests`.
+
+[[temp-file-limits]]
+== Temp file limits
+
+Tika spools a stream to a temp file when a parser or detector needs random access to
+it, and UNPACK spools every embedded file. `TempLimits.maxTempBytes` bounds the bytes
+one task holds in those files at one time; space is given back as each file is
+deleted, so a container's entries are each measured against the whole limit.
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`maxTempBytes`
+|50 GiB
+|Maximum bytes held at once in spooled temp files, per task. `-1` is unlimited;
+`0` is rejected.
+|===
+
+The write that would pass the limit fails with a `TempLimitReachedException`, which is
+reported in the metadata like any other parse exception; the fork is not restarted.
+A request may lower the limit, not raise it.
+
+[source,json]
+----
+{
+  "parse-context": {
+    "temp-limits": { "maxTempBytes": 10737418240 }
+  }
+}
+----
+
+[IMPORTANT]
+====
+*Tika can only limit the temp files Tika itself writes. It cannot limit its dependencies.*
+
+`maxTempBytes` is not a bound on disk use. It counts the temp files Tika writes when it
+spools a stream, and nothing else. It does not count, and Tika has no way to cap:
+
+* temp files written by the third-party libraries Tika parses with;
+* temp files and output written by external programs (tesseract, ffmpeg, GDAL and
+  others);
+* temp files a parser writes for itself.
+
+A document can still fill the volume `java.io.tmpdir` is on. The limit is also per
+task, so a server can hold up to `numClients` times it. Keep `java.io.tmpdir` on a
+volume that can fill without taking out the host, and size or quota that volume
+yourself; see xref:pipes/configuration.adoc[Pipes configuration].
+
+Make sure that volume is a disk. `java.io.tmpdir` defaults to `/tmp`, which is tmpfs
+(RAM) on some Linux distributions and many container images; there, temp files use
+memory outside the forks' heap limit. Check with `findmnt -T /tmp`.
+====
+
+Parsing in-process, nothing applies `temp-limits`: put a `TempBytesBudget` in the
+`ParseContext` to get the same bound.
 
 == Metadata limits
 
@@ -455,6 +518,9 @@ context.set(ExceptionReporting.class,
 . Check `tk:warn:truncated-metadata` rather than guessing.
 . Combine with process isolation — limits protect against memory blowups,
   xref:advanced/robustness.adoc[process isolation] protects against crashes.
+. Give `java.io.tmpdir` its own disk-backed volume, sized or quota'd, so that a full temp
+  directory fails the parse and not the host. No Tika setting can guarantee this for
+  you. Never leave it on tmpfs, and check that the default `/tmp` is not tmpfs.
 . Test with adversarial files; `MockParser` (tika-core test jar) simulates
   hangs, OOMs, and huge output.
 

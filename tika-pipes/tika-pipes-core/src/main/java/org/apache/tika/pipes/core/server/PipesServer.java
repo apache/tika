@@ -49,6 +49,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -57,6 +58,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CacheMemoryBudget;
+import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
@@ -158,6 +160,17 @@ public class PipesServer implements AutoCloseable {
     static void seedCacheMemoryBudget(ParseContext mergedContext) {
         if (CACHE_MEMORY_BUDGET != null) {
             mergedContext.set(CacheMemoryBudget.class, CACHE_MEMORY_BUDGET);
+        }
+    }
+
+    /**
+     * One budget per task, from the context's {@link TempLimits}. Call after the request
+     * clamp; like the cache budget, a budget cannot arrive from config or the wire.
+     */
+    static void seedTempBudget(ParseContext mergedContext) {
+        TempBytesBudget tempBudget = TempLimits.get(mergedContext).newBudget();
+        if (tempBudget != null) {
+            mergedContext.set(TempBytesBudget.class, tempBudget);
         }
     }
 
@@ -858,6 +871,7 @@ public class PipesServer implements AutoCloseable {
         mergePreset(presetRegistry, presetName, mergedContext);
         overlayRequest(requestContext, mergedContext, pipesConfig, defaultContentHandlerFactory);
         seedCacheMemoryBudget(mergedContext);
+        seedTempBudget(mergedContext);
         return mergedContext;
     }
 

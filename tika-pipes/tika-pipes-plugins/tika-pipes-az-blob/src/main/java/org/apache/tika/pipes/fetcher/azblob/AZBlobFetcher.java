@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigValidator;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -114,9 +115,12 @@ public class AZBlobFetcher extends AbstractTikaExtension implements Fetcher {
             } else {
                 long start = System.currentTimeMillis();
                 TemporaryResources tmpResources = new TemporaryResources();
+                TempLimits.apply(tmpResources, parseContext);
                 try {
                     Path tmp = tmpResources.createTempFile();
                     blobClient.downloadToFile(tmp.toRealPath().toString(), true);
+                    // the client wrote it; all we can do is count it once it is done
+                    tmpResources.chargeTempFile(tmp);
                     TikaInputStream tis = TikaInputStream.get(tmp, metadata, tmpResources);
                     long elapsed = System.currentTimeMillis() - start;
                     LOGGER.debug("took {} ms to copy to local tmp file", elapsed);

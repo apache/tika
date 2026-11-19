@@ -17,13 +17,14 @@
 package org.apache.tika.parser.grib;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import ucar.nc2.Attribute;
@@ -32,7 +33,9 @@ import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
@@ -69,11 +72,15 @@ public class GribParser implements Parser {
         //this is a work around the creates a temp directory then copies the full input file
         //into that tmp directory.  We then delete the directory in the finally statement.
         Path tmpDir = Files.createTempDirectory("tika-grib-");
+        TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, context);
 
         try {
             XHTMLContentHandler xhtml;
             Path gribFile = Files.createTempFile(tmpDir, "tika-file", ".grib2");
-            Files.copy(tis, gribFile, StandardCopyOption.REPLACE_EXISTING);
+            try (OutputStream os = tmp.newOutputStream(gribFile)) {
+                IOUtils.copy(tis, os);
+            }
 
             try (NetcdfFile ncFile = NetcdfReaders.open(gribFile, NetcdfReaders.GRIB1,
                     NetcdfReaders.GRIB2)) {
@@ -124,6 +131,7 @@ public class GribParser implements Parser {
             throw new TikaException("NetCDF parse error", e);
         } finally {
             FileUtils.deleteDirectory(tmpDir.toFile());
+            tmp.close();
         }
     }
 

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.rtf.jflex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -128,5 +130,24 @@ public class RTFEmbeddedHandlerTest {
             }
             assertTrue(hasName, "at least one embedded should have a resource name");
         }
+    }
+
+    @Test
+    public void testPictIsChargedToTheTempBudget() throws Exception {
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\pict\\wmetafile8 "
+                + "01".repeat(20000) + "}}";
+        byte[] bytes = rtf.getBytes(StandardCharsets.US_ASCII);
+
+        List<Metadata> unlimited = new ArrayList<>();
+        new RTFHtmlDecapsulator(new DefaultHandler(), buildContext(unlimited)).extract(bytes);
+        assertEquals(1, unlimited.size());
+
+        List<Metadata> limited = new ArrayList<>();
+        ParseContext context = buildContext(limited);
+        TempBytesBudget budget = new TempBytesBudget(64);
+        context.set(TempBytesBudget.class, budget);
+        new RTFHtmlDecapsulator(new DefaultHandler(), context).extract(bytes);
+        assertEquals(0, limited.size(), "a pict past the budget is not extracted");
+        assertEquals(0, budget.getReservedBytes());
     }
 }

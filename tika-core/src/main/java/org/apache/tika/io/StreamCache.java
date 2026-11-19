@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
@@ -196,7 +195,7 @@ class StreamCache implements Closeable {
         // registered after the file so tmp.close() releases these handles before deleting it,
         // and so a caller that disposes tmp without closing this cache does not leak them
         tmp.addResource(this);
-        spillOutputStream = new BufferedOutputStream(Files.newOutputStream(spillFile));
+        spillOutputStream = new BufferedOutputStream(tmp.newOutputStream(spillFile));
 
         // Write existing memory content to file
         if (memorySize > 0) {

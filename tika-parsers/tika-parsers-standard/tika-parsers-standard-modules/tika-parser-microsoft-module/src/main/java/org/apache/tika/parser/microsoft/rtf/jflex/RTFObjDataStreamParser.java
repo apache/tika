@@ -39,6 +39,7 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.BoundedInputStream;
@@ -49,6 +50,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 
 /**
@@ -105,7 +107,16 @@ public class RTFObjDataStreamParser implements Closeable {
      * @param maxBytes maximum payload bytes to accept (-1 for unlimited)
      */
     public RTFObjDataStreamParser(long maxBytes) {
+        this(maxBytes, null);
+    }
+
+    /**
+     * @param maxBytes maximum payload bytes to accept (-1 for unlimited)
+     * @param context  source of the temp budget; may be null
+     */
+    public RTFObjDataStreamParser(long maxBytes, ParseContext context) {
         this.maxBytes = maxBytes;
+        TempLimits.apply(tmp, context);
     }
 
     /**
@@ -191,7 +202,7 @@ public class RTFObjDataStreamParser implements Closeable {
                     } else {
                         currentField = Field.DATA;
                         tempFile = tmp.createTempFile(".bin");
-                        dataOut = new BufferedOutputStream(Files.newOutputStream(tempFile));
+                        dataOut = new BufferedOutputStream(tmp.newOutputStream(tempFile));
                     }
                 }
                 break;
@@ -282,7 +293,7 @@ public class RTFObjDataStreamParser implements Closeable {
             // Write the embedded file content to a new temp file
             Path contentFile = tmp.createTempFile(".bin");
             try (OutputStream contentOut = new BufferedOutputStream(
-                    Files.newOutputStream(contentFile))) {
+                    tmp.newOutputStream(contentFile))) {
                 copyBounded(is, contentOut, bytesLen);
             }
 
@@ -384,7 +395,9 @@ public class RTFObjDataStreamParser implements Closeable {
 
             if (content != null) {
                 Path contentFile = tmp.createTempFile(".bin");
-                Files.write(contentFile, content);
+                try (OutputStream contentOut = tmp.newOutputStream(contentFile)) {
+                    contentOut.write(content);
+                }
                 return TikaInputStream.get(contentFile, metadata, tmp);
             }
         }

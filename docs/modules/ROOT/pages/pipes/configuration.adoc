@@ -82,7 +82,15 @@ volume where filling it does not take out the OS, and apply your own retention t
 ====
 *DO NOT USE tmpfs* (`/dev/shm`, any RAM-backed filesystem) for `java.io.tmpdir`.
 
-Spool size is bounded by the input, not by any Tika setting: one large archive expanding
+*Check the default.* `java.io.tmpdir` defaults to `/tmp`, and on some Linux distributions
+and many container images `/tmp` is itself tmpfs. Run `findmnt -T /tmp` (or `df -T /tmp`): if
+the type is `tmpfs`, set `-Djava.io.tmpdir` to a disk-backed directory. On tmpfs every
+spooled byte is RAM, outside the forks' `-Xmx`, so the heap limit no longer bounds what a
+document can make the host hold in memory.
+
+`temp-limits` (xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits])
+bounds the streams Tika spools, 50 GiB per task by default, but not the temp files its
+libraries and external programs write: one large archive expanding
 into tmpfs can exhaust memory for every process on the host or get a container evicted,
 and a fork directory orphaned by a killed parent pins that RAM until someone deletes it.
 A slow run is recoverable; a lost host is not. If you must, give tmpfs a dedicated mount

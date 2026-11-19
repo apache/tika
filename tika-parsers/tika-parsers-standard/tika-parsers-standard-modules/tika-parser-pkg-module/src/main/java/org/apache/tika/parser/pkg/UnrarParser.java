@@ -21,7 +21,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -35,11 +34,13 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -79,18 +80,26 @@ public class UnrarParser implements Parser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         Path cwd = Files.createTempDirectory("tika-unrar-");
+        TemporaryResources unpacked = new TemporaryResources();
+        TempLimits.apply(unpacked, context);
         try {
             Path tmp = Files.createTempFile(cwd, "input", ".rar");
-            try (OutputStream os = Files.newOutputStream(tmp, StandardOpenOption.WRITE)) {
-                IOUtils.copy(tis, os);
+            FileProcessResult result;
+            try (TemporaryResources input = new TemporaryResources()) {
+                TempLimits.apply(input, context);
+                try (OutputStream os = input.newOutputStream(tmp)) {
+                    IOUtils.copy(tis, os);
+                }
+                result = unrar(cwd, tmp, context);
+                //delete the tmp rar file so that we don't recursively parse it in the next step
+                try {
+                    Files.delete(tmp);
+                } catch (IOException e) {
+                    //warn failed to delete tmp
+                }
             }
-            FileProcessResult result = unrar(cwd, tmp, context);
-            //delete the tmp rar file so that we don't recursively parse it in the next step
-            try {
-                Files.delete(tmp);
-            } catch (IOException e) {
-                //warn failed to delete tmp
-            }
+            // unrar wrote these; all we can do is count them once it is done
+            unpacked.chargeTempFile(cwd);
             if (result.isTimeout()) {
                 throw new TikaTimeoutException("timed out unrarring",
                         result.getRequestedTimeoutMillis(), result.getGrantedTimeoutMillis());
@@ -110,6 +119,7 @@ public class UnrarParser implements Parser {
             processDirectory(cwd, cwd, xhtml, extractor, context);
         } finally {
             FileUtils.deleteDirectory(cwd.toFile());
+            unpacked.close();
         }
         xhtml.endDocument();
     }

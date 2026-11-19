@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -54,6 +53,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -175,12 +175,13 @@ public class TSDParser implements Parser {
 
         if (edx.shouldParseEmbedded(metadata, context)) {
             try (TemporaryResources tmp = new TemporaryResources()) {
+                TempLimits.apply(tmp, context);
                 cmsTimeStampedDataParser = new CMSTimeStampedDataParser(stream);
 
                 // Spool content to temp file, catching any EOF from truncated files
                 Path tempFile = tmp.createTempFile();
                 try (InputStream content = cmsTimeStampedDataParser.getContent();
-                     OutputStream out = Files.newOutputStream(tempFile)) {
+                     OutputStream out = tmp.newOutputStream(tempFile)) {
                     byte[] buffer = new byte[8192];
                     int n;
                     while ((n = content.read(buffer)) != -1) {
