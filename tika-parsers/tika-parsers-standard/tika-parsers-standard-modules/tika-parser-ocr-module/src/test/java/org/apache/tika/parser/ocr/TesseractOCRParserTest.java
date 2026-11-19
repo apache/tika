@@ -23,11 +23,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -90,6 +92,25 @@ public class TesseractOCRParserTest extends TikaTest {
             assertEquals("TesseractOCRParser input is not an image tesseract accepts",
                     e.getMessage());
         }
+    }
+
+    @Test
+    public void testOutputTypeIsLastArgument() throws Exception {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.addOtherTesseractConfig("tessedit_page_number", "1");
+        for (boolean nameOnStdin : new boolean[]{true, false}) {
+            List<String> cmd = new TesseractOCRParser().command("input", nameOnStdin,
+                    new File("out"), config);
+            assertEquals("txt", cmd.get(cmd.size() - 1));
+            assertEquals(nameOnStdin, cmd.contains("stream_filelist=1"));
+            if (nameOnStdin) {
+                assertTrue(cmd.indexOf("tessedit_page_number=-1") >
+                        cmd.indexOf("tessedit_page_number=1"));
+            }
+        }
+        config.setPageSegMode("0");
+        List<String> cmd = new TesseractOCRParser().command("input", true, new File("out"), config);
+        assertEquals("tessedit_page_number=-1", cmd.get(cmd.size() - 1));
     }
 
     @Test
