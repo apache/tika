@@ -493,28 +493,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
         String name = image.getFileName().toString();
         byte[] stdin = nameOnStdin ? (name + "\n").getBytes(US_ASCII) : null;
 
-        ArrayList<String> cmd = new ArrayList<>(
-                Arrays.asList(tesseractCommand(), nameOnStdin ? STDIN : name,
-                        output.getAbsolutePath(), "--psm", config.getPageSegMode()));
-        //if --psm == 0, don't add anything else to the command line
-        if (! "0".equals(config.getPageSegMode())) {
-            if (!StringUtils.isBlank(config.getLanguage())) {
-                cmd.add("-l");
-                cmd.add(config.getLanguage());
-            }
-            for (Map.Entry<String, String> entry : config.getOtherTesseractConfig().entrySet()) {
-                cmd.add("-c");
-                cmd.add(entry.getKey() + "=" + entry.getValue());
-            }
-            cmd.addAll(Arrays.asList("-c", "page_separator=" + config.getPageSeparator(), "-c",
-                    (config.isPreserveInterwordSpacing()) ? "preserve_interword_spaces=1" :
-                            "preserve_interword_spaces=0",
-                    config.getOutputType().name().toLowerCase(Locale.US)));
-        }
-        if (nameOnStdin) {
-            // the name is read from stdin; a page number would not apply to it
-            cmd.addAll(Arrays.asList("-c", "stream_filelist=1", "-c", "tessedit_page_number=-1"));
-        }
+        List<String> cmd = command(nameOnStdin ? STDIN : name, nameOnStdin, output, config);
         LOG.debug("Tesseract command: " + String.join(" ", cmd));
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -539,6 +518,39 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
                 release(id);
             }
         }
+    }
+
+    List<String> command(String input, boolean nameOnStdin, File output,
+                         TesseractOCRConfig config) {
+        List<String> cmd = new ArrayList<>(
+                Arrays.asList(tesseractCommand(), input,
+                        output.getAbsolutePath(), "--psm", config.getPageSegMode()));
+        // a page number would not apply to a name read from stdin
+        List<String> stdinOptions = nameOnStdin ?
+                Arrays.asList("-c", "stream_filelist=1", "-c", "tessedit_page_number=-1") :
+                Collections.emptyList();
+        //if --psm == 0, don't add anything else to the command line
+        if ("0".equals(config.getPageSegMode())) {
+            cmd.addAll(stdinOptions);
+            return cmd;
+        }
+        if (!StringUtils.isBlank(config.getLanguage())) {
+            cmd.add("-l");
+            cmd.add(config.getLanguage());
+        }
+        for (Map.Entry<String, String> entry : config.getOtherTesseractConfig().entrySet()) {
+            cmd.add("-c");
+            cmd.add(entry.getKey() + "=" + entry.getValue());
+        }
+        // after the user's settings: tesseract uses the last value given
+        cmd.addAll(stdinOptions);
+        // the config file name (e.g. "txt") must come last: tesseract reads every argument
+        // after it as another config file
+        cmd.addAll(Arrays.asList("-c", "page_separator=" + config.getPageSeparator(), "-c",
+                (config.isPreserveInterwordSpacing()) ? "preserve_interword_spaces=1" :
+                        "preserve_interword_spaces=0",
+                config.getOutputType().name().toLowerCase(Locale.US)));
+        return cmd;
     }
 
     // absolute: the process does not run in this JVM's working directory

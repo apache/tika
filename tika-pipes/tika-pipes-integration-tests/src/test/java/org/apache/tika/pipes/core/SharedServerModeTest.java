@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -359,6 +361,37 @@ public class SharedServerModeTest {
 
             assertTrue(okResult.isSuccess(),
                     "After timeout, server should restart and subsequent request should succeed. Got: " + okResult.status());
+        }
+    }
+
+    @Test
+    public void testServerTempDirDeletedWithoutNextRequest(@TempDir Path tmp) throws Exception {
+        Path inputDir = setupInputDir(tmp);
+        Files.writeString(inputDir.resolve("timeout.xml"), MOCK_TIMEOUT, StandardCharsets.UTF_8);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        Path forkTmpBase = tmp.resolve("fork-tmp");
+        pipesConfig.setTempDirectory(forkTmpBase.toString());
+
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
+            PipesResult timeoutResult = parse(pipesParser, "timeout.xml");
+            assertEquals(PipesResult.RESULT_STATUS.TIMEOUT, timeoutResult.status());
+
+            // the cleanup runs when the server's exit is observed, shortly after the result
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            while (!isEmptyDir(forkTmpBase) && System.nanoTime() < deadline) {
+                Thread.sleep(100);
+            }
+            assertTrue(isEmptyDir(forkTmpBase), "shared server temp dir left behind");
+        }
+    }
+
+    private static boolean isEmptyDir(Path dir) throws IOException {
+        try (Stream<Path> children = Files.list(dir)) {
+            return children.findAny().isEmpty();
         }
     }
 

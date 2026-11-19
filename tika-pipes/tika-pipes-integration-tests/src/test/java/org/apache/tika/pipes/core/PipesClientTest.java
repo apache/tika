@@ -59,6 +59,7 @@ import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -855,6 +856,46 @@ public class PipesClientTest {
             assertEquals(1, normalResult.emitData().getMetadataList().size());
             Metadata metadata = normalResult.emitData().getMetadataList().get(0);
             assertEquals("Normal Author", metadata.get("dc:creator"));
+        }
+    }
+
+    @Test
+    public void testForkTempDirDeletedWithoutNextRequest(@TempDir Path tmp) throws Exception {
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        String slowFile = "mock-slow.xml";
+        Files.writeString(inputDir.resolve(slowFile), "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock><write element=\"p\">main_content</write>" +
+                "<fakeload millis=\"10000\" cpu=\"1\" mb=\"10\"/></mock>", StandardCharsets.UTF_8);
+        String crashFile = "mock-crash.xml";
+        Files.writeString(inputDir.resolve(crashFile), "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock><write element=\"p\">content before crash</write><system_exit/></mock>",
+                StandardCharsets.UTF_8);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        ParseContext shortTimeout = new ParseContext();
+        shortTimeout.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
+
+        try (PerClientServerManager manager = new PerClientServerManager(pipesConfig,
+                ForkBootstrap.toBytes(tikaJsonConfig), 0);
+                PipesClient pipesClient = new PipesClient(pipesConfig, manager)) {
+            for (String file : new String[]{slowFile, crashFile}) {
+                pipesClient.start();
+                Path forkTmp = manager.getTempDirectory();
+                assertTrue(Files.isDirectory(forkTmp));
+                // stands in for a partial spool
+                Files.write(forkTmp.resolve("apache-tika-leftover.bin"), new byte[1024]);
+
+                PipesResult result = pipesClient.process(
+                        new FetchEmitTuple(file, new FetchKey(fetcherName, file),
+                                new EmitKey(), new Metadata(), shortTimeout,
+                                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                assertTrue(result.isProcessCrash(), file + ": " + result.status());
+                assertFalse(Files.exists(forkTmp), file + ": fork temp dir left behind");
+                assertFalse(manager.isRunning(), file);
+            }
         }
     }
 

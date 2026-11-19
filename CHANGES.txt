@@ -71,6 +71,10 @@ Release 4.3.0 - ???
      It covers only temp files Tika itself writes, not those of its dependencies or of
      external programs, so it is not a bound on disk use (TIKA-5075).
 
+   * A pipes fork that times out, crashes or runs out of memory is killed and its temp
+     directory deleted at once, not when that client's next request arrives; an idle
+     server no longer keeps a stopped parse's temp files (TIKA-5074).
+
    * An idle pipes fork whose parent closes or drops the connection without asking it
      to shut down, as when tika-server is killed, logs one warning and exits with the
      parent-gone code (23) instead of a "main loop error" stack trace and exit 19.
