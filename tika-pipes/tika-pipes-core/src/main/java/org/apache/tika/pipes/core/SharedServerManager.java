@@ -375,6 +375,10 @@ public class SharedServerManager implements ServerManager {
             throw new ServerInitializationException(msg, e);
         }
 
+        // The next request may be a long way off; don't keep a dead server's temp files until then.
+        Path startedIn = tmpDir;
+        process.onExit().thenRun(() -> deleteTmpDirIfStill(startedIn));
+
         try (OutputStream stdin = process.getOutputStream()) {
             ForkBootstrap.write(stdin, token, tikaConfigJson);
         } catch (IOException e) {
@@ -450,14 +454,27 @@ public class SharedServerManager implements ServerManager {
 
         destroyProcessUnsafe();
 
+        deleteTmpDirUnsafe();
+
+        serverPort = -1;
+    }
+
+    /** No-op once a restart or shutdown has already replaced or removed {@code dir}. */
+    private void deleteTmpDirIfStill(Path dir) {
+        synchronized (lock) {
+            if (tmpDir == dir) {
+                deleteTmpDirUnsafe();
+            }
+        }
+    }
+
+    private void deleteTmpDirUnsafe() {
         if (tmpDir != null) {
             // never delete a crash log unread
             ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
             deleteDir(tmpDir);
             tmpDir = null;
         }
-
-        serverPort = -1;
     }
 
     private void destroyProcessUnsafe() throws InterruptedException {

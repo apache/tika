@@ -343,6 +343,44 @@ public class PerClientServerManager implements ServerManager {
     private synchronized void markForRestart(RestartReason reason) {
         restarts.mark(reason);
         pendingRestart = true;
+        // A recycle at the file limit leaves a healthy, idle fork with nothing spooled.
+        if (reason != RestartReason.MAX_FILES) {
+            reap();
+        }
+    }
+
+    /**
+     * Kills a fork that is not coming back and deletes its temp dir now rather than at the
+     * next request, which on an idle server may never arrive: a parse cut short mid-spool
+     * otherwise leaves its partial temp files on disk until then. {@code process} is kept so
+     * {@link #ensureRunning()} still has an exit code to count the restart by.
+     */
+    private synchronized void reap() {
+        Process p = process;
+        if (p != null) {
+            ProcessUtils.destroyForciblyWithDescendants(p);
+            try {
+                if (!p.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS)) {
+                    // files it still holds open can't all be deleted; the restart retries
+                    LOG.warn("clientId={}: process still alive after {}ms; temp dir cleanup deferred",
+                            clientId, WAIT_ON_DESTROY_MS);
+                    return;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        deleteTmpDir();
+    }
+
+    private void deleteTmpDir() {
+        if (tmpDir != null) {
+            // never delete a crash log unread
+            ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+            deleteDir(tmpDir);
+            tmpDir = null;
+        }
     }
 
     @Override
@@ -360,6 +398,14 @@ public class PerClientServerManager implements ServerManager {
     public int handleCrashAndGetExitCode(long generation) {
         // Not marked: RestartCounter attributes by exit code; the caller refines OOM/TIMEOUT.
         pendingRestart = true;
+        try {
+            return awaitExitCode();
+        } finally {
+            reap();
+        }
+    }
+
+    private int awaitExitCode() {
         if (process != null) {
             try {
                 process.waitFor(1, TimeUnit.SECONDS);
@@ -594,12 +640,7 @@ public class PerClientServerManager implements ServerManager {
 
         destroyProcess();
 
-        if (tmpDir != null) {
-            // never delete a crash log unread
-            ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
-            deleteDir(tmpDir);
-            tmpDir = null;
-        }
+        deleteTmpDir();
 
         port = -1;
     }
