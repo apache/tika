@@ -27,7 +27,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.apache.poi.util.LocaleUtil;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +42,29 @@ import org.apache.tika.TikaTest;
  * broadly similar output.
  * This is mostly focused on the XHTML output
  */
+//pins the JVM default locale, which is global: no other class may run alongside
+@Isolated
 public class TabularFormatsTest extends TikaTest {
+
+    //POI's DataFormatter and parso's DataWriterUtil emit the default locale's digits whatever
+    //locale they are given; pin the default until that is fixed upstream (TIKA-4920)
+    private static Locale savedLocale;
+    private static Locale savedPoiLocale;
+
+    @BeforeAll
+    public static void pinLocale() {
+        savedLocale = Locale.getDefault();
+        savedPoiLocale = LocaleUtil.getUserLocale();
+        Locale.setDefault(Locale.US);
+        LocaleUtil.setUserLocale(Locale.US);
+    }
+
+    @AfterAll
+    public static void restoreLocale() {
+        LocaleUtil.setUserLocale(savedPoiLocale);
+        Locale.setDefault(savedLocale);
+    }
+
     protected static final String[] columnNames =
             new String[]{"recnum", "square", "desc", "pctdone", "pctincr", "date", "datetime",
                     "time"};
