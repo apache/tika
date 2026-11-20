@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -92,13 +94,25 @@ public class ComicBookTarParser extends PackageParser {
         });
     }
 
+    /** A tar only: content of another archive type under a comic's name is not unpacked. */
+    @Override
+    protected ArchiveInputStream<?> createArchiveInputStream(TikaInputStream tis,
+                                                             ParseContext context) {
+        String encoding = entryEncoding(context);
+        return encoding == null ? new TarArchiveInputStream(tis)
+                : new TarArchiveInputStream(tis, encoding);
+    }
+
+    private static String entryEncoding(ParseContext context) {
+        return context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory())
+                .getEntryEncoding();
+    }
+
     /** The first page in name order, from the entry headers alone; null if there is none. */
     private static String cover(TikaInputStream tis, ParseContext context) {
-        String encoding = context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory())
-                .getEntryEncoding();
         String cover = null;
         // TarFile seeks from header to header; a TarArchiveInputStream reads the data too
-        try (TarFile tar = new TarFile(tis.getPath(), encoding)) {
+        try (TarFile tar = new TarFile(tis.getPath(), entryEncoding(context))) {
             for (TarArchiveEntry entry : tar.getEntries()) {
                 if (!entry.isDirectory()) {
                     cover = ComicBook.earlier(cover, entry.getName());

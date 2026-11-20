@@ -108,9 +108,7 @@ public class PackageParser extends AbstractArchiveParser {
             throws TikaException, IOException, SAXException {
         ArchiveInputStream ais;
         try {
-            ArchiveStreamFactory factory =
-                    context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
-            ais = factory.createArchiveInputStream(tis);
+            ais = createArchiveInputStream(tis, context);
         } catch (ArchiveException e) {
             throw new TikaException("Unable to unpack document stream", e);
         }
@@ -135,6 +133,14 @@ public class PackageParser extends AbstractArchiveParser {
             ais.close();
             xhtml.endDocument();
         }
+    }
+
+    /** The archive stream to read; this one is whichever the factory detects in the content. */
+    protected ArchiveInputStream<?> createArchiveInputStream(TikaInputStream tis,
+                                                             ParseContext context)
+            throws ArchiveException {
+        return context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory())
+                .createArchiveInputStream(tis);
     }
 
     private void updateMediaType(ArchiveInputStream ais, Metadata metadata) {

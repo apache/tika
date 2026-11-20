@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -57,10 +59,32 @@ public class ComicBookDetectorTest {
         assertEquals(MediaType.OCTET_STREAM, detect(SEVEN_Z, "comic.cb7", null));
     }
 
+    /** "ustar" at 257 is not enough: the header's checksum has to hold. */
+    @Test
+    public void testUstarWithoutChecksum() throws Exception {
+        byte[] zip = new byte[512];
+        System.arraycopy(new byte[]{'P', 'K', 3, 4}, 0, zip, 0, 4);
+        System.arraycopy("ustar".getBytes(StandardCharsets.US_ASCII), 0, zip, 257, 5);
+        assertEquals(MediaType.OCTET_STREAM, detect(zip, "comic.cbt", null));
+        assertEquals(MediaType.OCTET_STREAM, detect(zip, null, "application/x-cbt"));
+        assertEquals(MediaType.OCTET_STREAM, detect(Arrays.copyOf(tar("ustar  \0"), 300), "comic.cbt", null));
+    }
+
     private static byte[] tar(String magic) {
         byte[] header = new byte[512];
         byte[] bytes = magic.getBytes(StandardCharsets.ISO_8859_1);
         System.arraycopy(bytes, 0, header, 257, bytes.length);
+        return checksummed(header);
+    }
+
+    private static byte[] checksummed(byte[] header) {
+        Arrays.fill(header, 148, 156, (byte) ' ');
+        int sum = 0;
+        for (byte b : header) {
+            sum += b & 0xff;
+        }
+        byte[] checksum = String.format(Locale.ROOT, "%06o\0 ", sum).getBytes(StandardCharsets.US_ASCII);
+        System.arraycopy(checksum, 0, header, 148, checksum.length);
         return header;
     }
 
