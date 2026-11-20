@@ -237,7 +237,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     private void handleShowEmbeddedResources(HSLFSlideShow ss, XHTMLContentHandler xhtml,
                                              boolean outputHtml)
             throws SAXException {
-        
+
         HSLFObjectData[] objectData = ss.getEmbeddedObjects();
         int i = 0;
         for (HSLFObjectData d : objectData) {
@@ -540,17 +540,32 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 String paraTag = showBullet ? "li" : "p";
 
                 xhtml.startElement(paraTag);
-                boolean runIsHyperLink = false;
                 for (HSLFTextRun htr : textRuns) {
+                    String href = null;
                     Hyperlink link = htr.getHyperlink();
                     if (link != null) {
                         String address = link.getAddress();
                         if (address != null && !address.startsWith("_ftn")) {
-                            xhtml.startElement("a", "href", link.getAddress());
-                            runIsHyperLink = true;
+                            href = address;
                         }
                     }
                     String line = htr.getRawText();
+                    // a link can be superscript too (footnote refs), so the two are
+                    // independent; skip the tag on a run that holds only the paragraph break
+                    String vertTag = null;
+                    if (line != null && !removePBreak(line).isEmpty()) {
+                        if (htr.isSuperscript()) {
+                            vertTag = "sup";
+                        } else if (htr.isSubscript()) {
+                            vertTag = "sub";
+                        }
+                    }
+                    if (href != null) {
+                        xhtml.startElement("a", "href", href);
+                    }
+                    if (vertTag != null) {
+                        xhtml.startElement(vertTag);
+                    }
                     if (line != null) {
                         boolean isfirst = true;
                         for (String fragment : line.split("\\u000b")) {
@@ -566,10 +581,12 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                             xhtml.endElement("br");
                         }
                     }
-                    if (runIsHyperLink) {
+                    if (vertTag != null) {
+                        xhtml.endElement(vertTag);
+                    }
+                    if (href != null) {
                         xhtml.endElement("a");
                     }
-                    runIsHyperLink = false;
                 }
                 xhtml.endElement(paraTag);
             }

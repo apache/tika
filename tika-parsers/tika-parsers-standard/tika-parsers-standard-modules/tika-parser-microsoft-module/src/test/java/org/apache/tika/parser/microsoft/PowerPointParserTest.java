@@ -29,7 +29,10 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.poi.hslf.record.ExOleObjStg;
+import org.apache.poi.hslf.usermodel.HSLFSlide;
 import org.apache.poi.hslf.usermodel.HSLFSlideShow;
+import org.apache.poi.hslf.usermodel.HSLFTextBox;
+import org.apache.poi.hslf.usermodel.HSLFTextRun;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -98,13 +101,13 @@ public class PowerPointParserTest extends TikaTest {
     public void testVarious() throws Exception {
         Metadata metadata = new Metadata();
         String xml = getXML("testPPT_various.ppt", metadata).xml;
-        assertContains("<p>Footnote appears here", xml);
-        assertContains("<p>[1] This is a footnote.", xml);
+        assertContains("<p>Footnote appears here<sup>[1]</sup></p>", xml);
+        assertContains("<p><sup>[1]</sup> This is a footnote.</p>", xml);
         assertContains("<p>This is the header text.</p>", xml);
         assertContains("<p>This is the footer text.</p>", xml);
         assertContainsCount("<p>Here is a text box</p>", xml, 1);
         assertContains("<p>Bold ", xml);
-        assertContains("italic underline superscript subscript", xml);
+        assertContains("italic underline <sup>superscript</sup> <sub>subscript</sub>", xml);
         assertContains("underline", xml);
         assertContains("superscript", xml);
         assertContains("subscript", xml);
@@ -521,5 +524,25 @@ public class PowerPointParserTest extends TikaTest {
             wb.write(bos);
             return bos.toByteArray();
         }
+    }
+
+    //TIKA-5072 a hyperlinked run keeps its superscript
+    @Test
+    public void testSuperscriptInHyperlink() throws Exception {
+        ByteArrayOutputStream ppt = new ByteArrayOutputStream();
+        try (HSLFSlideShow ss = new HSLFSlideShow()) {
+            HSLFSlide slide = ss.createSlide();
+            HSLFTextBox box = slide.createTextBox();
+            box.setText("See note");
+            HSLFTextRun ref = box.appendText("1", false);
+            ref.setSuperscript(30);
+            ref.createHyperlink().linkToUrl("https://tika.apache.org/");
+            ss.write(ppt);
+        }
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(ppt.toByteArray())) {
+            xml = getRecursiveMetadata(tis, true).get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        }
+        assertContains("See note<a href=\"https://tika.apache.org/\"><sup>1</sup></a>", xml);
     }
 }
