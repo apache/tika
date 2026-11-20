@@ -18,7 +18,9 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import com.github.junrar.Archive;
@@ -39,6 +41,7 @@ import org.apache.tika.io.IsolatedInput;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -88,6 +91,17 @@ public class RarParser implements Parser {
             //Without this BodyContentHandler does not work
             xhtml.element("div", " ");
 
+            String cover = null;
+            if (ComicBook.is(metadata, ComicBook.CBR)) {
+                List<String> names = new ArrayList<>();
+                for (FileHeader fileHeader : rar.getFileHeaders()) {
+                    if (!fileHeader.isDirectory()) {
+                        names.add(fileHeader.getFileName());
+                    }
+                }
+                cover = ComicBook.cover(names);
+            }
+
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
@@ -103,6 +117,11 @@ public class RarParser implements Parser {
                         AbstractArchiveParser.setLocalTime(entrydata, FileSystem.CREATED, header.getCTime());
                         AbstractArchiveParser.setLocalTime(entrydata, FileSystem.MODIFIED, header.getMTime());
                         AbstractArchiveParser.setLocalTime(entrydata, FileSystem.ACCESSED, header.getATime());
+                    }
+                    if (header.getFileName().equals(cover)) {
+                        entrydata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+                        cover = null;
                     }
                     EntryStream entryStream = new EntryStream(rar.getInputStream(header));
                     try (TikaInputStream rarTis = TikaInputStream.get(entryStream)) {
