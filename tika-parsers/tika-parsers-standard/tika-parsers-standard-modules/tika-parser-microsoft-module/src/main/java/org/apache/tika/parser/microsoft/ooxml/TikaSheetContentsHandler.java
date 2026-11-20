@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import org.apache.tika.parser.microsoft.ScriptedTextCell;
+
 /**
  * Sheet contents handler that uses {@link XSSFCommentsShim.CommentData}
  * instead of POI's XMLBeans-dependent {@code XSSFComment}.
@@ -27,6 +29,15 @@ interface TikaSheetContentsHandler {
     void endRow(int rowNum);
 
     void cell(String cellRef, String formattedValue, XSSFCommentsShim.CommentData comment);
+
+    /**
+     * A cell whose text has superscript or subscript in it. The default drops the
+     * formatting.
+     */
+    default void scriptedCell(String cellRef, ScriptedTextCell text,
+                              XSSFCommentsShim.CommentData comment) {
+        cell(cellRef, text.getText(), comment);
+    }
 
     default void headerFooter(String text, boolean isHeader, String tagName) {
     }

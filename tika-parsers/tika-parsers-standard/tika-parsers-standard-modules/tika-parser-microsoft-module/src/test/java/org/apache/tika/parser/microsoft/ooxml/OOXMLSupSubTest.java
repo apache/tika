@@ -69,6 +69,44 @@ public class OOXMLSupSubTest extends TikaTest {
         assertContains("E = mc<sup>2</sup> and H<sub>2</sub>O", xml);
     }
 
+    //TIKA-5071
+    @Test
+    public void testXlsx() throws Exception {
+        String sml = "xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"";
+        String sharedStrings = "<sst " + sml + ">"
+                + "<si><r><t>E = mc</t></r>"
+                + "<r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r></si>"
+                // a run with no rPr is in the cell's font; one with rPr is not
+                + "<si><r><t>CO</t></r>"
+                + "<r><rPr><vertAlign val=\"subscript\"/></rPr><t>2</t></r>"
+                + "<r><rPr><sz val=\"11\"/></rPr><t xml:space=\"preserve\"> gas</t></r></si>"
+                + "<si><t>n</t></si>"
+                // the phonetic reading follows the runs as plain text
+                + "<si><r><t>x</t></r><r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r>"
+                + "<rPh sb=\"0\" eb=\"1\"><t>ekusu</t></rPh></si></sst>";
+        String styles = "<styleSheet " + sml + "><fonts count=\"3\"><font><sz val=\"11\"/></font>"
+                + "<font><vertAlign val=\"superscript\"/><sz val=\"11\"/></font>"
+                + "<font><vertAlign val=\"subscript\"/><sz val=\"11\"/></font></fonts>"
+                + "<cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\"/>"
+                + "<xf numFmtId=\"0\" fontId=\"1\"/><xf numFmtId=\"0\" fontId=\"2\"/></cellXfs>"
+                + "</styleSheet>";
+        String sheet = "<worksheet " + sml + "><sheetData><row r=\"1\">"
+                + "<c r=\"A1\" t=\"s\"><v>0</v></c>"
+                + "<c r=\"B1\" s=\"2\" t=\"s\"><v>1</v></c>"
+                + "<c r=\"C1\" s=\"1\" t=\"s\"><v>2</v></c>"
+                + "<c r=\"D1\" s=\"2\"><v>219</v></c>"
+                + "<c r=\"E1\"><v>5</v></c>"
+                + "<c r=\"F1\" t=\"s\"><v>3</v></c>"
+                + "</row></sheetData></worksheet>";
+        String xml = parse(xlsx(sharedStrings, styles, sheet));
+        assertContains("<td>E = mc<sup>2</sup></td>", xml);
+        assertContains("<td><sub>CO2</sub> gas</td>", xml);
+        assertContains("<td><sup>n</sup></td>", xml);
+        assertContains("<td><sub>219</sub></td>", xml);
+        assertContains("<td>5</td>", xml);
+        assertContains("<td>x<sup>2</sup> ekusu</td>", xml);
+    }
+
     private static String run(String text, String rPr) {
         return "<w:r>" + (rPr.isEmpty() ? "" : "<w:rPr>" + rPr + "</w:rPr>")
                 + "<w:t xml:space=\"preserve\">" + text + "</w:t></w:r>";
@@ -130,6 +168,43 @@ public class OOXMLSupSubTest extends TikaTest {
         parts.put("ppt/slides/slide1.xml", "<p:sld xmlns:p=\"" + pml + "\" xmlns:a=\"" + dml
                 + "\"><p:cSld><p:spTree><p:sp><p:txBody><a:bodyPr/><a:p>" + runs
                 + "</a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>");
+        return zip(parts);
+    }
+
+    private static byte[] xlsx(String sharedStrings, String styles, String sheet)
+            throws Exception {
+        String rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+        String ct = "application/vnd.openxmlformats-officedocument.spreadsheetml.";
+        Map<String, String> parts = new LinkedHashMap<>();
+        parts.put("[Content_Types].xml", "<Types xmlns=\"http://schemas.openxmlformats.org/"
+                + "package/2006/content-types\">"
+                + "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-"
+                + "package.relationships+xml\"/>"
+                + "<Default Extension=\"xml\" ContentType=\"application/xml\"/>"
+                + "<Override PartName=\"/xl/workbook.xml\" ContentType=\"" + ct
+                + "sheet.main+xml\"/>"
+                + "<Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"" + ct
+                + "worksheet+xml\"/>"
+                + "<Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"" + ct
+                + "sharedStrings+xml\"/>"
+                + "<Override PartName=\"/xl/styles.xml\" ContentType=\"" + ct
+                + "styles+xml\"/>"
+                + "</Types>");
+        parts.put("_rels/.rels", rels("rId1", rel + "/officeDocument", "xl/workbook.xml"));
+        parts.put("xl/_rels/workbook.xml.rels", "<Relationships xmlns=\"http://schemas."
+                + "openxmlformats.org/package/2006/relationships\">"
+                + "<Relationship Id=\"rId1\" Type=\"" + rel + "/worksheet\" "
+                + "Target=\"worksheets/sheet1.xml\"/>"
+                + "<Relationship Id=\"rId2\" Type=\"" + rel + "/sharedStrings\" "
+                + "Target=\"sharedStrings.xml\"/>"
+                + "<Relationship Id=\"rId3\" Type=\"" + rel + "/styles\" "
+                + "Target=\"styles.xml\"/></Relationships>");
+        parts.put("xl/workbook.xml", "<workbook xmlns=\"http://schemas.openxmlformats.org/"
+                + "spreadsheetml/2006/main\" xmlns:r=\"" + rel + "\"><sheets>"
+                + "<sheet name=\"Sheet1\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>");
+        parts.put("xl/worksheets/sheet1.xml", sheet);
+        parts.put("xl/sharedStrings.xml", sharedStrings);
+        parts.put("xl/styles.xml", styles);
         return zip(parts);
     }
 

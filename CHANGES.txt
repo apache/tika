@@ -133,6 +133,11 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Superscript and subscript are kept as <sup>/<sub> in XHTML for .xls and .xlsx, from
+     rich-text runs in a cell and from the cell's own font (BIFF FONT records, xlsx
+     vertAlign); they were dropped, so "Article 5<sup>1</sup>" read "Article 51"
+     (TIKA-5071).
+
    * ASX playlists (application/x-ms-asx) are parsed by JSoupParser; XMLParser failed on
      many real ones (mixed-case or unclosed tags, raw '&', non-UTF-8 without a declaration).
      Texinfo files are parsed as text; they produced no content (TIKA-5029).

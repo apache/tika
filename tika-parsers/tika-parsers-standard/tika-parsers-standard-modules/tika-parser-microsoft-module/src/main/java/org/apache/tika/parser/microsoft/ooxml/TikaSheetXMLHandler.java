@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import org.apache.poi.ss.usermodel.BuiltinFormats;
@@ -28,6 +29,9 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.parser.microsoft.FormattingUtils.Tag;
+import org.apache.tika.parser.microsoft.ScriptedTextCell;
 
 /**
  * Sheet XML handler for XLSX event-based parsing that uses {@link XSSFStylesShim}
@@ -67,6 +71,8 @@ class TikaSheetXMLHandler extends DefaultHandler {
     private XssfDataType nextDataType;
     private short formatIndex;
     private String formatString;
+    // SUP or SUB if the cell style's font is superscript or subscript
+    private Tag cellScriptTag;
 
     private int rowNum;
     private int nextRowNum;
@@ -174,6 +180,8 @@ class TikaSheetXMLHandler extends DefaultHandler {
             cellRef = attributes.getValue("r");
             String cellType = attributes.getValue("t");
             String cellStyleStr = attributes.getValue("s");
+            int styleIndex = getStyleIndex(cellStyleStr);
+            this.cellScriptTag = styleIndex >= 0 ? stylesShim.getScriptTag(styleIndex) : null;
 
             if ("b".equals(cellType)) {
                 nextDataType = XssfDataType.BOOLEAN;
@@ -187,26 +195,34 @@ class TikaSheetXMLHandler extends DefaultHandler {
                 nextDataType = XssfDataType.FORMULA;
             } else {
                 // Number — resolve format via our styles shim
-                if (stylesShim != null) {
-                    int styleIndex;
-                    if (cellStyleStr != null) {
-                        styleIndex = Integer.parseInt(cellStyleStr.trim());
-                    } else if (stylesShim.getNumCellStyles() > 0) {
-                        styleIndex = 0;
-                    } else {
-                        styleIndex = -1;
-                    }
-                    if (styleIndex >= 0) {
-                        this.formatIndex = stylesShim.getFormatIndex(styleIndex);
-                        this.formatString = stylesShim.getFormatString(styleIndex);
-                        if (this.formatString == null) {
-                            this.formatString =
-                                    BuiltinFormats.getBuiltinFormat(this.formatIndex);
-                        }
+                if (styleIndex >= 0) {
+                    this.formatIndex = stylesShim.getFormatIndex(styleIndex);
+                    this.formatString = stylesShim.getFormatString(styleIndex);
+                    if (this.formatString == null) {
+                        this.formatString =
+                                BuiltinFormats.getBuiltinFormat(this.formatIndex);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * @return the cell's cellXfs index, 0 if it has none, or -1 if there are no styles
+     */
+    private int getStyleIndex(String cellStyleStr) {
+        if (stylesShim == null) {
+            return -1;
+        }
+        if (cellStyleStr != null) {
+            try {
+                return Integer.parseInt(cellStyleStr.trim());
+            } catch (NumberFormatException e) {
+                LOG.debug("Bad cell style index '{}'", cellStyleStr);
+                return -1;
+            }
+        }
+        return stylesShim.getNumCellStyles() > 0 ? 0 : -1;
     }
 
     @Override
@@ -261,6 +277,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
 
     private void outputCell() {
         String thisStr = null;
+        ScriptedTextCell scripted = null;
 
         if (formulasNotResults && formula.length() > 0) {
             thisStr = formula.toString();
@@ -300,6 +317,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
                         try {
                             int idx = Integer.parseInt(sstIndex);
                             thisStr = sharedStringsShim.getItemAt(idx);
+                            scripted = toScriptedText(sharedStringsShim.getScriptedRunsAt(idx));
                         } catch (NumberFormatException ex) {
                             LOG.error("Failed to parse SST index '{}'", sstIndex, ex);
                         }
@@ -325,10 +343,33 @@ class TikaSheetXMLHandler extends DefaultHandler {
             }
         }
 
+        if (scripted == null && cellScriptTag != null && !formulasNotResults) {
+            scripted = new ScriptedTextCell().append(thisStr, cellScriptTag);
+        }
+
         checkForEmptyCellComments(EmptyCellCommentsCheckType.CELL);
         XSSFCommentsShim.CommentData comment = commentsShim != null ?
                 commentsShim.findCellComment(new CellAddress(cellRef)) : null;
-        output.cell(cellRef, thisStr, comment);
+        if (scripted != null && scripted.hasScript()) {
+            output.scriptedCell(cellRef, scripted, comment);
+        } else {
+            output.cell(cellRef, thisStr, comment);
+        }
+    }
+
+    /**
+     * @return the shared string's runs as cell text, a run with no {@code <rPr>} in
+     * the cell's font; {@code null} if {@code runs} is
+     */
+    private ScriptedTextCell toScriptedText(List<XSSFSharedStringsShim.Run> runs) {
+        if (runs == null) {
+            return null;
+        }
+        ScriptedTextCell text = new ScriptedTextCell();
+        for (XSSFSharedStringsShim.Run run : runs) {
+            text.append(run.text(), run.hasRPr() ? run.tag() : cellScriptTag);
+        }
+        return text;
     }
 
     private void checkForEmptyCellComments(EmptyCellCommentsCheckType type) {
