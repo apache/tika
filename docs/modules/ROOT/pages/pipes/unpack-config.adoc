@@ -252,7 +252,7 @@ it is extracted, and `temp-limits`
 (xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]) bounds that. Reaching
 that limit is not silent: it fails the file.
 
-Hitting the limit is silent apart from a log line. The embedded file being written is
+Hitting `maxUnpackBytes` is silent apart from a log line. The embedded file being written is
 truncated at the remaining budget, each later embedded file is skipped, and each case
 logs a WARN — but nothing is stamped on the metadata and the result status is unchanged
 (`PARSE_SUCCESS` / `EMIT_SUCCESS`). Watch the log, not the status, for truncation.

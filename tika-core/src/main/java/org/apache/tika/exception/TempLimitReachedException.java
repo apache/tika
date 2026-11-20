@@ -16,16 +16,15 @@
  */
 package org.apache.tika.exception;
 
-import java.io.IOException;
-
 /**
  * Thrown when writing a temp file would take a task past its
- * {@link org.apache.tika.io.TempBytesBudget}. It ends the task: parsers pass it up
- * unwrapped, and no further document of the task is parsed.
+ * {@link org.apache.tika.io.TempBytesBudget}. It ends the task and reaches the top-level
+ * caller as itself. Unchecked, so that the many {@code catch (IOException)} blocks
+ * between a temp write and that caller cannot take it for a bad document and go on.
  *
  * @since Apache Tika 4.3
  */
-public class TempLimitReachedException extends IOException {
+public class TempLimitReachedException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

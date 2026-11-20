@@ -101,7 +101,7 @@ include::example$pipes-http-fetcher.json[]
 
 |`maxSpoolSize`
 |`-1`
-|Maximum bytes to spool locally before failing. `-1` means no limit.
+|Maximum bytes to spool locally before failing. `-1` means no limit of its own; `temp-limits` still applies.
 
 |`maxErrMsgSize`
 |`10000000`

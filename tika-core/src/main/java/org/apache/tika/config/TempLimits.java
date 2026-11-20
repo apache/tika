@@ -29,11 +29,10 @@ import org.apache.tika.parser.ParseContext;
  * Limit on the temp files Tika writes for one task.
  * <p>
  * {@code maxTempBytes} bounds the bytes held at one time in the temp files Tika itself
- * writes for a task: spooled streams, parsers' own temp files, a document a fetcher
- * downloads to temp, and the output of external programs once they have written it.
- * Reaching it fails the write with a
+ * writes for a task: spooled streams, parsers' own temp files, and a document a fetcher
+ * downloads to temp. Reaching it fails the write with a
  * {@link org.apache.tika.exception.TempLimitReachedException}, which fails the task.
- * Temp files written inside a library are not counted. Default 50 GiB; {@code -1} for
+ * Temp files written inside a library or by an external program are not counted. Default 50 GiB; {@code -1} for
  * no limit; {@code 0} and anything below {@code -1} are rejected.
  * <p>
  * Applied by tika-pipes, which turns it into one {@link TempBytesBudget} per task. Parsing
@@ -98,8 +97,7 @@ public class TempLimits implements Serializable {
      *
      * @throws TempLimitReachedException if the task has already reached its limit
      */
-    public static void apply(TikaInputStream tis, ParseContext context)
-            throws TempLimitReachedException {
+    public static void apply(TikaInputStream tis, ParseContext context) {
         if (tis != null && context != null) {
             tis.setTempBudget(context.get(TempBytesBudget.class));
         }
@@ -116,7 +114,7 @@ public class TempLimits implements Serializable {
      * Fails a task that has reached its limit, whatever became of the exception that
      * reported it first.
      */
-    public static void throwIfReached(ParseContext context) throws TempLimitReachedException {
+    public static void throwIfReached(ParseContext context) {
         if (isReached(context)) {
             throw new TempLimitReachedException(context.get(TempBytesBudget.class).getMaxBytes());
         }

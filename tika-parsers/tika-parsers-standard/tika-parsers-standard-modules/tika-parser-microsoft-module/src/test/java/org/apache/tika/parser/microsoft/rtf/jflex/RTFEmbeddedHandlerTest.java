@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.rtf.jflex;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TempBytesBudget;
@@ -147,7 +149,8 @@ public class RTFEmbeddedHandlerTest {
         // one buffer's worth fits and is charged; the next flush is refused
         TempBytesBudget budget = new TempBytesBudget(10_000);
         context.set(TempBytesBudget.class, budget);
-        new RTFHtmlDecapsulator(new DefaultHandler(), context).extract(bytes);
+        assertThrows(TempLimitReachedException.class,
+                () -> new RTFHtmlDecapsulator(new DefaultHandler(), context).extract(bytes));
         assertEquals(0, limited.size(), "a pict past the budget is not extracted");
         assertEquals(0, budget.getReservedBytes());
     }
@@ -163,7 +166,7 @@ public class RTFEmbeddedHandlerTest {
         try {
             new RTFHtmlDecapsulator(new DefaultHandler(), context)
                     .extract(rtf.getBytes(StandardCharsets.US_ASCII));
-        } catch (IOException e) {
+        } catch (IOException | TempLimitReachedException e) {
             //the refused flush; what matters is what is left behind
         }
         assertTrue(budget.isLimitReached());

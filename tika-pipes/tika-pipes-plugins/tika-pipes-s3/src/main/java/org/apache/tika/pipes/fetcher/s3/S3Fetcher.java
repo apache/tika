@@ -46,7 +46,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.FileTooLongException;
-import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.FilenameUtils;
@@ -187,9 +186,6 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
             } catch (SdkClientException e) {
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = new IOException(e);
-            } catch (TempLimitReachedException e) {
-                // a retry would only fill the same budget again
-                throw e;
             } catch (IOException e) {
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = e;

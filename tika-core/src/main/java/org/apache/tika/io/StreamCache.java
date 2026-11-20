@@ -26,6 +26,8 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.util.Arrays;
 
+import org.apache.tika.exception.TempLimitReachedException;
+
 /**
  * Package-private cache that stores bytes in memory up to a threshold,
  * then spills to a temporary file. Supports reading from any offset.
@@ -68,7 +70,7 @@ class StreamCache implements Closeable {
 
     private boolean closed;
     // a write to the spill file failed: the cache has a hole and is never usable again
-    private IOException failure;
+    private Exception failure;
 
     /**
      * Suffix up front: a threshold spill precedes any getPath(suffix) call (TIKA-3903).
@@ -101,8 +103,9 @@ class StreamCache implements Closeable {
             spillToFile();
             try {
                 spillOutputStream.write(b);
-            } catch (IOException e) {
-                throw fail(e);
+            } catch (IOException | TempLimitReachedException e) {
+                fail(e);
+                throw e;
             }
         }
         totalSize++;
@@ -122,8 +125,9 @@ class StreamCache implements Closeable {
             spillToFile();
             try {
                 spillOutputStream.write(b, off, len);
-            } catch (IOException e) {
-                throw fail(e);
+            } catch (IOException | TempLimitReachedException e) {
+                fail(e);
+                throw e;
             }
         }
         totalSize += len;
@@ -133,8 +137,11 @@ class StreamCache implements Closeable {
         if (closed) {
             throw new IOException("StreamCache is closed");
         }
+        if (failure instanceof IOException) {
+            throw (IOException) failure;
+        }
         if (failure != null) {
-            throw failure;
+            throw (RuntimeException) failure;
         }
     }
 
@@ -142,7 +149,7 @@ class StreamCache implements Closeable {
      * The bytes that could not be written are gone from the source too, so nothing read
      * from this cache afterwards could be trusted: every later call rethrows {@code e}.
      */
-    private IOException fail(IOException e) {
+    private void fail(Exception e) {
         failure = e;
         memoryBuffer = null;
         memorySize = 0;
@@ -158,7 +165,6 @@ class StreamCache implements Closeable {
                 //the first failure is the one to report
             }
         }
-        return e;
     }
 
     /**
@@ -230,8 +236,9 @@ class StreamCache implements Closeable {
         if (memorySize > 0) {
             try {
                 spillOutputStream.write(memoryBuffer, 0, memorySize);
-            } catch (IOException e) {
-                throw fail(e);
+            } catch (IOException | TempLimitReachedException e) {
+                fail(e);
+                throw e;
             }
         }
 
@@ -322,8 +329,9 @@ class StreamCache implements Closeable {
         if (spillOutputStream != null) {
             try {
                 spillOutputStream.flush();
-            } catch (IOException e) {
-                throw fail(e);
+            } catch (IOException | TempLimitReachedException e) {
+                fail(e);
+                throw e;
             }
         }
     }
@@ -363,9 +371,6 @@ class StreamCache implements Closeable {
     }
 
     /**
-     * Whether the cache has spilled to a file.
-     */
-    /**
      * The spill file, or null while the content is still in memory or after a failed
      * write left the file incomplete. Never creates one.
      */
@@ -403,7 +408,8 @@ class StreamCache implements Closeable {
         closed = true;
         memoryBuffer = null;
         maybeReleaseReserved();
-        OutputStream out = spillOutputStream;
+        // not the buffered stream: its flush could be refused, for bytes about to be deleted
+        OutputStream out = spillRaw;
         RandomAccessFile raf = reader;
         spillOutputStream = null;
         spillRaw = null;

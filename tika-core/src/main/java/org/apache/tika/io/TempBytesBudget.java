@@ -26,10 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * deletes the file, at its close at the latest, so a container's entries spooled one
  * after another each see what the container itself is not holding.
  * <p>
- * It covers only temp files written through that method, and files something else wrote
- * that are reported afterwards through {@link TemporaryResources#chargeTempFile}, as Tika
- * does for the output of the external programs it runs. Temp files written inside a
- * library are not counted.
+ * It covers only temp files written through that method. Temp files written inside a
+ * library, or by an external program Tika runs, are not counted.
  * <p>
  * Reaching the limit is final: the task fails, so once a write has been refused every
  * later one is too, and {@link #isLimitReached()} stays true.

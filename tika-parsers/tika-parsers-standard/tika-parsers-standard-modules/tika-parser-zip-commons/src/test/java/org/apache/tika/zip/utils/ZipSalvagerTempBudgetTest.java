@@ -18,7 +18,6 @@ package org.apache.tika.zip.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -78,7 +77,8 @@ public class ZipSalvagerTempBudgetTest {
         TempBytesBudget budget = new TempBytesBudget(MB);
         try (TikaInputStream tis = TikaInputStream.get(truncated)) {
             tis.setTempBudget(budget);
-            assertNull(ZipSalvager.tryToOpenZipFile(tis, new Metadata()));
+            assertThrows(TempLimitReachedException.class,
+                    () -> ZipSalvager.tryToOpenZipFile(tis, new Metadata()));
             // the abandoned copy is deleted and no longer counted
             assertEquals(0, budget.getReservedBytes());
             assertTrue(budget.isLimitReached());

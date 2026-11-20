@@ -21,11 +21,8 @@ import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -63,8 +60,8 @@ public class TemporaryResources implements Closeable {
 
     private TempBytesBudget tempBudget;
 
-    // per file or directory: bytes written and not yet given back; counted with or without a
-    // budget, so that one set late can still be charged for them
+    // per file: bytes written and not yet given back; counted with or without a budget, so
+    // that one set late can still be charged for them
     private final Map<Path, Charge> tempBytesCharged = new HashMap<>();
 
     private static final class Charge {
@@ -178,37 +175,7 @@ public class TemporaryResources implements Closeable {
         }
     }
 
-    /**
-     * Charges a temp file, or everything under a temp directory, that something else
-     * wrote: an external program or a library. That cannot stop the writer early; it
-     * makes what it wrote count, and fails once the total is past the budget. Measuring
-     * the same path again replaces its earlier charge.
-     *
-     * @throws TempLimitReachedException if the budget cannot cover it
-     * @since Apache Tika 4.3
-     */
-    public void chargeTempFile(Path fileOrDirectory) throws IOException {
-        if (tempBudget == null || !Files.exists(fileOrDirectory)) {
-            return;
-        }
-        long[] bytes = new long[1];
-        // links are not followed, so one extracted file is never counted through a second name
-        Files.walkFileTree(fileOrDirectory, new SimpleFileVisitor<>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                if (attrs.isRegularFile()) {
-                    bytes[0] += attrs.size();
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-        release(fileOrDirectory);
-        Charge charge = new Charge();
-        charge(charge, bytes[0]);
-        tempBytesCharged.put(fileOrDirectory, charge);
-    }
-
-    private void charge(Charge charge, long n) throws TempLimitReachedException {
+    private void charge(Charge charge, long n) {
         if (tempBudget != null && !tempBudget.tryReserve(n)) {
             throw new TempLimitReachedException(tempBudget.getMaxBytes());
         }

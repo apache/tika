@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,7 +33,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.io.function.IOSupplier;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -129,24 +127,6 @@ public class TempBytesBudgetTest {
     }
 
     @Test
-    public void testChargeFilesSomethingElseWrote(@TempDir Path dir) throws IOException {
-        Files.write(dir.resolve("a"), new byte[MB]);
-        Files.write(Files.createDirectory(dir.resolve("sub")).resolve("b"), new byte[MB]);
-        TempBytesBudget budget = new TempBytesBudget(2 * MB + MB / 2);
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            tmp.setTempBudget(budget);
-            tmp.chargeTempFile(dir);
-            assertEquals(2 * MB, budget.getReservedBytes());
-            // measured again, not added again
-            tmp.chargeTempFile(dir);
-            assertEquals(2 * MB, budget.getReservedBytes());
-            assertThrows(TempLimitReachedException.class,
-                    () -> tmp.chargeTempFile(dir.resolve("sub")));
-        }
-        assertEquals(0, budget.getReservedBytes());
-    }
-
-    @Test
     public void testFailedSpoolIsFinal() throws Exception {
         // all in memory until getPath(), so the first write to the spill file is the one refused
         TempBytesBudget budget = new TempBytesBudget(MB / 2);
@@ -158,6 +138,24 @@ public class TempBytesBudgetTest {
             assertThrows(TempLimitReachedException.class, tis::getPath);
             assertFalse(tis.hasFile());
         }
+        assertEquals(0, budget.getReservedBytes());
+    }
+
+    @Test
+    public void testCloseDoesNotChargeTheUnflushedTail() throws Exception {
+        // spilled at the memory threshold; the last 100 bytes sit in the spill buffer
+        TempBytesBudget budget = new TempBytesBudget(2 * MB + 50);
+        try (TikaInputStream tis =
+                TikaInputStream.get(new ByteArrayInputStream(new byte[2 * MB + 100]))) {
+            tis.setTempBudget(budget);
+            tis.enableRewind();
+            byte[] buffer = new byte[MB];
+            while (tis.read(buffer) != -1) {
+                //drain
+            }
+            assertTrue(budget.getReservedBytes() > 0, "never spilled");
+        }
+        assertFalse(budget.isLimitReached());
         assertEquals(0, budget.getReservedBytes());
     }
 
@@ -238,22 +236,6 @@ public class TempBytesBudgetTest {
             assertEquals(0, second.getReservedBytes());
         }
         assertEquals(0, first.getReservedBytes());
-    }
-
-    @Test
-    public void testChargeDoesNotFollowLinks(@TempDir Path dir) throws IOException {
-        Path file = Files.write(dir.resolve("a"), new byte[MB]);
-        try {
-            Files.createSymbolicLink(dir.resolve("b"), file);
-        } catch (IOException | UnsupportedOperationException e) {
-            assumeTrue(false, "no symbolic links on this file system");
-        }
-        TempBytesBudget budget = new TempBytesBudget(3 * MB);
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            tmp.setTempBudget(budget);
-            tmp.chargeTempFile(dir);
-            assertEquals(MB, budget.getReservedBytes());
-        }
     }
 
     @Test

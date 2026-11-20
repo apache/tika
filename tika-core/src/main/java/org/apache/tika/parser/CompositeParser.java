@@ -367,6 +367,10 @@ public class CompositeParser implements Parser {
             } catch (TempLimitReachedException e) {
                 // ends the task: wrapped, an embedded extractor would record it and go on
                 throw e;
+            } catch (TikaException e) {
+                // a parser may have wrapped it
+                TempLimits.throwIfReached(context);
+                throw e;
             } catch (IOException e) {
                 tis.throwIfCauseOf(e);
                 TempLimits.throwIfReached(context);
@@ -376,6 +380,7 @@ public class CompositeParser implements Parser {
                 if (taggedHandler != null) {
                     taggedHandler.throwIfCauseOf(e);
                 }
+                TempLimits.throwIfReached(context);
                 throw new TikaException("TIKA-237: Illegal SAXException from " + parser, e);
             } catch (EmbeddedLimitReachedException e) {
                 // throwOnMaxDepth/throwOnMaxCount/throwOnDeadline mean this must surface to

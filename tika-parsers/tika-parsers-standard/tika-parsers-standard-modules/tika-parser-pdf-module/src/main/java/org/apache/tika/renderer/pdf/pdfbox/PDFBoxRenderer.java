@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -265,8 +266,8 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             long elapsedWrite = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_IMAGE_WRITING_TIME_MS, elapsedWrite);
             metadata.set(Rendering.RENDERED_MS, renderingElapsed + elapsedWrite);
-        } catch (SecurityException e) {
-            //throw SecurityExceptions immediately
+        } catch (SecurityException | TempLimitReachedException e) {
+            //throw these immediately
             discard(charge, tmpFile);
             throw e;
         } catch (Exception e) {

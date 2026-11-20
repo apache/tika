@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -48,38 +50,46 @@ public class TempLimitFailsTheTaskTest {
 
     private static final int MB = 1024 * 1024;
     private static final MediaType SPOOLS = MediaType.application("x-tika-test-spools");
-    private static final MediaType SWALLOWS = MediaType.application("x-tika-test-swallows");
     private static final MediaType CONTAINER = MediaType.application("x-tika-test-container");
 
     // spools its input, as a parser that needs random access does
+    private enum OnLimit { THROW, SWALLOW, WRAP_TIKA, WRAP_SAX }
+
     private static class SpoolingParser implements Parser {
-        private final boolean swallow;
+        private final OnLimit onLimit;
         private final AtomicInteger parsed = new AtomicInteger();
 
-        SpoolingParser(boolean swallow) {
-            this.swallow = swallow;
+        SpoolingParser(OnLimit onLimit) {
+            this.onLimit = onLimit;
         }
 
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
-            return Set.of(swallow ? SWALLOWS : SPOOLS);
+            return Set.of(SPOOLS);
         }
 
         @Override
         public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException {
+                          ParseContext context) throws IOException, SAXException, TikaException {
             parsed.incrementAndGet();
             try {
                 tis.getPath();
-            } catch (IOException e) {
-                if (!swallow) {
-                    throw e;
+            } catch (RuntimeException e) {
+                switch (onLimit) {
+                    case SWALLOW:
+                        return;
+                    case WRAP_TIKA:
+                        throw new TikaException("wrapped", e);
+                    case WRAP_SAX:
+                        throw new SAXException("wrapped", e);
+                    default:
+                        throw e;
                 }
             }
         }
     }
 
-    // two embedded streams; the first is over the budget
+    // two embedded streams; the first is over the budget, and a failed entry is skipped
     private static class ContainerParser implements Parser {
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -88,12 +98,14 @@ public class TempLimitFailsTheTaskTest {
 
         @Override
         public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+                          ParseContext context) throws IOException {
             for (int size : new int[]{3 * MB, 1024}) {
                 try (TikaInputStream entry =
                         TikaInputStream.get(new ByteArrayInputStream(new byte[size]))) {
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)
                             .parseEmbedded(entry, handler, new Metadata(), context, false);
+                } catch (Exception e) {
+                    //next entry
                 }
             }
         }
@@ -114,23 +126,17 @@ public class TempLimitFailsTheTaskTest {
         }
     }
 
-    @Test
-    public void testTopLevelSpoolIsBudgetedAndNotWrapped() {
-        AutoDetectParser parser = new AutoDetectParser(new SpoolingParser(false));
+    @ParameterizedTest
+    @EnumSource(OnLimit.class)
+    public void testLimitReachesTheCallerAsItself(OnLimit onLimit) {
+        AutoDetectParser parser = new AutoDetectParser(new SpoolingParser(onLimit));
         assertThrows(TempLimitReachedException.class,
                 () -> parse(parser, SPOOLS, contextWithBudget()));
     }
 
     @Test
-    public void testSwallowedLimitStillFailsTheParse() {
-        AutoDetectParser parser = new AutoDetectParser(new SpoolingParser(true));
-        assertThrows(TempLimitReachedException.class,
-                () -> parse(parser, SWALLOWS, contextWithBudget()));
-    }
-
-    @Test
     public void testEmbeddedLimitEndsTheContainer() {
-        SpoolingParser embedded = new SpoolingParser(false);
+        SpoolingParser embedded = new SpoolingParser(OnLimit.THROW);
         ParseContext context = contextWithBudget();
         // not an AutoDetectParser: only the extractor can put the entry under the budget
         context.set(Parser.class, embedded);

@@ -587,18 +587,6 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
-     * Charges a temp file or directory that lives no longer than this stream and that
-     * something else wrote. See {@link TemporaryResources#chargeTempFile}.
-     *
-     * @since Apache Tika 4.3
-     */
-    public void chargeTempFile(Path fileOrDirectory) throws IOException {
-        if (tmp != null) {
-            tmp.chargeTempFile(fileOrDirectory);
-        }
-    }
-
-    /**
      * Enables full rewind capability for this stream.
      * <p>
      * For streams backed by byte arrays or files, this is a no-op since they

@@ -130,7 +130,6 @@ public class DWGReadParser extends AbstractDWGParser {
             LOG.debug("About to call DWGRead: {}", command);
             FileProcessResult fpr = ProcessUtils.execute(pb, context, dwgc.getTimeoutMillis(), 10000, 10000);
             LOG.debug("DWGRead Exit code is: {}", fpr.getExitValue());
-            tmp.chargeTempFile(tmpFileOut.toPath());
             if (fpr.getExitValue() == 0) {
                 if (dwgc.isCleanDwgReadOutput()) {
                     // dwgread sometimes creates strings with invalid utf-8 sequences or invalid

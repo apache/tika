@@ -43,6 +43,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -216,6 +217,22 @@ public class InferenceDispatcherTest {
     }
 
     /** A spacer is not a picture: an image recorded under the binding's minimum is not offered. */
+    @Test
+    public void testTempLimitInATaskFailsTheFlush() throws Exception {
+        InferenceTask overLimit = (binding, units, engine, context) -> {
+            throw new TempLimitReachedException(1);
+        };
+        InferenceDispatcher dispatcher = new InferenceDispatcher(List.of(
+                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, Set.of(PNG), -1),
+                        new RecordingEngine(), List.of(overLimit))));
+        ParseContext context = new ParseContext();
+        offer(dispatcher, PNG, "a", context);
+        Path held = context.get(InferenceDispatcher.State.class).byBinding.get("png").get(0).getPath();
+        assertThrows(TempLimitReachedException.class,
+                () -> dispatcher.flush(new Metadata(), context));
+        assertFalse(Files.exists(held), "the buffer's files are gone");
+    }
+
     @Test
     public void testTinyImagesAreNotOffered() throws Exception {
         RecordingTask task = new RecordingTask();

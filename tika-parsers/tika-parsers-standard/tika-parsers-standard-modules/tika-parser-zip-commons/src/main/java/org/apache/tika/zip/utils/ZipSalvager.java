@@ -33,7 +33,6 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Zip;
@@ -197,8 +196,6 @@ public class ZipSalvager {
             }
             outputStream.flush();
             outputStream.finish();
-        } catch (TempLimitReachedException e) {
-            throw e;
         } catch (UnsupportedZipFeatureException e) {
             //now retry with data descriptor support
             if (!allowStoredEntries &&
@@ -244,8 +241,6 @@ public class ZipSalvager {
                 try {
                     IOUtils.copy(zipArchiveInputStream, outputStream);
                     successfullyCopied = true;
-                } catch (TempLimitReachedException e) {
-                    throw e;
                 } catch (IOException e) {
                     //this can hit a "truncated ZipFile" IOException
                 }

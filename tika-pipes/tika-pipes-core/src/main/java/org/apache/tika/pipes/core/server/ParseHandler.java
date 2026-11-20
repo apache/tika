@@ -145,7 +145,7 @@ class ParseHandler {
                 // won't re-digest it during parsing
                 parseContext.set(SkipContainerDocumentDigest.class,
                         SkipContainerDocumentDigest.INSTANCE);
-            } catch (IOException e) {
+            } catch (IOException | TempLimitReachedException e) {
                 LOG.warn("problem digesting: " + t.getId(), e);
             }
         }
@@ -156,7 +156,7 @@ class ParseHandler {
             MediaType mt = detector.detect(tis, metadata, parseContext);
             metadata.set(HttpHeaders.CONTENT_TYPE, mt.toString());
             metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
-        } catch (IOException e) {
+        } catch (IOException | TempLimitReachedException e) {
             LOG.warn("problem detecting: " + t.getId(), e);
         }
         UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
@@ -165,7 +165,7 @@ class ParseHandler {
             UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
             try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
                 unpackHandler.add(0, metadata, is);
-            } catch (IOException e) {
+            } catch (IOException | TempLimitReachedException e) {
                 LOG.warn("problem reading source file into embedded document byte store", e);
             }
         }

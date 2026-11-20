@@ -80,8 +80,6 @@ public class UnrarParser implements Parser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         Path cwd = Files.createTempDirectory("tika-unrar-");
-        TemporaryResources unpacked = new TemporaryResources();
-        TempLimits.apply(unpacked, context);
         try {
             Path tmp = Files.createTempFile(cwd, "input", ".rar");
             FileProcessResult result;
@@ -98,8 +96,6 @@ public class UnrarParser implements Parser {
                     //warn failed to delete tmp
                 }
             }
-            // unrar wrote these; all we can do is count them once it is done
-            unpacked.chargeTempFile(cwd);
             if (result.isTimeout()) {
                 throw new TikaTimeoutException("timed out unrarring",
                         result.getRequestedTimeoutMillis(), result.getGrantedTimeoutMillis());
@@ -118,11 +114,7 @@ public class UnrarParser implements Parser {
             //e.g. Extracting  test-documents/testEXCEL.xls                              OK
             processDirectory(cwd, cwd, xhtml, extractor, context);
         } finally {
-            try {
-                FileUtils.deleteDirectory(cwd.toFile());
-            } finally {
-                unpacked.close();
-            }
+            FileUtils.deleteDirectory(cwd.toFile());
         }
         xhtml.endDocument();
     }

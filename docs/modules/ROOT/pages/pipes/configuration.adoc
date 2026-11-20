@@ -90,8 +90,8 @@ document can make the host hold in memory.
 
 `temp-limits` (xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits])
 bounds the temp files Tika itself writes, but at 50 GiB per task by default, far more than
-most hosts have RAM, and it does not cover what Tika's libraries write, nor an external
-program's output while it is being written. One large archive expanding into tmpfs can
+most hosts have RAM, and it does not cover what Tika's libraries or the external programs
+it runs write. One large archive expanding into tmpfs can
 still exhaust memory for every process on the host or get a container evicted, and a fork
 directory orphaned by a killed parent pins that RAM until someone deletes it. A slow run
 is recoverable; a lost host is not. If you must use tmpfs, give it a dedicated mount with
