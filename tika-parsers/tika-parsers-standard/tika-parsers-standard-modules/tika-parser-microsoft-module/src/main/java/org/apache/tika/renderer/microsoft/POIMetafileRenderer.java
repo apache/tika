@@ -40,6 +40,7 @@ import org.apache.poi.hwmf.record.HwmfRecord;
 import org.apache.poi.hwmf.usermodel.HwmfPicture;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -126,12 +127,14 @@ public class POIMetafileRenderer implements Renderer {
         Metadata renderingMetadata = Metadata.newInstance(parseContext);
         renderingMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
-        RenderResults results = new RenderResults(new TemporaryResources());
+        TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, parseContext);
+        RenderResults results = new RenderResults(tmp);
         try {
             long start = System.currentTimeMillis();
             BufferedImage image = picture instanceof HemfPicture
                     ? draw((HemfPicture) picture, settings) : draw((HwmfPicture) picture, settings);
-            Path tmpFile = write(image, id, imageFormatName);
+            Path tmpFile = write(image, id, imageFormatName, tmp);
             renderingMetadata.set(Rendering.RENDERED_MS, System.currentTimeMillis() - start);
             renderingMetadata.add(Rendering.RENDERED_BY, RENDERED_BY);
             renderingMetadata.set(HttpHeaders.CONTENT_TYPE, "image/" + imageFormatName);
@@ -252,10 +255,11 @@ public class POIMetafileRenderer implements Renderer {
                 ? BufferedImage.TYPE_BYTE_GRAY : BufferedImage.TYPE_INT_RGB;
     }
 
-    private Path write(BufferedImage image, int id, String imageFormatName) throws IOException {
+    private Path write(BufferedImage image, int id, String imageFormatName,
+                       TemporaryResources tmp) throws IOException {
         Path tmpFile = Files.createTempFile("tika-metafile-rendering-",
                 "-" + id + "." + imageFormatName);
-        try (OutputStream os = Files.newOutputStream(tmpFile)) {
+        try (OutputStream os = tmp.newOutputStream(tmpFile)) {
             if (!ImageIO.write(image, imageFormatName, os)) {
                 throw new IOException("no ImageIO writer for " + imageFormatName);
             }

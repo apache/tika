@@ -165,8 +165,12 @@ public class SharedServerManager implements ServerManager {
     }
 
     /**
-     * Called by a client that received OOM or TIMEOUT: the process is exiting even if
+     * Called by a client that received OOM or TIMEOUT: the process should be exiting even if
      * isRunning() still says otherwise; the next ensureRunning() restarts it.
+     * <p>
+     * On those two it is killed here, since a client's own timeout fires when the server has
+     * not exited by itself, and the next request may never come. {@code process} is kept so
+     * {@link #ensureRunning()} still has something to count the restart by.
      */
     @Override
     public void markServerForRestart(RestartReason reason, long generation) {
@@ -176,6 +180,10 @@ public class SharedServerManager implements ServerManager {
             }
             LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
             markForRestart(reason);
+            if ((reason == RestartReason.OOM || reason == RestartReason.TIMEOUT) && process != null) {
+                // not waited for under the lock: the exit deletes the temp dir
+                ProcessUtils.destroyForciblyWithDescendants(process);
+            }
         }
     }
 

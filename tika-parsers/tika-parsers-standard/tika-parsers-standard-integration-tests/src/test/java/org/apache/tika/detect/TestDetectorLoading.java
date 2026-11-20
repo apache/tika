@@ -32,20 +32,21 @@ public class TestDetectorLoading {
         //integration test - detectors should be sorted alphabetically by class name
         Detector detector = TikaLoader.loadDefault().loadDetectors();
         List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
-        assertEquals(9, detectors.size());
+        assertEquals(10, detectors.size());
         // Sorted alphabetically by full class name (all are org.apache.tika.*)
         assertEquals("org.apache.tika.detect.apple.BPListDetector", detectors.get(0).getClass().getName());
         assertEquals("org.apache.tika.detect.blender.BlenderDetector", detectors.get(1).getClass().getName());
-        assertEquals("org.apache.tika.detect.gzip.GZipSpecializationDetector",
+        assertEquals("org.apache.tika.detect.comicbook.ComicBookDetector",
                 detectors.get(2).getClass().getName());
-        assertEquals("org.apache.tika.detect.image.RawTiffDetector",
+        assertEquals("org.apache.tika.detect.gzip.GZipSpecializationDetector",
                 detectors.get(3).getClass().getName());
+        assertEquals("org.apache.tika.detect.image.RawTiffDetector", detectors.get(4).getClass().getName());
         assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
-                detectors.get(4).getClass().getName());
-        assertEquals("org.apache.tika.detect.mkv.MatroskaDetector", detectors.get(5).getClass().getName());
-        assertEquals("org.apache.tika.detect.ogg.OggDetector", detectors.get(6).getClass().getName());
-        assertEquals("org.apache.tika.detect.ole.MiscOLEDetector", detectors.get(7).getClass().getName());
+                detectors.get(5).getClass().getName());
+        assertEquals("org.apache.tika.detect.mkv.MatroskaDetector", detectors.get(6).getClass().getName());
+        assertEquals("org.apache.tika.detect.ogg.OggDetector", detectors.get(7).getClass().getName());
+        assertEquals("org.apache.tika.detect.ole.MiscOLEDetector", detectors.get(8).getClass().getName());
         assertEquals("org.apache.tika.detect.zip.DefaultZipContainerDetector",
-                detectors.get(8).getClass().getName());
+                detectors.get(9).getClass().getName());
     }
 }

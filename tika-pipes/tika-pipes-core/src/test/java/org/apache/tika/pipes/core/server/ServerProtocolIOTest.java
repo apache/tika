@@ -19,6 +19,8 @@ package org.apache.tika.pipes.core.server;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,12 +32,17 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.OutputLimits;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
@@ -173,6 +180,67 @@ class ServerProtocolIOTest {
         assertEquals(1_000_000, output.getZipBombThreshold());
         assertEquals(5, merged.get(EmbeddedLimits.class).getMaxDepth());
         assertEquals(100, merged.get(EmbeddedLimits.class).getMaxCount());
+    }
+
+    // operator, request (0 = none set), expected (0 = no limit)
+    @ParameterizedTest(name = "operator {0}, request {1}")
+    @CsvSource({"10, 11, 10", "10, -1, 10", "10, 5, 5", "10, 0, 10", "-1, 11, 11", "-1, -1, 0",
+            "0, 5, 5"})
+    public void testRequestMayOnlyLowerTempLimit(long operatorMax, long requestMax, long expected)
+            throws Exception {
+        ParseContext operator = new ParseContext();
+        if (operatorMax != 0) {
+            operator.set(TempLimits.class, new TempLimits(operatorMax));
+        }
+        ParseContext request = new ParseContext();
+        if (requestMax != 0) {
+            request.set(TempLimits.class, new TempLimits(requestMax));
+        }
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+        PipesServer.seedTempBudget(merged);
+
+        TempBytesBudget budget = merged.get(TempBytesBudget.class);
+        if (expected == 0) {
+            assertNull(budget);
+        } else {
+            assertEquals(expected, budget.getMaxBytes());
+        }
+    }
+
+    @Test
+    public void testDefaultTempLimitIsTheCeilingWhenNothingIsConfigured() throws Exception {
+        ParseContext request = new ParseContext();
+        request.setJsonConfig("temp-limits", "{\"maxTempBytes\": -1}");
+        ParseContext operator = new ParseContext();
+        ParseContext merged = overlay(operator, request);
+        ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+        PipesServer.seedTempBudget(merged);
+
+        assertEquals(TempLimits.DEFAULT_MAX_TEMP_BYTES,
+                merged.get(TempBytesBudget.class).getMaxBytes());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, -2})
+    public void testTempLimitRejectsZeroAndBelowMinusOne(long maxTempBytes) {
+        ParseContext request = new ParseContext();
+        request.setJsonConfig("temp-limits", "{\"maxTempBytes\": " + maxTempBytes + "}");
+        assertThrows(TikaConfigException.class,
+                () -> ParseContextUtils.resolveAll(request, getClass().getClassLoader()));
+    }
+
+    @Test
+    public void testEachTaskGetsItsOwnTempBudget() {
+        ParseContext first = new ParseContext();
+        ParseContext second = new ParseContext();
+        PipesServer.seedTempBudget(first);
+        PipesServer.seedTempBudget(second);
+        assertEquals(TempLimits.DEFAULT_MAX_TEMP_BYTES, first.get(TempBytesBudget.class).getMaxBytes());
+        assertNotSame(first.get(TempBytesBudget.class), second.get(TempBytesBudget.class));
     }
 
     @Test

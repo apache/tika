@@ -56,6 +56,9 @@ import org.apache.tika.parser.ParseContext;
  *       "totalTaskTimeoutMillis": 3600000,
  *       "progressTimeoutMillis": 60000
  *     },
+ *     "temp-limits": {
+ *       "maxTempBytes": 10737418240
+ *     },
  *     "standard-metadata-limiter-factory": {
  *       "maxTotalBytes": 1048576,
  *       "maxFieldSize": 102400,
@@ -97,6 +100,11 @@ public class AllLimitsTest extends TikaTest {
         TimeoutLimits timeoutLimits = context.get(TimeoutLimits.class);
         assertNotNull(timeoutLimits, "TimeoutLimits should be loaded");
         assertEquals(60000, timeoutLimits.getProgressTimeoutMillis());
+
+        // Verify TempLimits
+        TempLimits tempLimits = context.get(TempLimits.class);
+        assertNotNull(tempLimits, "TempLimits should be loaded");
+        assertEquals(10737418240L, tempLimits.getMaxTempBytes());
 
         // Verify MetadataWriteLimiterFactory
         MetadataWriteLimiterFactory metadataFactory = context.get(MetadataWriteLimiterFactory.class);

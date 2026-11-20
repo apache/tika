@@ -65,6 +65,19 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * New temp-limits setting: tika-pipes bounds the bytes a task holds at once in the
+     temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none;
+     in-process there is no default, and AutoDetectParser applies it only when a
+     TempLimits is in the ParseContext):
+     spooled streams, parsers' own temp files, and a document a fetcher downloads to
+     temp. Reaching it stops that file with a
+     TempLimitReachedException (unchecked) as its container exception, keeping what
+     was parsed before it, and the fork keeps running; a fetched document larger than
+     the limit now fails. The default is a backstop: it does not stop one document
+     from writing several gigabytes. Temp files written inside third-party libraries
+     or by external programs (tesseract, unrar, ...) are not counted, so it is not a
+     bound on disk use (TIKA-5075).
+
    * A pipes fork that times out, crashes or runs out of memory is killed and its temp
      directory deleted at once, not when that client's next request arrives; an idle
      server no longer keeps a stopped parse's temp files (TIKA-5074).
@@ -134,6 +147,12 @@ Release 4.3.0 - ???
   EXTRACTION AND FORMATS
 
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
+   
+   * Comic book archives in RAR, 7z and tar (.cbr, .cb7, .cbt; application/vnd.comicbook-rar,
+     application/x-cb7, application/x-cbt, all new) have their first page in name order
+     emitted as the THUMBNAIL, as .cbz has. A name or declared type does not replace the
+     versioned RAR magic type or GNU tar's, so ComicBookDetector recognizes them by their
+     name or declared type together with the container's magic (TIKA-5041).
 
    * ASX playlists (application/x-ms-asx) are parsed by JSoupParser; XMLParser failed on
      many real ones (mixed-case or unclosed tags, raw '&', non-UTF-8 without a declaration).

@@ -17,10 +17,10 @@
 package org.apache.tika.parser.inference;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -32,7 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.TransientParseState;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedMetadataLookup;
@@ -206,7 +208,9 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             return source;
         }
         Path copy = state.tmp.createTempFile();
-        Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
+        try (OutputStream out = state.tmp.newOutputStream(copy)) {
+            Files.copy(source, out);
+        }
         return copy;
     }
 
@@ -228,6 +232,8 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
                 for (InferenceTask task : b.tasks()) {
                     try {
                         task.run(b.binding(), kept, b.engine(), context);
+                    } catch (TempLimitReachedException e) {
+                        throw e;
                     } catch (Exception e) {
                         LOG.warn("inference binding {} failed", b.binding().getId(), e);
                         root.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
@@ -335,6 +341,8 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             for (InferenceTask task : b.tasks()) {
                 try {
                     task.run(binding, units, b.engine(), context);
+                } catch (TempLimitReachedException e) {
+                    throw e;
                 } catch (Exception e) {
                     LOG.warn("inference binding {} failed", binding.getId(), e);
                     root.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
@@ -381,6 +389,7 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
         State state = context.get(State.class);
         if (state == null) {
             state = new State();
+            TempLimits.apply(state.tmp, context);
             context.set(State.class, state);
         }
         return state;

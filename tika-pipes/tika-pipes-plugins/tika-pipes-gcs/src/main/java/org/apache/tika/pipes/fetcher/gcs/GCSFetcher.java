@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.fetcher.gcs;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigValidator;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -94,9 +96,13 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
             } else {
                 long start = System.currentTimeMillis();
                 TemporaryResources tmpResources = new TemporaryResources();
+                TempLimits.apply(tmpResources, parseContext);
                 try {
                     Path tmp = tmpResources.createTempFile();
-                    blob.downloadTo(tmp);
+                    // not downloadTo(Path): the temp limit can only stop a write it sees
+                    try (OutputStream os = tmpResources.newOutputStream(tmp)) {
+                        blob.downloadTo(os);
+                    }
                     TikaInputStream tis = TikaInputStream.get(tmp, metadata, tmpResources);
                     long elapsed = System.currentTimeMillis() - start;
                     LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
@@ -112,6 +118,8 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
                 }
             }
         } catch (Exception e) {
+            // not a storage problem, however the client wrapped it
+            TempLimits.throwIfReached(parseContext);
             throw new IOException("gcs storage exception", e);
         }
     }

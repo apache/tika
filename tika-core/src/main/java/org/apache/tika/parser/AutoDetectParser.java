@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.DigestHelper;
@@ -147,6 +148,9 @@ public class AutoDetectParser extends CompositeParser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        // like ParseRecord, made on first use and left in the context: one context per document
+        TempLimits.seedBudget(context);
+        TempLimits.apply(tis, context);
         // Compute digests before type detection if configured
         // DigesterFactory is retrieved from ParseContext (configured via parse-context)
         DigestHelper.maybeDigest(tis, metadata, context);

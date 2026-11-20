@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedInputStream;
@@ -37,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -896,6 +898,48 @@ public class PipesClientTest {
                 assertFalse(Files.exists(forkTmp), file + ": fork temp dir left behind");
                 assertFalse(manager.isRunning(), file);
             }
+        }
+    }
+
+    @Test
+    public void testForkTempDirDeletedAfterInterrupt(@TempDir Path tmp) throws Exception {
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        String slowFile = "mock-slow.xml";
+        Files.writeString(inputDir.resolve(slowFile), "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock><write element=\"p\">main_content</write>" +
+                "<fakeload millis=\"10000\" cpu=\"1\" mb=\"10\"/></mock>", StandardCharsets.UTF_8);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        try (PerClientServerManager manager = new PerClientServerManager(pipesConfig,
+                ForkBootstrap.toBytes(tikaJsonConfig), 0);
+                PipesClient pipesClient = new PipesClient(pipesConfig, manager)) {
+            pipesClient.start();
+            Path forkTmp = manager.getTempDirectory();
+            // stands in for a partial spool
+            Files.write(forkTmp.resolve("apache-tika-leftover.bin"), new byte[1024]);
+
+            FetchEmitTuple tuple = new FetchEmitTuple(slowFile, new FetchKey(fetcherName, slowFile),
+                    new EmitKey(), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+            try {
+                // the client's own check sees this and leaves the flag set
+                Thread.currentThread().interrupt();
+                assertThrows(InterruptedException.class, () -> pipesClient.process(tuple));
+            } finally {
+                Thread.interrupted();
+            }
+
+            // the interrupted caller could not wait for the kill; the fork's exit does the cleanup
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            while (Files.exists(forkTmp) && System.nanoTime() < deadline) {
+                Thread.sleep(100);
+            }
+            assertFalse(Files.exists(forkTmp), "fork temp dir left behind");
+            assertFalse(manager.isRunning());
         }
     }
 

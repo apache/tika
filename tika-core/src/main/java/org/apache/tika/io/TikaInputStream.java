@@ -21,6 +21,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -546,6 +547,43 @@ public class TikaInputStream extends TaggedInputStream {
         position = 0;
         mark = -1;
         consecutiveEOFs = 0;
+    }
+
+    /**
+     * Bounds the temp files this stream writes when it spools; see {@link TempBytesBudget}.
+     * {@code null} is ignored, and the first budget set wins. What the stream has already
+     * spooled is charged to it.
+     *
+     * @since Apache Tika 4.3
+     */
+    public void setTempBudget(TempBytesBudget budget) {
+        if (tmp != null) {
+            tmp.setTempBudget(budget);
+        }
+    }
+
+    /**
+     * Opens a temp file that lives no longer than this stream, charging what is written to
+     * this stream's {@link TempBytesBudget}. See {@link TemporaryResources#newOutputStream}.
+     *
+     * @since Apache Tika 4.3
+     */
+    public OutputStream newTempOutputStream(Path tempFile) throws IOException {
+        return tmp != null ? tmp.newOutputStream(tempFile) : Files.newOutputStream(tempFile);
+    }
+
+    /**
+     * Deletes a temp file opened with {@link #newTempOutputStream} and gives back what it
+     * was charged. See {@link TemporaryResources#deleteTempFile}.
+     *
+     * @since Apache Tika 4.3
+     */
+    public void deleteTempFile(Path tempFile) throws IOException {
+        if (tmp != null) {
+            tmp.deleteTempFile(tempFile);
+        } else {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     /**

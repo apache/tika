@@ -24,9 +24,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +45,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -157,8 +156,10 @@ public class S3Emitter extends AbstractStreamEmitter {
             }
         } else {
             try (TemporaryResources tmp = new TemporaryResources()) {
+                TempLimits.apply(tmp, parseContext);
                 Path tmpPath = tmp.createTempFile();
-                try (Writer writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
+                try (Writer writer = new BufferedWriter(
+                        new OutputStreamWriter(tmp.newOutputStream(tmpPath), StandardCharsets.UTF_8))) {
                     JsonMetadataList.toJson(metadataList, writer);
                 }
                 try (TikaInputStream tis = TikaInputStream.get(tmpPath)) {

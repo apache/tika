@@ -31,6 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -73,6 +74,7 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     public void parseEmbedded(
             TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context, boolean outputHtml)
             throws SAXException, IOException {
+        TempLimits.apply(tis, context);
         // Check and enforce embedded limits even if caller didn't call shouldParseEmbedded()
         // This guarantees limits are enforced for all callers
         ParseRecord parseRecord = context.get(ParseRecord.class);
@@ -143,7 +145,7 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             //translate the stream or not
             if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
                 translated = Files.createTempFile("tika-tmp-", ".bin");
-                try (OutputStream os = Files.newOutputStream(translated)) {
+                try (OutputStream os = tis.newTempOutputStream(translated)) {
                     EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
                 } finally {
                     // translate() drains to EOF; without this the parse below sees an empty stream
@@ -160,7 +162,7 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
                 }
             } finally {
                 if (translated != null) {
-                    Files.delete(translated);
+                    tis.deleteTempFile(translated);
                 }
             }
         }
@@ -174,7 +176,8 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata, ParseContext context) {
-        if (p == null) {
+        // past the limit the file may be cut short, and the task is failing anyway
+        if (p == null || TempLimits.isReached(context)) {
             return;
         }
 

@@ -19,9 +19,9 @@ package org.apache.tika.parser.dwg;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -48,10 +48,12 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DWG;
 import org.apache.tika.metadata.Metadata;
@@ -113,10 +115,14 @@ public class DWGReadParser extends AbstractDWGParser {
         File tmpFileOut = Files.createTempFile(uuid + "dwgreadout", ".json").toFile();
         File tmpFileOutCleaned = Files.createTempFile(uuid + "dwgreadoutclean", ".json").toFile();
         File tmpFileIn = Files.createTempFile(uuid + "dwgreadin", ".dwg").toFile();
+        TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, context);
         try {
             
 
-            FileUtils.copyInputStreamToFile(tis, tmpFileIn);
+            try (OutputStream os = tmp.newOutputStream(tmpFileIn.toPath())) {
+                tis.transferTo(os);
+            }
 
             List<String> command = Arrays.asList(dwgc.getDwgReadExecutable(), "-O", "JSON", "-o",
                     tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
@@ -138,7 +144,7 @@ public class DWGReadParser extends AbstractDWGParser {
                             
                             BufferedWriter out = new BufferedWriter(
                                     new OutputStreamWriter(
-                                            new FileOutputStream(tmpFileOutCleaned, true), 
+                                            tmp.newOutputStream(tmpFileOutCleaned.toPath()),
                                             StandardCharsets.UTF_8),32768))
                     {
 
@@ -154,8 +160,8 @@ public class DWGReadParser extends AbstractDWGParser {
                         }                            
                                  
                     } finally {
-                        FileUtils.deleteQuietly(tmpFileIn);
-                        FileUtils.deleteQuietly(tmpFileOut);
+                        deleteQuietly(tmp, tmpFileIn);
+                        deleteQuietly(tmp, tmpFileOut);
                         tmpFileOut = tmpFileOutCleaned;
                     }
 
@@ -234,12 +240,22 @@ public class DWGReadParser extends AbstractDWGParser {
             jParser.close();
         } finally {
             // make sure we delete all temp files
-            FileUtils.deleteQuietly(tmpFileOut);
-            FileUtils.deleteQuietly(tmpFileIn);
-            FileUtils.deleteQuietly(tmpFileOutCleaned);
+            deleteQuietly(tmp, tmpFileOut);
+            deleteQuietly(tmp, tmpFileIn);
+            deleteQuietly(tmp, tmpFileOutCleaned);
+            tmp.close();
         }
 
         xhtml.endDocument();
+    }
+
+    // through tmp, so a file deleted before the parse ends stops counting against the temp limit
+    private static void deleteQuietly(TemporaryResources tmp, File file) {
+        try {
+            tmp.deleteTempFile(file.toPath());
+        } catch (IOException e) {
+            FileUtils.deleteQuietly(file);
+        }
     }
 
     private static final Set<String> OBJECT_TEXT_FIELDS = Set.of(

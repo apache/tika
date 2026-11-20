@@ -110,7 +110,7 @@ public class ZipSalvager {
             // Add file deletion FIRST so it runs AFTER ZipFile is closed
             // (TemporaryResources uses LIFO order)
             final Path toDelete = salvagedPath;
-            tis.addCloseableResource(() -> deleteSalvaged(toDelete));
+            tis.addCloseableResource(() -> deleteSalvaged(tis, toDelete));
             ownershipTransferred = true;
 
             // Then add ZipFile (will be closed before file deletion runs)
@@ -130,7 +130,7 @@ public class ZipSalvager {
             }
         } finally {
             if (!ownershipTransferred && salvagedPath != null) {
-                deleteSalvaged(salvagedPath);
+                deleteSalvaged(tis, salvagedPath);
             }
         }
 
@@ -139,9 +139,10 @@ public class ZipSalvager {
         return null;
     }
 
-    private static void deleteSalvaged(Path salvagedPath) {
+    // through the stream, so what the copy was charged is given back with it
+    private static void deleteSalvaged(TikaInputStream tis, Path salvagedPath) {
         try {
-            Files.deleteIfExists(salvagedPath);
+            tis.deleteTempFile(salvagedPath);
         } catch (IOException e) {
             LOG.warn("Failed to delete salvaged temp file: {}", salvagedPath, e);
             salvagedPath.toFile().deleteOnExit();
@@ -168,13 +169,15 @@ public class ZipSalvager {
      * if retry on DATA_DESCRIPTOR is needed.
      *
      * @param tis               the TikaInputStream to read from (not closed by this method)
-     * @param salvagedZip       the output path for the salvaged ZIP
+     * @param salvagedZip       the output path for the salvaged ZIP; what is written counts
+     *                          against {@code tis}'s temp budget, if it has one, until
+     *                          {@code tis} is closed
      * @param allowStoredEntries whether to allow stored entries with data descriptors
      * @throws IOException if salvaging fails
      */
     public static void salvageCopy(TikaInputStream tis, Path salvagedZip,
                                    boolean allowStoredEntries) throws IOException {
-        try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(Files.newOutputStream(salvagedZip));
+        try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(tis.newTempOutputStream(salvagedZip));
                 ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
                         CloseShieldInputStream.wrap(tis), "UTF8", false,
                         allowStoredEntries)) {
