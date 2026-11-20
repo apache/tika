@@ -66,7 +66,9 @@ Release 4.3.0 - ???
 
   SERVER, PIPES AND OPERATIONS
    * New temp-limits setting: tika-pipes bounds the bytes a task holds at once in the
-     temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none):
+     temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none;
+     in-process there is no default, and AutoDetectParser applies it only when a
+     TempLimits is in the ParseContext):
      spooled streams, parsers' own temp files, and a document a fetcher downloads to
      temp. Reaching it stops that file with a
      TempLimitReachedException (unchecked) as its container exception, keeping what

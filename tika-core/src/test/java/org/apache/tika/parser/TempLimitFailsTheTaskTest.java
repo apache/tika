@@ -31,6 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TempLimitReachedException;
@@ -132,6 +133,20 @@ public class TempLimitFailsTheTaskTest {
         AutoDetectParser parser = new AutoDetectParser(new SpoolingParser(onLimit));
         assertThrows(TempLimitReachedException.class,
                 () -> parse(parser, SPOOLS, contextWithBudget()));
+    }
+
+    @Test
+    public void testTempLimitsInTheContextLimitsTheParse() {
+        AutoDetectParser parser = new AutoDetectParser(new SpoolingParser(OnLimit.THROW));
+        ParseContext context = new ParseContext();
+        context.set(TempLimits.class, new TempLimits(MB));
+        assertThrows(TempLimitReachedException.class, () -> parse(parser, SPOOLS, context));
+    }
+
+    @Test
+    public void testNoTempLimitsNoLimit() throws Exception {
+        AutoDetectParser parser = new AutoDetectParser(new SpoolingParser(OnLimit.THROW));
+        parse(parser, SPOOLS, new ParseContext());
     }
 
     @Test

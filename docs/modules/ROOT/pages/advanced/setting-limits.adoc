@@ -47,7 +47,8 @@ throughout the parse.
 |`temp-limits`
 |`TempLimits`
 |Bytes held at once in the temp files Tika itself writes, fetched input included; not
-those its libraries or external programs write. Pipes only.
+those its libraries or external programs write. Always on in pipes; in-process only when
+set.
 
 |`standard-metadata-limiter-factory`
 |`StandardMetadataLimiterFactory`
@@ -379,12 +380,13 @@ disk-backed volume, not tmpfs, that can fill without taking out the host, and si
 quota it yourself; see xref:pipes/configuration.adoc[Pipes configuration].
 ====
 
-Parsing in-process, nothing applies `temp-limits`: put a `TempBytesBudget`, one per
-document, in the `ParseContext` to get the same bound; the parse then throws the
-unchecked `TempLimitReachedException`. Use a new one for each document:
-a budget that has reached its limit stays reached, so every later parse that shares it
-fails at once. A context holding one cannot be handed to `PipesParser` or
-`PipesForkParser`; those apply `temp-limits` themselves.
+In-process there is no default: nothing is limited unless you set it. Put a `TempLimits`
+in the `ParseContext` you pass to `AutoDetectParser` (a `temp-limits` entry in the config's
+`parse-context` does this when the context comes from `TikaLoader.loadParseContext()`).
+The parse throws the unchecked `TempLimitReachedException` when the limit is reached. The
+limit's count lives in the `ParseContext`, like the embedded-document counts: use a new
+`ParseContext` for each document, or one that reached its limit fails every later parse.
+A parser called directly, not through `AutoDetectParser`, is not limited.
 
 == Metadata limits
 

@@ -35,8 +35,10 @@ import org.apache.tika.parser.ParseContext;
  * Temp files written inside a library or by an external program are not counted. Default 50 GiB; {@code -1} for
  * no limit; {@code 0} and anything below {@code -1} are rejected.
  * <p>
- * Applied by tika-pipes, which turns it into one {@link TempBytesBudget} per task. Parsing
- * in-process, nothing is limited unless the caller puts a budget in the context.
+ * tika-pipes applies it to every task, with the default if none is configured.
+ * In-process there is no default: {@code AutoDetectParser} applies it only when the
+ * {@code ParseContext} holds a {@code TempLimits}, and the limit belongs to that context,
+ * so use a new {@code ParseContext} for each document.
  * <pre>
  * {
  *   "parse-context": {
@@ -91,9 +93,26 @@ public class TempLimits implements Serializable {
     }
 
     /**
+     * Gives a context that has {@code TempLimits} and no {@link TempBytesBudget} a new
+     * budget. It stays in the context, like the rest of a parse's state: use a new
+     * {@code ParseContext} for each document, since a budget that has reached its limit
+     * fails every later parse that finds it.
+     */
+    public static void seedBudget(ParseContext context) {
+        TempLimits limits = context == null ? null : context.get(TempLimits.class);
+        if (limits == null || context.get(TempBytesBudget.class) != null) {
+            return;
+        }
+        TempBytesBudget budget = limits.newBudget();
+        if (budget != null) {
+            context.set(TempBytesBudget.class, budget);
+        }
+    }
+
+    /**
      * Puts {@code tis} under the context's {@link TempBytesBudget}, if it has one. Call it
-     * wherever a stream enters a parse. Nothing here creates the budget: a pipes fork
-     * seeds one per task from these limits, and a caller parsing in-process sets its own.
+     * wherever a stream enters a parse. The budget comes from {@link #seedBudget}, or
+     * from a caller that set its own.
      *
      * @throws TempLimitReachedException if the task has already reached its limit
      */

@@ -148,6 +148,8 @@ public class AutoDetectParser extends CompositeParser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        // like ParseRecord, made on first use and left in the context: one context per document
+        TempLimits.seedBudget(context);
         TempLimits.apply(tis, context);
         // Compute digests before type detection if configured
         // DigesterFactory is retrieved from ParseContext (configured via parse-context)
