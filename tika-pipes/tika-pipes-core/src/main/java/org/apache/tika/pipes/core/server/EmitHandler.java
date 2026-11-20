@@ -29,6 +29,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -237,7 +238,7 @@ class EmitHandler {
             } else {
                 emitter.emit(emitKey.getEmitKey(), parseData.getMetadataList(), parseContext);
             }
-        } catch (IOException e) {
+        } catch (IOException | TempLimitReachedException e) {
             LOG.warn("emit exception", e);
             String msg = ExceptionUtils.format(e, parseContext);
             //for now, we're hiding the parse exception if there was also an emit exception

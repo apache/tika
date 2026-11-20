@@ -26,9 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.PrivateKey;
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,6 +60,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
@@ -169,7 +168,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         get.setConfig(buildRequestConfig());
         setHttpRequestHeaders(metadata, get);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
-        return execute(get, metadata, httpClient, true);
+        return execute(get, metadata, httpClient, true, parseContext);
     }
 
     private RequestConfig buildRequestConfig() {
@@ -249,7 +248,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
 
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
-        return execute(get, metadata, httpClient, true);
+        return execute(get, metadata, httpClient, true, parseContext);
     }
 
     private void putAdditionalHeadersOnRequest(HttpFetcherRequestConfig additionalFetcherConfig, HttpGet httpGet) throws TikaException {
@@ -295,7 +294,8 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         get.setHeader(headerKey, headerValue);
     }
 
-    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength)
+    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client,
+                                    boolean retryOnBadLength, ParseContext parseContext)
             throws IOException, TikaTimeoutException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
@@ -333,7 +333,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
             try (InputStream is = response
                     .getEntity()
                     .getContent()) {
-                return spool(is, metadata);
+                return spool(is, metadata, parseContext);
             }
         } catch (ConnectionClosedException e) {
 
@@ -343,7 +343,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
                 //one trigger for this is if the server sends the uncompressed length
                 //and then compresses the stream. See HTTPCLIENT-2176
                 LOG.warn("premature end of content-length delimited message; retrying with content compression disabled");
-                return execute(get, metadata, noCompressHttpClient, false);
+                return execute(get, metadata, noCompressHttpClient, false, parseContext);
             }
             throw e;
         } catch (IOException e) {
@@ -367,15 +367,19 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         }
     }
 
-    private TikaInputStream spool(InputStream content, Metadata metadata) throws IOException {
+    private TikaInputStream spool(InputStream content, Metadata metadata,
+                                  ParseContext parseContext) throws IOException {
         long start = System.currentTimeMillis();
         TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, parseContext);
         try {
             Path tmpFile = tmp.createTempFile(metadata);
             if (httpFetcherConfig.getMaxSpoolSize() < 0) {
-                Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                try (OutputStream os = tmp.newOutputStream(tmpFile)) {
+                    IOUtils.copyLarge(content, os);
+                }
             } else {
-                try (OutputStream os = Files.newOutputStream(tmpFile)) {
+                try (OutputStream os = tmp.newOutputStream(tmpFile)) {
                     long totalRead = IOUtils.copyLarge(content, os, 0, httpFetcherConfig.getMaxSpoolSize());
                     if (totalRead == httpFetcherConfig.getMaxSpoolSize() && content.read() != -1) {
                         metadata.set(HTTP_FETCH_TRUNCATED, "true");

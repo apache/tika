@@ -26,9 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Timer;
@@ -55,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
@@ -154,7 +153,7 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
                 .setRedirectsEnabled(config.getMaxRedirects() > 0).build();
         get.setConfig(requestConfig);
         putAdditionalHeadersOnRequest(get, fetchKey);
-        return execute(get, metadata, httpClient, true);
+        return execute(get, metadata, httpClient, true, parseContext);
     }
 
     private void putAdditionalHeadersOnRequest(HttpGet httpGet, String url)
@@ -182,7 +181,7 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
     }
 
     private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client,
-                                    boolean retryOnBadLength)
+                                    boolean retryOnBadLength, ParseContext parseContext)
             throws IOException, TikaException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
@@ -213,12 +212,12 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
                 throw new IOException("bad status code: " + code + " :: " + responseToString(response));
             }
             try (InputStream is = response.getEntity().getContent()) {
-                return spool(is, metadata);
+                return spool(is, metadata, parseContext);
             }
         } catch (ConnectionClosedException e) {
             if (retryOnBadLength && e.getMessage() != null && e.getMessage().contains("Premature end of Content-Length delimited message")) {
                 LOG.warn("premature end of content-length delimited message; retrying with content compression disabled");
-                return execute(get, metadata, noCompressHttpClient, false);
+                return execute(get, metadata, noCompressHttpClient, false, parseContext);
             }
             throw e;
         } catch (IOException e) {
@@ -241,16 +240,19 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
         }
     }
 
-    private TikaInputStream spool(InputStream content, Metadata metadata) throws IOException {
+    private TikaInputStream spool(InputStream content, Metadata metadata,
+                                  ParseContext parseContext) throws IOException {
         long start = System.currentTimeMillis();
         TemporaryResources tmp = new TemporaryResources();
+        TempLimits.apply(tmp, parseContext);
         try {
             Path tmpFile = tmp.createTempFile(metadata);
             if (config.getMaxSpoolSize() < 0) {
-                // createTempFile already created the file
-                Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+                try (OutputStream os = tmp.newOutputStream(tmpFile)) {
+                    IOUtils.copyLarge(content, os);
+                }
             } else {
-                try (OutputStream os = Files.newOutputStream(tmpFile)) {
+                try (OutputStream os = tmp.newOutputStream(tmpFile)) {
                     long totalRead = IOUtils.copyLarge(content, os, 0, config.getMaxSpoolSize());
                     if (totalRead == config.getMaxSpoolSize() && content.read() != -1) {
                         metadata.set(HTTP_FETCH_TRUNCATED, true);
