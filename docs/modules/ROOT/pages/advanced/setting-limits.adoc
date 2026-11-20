@@ -42,7 +42,7 @@ throughout the parse.
 
 |`unpack-config`
 |`UnpackConfig`
-|Total bytes extracted by `ParseMode.UNPACK`. Pipes only.
+|Total embedded bytes `ParseMode.UNPACK` hands back; not temp space. Pipes only.
 
 |`temp-limits`
 |`TempLimits`
@@ -276,10 +276,10 @@ scenarios and how each outcome is reported, see xref:pipes/timeouts.adoc[Timeout
 
 == Embedded byte extraction limits
 
-`ParseMode.UNPACK` writes embedded bytes out; `UnpackConfig.maxUnpackBytes`
-caps the total extracted. It does not cap the temp space used on the way: each
-embedded file is spooled to a temp file before it is extracted, and that is what
-<<temp-file-limits,`temp-limits`>> bounds.
+`ParseMode.UNPACK` hands embedded bytes back to the caller; `UnpackConfig.maxUnpackBytes`
+caps the total handed back for one file. It is not a limit on temp space: each
+embedded file is spooled to a temp file first, and that is bounded separately by
+<<temp-file-limits,`temp-limits`>>.
 
 [cols="2,1,3"]
 |===
@@ -287,7 +287,7 @@ embedded file is spooled to a temp file before it is extracted, and that is what
 
 |`maxUnpackBytes`
 |10 GiB
-|Maximum total bytes extracted from all embedded documents per file. `-1` is
+|Maximum total bytes handed back from all embedded documents per file. `-1` is
 unlimited (not advisable for untrusted input); `0` means zero bytes, not unlimited.
 |===
 

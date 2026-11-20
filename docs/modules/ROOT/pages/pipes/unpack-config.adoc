@@ -86,7 +86,8 @@ All options below are fields of the `unpack-config` block — nest them inside
 |`maxUnpackBytes`
 |long
 |10 GiB
-|Maximum total bytes to extract per file. Set to `-1` for unlimited (not recommended). `0`
+|Maximum total embedded bytes handed back per file; not a limit on temp space (see
+<<_safety_limits>>). Set to `-1` for unlimited (not recommended). `0`
 is not unlimited -- it means zero bytes, so the first embedded file's extraction is
 immediately capped.
 
@@ -245,12 +246,14 @@ These keys are REGULAR output's; a Frictionless package sits at `<containerKey>/
 
 == Safety Limits
 
-`maxUnpackBytes` bounds the bytes extracted from zip bombs and other files that expand to
-enormous sizes. The 10 GiB default suits most corpora; lower it for untrusted input. It does
-not bound the temp space used on the way: each embedded file is spooled to a temp file before
-it is extracted, and `temp-limits`
-(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]) bounds that. Reaching
-that limit is not silent: it fails the file.
+`maxUnpackBytes` limits the embedded bytes handed back to you, the total emitted for one
+file, so that a zip bomb or other file that expands enormously cannot flood your output.
+The 10 GiB default suits most corpora; lower it for untrusted input.
+
+It is not a limit on temp space. Each embedded file is spooled to a temp file before it is
+handed back, and that is bounded separately by `temp-limits`
+(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]). Reaching that
+limit is not silent: it fails the file.
 
 Hitting `maxUnpackBytes` is silent apart from a log line. The embedded file being written is
 truncated at the remaining budget, each later embedded file is skipped, and each case
