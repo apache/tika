@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.xml.sax.Attributes;
@@ -97,6 +98,13 @@ class XSSFStylesShim {
             return null;
         }
         return fontScriptTags.get(fontId);
+    }
+
+    /**
+     * @return whether some font in {@code <fonts>} is superscript or subscript
+     */
+    boolean hasScriptFont() {
+        return fontScriptTags.stream().anyMatch(Objects::nonNull);
     }
 
     private class StylesHandler extends DefaultHandler {

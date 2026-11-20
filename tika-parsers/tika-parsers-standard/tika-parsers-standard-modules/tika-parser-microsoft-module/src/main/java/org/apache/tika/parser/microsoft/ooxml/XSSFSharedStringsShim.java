@@ -40,8 +40,9 @@ import org.apache.tika.utils.XMLReaderUtils;
  * Parses {@code xl/sharedStrings.xml} and stores each shared string entry
  * as a plain {@code String}, avoiding the XMLBeans dependency that
  * {@code XSSFRichTextString} requires. Rich text runs within a single
- * {@code <si>} are concatenated into a single string; an entry with a superscript or
- * subscript run also keeps its runs, for {@code <sup>}/{@code <sub>}.
+ * {@code <si>} are concatenated into a single string. An entry also keeps its runs,
+ * for {@code <sup>}/{@code <sub>}, if one of them is superscript or subscript, or if
+ * it has formatted runs and some cell style's font is superscript or subscript.
  */
 class XSSFSharedStringsShim {
 
@@ -56,12 +57,20 @@ class XSSFSharedStringsShim {
     private final List<String> strings;
     private final Map<Integer, List<Run>> scriptedRuns;
     private final boolean includePhoneticRuns;
+    private final boolean cellFontsMayBeScript;
 
+    /**
+     * @param cellFontsMayBeScript whether some cell style's font is superscript or
+     *                             subscript; if not, only entries with a superscript
+     *                             or subscript run keep their runs
+     */
     XSSFSharedStringsShim(InputStream sharedStringsData,
                            boolean includePhoneticRuns,
+                           boolean cellFontsMayBeScript,
                            ParseContext parseContext)
             throws IOException, SAXException, TikaException {
         this.includePhoneticRuns = includePhoneticRuns;
+        this.cellFontsMayBeScript = cellFontsMayBeScript;
         SharedStringsHandler handler = new SharedStringsHandler();
         if (sharedStringsData != null) {
             try {
@@ -80,7 +89,7 @@ class XSSFSharedStringsShim {
 
     /**
      * @return the entry's runs, phonetic runs included as plain text if they are
-     * concatenated, if one of them is superscript or subscript; else {@code null}
+     * concatenated, if it kept them (see the class javadoc); else {@code null}
      */
     List<Run> getScriptedRunsAt(int idx) {
         return scriptedRuns.get(idx);
@@ -100,12 +109,14 @@ class XSSFSharedStringsShim {
         private StringBuilder characters;
         private boolean tIsOpen;
         private boolean inRPh;
+        private int tStart;
         private int rPhStart;
         private final List<Run> runs = new ArrayList<>();
         private final StringBuilder runText = new StringBuilder();
         private boolean inR;
         private boolean runHasRPr;
         private Tag runTag;
+        private boolean entryHasRuns;
         private boolean entryHasScript;
 
         @Override
@@ -134,6 +145,7 @@ class XSSFSharedStringsShim {
                         characters.setLength(0);
                     }
                     runs.clear();
+                    entryHasRuns = false;
                     entryHasScript = false;
                     break;
                 case "r":
@@ -145,6 +157,7 @@ class XSSFSharedStringsShim {
                 case "rPr":
                     if (inR) {
                         runHasRPr = true;
+                        entryHasRuns = true;
                     }
                     break;
                 case "vertAlign":
@@ -155,6 +168,7 @@ class XSSFSharedStringsShim {
                     break;
                 case "t":
                     tIsOpen = true;
+                    tStart = characters != null ? characters.length() : 0;
                     break;
                 case "rPh":
                     inRPh = true;
@@ -177,7 +191,7 @@ class XSSFSharedStringsShim {
             switch (localName) {
                 case "si":
                     if (characters != null) {
-                        if (entryHasScript) {
+                        if (entryHasScript || (entryHasRuns && cellFontsMayBeScript)) {
                             scriptedRuns.put(strings.size(), List.copyOf(runs));
                         }
                         strings.add(characters.toString());
@@ -191,6 +205,10 @@ class XSSFSharedStringsShim {
                     break;
                 case "t":
                     tIsOpen = false;
+                    // a <t> directly in <si>, before any <r>, is in the cell's font
+                    if (!inR && !inRPh && characters != null && characters.length() > tStart) {
+                        runs.add(new Run(characters.substring(tStart), null, false));
+                    }
                     break;
                 case "rPh":
                     inRPh = false;

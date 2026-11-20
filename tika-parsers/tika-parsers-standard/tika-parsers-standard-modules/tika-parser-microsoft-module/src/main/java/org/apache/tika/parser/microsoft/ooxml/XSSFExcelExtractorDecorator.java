@@ -172,7 +172,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
         try {
             stringsShim = new XSSFSharedStringsShim(xssfReader.getSharedStringsData(),
-                    config.isConcatenatePhoneticRuns(), context);
+                    config.isConcatenatePhoneticRuns(),
+                    stylesShim != null && stylesShim.hasScriptFont(), context);
         } catch (Exception e) {
             EmbeddedDocumentUtil.recordException(e, metadata, context);
         }

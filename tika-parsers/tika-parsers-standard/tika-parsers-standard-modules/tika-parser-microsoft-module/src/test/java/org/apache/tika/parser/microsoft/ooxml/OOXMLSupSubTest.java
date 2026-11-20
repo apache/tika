@@ -17,7 +17,10 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -83,7 +86,12 @@ public class OOXMLSupSubTest extends TikaTest {
                 + "<si><t>n</t></si>"
                 // the phonetic reading follows the runs as plain text
                 + "<si><r><t>x</t></r><r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r>"
-                + "<rPh sb=\"0\" eb=\"1\"><t>ekusu</t></rPh></si></sst>";
+                + "<rPh sb=\"0\" eb=\"1\"><t>ekusu</t></rPh></si>"
+                // in a superscript cell, a run with rPr but no vertAlign is baseline
+                + "<si><r><t>a</t></r><r><rPr><b/></rPr><t>b</t></r></si>"
+                // a direct <t> before the runs is kept, in the cell's font
+                + "<si><t>abc</t><r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r>"
+                + "</si></sst>";
         String styles = "<styleSheet " + sml + "><fonts count=\"3\"><font><sz val=\"11\"/></font>"
                 + "<font><vertAlign val=\"superscript\"/><sz val=\"11\"/></font>"
                 + "<font><vertAlign val=\"subscript\"/><sz val=\"11\"/></font></fonts>"
@@ -97,6 +105,8 @@ public class OOXMLSupSubTest extends TikaTest {
                 + "<c r=\"D1\" s=\"2\"><v>219</v></c>"
                 + "<c r=\"E1\"><v>5</v></c>"
                 + "<c r=\"F1\" t=\"s\"><v>3</v></c>"
+                + "<c r=\"G1\" s=\"1\" t=\"s\"><v>4</v></c>"
+                + "<c r=\"H1\" t=\"s\"><v>5</v></c>"
                 + "</row></sheetData></worksheet>";
         String xml = parse(xlsx(sharedStrings, styles, sheet));
         assertContains("<td>E = mc<sup>2</sup></td>", xml);
@@ -105,6 +115,22 @@ public class OOXMLSupSubTest extends TikaTest {
         assertContains("<td><sub>219</sub></td>", xml);
         assertContains("<td>5</td>", xml);
         assertContains("<td>x<sup>2</sup> ekusu</td>", xml);
+        assertContains("<td><sup>a</sup>b</td>", xml);
+        assertContains("<td>abc<sup>2</sup></td>", xml);
+    }
+
+    //TIKA-5071
+    @Test
+    public void testXlsxSharedStringRunsKeptOnlyForScript() throws Exception {
+        String sst = "<sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+                + "<si><r><t>a</t></r><r><rPr><b/></rPr><t>b</t></r></si>"
+                + "<si><r><t>x</t></r><r><rPr><vertAlign val=\"superscript\"/></rPr>"
+                + "<t>2</t></r></si></sst>";
+        XSSFSharedStringsShim shim = new XSSFSharedStringsShim(
+                new ByteArrayInputStream(sst.getBytes(UTF_8)), false, false, new ParseContext());
+        // no cell style is superscript or subscript, so a bold-only entry's runs don't matter
+        assertNull(shim.getScriptedRunsAt(0));
+        assertNotNull(shim.getScriptedRunsAt(1));
     }
 
     private static String run(String text, String rPr) {

@@ -635,13 +635,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
                 case RKRecord.sid: // Excel internal number record
                     RKRecord rk = (RKRecord) record;
-                    Tag rkTag = getScriptTag(rk);
-                    if (rkTag != null) {
-                        addScriptedTextCell(record,
-                                new ScriptedTextCell().append(format.format(rk.getRKNumber()), rkTag));
-                    } else {
-                        addCell(record, new NumberCell(rk.getRKNumber(), format));
-                    }
+                    addCell(record, new NumberCell(rk.getRKNumber(), format));
                     break;
 
                 case HyperlinkRecord.sid: // holds a URL associated with a cell
@@ -847,7 +841,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 tag = getFontScriptTag(formatRun.getFontIndex() & 0xFFFF);
             }
             text.append(string.substring(pos), tag);
-            return text.hasScript() ? text : null;
+            return text.hasScript() || cellTag != null ? text : null;
         }
 
         /**

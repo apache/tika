@@ -31,13 +31,10 @@ interface TikaSheetContentsHandler {
     void cell(String cellRef, String formattedValue, XSSFCommentsShim.CommentData comment);
 
     /**
-     * A cell whose text has superscript or subscript in it. The default drops the
-     * formatting.
+     * A cell whose text has superscript or subscript in it.
      */
-    default void scriptedCell(String cellRef, ScriptedTextCell text,
-                              XSSFCommentsShim.CommentData comment) {
-        cell(cellRef, text.getText(), comment);
-    }
+    void scriptedCell(String cellRef, ScriptedTextCell text,
+                      XSSFCommentsShim.CommentData comment);
 
     default void headerFooter(String text, boolean isHeader, String tagName) {
     }

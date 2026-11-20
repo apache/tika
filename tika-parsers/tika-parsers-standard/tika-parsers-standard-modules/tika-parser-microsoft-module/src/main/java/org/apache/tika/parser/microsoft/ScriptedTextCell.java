@@ -43,9 +43,9 @@ public class ScriptedTextCell implements Cell {
         }
         int last = runs.size() - 1;
         if (last >= 0 && runs.get(last).tag == tag) {
-            runs.set(last, new Run(runs.get(last).text + text, tag));
+            runs.get(last).text.append(text);
         } else {
-            runs.add(new Run(text, tag));
+            runs.add(new Run(new StringBuilder(text), tag));
         }
         return this;
     }
@@ -64,46 +64,45 @@ public class ScriptedTextCell implements Cell {
     }
 
     /**
-     * @return the text without the formatting
-     */
-    public String getText() {
-        StringBuilder sb = new StringBuilder();
-        for (Run run : runs) {
-            sb.append(run.text);
-        }
-        return sb.toString();
-    }
-
-    /**
      * Trims whitespace off both ends of the text, as {@link String#trim()} does for
      * a {@link TextCell}; runs left empty are dropped.
      */
     public ScriptedTextCell trim() {
-        while (!runs.isEmpty()) {
-            Run first = runs.get(0);
-            int start = 0;
-            while (start < first.text.length() && first.text.charAt(start) <= ' ') {
+        // drop whitespace-only runs in one subList clear each end, not remove(0) per run
+        int first = 0;
+        int start = 0;
+        for (; first < runs.size(); first++) {
+            StringBuilder text = runs.get(first).text;
+            start = 0;
+            while (start < text.length() && text.charAt(start) <= ' ') {
                 start++;
             }
-            if (start < first.text.length()) {
-                runs.set(0, new Run(first.text.substring(start), first.tag));
+            if (start < text.length()) {
                 break;
             }
-            runs.remove(0);
         }
-        while (!runs.isEmpty()) {
-            int lastIndex = runs.size() - 1;
-            Run last = runs.get(lastIndex);
-            int end = last.text.length();
-            while (end > 0 && last.text.charAt(end - 1) <= ' ') {
+        if (first == runs.size()) {
+            runs.clear();
+            return this;
+        }
+        runs.get(first).text.delete(0, start);
+        runs.subList(0, first).clear();
+
+        int last = runs.size() - 1;
+        int end = 0;
+        for (; last >= 0; last--) {
+            StringBuilder text = runs.get(last).text;
+            end = text.length();
+            while (end > 0 && text.charAt(end - 1) <= ' ') {
                 end--;
             }
             if (end > 0) {
-                runs.set(lastIndex, new Run(last.text.substring(0, end), last.tag));
                 break;
             }
-            runs.remove(lastIndex);
         }
+        // the first run has non-whitespace, so last >= 0
+        runs.get(last).text.setLength(end);
+        runs.subList(last + 1, runs.size()).clear();
         return this;
     }
 
@@ -111,10 +110,10 @@ public class ScriptedTextCell implements Cell {
     public void render(XHTMLContentHandler handler) throws SAXException {
         for (Run run : runs) {
             if (run.tag == null) {
-                handler.characters(run.text);
+                handler.characters(run.text.toString());
             } else {
                 handler.startElement(run.tag.tagName());
-                handler.characters(run.text);
+                handler.characters(run.text.toString());
                 handler.endElement(run.tag.tagName());
             }
         }
@@ -147,6 +146,6 @@ public class ScriptedTextCell implements Cell {
         return null;
     }
 
-    private record Run(String text, Tag tag) {
+    private record Run(StringBuilder text, Tag tag) {
     }
 }

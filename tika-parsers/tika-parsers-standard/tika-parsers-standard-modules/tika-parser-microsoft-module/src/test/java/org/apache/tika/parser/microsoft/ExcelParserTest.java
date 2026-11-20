@@ -893,6 +893,19 @@ public class ExcelParserTest extends TikaTest {
             number.setCellValue(219);
             number.setCellStyle(subStyle);
             row.createCell(3).setCellValue(5);
+            // in a subscript cell, a format run's own font replaces the cell's font
+            HSSFFont bold = wb.createFont();
+            bold.setBold(true);
+            HSSFRichTextString allBold = new HSSFRichTextString("pq");
+            allBold.applyFont(0, 2, bold);
+            HSSFCell allBoldCell = row.createCell(4);
+            allBoldCell.setCellValue(allBold);
+            allBoldCell.setCellStyle(subStyle);
+            HSSFRichTextString tailBold = new HSSFRichTextString("rs");
+            tailBold.applyFont(1, 2, bold);
+            HSSFCell tailBoldCell = row.createCell(5);
+            tailBoldCell.setCellValue(tailBold);
+            tailBoldCell.setCellStyle(subStyle);
             wb.write(bos);
         }
         String xml;
@@ -903,6 +916,8 @@ public class ExcelParserTest extends TikaTest {
         assertContains("<td><sub>n</sub></td>", xml);
         assertContains("<td><sub>219</sub></td>", xml);
         assertContains("<td>5</td>", xml);
+        assertContains("<td>pq</td>", xml);
+        assertContains("<td><sub>r</sub>s</td>", xml);
     }
 
     //TIKA-5071 the phonetic reading follows a superscript cell as plain text

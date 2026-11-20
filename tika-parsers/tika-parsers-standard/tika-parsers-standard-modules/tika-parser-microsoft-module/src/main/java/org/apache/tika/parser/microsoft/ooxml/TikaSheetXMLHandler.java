@@ -359,7 +359,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
 
     /**
      * @return the shared string's runs as cell text, a run with no {@code <rPr>} in
-     * the cell's font; {@code null} if {@code runs} is
+     * the cell's font; {@code null} if {@code runs} is {@code null}
      */
     private ScriptedTextCell toScriptedText(List<XSSFSharedStringsShim.Run> runs) {
         if (runs == null) {
