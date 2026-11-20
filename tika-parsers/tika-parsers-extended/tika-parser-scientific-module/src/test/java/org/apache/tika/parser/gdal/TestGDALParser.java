@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -226,6 +227,8 @@ public class TestGDALParser extends TikaTest {
                         document.getBytes(StandardCharsets.US_ASCII))) {
                     new GDALParser().parse(tis, new BodyContentHandler(), new Metadata(),
                             new ParseContext());
+                } catch (TikaException e) {
+                    // gdalinfo may refuse the file; what matters is that it opened no URL
                 }
             }
             assertEquals(0, connections.get());

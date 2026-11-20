@@ -354,6 +354,8 @@ public class PerClientServerManager implements ServerManager {
      * next request, which on an idle server may never arrive: a parse cut short mid-spool
      * otherwise leaves its partial temp files on disk until then. {@code process} is kept so
      * {@link #ensureRunning()} still has an exit code to count the restart by.
+     * <p>
+     * Where this returns without deleting, the fork's exit does it; see {@link #startServer()}.
      */
     private synchronized void reap() {
         Process p = process;
@@ -361,7 +363,7 @@ public class PerClientServerManager implements ServerManager {
             ProcessUtils.destroyForciblyWithDescendants(p);
             try {
                 if (!p.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS)) {
-                    // files it still holds open can't all be deleted; the restart retries
+                    // files it still holds open can't all be deleted
                     LOG.warn("clientId={}: process still alive after {}ms; temp dir cleanup deferred",
                             clientId, WAIT_ON_DESTROY_MS);
                     return;
@@ -372,6 +374,13 @@ public class PerClientServerManager implements ServerManager {
             }
         }
         deleteTmpDir();
+    }
+
+    /** No-op once a restart or shutdown has already replaced or removed {@code dir}. */
+    private synchronized void deleteTmpDirIfStill(Path dir) {
+        if (tmpDir == dir) {
+            deleteTmpDir();
+        }
     }
 
     private void deleteTmpDir() {
@@ -390,7 +399,7 @@ public class PerClientServerManager implements ServerManager {
 
     @Override
     public void connectionAbandoned() {
-        LOG.info("clientId={}: connection abandoned, worker will be recycled on next use", clientId);
+        LOG.info("clientId={}: connection abandoned, killing the worker", clientId);
         markForRestart(RestartReason.CONNECTION_ABANDONED);
     }
 
@@ -597,6 +606,10 @@ public class PerClientServerManager implements ServerManager {
             }
             throw new ServerInitializationException(msg, e);
         }
+
+        // reap() cannot wait for the exit when its caller is interrupted or the fork is slow to die
+        Path startedIn = tmpDir;
+        process.onExit().thenRun(() -> deleteTmpDirIfStill(startedIn));
 
         token = ForkBootstrap.newToken();
         try (OutputStream stdin = process.getOutputStream()) {

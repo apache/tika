@@ -27,6 +27,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -172,6 +173,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     public void parseEmbedded(
             TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context, boolean outputHtml)
             throws SAXException, IOException {
+        TempLimits.apply(tis, context);
         // Check and enforce embedded limits even if caller didn't call shouldParseEmbedded()
         // This guarantees limits are enforced for all callers
         ParseRecord parseRecord = context.get(ParseRecord.class);

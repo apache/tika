@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.rtf.jflex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -31,8 +33,10 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -128,5 +132,44 @@ public class RTFEmbeddedHandlerTest {
             }
             assertTrue(hasName, "at least one embedded should have a resource name");
         }
+    }
+
+    @Test
+    public void testPictIsChargedToTheTempBudget() throws Exception {
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\pict\\wmetafile8 "
+                + "01".repeat(20000) + "}}";
+        byte[] bytes = rtf.getBytes(StandardCharsets.US_ASCII);
+
+        List<Metadata> unlimited = new ArrayList<>();
+        new RTFHtmlDecapsulator(new DefaultHandler(), buildContext(unlimited)).extract(bytes);
+        assertEquals(1, unlimited.size());
+
+        List<Metadata> limited = new ArrayList<>();
+        ParseContext context = buildContext(limited);
+        // one buffer's worth fits and is charged; the next flush is refused
+        TempBytesBudget budget = new TempBytesBudget(10_000);
+        context.set(TempBytesBudget.class, budget);
+        assertThrows(TempLimitReachedException.class,
+                () -> new RTFHtmlDecapsulator(new DefaultHandler(), context).extract(bytes));
+        assertEquals(0, limited.size(), "a pict past the budget is not extracted");
+        assertEquals(0, budget.getReservedBytes());
+    }
+
+    @Test
+    public void testTempFileOfAnUnclosedPictIsStillDeleted() throws Exception {
+        // the file ends inside the group, so only the handler's own close() ends the pict
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\pict\\wmetafile8 "
+                + "01".repeat(20000);
+        TempBytesBudget budget = new TempBytesBudget(10_000);
+        ParseContext context = buildContext(new ArrayList<>());
+        context.set(TempBytesBudget.class, budget);
+        try {
+            new RTFHtmlDecapsulator(new DefaultHandler(), context)
+                    .extract(rtf.getBytes(StandardCharsets.US_ASCII));
+        } catch (IOException | TempLimitReachedException e) {
+            //the refused flush; what matters is what is left behind
+        }
+        assertTrue(budget.isLimitReached());
+        assertEquals(0, budget.getReservedBytes(), "the pict's temp file was not released");
     }
 }

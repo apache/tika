@@ -37,6 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -246,6 +248,9 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         String formatName = settings.getImageFormat().getFormatName();
         Path tmpFile = Files.createTempFile("tika-pdfbox-rendering-",
                 "-" + id + "-" + pageNumber + "." + formatName);
+        // holds the page's charge; released with the result
+        TemporaryResources charge = new TemporaryResources();
+        TempLimits.apply(charge, parseContext);
         try {
             long start = System.currentTimeMillis();
             //TODO: parameterize whether or not to un-rotate page?
@@ -254,25 +259,44 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             long renderingElapsed = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);
             start = System.currentTimeMillis();
-            try (OutputStream os = Files.newOutputStream(tmpFile)) {
+            try (OutputStream os = charge.newOutputStream(tmpFile)) {
                 ImageIOUtil.writeImage(image, formatName, os, Math.round(dpi),
                         settings.getImageQuality());
             }
             long elapsedWrite = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_IMAGE_WRITING_TIME_MS, elapsedWrite);
             metadata.set(Rendering.RENDERED_MS, renderingElapsed + elapsedWrite);
-        } catch (SecurityException e) {
-            //throw SecurityExceptions immediately
+        } catch (SecurityException | TempLimitReachedException e) {
+            //throw these immediately
+            discard(charge, tmpFile);
             throw e;
         } catch (Exception e) {
-            try {
-                Files.delete(tmpFile);
-            } catch (IOException ex) {
-                LOG.warn("couldn't delete " + tmpFile, ex);
-            }
+            discard(charge, tmpFile);
             throw new IOException(e);
         }
-        return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, metadata);
+        return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, metadata) {
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } finally {
+                    charge.close();
+                }
+            }
+        };
+    }
+
+    private static void discard(TemporaryResources charge, Path tmpFile) {
+        try {
+            charge.deleteTempFile(tmpFile);
+        } catch (IOException ex) {
+            LOG.warn("couldn't delete " + tmpFile, ex);
+        }
+        try {
+            charge.close();
+        } catch (IOException ex) {
+            LOG.warn("couldn't release the temp charge for " + tmpFile, ex);
+        }
     }
 
     /**

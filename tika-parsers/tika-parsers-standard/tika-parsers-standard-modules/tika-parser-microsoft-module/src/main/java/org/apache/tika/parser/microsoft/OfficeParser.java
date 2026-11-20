@@ -45,6 +45,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -289,6 +290,7 @@ public class OfficeParser extends AbstractOfficeParser {
                     //  file to the regular OOXML parser for normal handling
                     OOXMLParser parser = new OOXMLParser();
                     try (TikaInputStream tis = TikaInputStream.get(d.getDataStream(root))) {
+                        TempLimits.apply(tis, context);
                         parser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                                 metadata, context);
                     }

@@ -307,7 +307,9 @@ public class UnpackConfig implements Serializable {
     }
 
     /**
-     * Maximum total bytes to unpack per file. Default is 10GB.
+     * Maximum total embedded bytes handed back per file. Default is 10GB. Not a limit on
+     * the temp space used to get them: see {@code temp-limits}
+     * ({@link org.apache.tika.config.TempLimits}).
      * Set to -1 to disable the limit (not recommended). 0 is not "unlimited" -- it means
      * zero bytes, so the very first embedded file's extraction is immediately capped.
      *

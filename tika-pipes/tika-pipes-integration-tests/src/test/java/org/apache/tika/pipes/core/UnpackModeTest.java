@@ -22,28 +22,35 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
@@ -87,7 +94,15 @@ public class UnpackModeTest {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        pipesConfig.setTempDirectory(dir.resolve("fork-tmp").toString());
         return new PipesClient(pipesConfig, tikaConfigPath);
+    }
+
+    /** Every file under the shared client's fork temp directory. */
+    private static Set<Path> forkTempFiles() throws IOException {
+        try (Stream<Path> paths = Files.walk(tmp.resolve("fork-tmp"))) {
+            return paths.filter(Files::isRegularFile).collect(Collectors.toSet());
+        }
     }
 
     private static Path outputDir(String testName) {
@@ -391,6 +406,93 @@ public class UnpackModeTest {
         // testMaxUnpackBytesUnlimited shows these files otherwise total 4 x 146 bytes
         assertTrue(totalBytesWritten <= 10,
                 "Total bytes written should be limited by maxUnpackBytes. Got: " + totalBytesWritten);
+    }
+
+    @Test
+    public void testMaxTempBytesFailsTheFile() throws Exception {
+        // about 20 KB of zip, 20 MB once inflated: UNPACK spools each embedded file to temp
+        String bomb = "zeros.zip";
+        try (ZipOutputStream zip = new ZipOutputStream(
+                Files.newOutputStream(tmp.resolve("input").resolve(bomb)))) {
+            zip.putNextEntry(new ZipEntry("before.txt"));
+            zip.write("before".getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+            zip.putNextEntry(new ZipEntry("zeros.bin"));
+            byte[] chunk = new byte[1024 * 1024];
+            for (int i = 0; i < 20; i++) {
+                zip.write(chunk);
+            }
+            zip.closeEntry();
+            zip.putNextEntry(new ZipEntry("after.txt"));
+            zip.write("after".getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+        parseContext.set(TempLimits.class, new TempLimits(2 * 1024 * 1024));
+
+        Set<Path> tempFilesBefore = forkTempFiles();
+        PipesResult pipesResult = process("temp-limit", bomb, bomb, parseContext);
+        assertFalse(pipesResult.isProcessCrash(), "Status: " + pipesResult.status() +
+                ", Message: " + pipesResult.message());
+        assertEquals(tempFilesBefore, forkTempFiles(), "the failed file left temp files behind");
+
+        List<Metadata> metadataList = readMetadataList(outputDir("temp-limit"), bomb);
+        String containerException = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        assertNotNull(containerException, "no container exception in " + metadataList);
+        assertTrue(containerException.contains("TempLimitReachedException"), containerException);
+        assertFalse(containerException.contains("TIKA-198"), containerException);
+
+        // the limit ends the file: nothing is parsed or extracted from that entry on
+        Set<String> names = new HashSet<>();
+        for (Metadata m : metadataList) {
+            names.add(String.valueOf(m.get(TikaCoreProperties.RESOURCE_NAME_KEY)));
+        }
+        assertTrue(names.contains("before.txt"), names.toString());
+        assertFalse(names.contains("after.txt"), names.toString());
+        long unpacked = embeddedFiles(outputDir("temp-limit"), bomb).values().stream()
+                .mapToLong(Long::longValue).sum();
+        assertTrue(unpacked < 1024, "extracted at or past the limit: " + unpacked);
+
+        // the fork survived
+        ParseContext next = new ParseContext();
+        next.set(ParseMode.class, ParseMode.UNPACK);
+        assertTrue(process("temp-limit-next", testDocWithEmbedded, testDocWithEmbedded, next)
+                .isSuccess());
+    }
+
+    @Test
+    public void testMaxTempBytesCoversTopLevelDetection() throws Exception {
+        // 3 MB that does not compress, with the central directory cut off: the detector
+        // salvages a copy to temp before any parser has seen the stream
+        byte[] noise = new byte[1024 * 1024];
+        new Random(5075).nextBytes(noise);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(bos)) {
+            for (int i = 0; i < 3; i++) {
+                zip.putNextEntry(new ZipEntry("noise" + i + ".bin"));
+                zip.write(noise);
+                zip.closeEntry();
+            }
+        }
+        String truncated = "truncated.zip";
+        Files.write(tmp.resolve("input").resolve(truncated),
+                Arrays.copyOf(bos.toByteArray(), bos.size() - 200));
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.RMETA);
+        parseContext.set(TempLimits.class, new TempLimits(1024 * 1024));
+
+        Set<Path> tempFilesBefore = forkTempFiles();
+        PipesResult pipesResult = process("temp-limit-top", truncated, truncated, parseContext);
+        assertFalse(pipesResult.isProcessCrash(), "Status: " + pipesResult.status() +
+                ", Message: " + pipesResult.message());
+        assertEquals(tempFilesBefore, forkTempFiles(), "the failed file left temp files behind");
+        // RMETA passes the list back
+        List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
+        String containerException = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        assertNotNull(containerException, "no container exception in " + metadataList);
+        assertTrue(containerException.contains("TempLimitReachedException"), containerException);
     }
 
     @Test

@@ -58,6 +58,15 @@ limits — escaping the memory, timeout, or process bounds that sandboxing is su
 enforce — is a bug in Tika, and the project does treat that as a security issue. Report it
 privately to mailto:security@apache.org[security@apache.org], not in a public issue.
 
+IMPORTANT: Disk is not one of those bounds. Tika can only limit the temp files Tika itself
+writes (`temp-limits`, see xref:advanced/setting-limits.adoc#temp-file-limits[Temp file
+limits]); it cannot limit the temp files written inside the third-party libraries it parses
+with, or by the external programs it runs. That limit is hardening, not containment: a
+document can still
+fill the volume `java.io.tmpdir` is on, and keeping that volume from taking out the host is
+the operator's responsibility. On tmpfs the memory bound does not hold either: put
+`java.io.tmpdir` on disk (xref:pipes/configuration.adoc[Pipes configuration]).
+
 === Tika Server and gRPC Trust Model
 
 IMPORTANT: Neither `tika-server` nor `tika-grpc` is a security boundary. They perform no
@@ -86,7 +95,7 @@ callers — that requirement stands regardless of how the flags are set. All def
 
 Either way, per-request configuration stays bounded: a request may not set an `@OperatorOnly`
 property (a path, executable, class name, URL or credential), and it may tighten the server's
-output, embedded-document, metadata and timeout limits but not loosen them
+output, embedded-document, temp-file, metadata and timeout limits but not loosen them
 (xref:advanced/setting-limits.adoc#_per_request_limits[details]).
 
 *tika-grpc* ships unlocked; securing it is the deployer's job. It has no transport security and

@@ -65,6 +65,19 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * New temp-limits setting: tika-pipes bounds the bytes a task holds at once in the
+     temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none;
+     in-process there is no default, and AutoDetectParser applies it only when a
+     TempLimits is in the ParseContext):
+     spooled streams, parsers' own temp files, and a document a fetcher downloads to
+     temp. Reaching it stops that file with a
+     TempLimitReachedException (unchecked) as its container exception, keeping what
+     was parsed before it, and the fork keeps running; a fetched document larger than
+     the limit now fails. The default is a backstop: it does not stop one document
+     from writing several gigabytes. Temp files written inside third-party libraries
+     or by external programs (tesseract, unrar, ...) are not counted, so it is not a
+     bound on disk use (TIKA-5075).
+
    * A pipes fork that times out, crashes or runs out of memory is killed and its temp
      directory deleted at once, not when that client's next request arrives; an idle
      server no longer keeps a stopped parse's temp files (TIKA-5074).
@@ -85,7 +98,7 @@ Release 4.3.0 - ???
      e.g. TIKA_SERVER_SETTING_MAX_REQUEST_SIZE_BYTES), over the file's own value, so raising the
      1 GiB request body limit no longer needs a config file. The 413 names the limit and
      where to raise it (TIKA-5025).
-     
+
    * When pipes kills a forked server, it now kills the server's descendant processes too,
      such as ExternalParser commands and their children; they kept running. On a timeout,
      an interrupt or JVM shutdown, ProcessUtils.execute also kills the descendants of the
@@ -107,7 +120,7 @@ Release 4.3.0 - ???
      Arial Black now render with Liberation fonts. The images add the IPA and
      WenQuanYi fonts, so pages in non-embedded Japanese and Chinese fonts render
      instead of showing empty boxes or nothing (TIKA-5005).
-     
+
    * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
      for EKS IAM roles for service accounts (IRSA), and "default" for the AWS SDK default
      chain, which covers ECS task roles and EKS Pod Identity; the plugin now bundles the
@@ -126,7 +139,7 @@ Release 4.3.0 - ???
    * The Kafka emitter reports success only once Kafka has acknowledged every record
      (per acks); a rejected or timed-out record fails the emit instead of being lost
      silently, and the producer is flushed and closed on shutdown. (TIKA-5008).
-     
+
    * The JDBC emitter is thread-safe: concurrent emits (shared-server mode, several
      async emitter threads) shared one connection and prepared statement unguarded,
      mixing values across rows and committing each other's batches (TIKA-5007).
@@ -135,8 +148,15 @@ Release 4.3.0 - ???
 
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .xls and .xlsx, from
      rich-text runs in a cell and from the cell's own font (BIFF FONT records, xlsx
-     vertAlign); they were dropped, so "Article 5<sup>1</sup>" read "Article 51"
-     (TIKA-5071).
+     vertAlign) (TIKA-5071).
+     
+   * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
+   
+   * Comic book archives in RAR, 7z and tar (.cbr, .cb7, .cbt; application/vnd.comicbook-rar,
+     application/x-cb7, application/x-cbt, all new) have their first page in name order
+     emitted as the THUMBNAIL, as .cbz has. A name or declared type does not replace the
+     versioned RAR magic type or GNU tar's, so ComicBookDetector recognizes them by their
+     name or declared type together with the container's magic (TIKA-5041).
 
    * ASX playlists (application/x-ms-asx) are parsed by JSoupParser; XMLParser failed on
      many real ones (mixed-case or unclosed tags, raw '&', non-UTF-8 without a declaration).
@@ -147,12 +167,12 @@ Release 4.3.0 - ???
      OpenOffice.org 2.x/3.x registry cache files and LibreOffice user-profile backup
      (user/pack) files are detected by content; they were application/octet-stream, or
      application/x-git-pack for a pack file with two or three entries (TIKA-5029).
-     
+
    * ISO-2022-JP is decoded as x-windows-50221, so NEC/IBM extension characters (circled
      numbers, Roman numerals) no longer become U+FFFD. ISO-8859-1, ISO-8859-9, TIS-620 and
      ISO-8859-11 decode as windows-1252, windows-1254 and windows-874, as browsers do, when a
      detector other than the default chain reports them (TIKA-5045).
-     
+
    * Binary files are no longer detected as text because of their name or a text header.
      When content has no magic and at least 5% control bytes, and does not decode as
      UTF-16 or UTF-32, a text type from the file name or Content-Type no longer wins: Terminal Reality
@@ -196,7 +216,7 @@ Release 4.3.0 - ???
      document, so .mht saved pages are not trimmed; tk:readability:* metadata). "jsoup-filters"
      runs a list of jsoup filters, including your own JsoupFilter implementations, in order
      (TIKA-5054).
-     
+
    * Container formats that were detected only as generic OLE2, OPC or zip are now detected by
      their streams, package relationships or entries: Autodesk Revit projects and families,
      3ds Max scenes, Ichitaro documents, Windows Thumbs.db caches and newer SolidWorks files
@@ -264,7 +284,7 @@ Release 4.3.0 - ???
 
    * tika-ml-junkdetect: JunkDetector has a public no-arg constructor, so ServiceLoader
      finds it on the class path (TIKA-5057).
-     
+
    * WOFF and WOFF2 fonts (font/woff, font/woff2), SquashFS images
      (application/vnd.squashfs), Adobe Swatch Exchange files, PalmDOC e-books and binary
      OpenPGP signatures (application/pgp-signature) are detected by content; they were
@@ -341,7 +361,7 @@ Release 4.3.0 - ???
      no longer read as a space, and '../' is followed, so such chapters and images are no
      longer skipped. encryption.xml URIs are resolved the same way. The new
      ZipEntryPaths in tika-parser-zip-commons does the resolving (TIKA-5050).
-     
+
    * Canon CR3 raws have a parser of their own, Cr3Parser in the image module, instead
      of going through the MP4 parser: their Exif data (IFD0, Exif IFD, Canon maker note,
      GPS) is extracted, the JPEG preview (PRVW, 1620x1080 on current bodies) is the
@@ -367,10 +387,10 @@ Release 4.3.0 - ???
      thumbnail is picked as nbsphinx picks it: the output a cell marked
      nbsphinx-thumbnail names, else the last image in the notebook, given as PNG or
      JPEG where the output also holds them as SVG (TIKA-5037).
-     
+
    * FictionBook marks the cover image named in <coverpage> as a THUMBNAIL embedded
      resource, so the thumbnail preset serves it (TIKA-5035).
-     
+
    * MP4Parser extracts text subtitle tracks (tx3g/mov_text, QuickTime text) as
      embedded text/vtt documents named track-<id>.vtt, synthesized from the samples
      and parsed by SubtitleParser, with the track language as dc:language (ISO 639-2;
@@ -450,7 +470,7 @@ Release 4.3.0 - ???
      instead of relationship-id order, which put rId10 before rId2; embedded-resource
      page numbers follow the same order. Slides that are related but missing from the
      list are extracted last and counted in msoffice:ppt:num-unlisted-slides (TIKA-5017).
-     
+
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for docx (w:vertAlign,
      directly or through a character style), pptx (a:rPr baseline), doc, RTF (\super,
      \sub, \nosupersub) and HTML; they were dropped, so "x<sup>2</sup>" read "x2" and

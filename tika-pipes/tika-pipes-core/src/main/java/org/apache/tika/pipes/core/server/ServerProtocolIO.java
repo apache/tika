@@ -31,6 +31,7 @@ import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -425,7 +426,7 @@ public class ServerProtocolIO {
 
     /**
      * A request may tighten the operator's {@link OutputLimits},
-     * {@link EmbeddedLimits}, content-handler write limit, metadata limiter and
+     * {@link EmbeddedLimits}, {@link TempLimits}, content-handler write limit, metadata limiter and
      * {@code maxUnpackBytes} but not loosen them. Render limits in {@code "pages"} are bounded
      * where the parser resolves them, by the {@link PagesConfig.OperatorPages} recorded here.
      * {@code operatorContext} is the server's config plus any preset, before the request was
@@ -452,6 +453,16 @@ public class ServerProtocolIO {
                 LOG.warn("request-supplied {} is looser than the server's {}; clamping",
                         embedded, operatorEmbedded);
                 merged.set(EmbeddedLimits.class, tightened);
+            }
+        }
+        TempLimits operatorTemp = TempLimits.get(operatorContext);
+        TempLimits temp = merged.get(TempLimits.class);
+        if (temp != null && temp != operatorContext.get(TempLimits.class)) {
+            TempLimits tightened = temp.tightenedTo(operatorTemp);
+            if (tightened != temp) {
+                LOG.warn("request-supplied {} is looser than the server's {}; clamping",
+                        temp, operatorTemp);
+                merged.set(TempLimits.class, tightened);
             }
         }
         MetadataWriteLimiterFactory operatorLimiter =

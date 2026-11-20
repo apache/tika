@@ -21,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.xml.sax.ContentHandler;
@@ -122,5 +124,15 @@ public abstract class AbstractPkgTest extends TikaTest {
             stream.read(lastSeenStart);
         }
 
+    }
+
+    /** The embedded resource type of each entry, by its resource name, "null" for none. */
+    protected static Map<String, String> resourceTypes(List<Metadata> list) {
+        Map<String, String> types = new TreeMap<>();
+        for (Metadata m : list.subList(1, list.size())) {
+            types.put(m.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                    String.valueOf(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE)));
+        }
+        return types;
     }
 }

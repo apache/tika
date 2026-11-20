@@ -110,11 +110,11 @@ public class RTFEmbeddedHandler implements Closeable {
                         break;
                     case "objdata":
                         metadata = Metadata.newInstance(context);
-                        objParser = new RTFObjDataStreamParser(maxBytes);
+                        objParser = new RTFObjDataStreamParser(maxBytes, context);
                         break;
                     case "pict":
                         metadata = Metadata.newInstance(context);
-                        pictParser = new RTFPictStreamParser(maxBytes);
+                        pictParser = new RTFPictStreamParser(maxBytes, context);
                         break;
                     case "sn":
                         metadataBuffer.setLength(0);
@@ -184,6 +184,10 @@ public class RTFEmbeddedHandler implements Closeable {
         } catch (IOException e) {
             EmbeddedDocumentUtil.recordException(e, metadata, context);
         } finally {
+            // a failed onComplete leaves the temp file with the parser
+            if (pictParser != null) {
+                pictParser.close();
+            }
             pictParser = null;
             reset();
         }
