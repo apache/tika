@@ -354,6 +354,8 @@
 ** `audio/vorbis`
 * `org.apache.tika.parser.pdf.` link:{tika-javadoc-url}/org/apache/tika/parser/pdf/PDFParser.html[PDFParser]
 ** `application/pdf`
+* `org.apache.tika.parser.pkg.` link:{tika-javadoc-url}/org/apache/tika/parser/pkg/ComicBookTarParser.html[ComicBookTarParser]
+** `application/x-cbt`
 * `org.apache.tika.parser.pkg.` link:{tika-javadoc-url}/org/apache/tika/parser/pkg/CompressorParser.html[CompressorParser]
 ** `application/deflate64`
 ** `application/gzip`

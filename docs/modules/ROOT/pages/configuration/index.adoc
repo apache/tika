@@ -103,7 +103,8 @@ whether from the config file, a preset, a tika-server `/config` request, a gRPC
 `parse_context_json` or a pipes `FetchEmitTuple`: `pdf-parser`, `tesseract-ocr-parser`,
 `tess4j-parser`, `claude-vlm-parser`, `gemini-vlm-parser`, `openai-vlm-parser`, `emf-parser`,
 `wmf-parser`, `executable-parser`, `jpeg-parser`, `tiff-parser`, `raw-tiff-parser`,
-`heif-parser`, `bpg-parser`, `cr3-parser` and `web-p-parser`. A block for any other parser,
+`heif-parser`, `bpg-parser`, `cr3-parser`, `web-p-parser` and `comic-book-tar-parser`. A block
+for any other parser,
 detector, renderer or translator has no effect: Tika logs a warning naming the component, once
 per component per process, and Tika 5.0 will refuse it. Configure those components in their own
 section (`parsers`, `detectors`, ...) instead.

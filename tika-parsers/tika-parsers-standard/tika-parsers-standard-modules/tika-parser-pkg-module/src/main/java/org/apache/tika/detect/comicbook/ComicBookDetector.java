@@ -37,7 +37,9 @@ import org.apache.tika.parser.ParseContext;
  * application/x-gtar, and a name or type hint only replaces the magic type when it is a
  * sub-type of it. When the name ends in .cbr or .cbt, or the declared content type is one
  * of their types, and the content starts like the matching container, this returns the
- * comic type. A .cb7 needs none of this: the magic of a 7z has no version.
+ * comic type; for a tar that is a first header with the ustar magic and a checksum that
+ * holds, as the magic alone can sit in a file of another type. A .cb7 needs none of this:
+ * the magic of a 7z has no version.
  */
 @TikaComponent
 public class ComicBookDetector implements Detector {
@@ -50,6 +52,9 @@ public class ComicBookDetector implements Detector {
     private static final byte[] RAR = {'R', 'a', 'r', '!', 0x1a, 0x07};
     private static final byte[] USTAR = "ustar".getBytes(StandardCharsets.US_ASCII);
     private static final int USTAR_OFFSET = 257;
+    private static final int TAR_HEADER_LENGTH = 512;
+    private static final int CHECKSUM_OFFSET = 148;
+    private static final int CHECKSUM_LENGTH = 8;
 
     @Override
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
@@ -61,16 +66,16 @@ public class ComicBookDetector implements Detector {
         if (wanted == null) {
             return MediaType.OCTET_STREAM;
         }
-        int length = USTAR_OFFSET + USTAR.length;
-        tis.mark(length);
+        tis.mark(TAR_HEADER_LENGTH);
         byte[] head;
         try {
-            head = tis.readNBytes(length);
+            head = tis.readNBytes(TAR_HEADER_LENGTH);
         } finally {
             tis.reset();
         }
         boolean matches = CBR.equals(wanted) ? startsWith(head, RAR, 0)
-                : startsWith(head, USTAR, USTAR_OFFSET);
+                : head.length == TAR_HEADER_LENGTH && startsWith(head, USTAR, USTAR_OFFSET)
+                        && checksumHolds(head);
         return matches ? wanted : MediaType.OCTET_STREAM;
     }
 
@@ -93,6 +98,35 @@ public class ComicBookDetector implements Detector {
             }
         }
         return null;
+    }
+
+    /**
+     * Whether the header's octal checksum is the sum of its bytes, the checksum field
+     * counted as spaces. Old tars summed the bytes as signed, so either sum is accepted.
+     */
+    private static boolean checksumHolds(byte[] header) {
+        int end = CHECKSUM_OFFSET + CHECKSUM_LENGTH;
+        int i = CHECKSUM_OFFSET;
+        while (i < end && (header[i] == ' ' || header[i] == '0')) {
+            i++;
+        }
+        long stored = 0;
+        for (; i < end && header[i] >= '0' && header[i] <= '7'; i++) {
+            stored = stored * 8 + (header[i] - '0');
+        }
+        for (; i < end; i++) {
+            if (header[i] != ' ' && header[i] != 0) {
+                return false;
+            }
+        }
+        long unsigned = 0;
+        long signed = 0;
+        for (int j = 0; j < header.length; j++) {
+            byte b = j >= CHECKSUM_OFFSET && j < end ? (byte) ' ' : header[j];
+            unsigned += b & 0xff;
+            signed += b;
+        }
+        return stored == unsigned || stored == signed;
     }
 
     private static boolean startsWith(byte[] bytes, byte[] prefix, int offset) {

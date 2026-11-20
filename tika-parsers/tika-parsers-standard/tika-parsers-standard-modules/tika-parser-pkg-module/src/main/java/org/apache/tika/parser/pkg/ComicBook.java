@@ -50,19 +50,23 @@ final class ComicBook {
 
     /** The cover among the archive's file names: the first page in name order, or null. */
     static String cover(Iterable<String> names) {
-        String first = null;
-        String firstKey = null;
+        String cover = null;
         for (String name : names) {
-            if (name == null || !isPage(name)) {
-                continue;
-            }
-            String key = name.toLowerCase(Locale.ROOT);
-            if (firstKey == null || key.compareTo(firstKey) < 0) {
-                first = name;
-                firstKey = key;
-            }
+            cover = earlier(cover, name);
         }
-        return first;
+        return cover;
+    }
+
+    /** The cover so far (or null), or the given file name if it is a page that sorts before it. */
+    static String earlier(String cover, String name) {
+        if (name == null || !isPage(name)) {
+            return cover;
+        }
+        if (cover == null || name.toLowerCase(Locale.ROOT)
+                .compareTo(cover.toLowerCase(Locale.ROOT)) < 0) {
+            return name;
+        }
+        return cover;
     }
 
     private static boolean isPage(String name) {

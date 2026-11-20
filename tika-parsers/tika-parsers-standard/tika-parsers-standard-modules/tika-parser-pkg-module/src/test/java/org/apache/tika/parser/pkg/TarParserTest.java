@@ -17,10 +17,12 @@
 package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,15 +34,21 @@ import java.util.Map;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 
 /**
  * Test case for parsing tar files.
@@ -48,8 +56,8 @@ import org.apache.tika.sax.BodyContentHandler;
 public class TarParserTest extends AbstractPkgTest {
 
     /**
-     * A .cbt keeps its type, and its first page by name is the cover, which a streamed tar
-     * only reaches in storage order; POSIX and GNU tar alike.
+     * A .cbt keeps its type. Its first page by name is the cover, which a streamed tar only
+     * reaches in storage order, so it is marked only when asked for; POSIX and GNU tar alike.
      */
     @Test
     public void testComicBookCover(@TempDir Path tmp) throws Exception {
@@ -68,12 +76,53 @@ public class TarParserTest extends AbstractPkgTest {
             if (gnu) {
                 Files.write(cbt, gnuMagic(Files.readAllBytes(cbt)));
             }
-            List<Metadata> list = getRecursiveMetadata(cbt, new ParseContext(), false);
+            List<Metadata> list = getRecursiveMetadata(cbt, markCover(), false);
             assertEquals("application/x-cbt", list.get(0).get(HttpHeaders.CONTENT_TYPE), cbt.toString());
             Map<String, String> types = resourceTypes(list);
             assertEquals("THUMBNAIL", types.get("page-01.png"), types.toString());
             assertEquals("null", types.get("page-03.png"));
+
+            list = getRecursiveMetadata(cbt, new ParseContext(), false);
+            assertEquals("application/x-cbt", list.get(0).get(HttpHeaders.CONTENT_TYPE), cbt.toString());
+            types = resourceTypes(list);
+            assertEquals(3, types.size(), types.toString());
+            assertFalse(types.containsValue("THUMBNAIL"), types.toString());
         }
+    }
+
+    /**
+     * A zip with "ustar" where a tar has its magic is a zip, whatever its name; and the
+     * comic book tar parser reads a tar only, whatever it is handed.
+     */
+    @Test
+    public void testZipNamedCbt(@TempDir Path tmp) throws Exception {
+        Path cbt = tmp.resolve("zip.cbt");
+        try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(cbt.toFile())) {
+            // the local file header is 30 bytes, so the name puts "ustar" at 257
+            out.putArchiveEntry(new ZipArchiveEntry("a".repeat(227) + "ustar.png"));
+            out.write("page".getBytes(StandardCharsets.UTF_8));
+            out.closeArchiveEntry();
+        }
+        List<Metadata> list = getRecursiveMetadata(cbt, new ParseContext(), false);
+        assertEquals("application/zip", list.get(0).get(HttpHeaders.CONTENT_TYPE));
+
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        try (TikaInputStream tis = TikaInputStream.get(cbt)) {
+            new RecursiveParserWrapper(new ComicBookTarParser())
+                    .parse(tis, handler, new Metadata(), new ParseContext());
+        } catch (IOException | TikaException e) {
+            // a tar reader may reject the zip outright
+        }
+        assertEquals(1, handler.getMetadataList().size());
+    }
+
+    private static ParseContext markCover() {
+        ComicBookTarParserConfig config = new ComicBookTarParserConfig();
+        config.setMarkCover(true);
+        ParseContext context = new ParseContext();
+        context.set(ComicBookTarParserConfig.class, config);
+        return context;
     }
 
     /**
@@ -114,7 +163,7 @@ public class TarParserTest extends AbstractPkgTest {
                 out.closeArchiveEntry();
             }
         }
-        ParseContext context = new ParseContext();
+        ParseContext context = markCover();
         context.set(ArchiveStreamFactory.class, new ArchiveStreamFactory(encoding));
         Map<String, String> types = resourceTypes(getRecursiveMetadata(cbt, context, false));
         assertEquals("THUMBNAIL", types.get("über-01.png"), types.toString());
