@@ -20,13 +20,11 @@ import static org.apache.tika.detect.zip.PackageConstants.AR;
 import static org.apache.tika.detect.zip.PackageConstants.ARJ;
 import static org.apache.tika.detect.zip.PackageConstants.CPIO;
 import static org.apache.tika.detect.zip.PackageConstants.DUMP;
-import static org.apache.tika.detect.zip.PackageConstants.GTAR;
 import static org.apache.tika.detect.zip.PackageConstants.TAR;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -37,9 +35,7 @@ import org.apache.commons.compress.archivers.arj.ArjArchiveEntry;
 import org.apache.commons.compress.archivers.arj.ArjArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarFile;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -53,8 +49,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -89,37 +85,31 @@ public class PackageParser extends AbstractArchiveParser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        parse(tis, handler, metadata, context, null);
+    }
+
+    /**
+     * @param entryCallback given each entry and its metadata before the entry is handed to
+     *                      the embedded document extractor; may be null
+     */
+    protected void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                         ParseContext context, BiConsumer<ArchiveEntry, Metadata> entryCallback)
+            throws IOException, SAXException, TikaException {
         tis.setCloseShield();
         try {
-            doParse(tis, handler, metadata, context);
+            doParse(tis, handler, metadata, context, entryCallback);
         } finally {
             tis.removeCloseShield();
         }
     }
 
     private void doParse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                         ParseContext context) throws TikaException, IOException, SAXException {
-        ArchiveStreamFactory factory =
-                context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
-
-        String cover = null;
-        if (ComicBook.is(metadata, ComicBook.CBT)) {
-            // the cover is the first page by name; a streamed tar has its names only one by one
-            List<String> names = new ArrayList<>();
-            try (TarFile tar = new TarFile(tis.getPath(), factory.getEntryEncoding())) {
-                for (TarArchiveEntry e : tar.getEntries()) {
-                    if (!e.isDirectory()) {
-                        names.add(e.getName());
-                    }
-                }
-            } catch (IOException e) {
-                // no cover then; the entries are still read below
-            }
-            cover = ComicBook.cover(names);
-        }
-
+                         ParseContext context, BiConsumer<ArchiveEntry, Metadata> entryCallback)
+            throws TikaException, IOException, SAXException {
         ArchiveInputStream ais;
         try {
+            ArchiveStreamFactory factory =
+                    context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
             ais = factory.createArchiveInputStream(tis);
         } catch (ArchiveException e) {
             throw new TikaException("Unable to unpack document stream", e);
@@ -137,11 +127,7 @@ public class PackageParser extends AbstractArchiveParser {
             ArchiveEntry entry = ais.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
-                    boolean isCover = entry.getName().equals(cover);
-                    if (isCover) {
-                        cover = null;
-                    }
-                    parseEntry(ais, entry, isCover, extractor, metadata, xhtml, context);
+                    parseEntry(ais, entry, entryCallback, extractor, metadata, xhtml, context);
                 }
                 entry = ais.getNextEntry();
             }
@@ -169,8 +155,10 @@ public class PackageParser extends AbstractArchiveParser {
             return;
         }
 
-        // Don't overwrite if incoming type is a TAR specialization (e.g., gtar, a comic)
-        if (!incomingMediaType.equals(GTAR) && !ComicBook.is(metadata, ComicBook.CBT)) {
+        // keep a tar specialization (gtar, a comic book tar)
+        MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
+        if (!(TAR.equals(type) && registry.isSpecializationOf(
+                registry.normalize(incomingMediaType.getBaseType()), TAR))) {
             metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         }
     }
@@ -191,7 +179,8 @@ public class PackageParser extends AbstractArchiveParser {
         }
     }
 
-    private void parseEntry(ArchiveInputStream archive, ArchiveEntry entry, boolean cover,
+    private void parseEntry(ArchiveInputStream archive, ArchiveEntry entry,
+                            BiConsumer<ArchiveEntry, Metadata> entryCallback,
                             EmbeddedDocumentExtractor extractor, Metadata parentMetadata,
                             XHTMLContentHandler xhtml, ParseContext context)
             throws SAXException, IOException, TikaException {
@@ -207,9 +196,8 @@ public class PackageParser extends AbstractArchiveParser {
             if (localTime) {
                 setLocalTime(entrydata, FileSystem.MODIFIED, entry.getLastModifiedDate());
             }
-            if (cover) {
-                entrydata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+            if (entryCallback != null) {
+                entryCallback.accept(entry, entrydata);
             }
 
             if (extractor.shouldParseEmbedded(entrydata, context)) {

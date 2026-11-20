@@ -17,6 +17,7 @@
 package org.apache.tika.server.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,6 +40,8 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -146,6 +149,43 @@ public class ThumbnailPresetTest extends CXFTestBase {
                 image.getWidth() + "x" + image.getHeight());
         assertTrue(image.getHeight() >= 255, "fills the box: " + image.getHeight());
         assertEquals(3, image.getColorModel().getNumColorComponents());
+    }
+
+    /**
+     * A tar gives its names only as it is read, so its parser marks the cover of a comic
+     * only when asked to; the preset asks.
+     */
+    @Test
+    public void testComicBookTarCover() throws Exception {
+        ByteArrayOutputStream cbt = new ByteArrayOutputStream();
+        byte[] cover = null;
+        try (TarArchiveOutputStream tar = new TarArchiveOutputStream(cbt)) {
+            int width = 1;
+            for (String name : new String[]{"page-03.png", "page-01.png", "page-02.png"}) {
+                ByteArrayOutputStream png = new ByteArrayOutputStream();
+                ImageIO.write(new BufferedImage(width++, 1, BufferedImage.TYPE_INT_RGB), "png", png);
+                if (name.equals("page-01.png")) {
+                    cover = png.toByteArray();
+                }
+                TarArchiveEntry entry = new TarArchiveEntry(name);
+                entry.setSize(png.size());
+                tar.putArchiveEntry(entry);
+                tar.write(png.toByteArray());
+                tar.closeArchiveEntry();
+            }
+        }
+        Response response = WebClient.create(endPoint + PRESET_PATH).accept("application/zip")
+                .header("Content-Disposition", "attachment; filename=comic.cbt")
+                .put(new ByteArrayInputStream(cbt.toByteArray()));
+        assertEquals(200, response.getStatus());
+        Map<String, byte[]> unpacked = new LinkedHashMap<>();
+        readZipArchiveBytes((InputStream) response.getEntity()).forEach((name, bytes) -> {
+            if (name.startsWith("unpacked/")) {
+                unpacked.put(name, bytes);
+            }
+        });
+        assertEquals(1, unpacked.size(), unpacked.keySet().toString());
+        assertArrayEquals(cover, unpacked.values().iterator().next(), unpacked.keySet().toString());
     }
 
     @Test

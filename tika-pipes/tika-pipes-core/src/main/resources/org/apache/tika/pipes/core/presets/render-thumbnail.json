@@ -8,5 +8,7 @@
              "render": {"maxWidth": 256, "maxHeight": 256, "imageType": "RGB"}}
   },
   "emf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"], "maxDepth": 1}}},
-  "wmf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"], "maxDepth": 1}}}
+  "wmf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"], "maxDepth": 1}}},
+  // a comic book tar names its cover only after a pass over its entry headers
+  "comic-book-tar-parser": {"markCover": true}
 }

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * testComicBook.cbr (RAR5), .cb7 and .cbt hold three colored pages stored as 3, 1, 2 and a
@@ -37,8 +38,13 @@ public class ComicBookFixturesTest extends AbstractPkgTest {
         String[][] cases = {{"testComicBook.cbr", "application/vnd.comicbook-rar"},
                 {"testComicBook.cb7", "application/x-cb7"},
                 {"testComicBook.cbt", "application/x-cbt"}};
+        // the cover of a tar is marked only when asked for
+        ComicBookTarParserConfig config = new ComicBookTarParserConfig();
+        config.setMarkCover(true);
+        ParseContext context = new ParseContext();
+        context.set(ComicBookTarParserConfig.class, config);
         for (String[] c : cases) {
-            List<Metadata> list = getRecursiveMetadata(c[0]);
+            List<Metadata> list = getRecursiveMetadata(c[0], context);
             assertEquals(c[1], list.get(0).get(HttpHeaders.CONTENT_TYPE), c[0]);
             Map<String, String> types = resourceTypes(list);
             assertEquals("THUMBNAIL", types.get("pages/page-001.png"), c[0] + " " + types);

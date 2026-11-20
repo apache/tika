@@ -211,7 +211,8 @@ most, so the parse is cheap.
 `/rmeta/preset/render-thumbnail` — "give me everything, thumbnail included". A full parse
 plus the two renders above, so an index gets the thumbnail's type and dimensions from the same
 request as the text. Nothing is selected for the client; it applies the rule below. The preset
-is a `pages` block plus the metafile parsers' overlays, and they merge field by field with what
+is a `pages` block plus the metafile parsers' overlays and the comic book tar parser's
+`markCover`, and they merge field by field with what
 the config's `parsers` block sets for `pdf-parser`, `emf-parser` and `wmf-parser`; the `pages`
 entry in the config's `parse-context` block is replaced by the preset's, as with any parse-context
 layer, so keep server-wide page settings a preset must not lose under `parsers`.

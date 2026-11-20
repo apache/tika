@@ -17,6 +17,7 @@
 package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,8 +49,8 @@ import org.apache.tika.sax.BodyContentHandler;
 public class TarParserTest extends AbstractPkgTest {
 
     /**
-     * A .cbt keeps its type, and its first page by name is the cover, which a streamed tar
-     * only reaches in storage order; POSIX and GNU tar alike.
+     * A .cbt keeps its type. Its first page by name is the cover, which a streamed tar only
+     * reaches in storage order, so it is marked only when asked for; POSIX and GNU tar alike.
      */
     @Test
     public void testComicBookCover(@TempDir Path tmp) throws Exception {
@@ -68,12 +69,26 @@ public class TarParserTest extends AbstractPkgTest {
             if (gnu) {
                 Files.write(cbt, gnuMagic(Files.readAllBytes(cbt)));
             }
-            List<Metadata> list = getRecursiveMetadata(cbt, new ParseContext(), false);
+            List<Metadata> list = getRecursiveMetadata(cbt, markCover(), false);
             assertEquals("application/x-cbt", list.get(0).get(HttpHeaders.CONTENT_TYPE), cbt.toString());
             Map<String, String> types = resourceTypes(list);
             assertEquals("THUMBNAIL", types.get("page-01.png"), types.toString());
             assertEquals("null", types.get("page-03.png"));
+
+            list = getRecursiveMetadata(cbt, new ParseContext(), false);
+            assertEquals("application/x-cbt", list.get(0).get(HttpHeaders.CONTENT_TYPE), cbt.toString());
+            types = resourceTypes(list);
+            assertEquals(3, types.size(), types.toString());
+            assertFalse(types.containsValue("THUMBNAIL"), types.toString());
         }
+    }
+
+    private static ParseContext markCover() {
+        ComicBookTarParserConfig config = new ComicBookTarParserConfig();
+        config.setMarkCover(true);
+        ParseContext context = new ParseContext();
+        context.set(ComicBookTarParserConfig.class, config);
+        return context;
     }
 
     /**
@@ -114,7 +129,7 @@ public class TarParserTest extends AbstractPkgTest {
                 out.closeArchiveEntry();
             }
         }
-        ParseContext context = new ParseContext();
+        ParseContext context = markCover();
         context.set(ArchiveStreamFactory.class, new ArchiveStreamFactory(encoding));
         Map<String, String> types = resourceTypes(getRecursiveMetadata(cbt, context, false));
         assertEquals("THUMBNAIL", types.get("über-01.png"), types.toString());
