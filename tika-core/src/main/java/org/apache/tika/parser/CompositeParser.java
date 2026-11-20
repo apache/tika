@@ -32,8 +32,10 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.TransientParseState;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
@@ -357,11 +359,17 @@ public class CompositeParser implements Parser {
             parserRecord.beforeParse(metadata);
             try {
                 parser.parse(tis, taggedHandler, metadata, context);
+                // a parser may have swallowed it and carried on with what it had
+                TempLimits.throwIfReached(context);
             } catch (SecurityException e) {
                 //rethrow security exceptions
                 throw e;
+            } catch (TempLimitReachedException e) {
+                // ends the task: wrapped, an embedded extractor would record it and go on
+                throw e;
             } catch (IOException e) {
                 tis.throwIfCauseOf(e);
+                TempLimits.throwIfReached(context);
                 throw new TikaException("TIKA-198: Illegal IOException from " + parser, e);
             } catch (SAXException e) {
                 WriteLimitReachedException.throwIfWriteLimitReached(e);
@@ -375,6 +383,7 @@ public class CompositeParser implements Parser {
                 // be swallowed by an intermediate catch(TikaException) like any per-document failure.
                 throw e;
             } catch (RuntimeException e) {
+                TempLimits.throwIfReached(context);
                 throw new TikaException("Unexpected RuntimeException from " + parser, e);
             }
         } finally {

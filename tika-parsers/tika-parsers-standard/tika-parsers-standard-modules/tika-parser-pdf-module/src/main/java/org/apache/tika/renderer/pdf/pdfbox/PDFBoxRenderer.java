@@ -267,14 +267,10 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             metadata.set(Rendering.RENDERED_MS, renderingElapsed + elapsedWrite);
         } catch (SecurityException e) {
             //throw SecurityExceptions immediately
+            discard(charge, tmpFile);
             throw e;
         } catch (Exception e) {
-            charge.close();
-            try {
-                Files.delete(tmpFile);
-            } catch (IOException ex) {
-                LOG.warn("couldn't delete " + tmpFile, ex);
-            }
+            discard(charge, tmpFile);
             throw new IOException(e);
         }
         return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, metadata) {
@@ -287,6 +283,19 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
                 }
             }
         };
+    }
+
+    private static void discard(TemporaryResources charge, Path tmpFile) {
+        try {
+            charge.deleteTempFile(tmpFile);
+        } catch (IOException ex) {
+            LOG.warn("couldn't delete " + tmpFile, ex);
+        }
+        try {
+            charge.close();
+        } catch (IOException ex) {
+            LOG.warn("couldn't release the temp charge for " + tmpFile, ex);
+        }
     }
 
     /**

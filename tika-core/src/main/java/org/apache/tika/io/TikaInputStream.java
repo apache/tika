@@ -551,7 +551,8 @@ public class TikaInputStream extends TaggedInputStream {
 
     /**
      * Bounds the temp files this stream writes when it spools; see {@link TempBytesBudget}.
-     * {@code null} is ignored, and the first budget set wins.
+     * {@code null} is ignored, and the first budget set wins. What the stream has already
+     * spooled is charged to it.
      *
      * @since Apache Tika 4.3
      */
@@ -569,6 +570,20 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public OutputStream newTempOutputStream(Path tempFile) throws IOException {
         return tmp != null ? tmp.newOutputStream(tempFile) : Files.newOutputStream(tempFile);
+    }
+
+    /**
+     * Deletes a temp file opened with {@link #newTempOutputStream} and gives back what it
+     * was charged. See {@link TemporaryResources#deleteTempFile}.
+     *
+     * @since Apache Tika 4.3
+     */
+    public void deleteTempFile(Path tempFile) throws IOException {
+        if (tmp != null) {
+            tmp.deleteTempFile(tempFile);
+        } else {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     /**

@@ -245,8 +245,12 @@ These keys are REGULAR output's; a Frictionless package sits at `<containerKey>/
 
 == Safety Limits
 
-`maxUnpackBytes` bounds zip bombs and other files that expand to enormous sizes. The 10 GiB
-default suits most corpora; lower it for untrusted input.
+`maxUnpackBytes` bounds the bytes extracted from zip bombs and other files that expand to
+enormous sizes. The 10 GiB default suits most corpora; lower it for untrusted input. It does
+not bound the temp space used on the way: each embedded file is spooled to a temp file before
+it is extracted, and `temp-limits`
+(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]) bounds that. Reaching
+that limit is not silent: it fails the file.
 
 Hitting the limit is silent apart from a log line. The embedded file being written is
 truncated at the remaining budget, each later embedded file is skipped, and each case

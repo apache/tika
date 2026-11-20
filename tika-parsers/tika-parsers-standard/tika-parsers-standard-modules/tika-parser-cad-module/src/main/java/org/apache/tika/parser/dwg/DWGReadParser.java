@@ -161,8 +161,8 @@ public class DWGReadParser extends AbstractDWGParser {
                         }                            
                                  
                     } finally {
-                        FileUtils.deleteQuietly(tmpFileIn);
-                        FileUtils.deleteQuietly(tmpFileOut);
+                        deleteQuietly(tmp, tmpFileIn);
+                        deleteQuietly(tmp, tmpFileOut);
                         tmpFileOut = tmpFileOutCleaned;
                     }
 
@@ -241,13 +241,22 @@ public class DWGReadParser extends AbstractDWGParser {
             jParser.close();
         } finally {
             // make sure we delete all temp files
-            FileUtils.deleteQuietly(tmpFileOut);
-            FileUtils.deleteQuietly(tmpFileIn);
-            FileUtils.deleteQuietly(tmpFileOutCleaned);
+            deleteQuietly(tmp, tmpFileOut);
+            deleteQuietly(tmp, tmpFileIn);
+            deleteQuietly(tmp, tmpFileOutCleaned);
             tmp.close();
         }
 
         xhtml.endDocument();
+    }
+
+    // through tmp, so a file deleted before the parse ends stops counting against the temp limit
+    private static void deleteQuietly(TemporaryResources tmp, File file) {
+        try {
+            tmp.deleteTempFile(file.toPath());
+        } catch (IOException e) {
+            FileUtils.deleteQuietly(file);
+        }
     }
 
     private static final Set<String> OBJECT_TEXT_FIELDS = Set.of(

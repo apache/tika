@@ -130,8 +130,11 @@ public class GribParser implements Parser {
         } catch (IOException e) {
             throw new TikaException("NetCDF parse error", e);
         } finally {
-            FileUtils.deleteDirectory(tmpDir.toFile());
-            tmp.close();
+            try {
+                FileUtils.deleteDirectory(tmpDir.toFile());
+            } finally {
+                tmp.close();
+            }
         }
     }
 

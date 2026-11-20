@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -55,6 +56,13 @@ class FetchHandler {
         try {
             TikaInputStream tis = fetcherResult.fetcher.fetch(
                     fetchEmitTuple.getFetchKey().getFetchKey(), metadata, parseContext);
+            try {
+                // digesting and detection spool a stream-backed fetch before any parser sees it
+                TempLimits.apply(tis, parseContext);
+            } catch (IOException e) {
+                tis.close();
+                throw e;
+            }
             return new TisOrResult(tis, null);
         } catch (IOException | TikaException e) {
             return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,

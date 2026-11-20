@@ -29,11 +29,13 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.Digester;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.UnpackHandler;
@@ -181,6 +183,13 @@ class ParseHandler {
     private List<Metadata> detectOnly(FetchEmitTuple fetchEmitTuple, TikaInputStream stream,
                                       Metadata metadata, ParseContext parseContext) {
         _preParse(fetchEmitTuple, stream, metadata, parseContext);
+        try {
+            // no parse follows to report a limit that digesting or detection reached
+            TempLimits.throwIfReached(parseContext);
+        } catch (TempLimitReachedException e) {
+            metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                    ExceptionUtils.format(e, parseContext));
+        }
         return Collections.singletonList(metadata);
     }
 

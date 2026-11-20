@@ -102,10 +102,15 @@ public class RTFPictStreamParser implements Closeable {
 
     @Override
     public void close() throws IOException {
-        if (out != null) {
-            out.close();
-            out = null;
+        // a flush refused at the temp limit must not keep the temp file from being deleted
+        try {
+            if (out != null) {
+                OutputStream toClose = out;
+                out = null;
+                toClose.close();
+            }
+        } finally {
+            tmp.close();
         }
-        tmp.close();
     }
 }

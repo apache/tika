@@ -21,10 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Function;
@@ -130,14 +132,135 @@ public class TempBytesBudgetTest {
     public void testChargeFilesSomethingElseWrote(@TempDir Path dir) throws IOException {
         Files.write(dir.resolve("a"), new byte[MB]);
         Files.write(Files.createDirectory(dir.resolve("sub")).resolve("b"), new byte[MB]);
-        TempBytesBudget budget = new TempBytesBudget(3 * MB);
+        TempBytesBudget budget = new TempBytesBudget(2 * MB + MB / 2);
         try (TemporaryResources tmp = new TemporaryResources()) {
             tmp.setTempBudget(budget);
             tmp.chargeTempFile(dir);
             assertEquals(2 * MB, budget.getReservedBytes());
-            assertThrows(TempLimitReachedException.class, () -> tmp.chargeTempFile(dir));
+            // measured again, not added again
+            tmp.chargeTempFile(dir);
+            assertEquals(2 * MB, budget.getReservedBytes());
+            assertThrows(TempLimitReachedException.class,
+                    () -> tmp.chargeTempFile(dir.resolve("sub")));
         }
         assertEquals(0, budget.getReservedBytes());
+    }
+
+    @Test
+    public void testFailedSpoolIsFinal() throws Exception {
+        // all in memory until getPath(), so the first write to the spill file is the one refused
+        TempBytesBudget budget = new TempBytesBudget(MB / 2);
+        try (TikaInputStream tis =
+                TikaInputStream.get(new ByteArrayInputStream(new byte[MB - 200_000]))) {
+            tis.setTempBudget(budget);
+            assertThrows(TempLimitReachedException.class, tis::getPath);
+            // not a file holding only what was written after the failure
+            assertThrows(TempLimitReachedException.class, tis::getPath);
+            assertFalse(tis.hasFile());
+        }
+        assertEquals(0, budget.getReservedBytes());
+    }
+
+    @Test
+    public void testReachingTheLimitIsFinal() throws Exception {
+        ParseContext context = new ParseContext();
+        TempBytesBudget budget = new TempBytesBudget(MB);
+        context.set(TempBytesBudget.class, budget);
+        try (TikaInputStream big = TikaInputStream.get(new byte[3 * MB])) {
+            TempLimits.apply(big, context);
+            assertThrows(TempLimitReachedException.class, big::getPath);
+        }
+        assertTrue(budget.isLimitReached());
+        assertEquals(0, budget.getReservedBytes());
+        // there is room again, but the task has failed
+        try (TikaInputStream small = TikaInputStream.get(new byte[1024])) {
+            assertThrows(TempLimitReachedException.class, () -> TempLimits.apply(small, context));
+            small.setTempBudget(budget);
+            assertThrows(TempLimitReachedException.class, small::getPath);
+        }
+    }
+
+    @Test
+    public void testChargeFollowsTheFile() throws IOException {
+        TempBytesBudget budget = new TempBytesBudget(3 * MB);
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTempBudget(budget);
+            Path file = tmp.createTempFile();
+            for (int i = 0; i < 3; i++) {
+                // reopening truncates: 2 MB each time, never 4
+                try (OutputStream os = tmp.newOutputStream(file)) {
+                    os.write(new byte[2 * MB]);
+                }
+                assertEquals(2 * MB, budget.getReservedBytes());
+            }
+            tmp.deleteTempFile(file);
+            assertFalse(Files.exists(file));
+            assertEquals(0, budget.getReservedBytes());
+        }
+        assertFalse(budget.isLimitReached());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("sources")
+    public void testBudgetSetLateCountsWhatWasSpooled(String name,
+                                                      Function<byte[], TikaInputStream> open)
+            throws Exception {
+        TempBytesBudget roomy = new TempBytesBudget(3 * MB);
+        try (TikaInputStream tis = open.apply(new byte[2 * MB])) {
+            tis.getPath();
+            tis.setTempBudget(roomy);
+            assertEquals(2 * MB, roomy.getReservedBytes());
+        }
+        assertEquals(0, roomy.getReservedBytes());
+
+        ParseContext context = new ParseContext();
+        TempBytesBudget tight = new TempBytesBudget(MB);
+        context.set(TempBytesBudget.class, tight);
+        try (TikaInputStream tis = open.apply(new byte[2 * MB])) {
+            tis.getPath();
+            assertThrows(TempLimitReachedException.class, () -> TempLimits.apply(tis, context));
+        }
+        assertEquals(0, tight.getReservedBytes());
+    }
+
+    @Test
+    public void testFirstBudgetWins() throws IOException {
+        TempBytesBudget first = new TempBytesBudget(3 * MB);
+        TempBytesBudget second = new TempBytesBudget(3 * MB);
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTempBudget(first);
+            tmp.setTempBudget(second);
+            tmp.setTempBudget(null);
+            try (OutputStream os = tmp.newOutputStream(tmp.createTempFile())) {
+                os.write(new byte[MB]);
+            }
+            assertEquals(MB, first.getReservedBytes());
+            assertEquals(0, second.getReservedBytes());
+        }
+        assertEquals(0, first.getReservedBytes());
+    }
+
+    @Test
+    public void testChargeDoesNotFollowLinks(@TempDir Path dir) throws IOException {
+        Path file = Files.write(dir.resolve("a"), new byte[MB]);
+        try {
+            Files.createSymbolicLink(dir.resolve("b"), file);
+        } catch (IOException | UnsupportedOperationException e) {
+            assumeTrue(false, "no symbolic links on this file system");
+        }
+        TempBytesBudget budget = new TempBytesBudget(3 * MB);
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTempBudget(budget);
+            tmp.chargeTempFile(dir);
+            assertEquals(MB, budget.getReservedBytes());
+        }
+    }
+
+    @Test
+    public void testOnlyMinusOneMeansNoLimit() {
+        assertThrows(IllegalArgumentException.class, () -> new TempLimits(0));
+        assertThrows(IllegalArgumentException.class, () -> new TempLimits(-2));
+        assertNull(new TempLimits(TempLimits.UNLIMITED).newBudget());
     }
 
     @Test

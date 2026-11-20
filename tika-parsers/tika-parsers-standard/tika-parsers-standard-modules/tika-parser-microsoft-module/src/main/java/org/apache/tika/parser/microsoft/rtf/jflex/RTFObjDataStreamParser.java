@@ -264,11 +264,16 @@ public class RTFObjDataStreamParser implements Closeable {
 
     @Override
     public void close() throws IOException {
-        if (dataOut != null) {
-            dataOut.close();
-            dataOut = null;
+        // a flush refused at the temp limit must not keep the temp files from being deleted
+        try {
+            if (dataOut != null) {
+                OutputStream toClose = dataOut;
+                dataOut = null;
+                toClose.close();
+            }
+        } finally {
+            tmp.close();
         }
-        tmp.close();
     }
 
     // --- Package handling ---

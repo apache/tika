@@ -23,13 +23,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * disk counterpart of {@link CacheMemoryBudget}. Place one instance per task in the
  * {@link org.apache.tika.parser.ParseContext}; {@link TemporaryResources} charges what it
  * writes through {@link TemporaryResources#newOutputStream} and gives it back when it
- * deletes its files, so a container's entries spooled one after another each see the
- * whole budget.
+ * deletes the file, at its close at the latest, so a container's entries spooled one
+ * after another each see what the container itself is not holding.
  * <p>
  * It covers only temp files written through that method, and files something else wrote
  * that are reported afterwards through {@link TemporaryResources#chargeTempFile}, as Tika
  * does for the output of the external programs it runs. Temp files written inside a
  * library are not counted.
+ * <p>
+ * Reaching the limit is final: the task fails, so once a write has been refused every
+ * later one is too, and {@link #isLimitReached()} stays true.
  * <p>
  * Thread-safe.
  *
@@ -39,6 +42,7 @@ public final class TempBytesBudget {
 
     private final long maxBytes;
     private final AtomicLong reserved = new AtomicLong();
+    private volatile boolean limitReached;
 
     /**
      * @param maxBytes most bytes that may be held in temp files at once; must be positive
@@ -52,13 +56,17 @@ public final class TempBytesBudget {
     }
 
     /** All or nothing. */
-    public boolean tryReserve(long n) {
+    boolean tryReserve(long n) {
+        if (limitReached) {
+            return false;
+        }
         if (n <= 0) {
             return true;
         }
         while (true) {
             long cur = reserved.get();
             if (n > maxBytes - cur) {
+                limitReached = true;
                 return false;
             }
             if (reserved.compareAndSet(cur, cur + n)) {
@@ -67,10 +75,15 @@ public final class TempBytesBudget {
         }
     }
 
-    public void release(long n) {
+    void release(long n) {
         if (n > 0) {
             reserved.addAndGet(-n);
         }
+    }
+
+    /** True once a write has been refused; never reset. */
+    public boolean isLimitReached() {
+        return limitReached;
     }
 
     public long getMaxBytes() {

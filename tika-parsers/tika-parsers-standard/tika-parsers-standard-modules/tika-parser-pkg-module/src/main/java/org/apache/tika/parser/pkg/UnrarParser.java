@@ -118,8 +118,11 @@ public class UnrarParser implements Parser {
             //e.g. Extracting  test-documents/testEXCEL.xls                              OK
             processDirectory(cwd, cwd, xhtml, extractor, context);
         } finally {
-            FileUtils.deleteDirectory(cwd.toFile());
-            unpacked.close();
+            try {
+                FileUtils.deleteDirectory(cwd.toFile());
+            } finally {
+                unpacked.close();
+            }
         }
         xhtml.endDocument();
     }

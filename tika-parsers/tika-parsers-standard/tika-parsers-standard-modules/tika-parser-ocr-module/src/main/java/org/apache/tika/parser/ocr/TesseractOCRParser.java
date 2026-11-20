@@ -282,8 +282,9 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TempLimits.apply(tmp, parseContext);
             TikaInputStream tikaStream = TikaInputStream.get(tis, tmp, metadata);
+            // callers hand over streams no extractor has seen; tesseract's output is charged to it
+            TempLimits.apply(tikaStream, parseContext);
 
             //trigger the spooling to a tmp file if the stream wasn't
             //already a TikaInputStream that contained a file
@@ -386,6 +387,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
                                 Files.copy(input, os);
                             }
                             imagePreprocessor.process(tmpFile, tmpFile, metadata, config);
+                            // ImageMagick rewrote it; count what is there now
+                            tmp.chargeTempFile(tmpFile);
                             doOCR(tmpFile.toFile(), tmpOCROutputFile, config, parseContext);
                         }
                     }
@@ -407,7 +410,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
                 }
             }
         } finally {
-            tmpTxtOutput.delete();
+            try {
+                tikaInputStream.deleteTempFile(tmpTxtOutput.toPath());
+            } catch (IOException e) {
+                LOG.warn("couldn't delete {}", tmpTxtOutput, e);
+            }
         }
     }
 

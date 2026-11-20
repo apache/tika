@@ -21,10 +21,14 @@ import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.stream.Stream;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,8 +63,13 @@ public class TemporaryResources implements Closeable {
 
     private TempBytesBudget tempBudget;
 
-    // charged to tempBudget and not yet given back
-    private long tempBytesCharged;
+    // per file or directory: bytes written and not yet given back; counted with or without a
+    // budget, so that one set late can still be charged for them
+    private final Map<Path, Charge> tempBytesCharged = new HashMap<>();
+
+    private static final class Charge {
+        private long bytes;
+    }
 
     /**
      * Sets the directory to be used for the temporary files created by
@@ -115,33 +124,65 @@ public class TemporaryResources implements Closeable {
 
     /**
      * Sets the budget that {@link #newOutputStream(Path)} charges. The first budget set
-     * wins; {@code null} is ignored. Bytes written before a budget is set are not counted.
+     * wins; {@code null} is ignored. What was already written through that method is
+     * charged now; if it does not fit, the budget is left at its limit, for the next
+     * write or {@link org.apache.tika.config.TempLimits#apply} to report.
      *
      * @since Apache Tika 4.3
      */
     public void setTempBudget(TempBytesBudget tempBudget) {
-        if (this.tempBudget == null) {
-            this.tempBudget = tempBudget;
+        if (this.tempBudget != null || tempBudget == null) {
+            return;
+        }
+        this.tempBudget = tempBudget;
+        long written = 0;
+        for (Charge charge : tempBytesCharged.values()) {
+            written += charge.bytes;
+        }
+        if (!tempBudget.tryReserve(written)) {
+            // nothing was reserved, so there is nothing to give back
+            tempBytesCharged.clear();
         }
     }
 
     /**
-     * Opens a temp file from {@link #createTempFile(String)} for writing, charging each
-     * write to the {@link TempBytesBudget}, if one is set. What was charged is given back
-     * when {@link #close()} deletes the files. Use this, not {@code Files.newOutputStream},
-     * for any temp file whose size the document decides.
+     * Opens a temp file for writing, charging each write to the {@link TempBytesBudget},
+     * if one is set. Opening truncates, so what an earlier open of the same file charged
+     * is given back first. The charge is given back by {@link #deleteTempFile(Path)}, or
+     * by {@link #close()} at the latest: a caller that deletes the file some other way
+     * before then leaves it counted. Use this, not {@code Files.newOutputStream}, for any
+     * temp file whose size the document decides.
      *
      * @throws TempLimitReachedException from a write that would exceed the budget
      * @since Apache Tika 4.3
      */
     public OutputStream newOutputStream(Path tempFile) throws IOException {
-        return new ChargingOutputStream(Files.newOutputStream(tempFile));
+        OutputStream out = Files.newOutputStream(tempFile);
+        release(tempFile);
+        Charge charge = new Charge();
+        tempBytesCharged.put(tempFile, charge);
+        return new ChargingOutputStream(out, charge);
+    }
+
+    /**
+     * Deletes a temp file and gives back what it was charged, for a file that goes
+     * before this does.
+     *
+     * @since Apache Tika 4.3
+     */
+    public void deleteTempFile(Path tempFile) throws IOException {
+        try {
+            Files.deleteIfExists(tempFile);
+        } finally {
+            release(tempFile);
+        }
     }
 
     /**
      * Charges a temp file, or everything under a temp directory, that something else
      * wrote: an external program or a library. That cannot stop the writer early; it
-     * makes what it wrote count, and fails once the total is past the budget.
+     * makes what it wrote count, and fails once the total is past the budget. Measuring
+     * the same path again replaces its earlier charge.
      *
      * @throws TempLimitReachedException if the budget cannot cover it
      * @since Apache Tika 4.3
@@ -150,38 +191,55 @@ public class TemporaryResources implements Closeable {
         if (tempBudget == null || !Files.exists(fileOrDirectory)) {
             return;
         }
-        long bytes;
-        try (Stream<Path> paths = Files.walk(fileOrDirectory)) {
-            bytes = paths.filter(Files::isRegularFile).mapToLong(p -> p.toFile().length()).sum();
-        }
-        charge(bytes);
+        long[] bytes = new long[1];
+        // links are not followed, so one extracted file is never counted through a second name
+        Files.walkFileTree(fileOrDirectory, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                if (attrs.isRegularFile()) {
+                    bytes[0] += attrs.size();
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        release(fileOrDirectory);
+        Charge charge = new Charge();
+        charge(charge, bytes[0]);
+        tempBytesCharged.put(fileOrDirectory, charge);
     }
 
-    private void charge(long n) throws TempLimitReachedException {
-        if (tempBudget == null) {
-            return;
-        }
-        if (!tempBudget.tryReserve(n)) {
+    private void charge(Charge charge, long n) throws TempLimitReachedException {
+        if (tempBudget != null && !tempBudget.tryReserve(n)) {
             throw new TempLimitReachedException(tempBudget.getMaxBytes());
         }
-        tempBytesCharged += n;
+        charge.bytes += n;
+    }
+
+    private void release(Path path) {
+        Charge charge = tempBytesCharged.remove(path);
+        if (charge != null && tempBudget != null) {
+            tempBudget.release(charge.bytes);
+        }
     }
 
     private final class ChargingOutputStream extends FilterOutputStream {
 
-        ChargingOutputStream(OutputStream out) {
+        private final Charge charge;
+
+        ChargingOutputStream(OutputStream out, Charge charge) {
             super(out);
+            this.charge = charge;
         }
 
         @Override
         public void write(int b) throws IOException {
-            charge(1);
+            charge(charge, 1);
             out.write(b);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            charge(len);
+            charge(charge, len);
             out.write(b, off, len);
         }
     }
@@ -256,9 +314,11 @@ public class TemporaryResources implements Closeable {
         } finally {
             resources.clear();
             if (tempBudget != null) {
-                tempBudget.release(tempBytesCharged);
+                for (Charge charge : tempBytesCharged.values()) {
+                    tempBudget.release(charge.bytes);
+                }
             }
-            tempBytesCharged = 0;
+            tempBytesCharged.clear();
         }
     }
 

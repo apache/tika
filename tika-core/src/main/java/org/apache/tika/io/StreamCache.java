@@ -62,9 +62,13 @@ class StreamCache implements Closeable {
     private long windowStart = -1;
     private int windowLength;
     private OutputStream spillOutputStream;
+    // what spillOutputStream buffers; closed directly after a failure, never flushed again
+    private OutputStream spillRaw;
     private long totalSize;
 
     private boolean closed;
+    // a write to the spill file failed: the cache has a hole and is never usable again
+    private IOException failure;
 
     /**
      * Suffix up front: a threshold spill precedes any getPath(suffix) call (TIKA-3903).
@@ -88,22 +92,18 @@ class StreamCache implements Closeable {
      * Append a single byte to the cache.
      */
     void append(int b) throws IOException {
-        if (closed) {
-            throw new IOException("StreamCache is closed");
-        }
+        checkUsable();
 
-        if (memoryBuffer != null) {
-            // Still in memory mode
-            if (canKeepInMemory(1)) {
-                ensureMemoryCapacity(memorySize + 1);
-                memoryBuffer[memorySize++] = (byte) b;
-            } else {
-                spillToFile();
-                spillOutputStream.write(b);
-            }
+        if (memoryBuffer != null && canKeepInMemory(1)) {
+            ensureMemoryCapacity(memorySize + 1);
+            memoryBuffer[memorySize++] = (byte) b;
         } else {
-            // Already spilled to file
-            spillOutputStream.write(b);
+            spillToFile();
+            try {
+                spillOutputStream.write(b);
+            } catch (IOException e) {
+                throw fail(e);
+            }
         }
         totalSize++;
     }
@@ -112,23 +112,53 @@ class StreamCache implements Closeable {
      * Append multiple bytes to the cache.
      */
     void append(byte[] b, int off, int len) throws IOException {
+        checkUsable();
+
+        if (memoryBuffer != null && canKeepInMemory(len)) {
+            ensureMemoryCapacity(memorySize + len);
+            System.arraycopy(b, off, memoryBuffer, memorySize, len);
+            memorySize += len;
+        } else {
+            spillToFile();
+            try {
+                spillOutputStream.write(b, off, len);
+            } catch (IOException e) {
+                throw fail(e);
+            }
+        }
+        totalSize += len;
+    }
+
+    private void checkUsable() throws IOException {
         if (closed) {
             throw new IOException("StreamCache is closed");
         }
-
-        if (memoryBuffer != null) {
-            if (canKeepInMemory(len)) {
-                ensureMemoryCapacity(memorySize + len);
-                System.arraycopy(b, off, memoryBuffer, memorySize, len);
-                memorySize += len;
-            } else {
-                spillToFile();
-                spillOutputStream.write(b, off, len);
-            }
-        } else {
-            spillOutputStream.write(b, off, len);
+        if (failure != null) {
+            throw failure;
         }
-        totalSize += len;
+    }
+
+    /**
+     * The bytes that could not be written are gone from the source too, so nothing read
+     * from this cache afterwards could be trusted: every later call rethrows {@code e}.
+     */
+    private IOException fail(IOException e) {
+        failure = e;
+        memoryBuffer = null;
+        memorySize = 0;
+        maybeReleaseReserved();
+        OutputStream raw = spillRaw;
+        spillOutputStream = null;
+        spillRaw = null;
+        // not the buffered stream: its close would flush, and fail the same way again
+        if (raw != null) {
+            try {
+                raw.close();
+            } catch (IOException ignored) {
+                //the first failure is the one to report
+            }
+        }
+        return e;
     }
 
     /**
@@ -184,9 +214,7 @@ class StreamCache implements Closeable {
     }
 
     private void spillToFile() throws IOException {
-        if (closed) {
-            throw new IOException("StreamCache is closed");
-        }
+        checkUsable();
         if (spillFile != null) {
             return; // Already spilled
         }
@@ -195,11 +223,16 @@ class StreamCache implements Closeable {
         // registered after the file so tmp.close() releases these handles before deleting it,
         // and so a caller that disposes tmp without closing this cache does not leak them
         tmp.addResource(this);
-        spillOutputStream = new BufferedOutputStream(tmp.newOutputStream(spillFile));
+        spillRaw = tmp.newOutputStream(spillFile);
+        spillOutputStream = new BufferedOutputStream(spillRaw);
 
         // Write existing memory content to file
         if (memorySize > 0) {
-            spillOutputStream.write(memoryBuffer, 0, memorySize);
+            try {
+                spillOutputStream.write(memoryBuffer, 0, memorySize);
+            } catch (IOException e) {
+                throw fail(e);
+            }
         }
 
         // Release memory buffer
@@ -212,9 +245,7 @@ class StreamCache implements Closeable {
      * Read a single byte at the given position.
      */
     int readAt(long position) throws IOException {
-        if (closed) {
-            throw new IOException("StreamCache is closed");
-        }
+        checkUsable();
         if (position < 0 || position >= totalSize) {
             return -1;
         }
@@ -239,9 +270,7 @@ class StreamCache implements Closeable {
      * Read multiple bytes starting at the given position.
      */
     int readAt(long position, byte[] b, int off, int len) throws IOException {
-        if (closed) {
-            throw new IOException("StreamCache is closed");
-        }
+        checkUsable();
         if (position < 0 || position >= totalSize) {
             return -1;
         }
@@ -291,7 +320,11 @@ class StreamCache implements Closeable {
 
     private void flushSpillStream() throws IOException {
         if (spillOutputStream != null) {
-            spillOutputStream.flush();
+            try {
+                spillOutputStream.flush();
+            } catch (IOException e) {
+                throw fail(e);
+            }
         }
     }
 
@@ -300,9 +333,7 @@ class StreamCache implements Closeable {
      * After this call, the cache is in file-backed mode.
      */
     Path toFile() throws IOException {
-        if (closed) {
-            throw new IOException("StreamCache is closed");
-        }
+        checkUsable();
         if (spillFile == null) {
             spillToFile();
         }
@@ -334,13 +365,16 @@ class StreamCache implements Closeable {
     /**
      * Whether the cache has spilled to a file.
      */
-    /** The spill file, or null while the content is still in memory. Never creates one. */
+    /**
+     * The spill file, or null while the content is still in memory or after a failed
+     * write left the file incomplete. Never creates one.
+     */
     Path spillFilePath() {
-        return spillFile;
+        return failure == null ? spillFile : null;
     }
 
     boolean isFileBacked() {
-        return spillFile != null;
+        return failure == null && spillFile != null;
     }
 
     /**
@@ -372,6 +406,7 @@ class StreamCache implements Closeable {
         OutputStream out = spillOutputStream;
         RandomAccessFile raf = reader;
         spillOutputStream = null;
+        spillRaw = null;
         reader = null;
         TemporaryResources.closeAll(out, raf);   // both, even if one throws; file deletion is tmp's
     }

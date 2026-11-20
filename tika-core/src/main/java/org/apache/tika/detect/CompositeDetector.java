@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -74,6 +75,8 @@ public class CompositeDetector implements Detector {
 
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
+        // parsers detect on streams they made before any extractor has seen them
+        TempLimits.apply(tis, parseContext);
         MediaType override = detectOverrides(metadata);
         if (override != null) {
             return override;

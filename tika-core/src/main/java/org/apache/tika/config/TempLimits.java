@@ -19,6 +19,7 @@ package org.apache.tika.config;
 import java.io.Serializable;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -31,8 +32,9 @@ import org.apache.tika.parser.ParseContext;
  * writes for a task: spooled streams, parsers' own temp files, a document a fetcher
  * downloads to temp, and the output of external programs once they have written it.
  * Reaching it fails the write with a
- * {@link org.apache.tika.exception.TempLimitReachedException}. Temp files written inside
- * a library are not counted. Default 50 GiB; {@code -1} for no limit.
+ * {@link org.apache.tika.exception.TempLimitReachedException}, which fails the task.
+ * Temp files written inside a library are not counted. Default 50 GiB; {@code -1} for
+ * no limit; {@code 0} and anything below {@code -1} are rejected.
  * <p>
  * Applied by tika-pipes, which turns it into one {@link TempBytesBudget} per task. Parsing
  * in-process, nothing is limited unless the caller puts a budget in the context.
@@ -53,6 +55,8 @@ public class TempLimits implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public static final long UNLIMITED = -1;
+
     public static final long DEFAULT_MAX_TEMP_BYTES = 50L * 1024 * 1024 * 1024;
 
     private long maxTempBytes = DEFAULT_MAX_TEMP_BYTES;
@@ -69,8 +73,9 @@ public class TempLimits implements Serializable {
     }
 
     public void setMaxTempBytes(long maxTempBytes) {
-        if (maxTempBytes == 0) {
-            throw new IllegalArgumentException("maxTempBytes must not be 0; use -1 for no limit");
+        if (maxTempBytes == 0 || maxTempBytes < UNLIMITED) {
+            throw new IllegalArgumentException(
+                    "maxTempBytes must be positive, or -1 for no limit: " + maxTempBytes);
         }
         this.maxTempBytes = maxTempBytes;
     }
@@ -90,10 +95,30 @@ public class TempLimits implements Serializable {
      * Puts {@code tis} under the context's {@link TempBytesBudget}, if it has one. Call it
      * wherever a stream enters a parse. Nothing here creates the budget: a pipes fork
      * seeds one per task from these limits, and a caller parsing in-process sets its own.
+     *
+     * @throws TempLimitReachedException if the task has already reached its limit
      */
-    public static void apply(TikaInputStream tis, ParseContext context) {
+    public static void apply(TikaInputStream tis, ParseContext context)
+            throws TempLimitReachedException {
         if (tis != null && context != null) {
             tis.setTempBudget(context.get(TempBytesBudget.class));
+        }
+        throwIfReached(context);
+    }
+
+    /** True once the context's budget has refused a write. */
+    public static boolean isReached(ParseContext context) {
+        TempBytesBudget budget = context == null ? null : context.get(TempBytesBudget.class);
+        return budget != null && budget.isLimitReached();
+    }
+
+    /**
+     * Fails a task that has reached its limit, whatever became of the exception that
+     * reported it first.
+     */
+    public static void throwIfReached(ParseContext context) throws TempLimitReachedException {
+        if (isReached(context)) {
+            throw new TempLimitReachedException(context.get(TempBytesBudget.class).getMaxBytes());
         }
     }
 

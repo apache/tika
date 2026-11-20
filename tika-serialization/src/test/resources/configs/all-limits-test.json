@@ -21,6 +21,9 @@
       "totalTaskTimeoutMillis": 3600000,
       "progressTimeoutMillis": 60000
     },
+    "temp-limits": {
+      "maxTempBytes": 10737418240
+    },
     "standard-metadata-limiter-factory": {
       "maxTotalBytes": 1048576,
       "maxFieldSize": 102400,

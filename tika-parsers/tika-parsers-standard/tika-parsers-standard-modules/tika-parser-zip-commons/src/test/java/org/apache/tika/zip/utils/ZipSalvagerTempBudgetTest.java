@@ -79,7 +79,9 @@ public class ZipSalvagerTempBudgetTest {
         try (TikaInputStream tis = TikaInputStream.get(truncated)) {
             tis.setTempBudget(budget);
             assertNull(ZipSalvager.tryToOpenZipFile(tis, new Metadata()));
-            assertTrue(budget.getReservedBytes() <= MB);
+            // the abandoned copy is deleted and no longer counted
+            assertEquals(0, budget.getReservedBytes());
+            assertTrue(budget.isLimitReached());
         }
         assertEquals(0, budget.getReservedBytes());
     }

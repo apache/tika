@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -115,6 +116,9 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
                     throw t;
                 }
             }
+        } catch (TempLimitReachedException e) {
+            // not a storage problem
+            throw e;
         } catch (Exception e) {
             throw new IOException("gcs storage exception", e);
         }

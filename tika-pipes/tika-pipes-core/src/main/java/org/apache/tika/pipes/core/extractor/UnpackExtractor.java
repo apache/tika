@@ -162,7 +162,7 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
                 }
             } finally {
                 if (translated != null) {
-                    Files.delete(translated);
+                    tis.deleteTempFile(translated);
                 }
             }
         }
@@ -176,7 +176,8 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata, ParseContext context) {
-        if (p == null) {
+        // past the limit the file may be cut short, and the task is failing anyway
+        if (p == null || TempLimits.isReached(context)) {
             return;
         }
 

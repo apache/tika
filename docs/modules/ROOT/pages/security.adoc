@@ -61,7 +61,8 @@ privately to mailto:security@apache.org[security@apache.org], not in a public is
 IMPORTANT: Disk is not one of those bounds. Tika can only limit the temp files Tika itself
 writes (`temp-limits`, see xref:advanced/setting-limits.adoc#temp-file-limits[Temp file
 limits]); it cannot limit the temp files written inside the third-party libraries it parses
-with, and it can only count an external program's output after the program has written it. That limit is hardening, not containment: a document can still
+with, and it can only count an external program's output after the program has written
+it. That limit is hardening, not containment: a document can still
 fill the volume `java.io.tmpdir` is on, and keeping that volume from taking out the host is
 the operator's responsibility. Where that volume is tmpfs, which the default `/tmp` is on some
 systems, temp files use RAM outside the forks' heap limit, so the memory bound does not hold
