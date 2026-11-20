@@ -47,6 +47,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 
 /**
  * Integration tests for shared server mode.
@@ -386,6 +387,36 @@ public class SharedServerModeTest {
                 Thread.sleep(100);
             }
             assertTrue(isEmptyDir(forkTmpBase), "shared server temp dir left behind");
+        }
+    }
+
+    @Test
+    public void testTimeoutMarkKillsServerWithoutNextRequest(@TempDir Path tmp) throws Exception {
+        Path inputDir = setupInputDir(tmp);
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        Path forkTmpBase = tmp.resolve("fork-tmp");
+        pipesConfig.setTempDirectory(forkTmpBase.toString());
+
+        try (SharedServerManager manager = new SharedServerManager(pipesConfig,
+                ForkBootstrap.toBytes(tikaJsonConfig), 2)) {
+            manager.ensureRunning();
+            assertFalse(isEmptyDir(forkTmpBase));
+
+            // what a client's backstop reports: a server that never exited on its own
+            manager.markServerForRestart(RestartReason.TIMEOUT, manager.getGeneration());
+
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            while ((manager.isRunning() || !isEmptyDir(forkTmpBase)) && System.nanoTime() < deadline) {
+                Thread.sleep(100);
+            }
+            assertFalse(manager.isRunning(), "wedged shared server left running");
+            assertTrue(isEmptyDir(forkTmpBase), "shared server temp dir left behind");
+
+            manager.ensureRunning();
+            assertEquals(1, manager.getRestartCount(RestartReason.TIMEOUT));
         }
     }
 
