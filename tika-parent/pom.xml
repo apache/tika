@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.79.0</google.cloud.version>
-    <aws2.version>2.59.3</aws2.version>
+    <aws2.version>2.59.5</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -458,7 +458,7 @@
     <zookeeper.version>3.8.8</zookeeper.version>
     <zstd.version>1.5.7-28</zstd.version>
     <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
-    <logback.version>1.6.7</logback.version>
+    <logback.version>1.6.8</logback.version>
     <javacpp.version>1.5.14</javacpp.version>
     <maven.site.version>3.22.0</maven.site.version>
     <maven.exec.version>3.7.0</maven.exec.version>
