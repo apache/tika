@@ -139,6 +139,8 @@ public class PDFParserConfig implements Serializable {
 
     private boolean detectAngles = false;
 
+    private boolean detectSuperscriptSubscript = false;
+
     private boolean extractIncrementalUpdateInfo = true;
 
     private boolean parseIncrementalUpdates = false;
@@ -627,6 +629,22 @@ public class PDFParserConfig implements Serializable {
 
     public void setDetectAngles(boolean detectAngles) {
         this.detectAngles = detectAngles;
+    }
+
+    public boolean isDetectSuperscriptSubscript() {
+        return detectSuperscriptSubscript;
+    }
+
+    /**
+     * If true, text that is smaller than the body text of its line and sits above or below
+     * its baseline is written as {@code <sup>} or {@code <sub>}. PDFs do not record
+     * superscript or subscript, so this is a layout guess. Default is <code>false</code>.
+     *
+     * @param detectSuperscriptSubscript whether to write sup and sub elements
+     * @since 4.3.0
+     */
+    public void setDetectSuperscriptSubscript(boolean detectSuperscriptSubscript) {
+        this.detectSuperscriptSubscript = detectSuperscriptSubscript;
     }
 
     /**

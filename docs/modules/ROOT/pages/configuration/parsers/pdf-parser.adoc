@@ -87,6 +87,17 @@ render is parsed for its metadata but not enriched again.
 `pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
 A page that `pages.ocr.maxPages` kept from an engine adds `skipped:max-pages` to `tk:ocr-warnings`.
 
+== Superscript and subscript (`detectSuperscriptSubscript`)
+
+PDFs do not record superscript or subscript, so with `detectSuperscriptSubscript` on (it is off
+by default) the parser guesses from the layout: on each line, text smaller than the line's most
+common size and above or below that text's baseline is written as `<sup>` or `<sub>`, so
+"Article 5¹" is `Article 5<sup>1</sup>` instead of `Article 51`. Only the XHTML gains elements; the
+plain text is unchanged. A line made only of smaller text has nothing to compare against and is
+left alone, and so is a line with more smaller text than body text. On a tagged PDF the elements
+nest inside those the structure tree gives (`<a>`, `<td>`, ...), closing and reopening at their
+edges.
+
 == Tagged PDFs (`markedContent`)
 
 A tagged PDF carries a structure tree: paragraphs, headings, lists, tables, links, and which

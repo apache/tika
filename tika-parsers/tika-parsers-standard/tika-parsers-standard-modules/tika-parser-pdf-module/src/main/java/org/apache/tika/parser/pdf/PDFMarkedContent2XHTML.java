@@ -163,33 +163,37 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     private static final class Segment {
         final Label label;
         final String text;
+        final List<TextPosition> glyphs;
         final int positions;
 
-        Segment(Label label, String text, int positions) {
+        Segment(Label label, String text, List<TextPosition> glyphs) {
             this.label = label;
             this.text = text;
-            this.positions = positions;
+            this.glyphs = glyphs;
+            this.positions = glyphs.size();
         }
     }
 
     private static final class Event {
-        static final Event PARA_START = new Event(EventKind.PARA_START, null, null);
-        static final Event PARA_END = new Event(EventKind.PARA_END, null, null);
-        static final Event WORD_SEP = new Event(EventKind.WORD_SEP, null, null);
-        static final Event LINE_SEP = new Event(EventKind.LINE_SEP, null, null);
+        static final Event PARA_START = new Event(EventKind.PARA_START, null, null, null);
+        static final Event PARA_END = new Event(EventKind.PARA_END, null, null, null);
+        static final Event WORD_SEP = new Event(EventKind.WORD_SEP, null, null, null);
+        static final Event LINE_SEP = new Event(EventKind.LINE_SEP, null, null, null);
 
         final EventKind kind;
-        /** The word as the stripper wrote it; what a flat replay writes. */
+        /** The word as the stripper wrote it, and its glyphs; what a flat replay writes. */
         final String text;
+        final List<TextPosition> positions;
         final List<Segment> segments;
         /** Whitespace-delimited words of three or more glyphs, and those drawn across three
          *  or more blocks. */
         int words;
         int shredded;
 
-        Event(EventKind kind, String text, List<Segment> segments) {
+        Event(EventKind kind, String text, List<TextPosition> positions, List<Segment> segments) {
             this.kind = kind;
             this.text = text;
+            this.positions = positions;
             this.segments = segments;
         }
     }
@@ -213,7 +217,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 return false;
             }
             Object last = pieces.get(pieces.size() - 1);
-            return last == NEWLINE || last == PARAGRAPH_BREAK || ((String) last).isBlank();
+            return last == NEWLINE || last == PARAGRAPH_BREAK
+                    || last instanceof String && ((String) last).isBlank();
         }
 
         boolean hasWhitespace() {
@@ -221,7 +226,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 if (piece == NEWLINE || piece == PARAGRAPH_BREAK) {
                     return true;
                 }
-                String s = (String) piece;
+                String s = pieceText(piece);
                 for (int i = 0; i < s.length(); i++) {
                     if (Character.isWhitespace(s.charAt(i))) {
                         return true;
@@ -636,43 +641,43 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             super.writeString(text, textPositions);
             return;
         }
-        int n = textPositions == null ? 0 : textPositions.size();
-        Label first = n == 0 ? Label.UNTAGGED :
-                labels.getOrDefault(textPositions.get(0), Label.UNTAGGED);
+        List<TextPosition> glyphs = textPositions == null ? List.of() : textPositions;
+        int n = glyphs.size();
+        Label first = n == 0 ? Label.UNTAGGED : labels.getOrDefault(glyphs.get(0), Label.UNTAGGED);
         boolean straddled = false;
         for (int i = 1; i < n && !straddled; i++) {
-            straddled = !first.equals(labels.getOrDefault(textPositions.get(i), Label.UNTAGGED));
+            straddled = !first.equals(labels.getOrDefault(glyphs.get(i), Label.UNTAGGED));
         }
         List<Segment> segments = new ArrayList<>(1);
         if (!straddled) {
-            segments.add(new Segment(first, text, n));
-        } else if (!text.equals(rawText(textPositions))) {
+            segments.add(new Segment(first, text, glyphs));
+        } else if (!text.equals(SupSubLine.rawText(glyphs))) {
             // the stripper reordered or normalized this word (bidi, presentation forms), so
             // its glyphs no longer map onto the text: keep it whole under the label that
             // drew most of it
-            segments.add(new Segment(majorityLabel(textPositions), text, n));
+            segments.add(new Segment(majorityLabel(glyphs), text, glyphs));
         } else {
             // a word drawn across MCIDs (cells separated by space glyphs, a link inside a
             // sentence): split it by glyph so each part lands in its own element
             Label label = first;
             StringBuilder part = new StringBuilder();
-            int count = 0;
-            for (TextPosition position : textPositions) {
+            int start = 0;
+            for (int i = 0; i < n; i++) {
+                TextPosition position = glyphs.get(i);
                 Label l = labels.getOrDefault(position, Label.UNTAGGED);
                 if (!l.equals(label)) {
-                    segments.add(new Segment(label, part.toString(), count));
+                    segments.add(new Segment(label, part.toString(), glyphs.subList(start, i)));
                     label = l;
                     part.setLength(0);
-                    count = 0;
+                    start = i;
                 }
                 if (position.getUnicode() != null) {
                     part.append(position.getUnicode());
                 }
-                count++;
             }
-            segments.add(new Segment(label, part.toString(), count));
+            segments.add(new Segment(label, part.toString(), glyphs.subList(start, n)));
         }
-        Event event = new Event(EventKind.WORD, text, segments);
+        Event event = new Event(EventKind.WORD, text, glyphs, segments);
         countShredding(event, textPositions);
         events.add(event);
     }
@@ -710,16 +715,6 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 nodes.add(blockOf(leaf.node));
             }
         }
-    }
-
-    private static String rawText(List<TextPosition> textPositions) {
-        StringBuilder sb = new StringBuilder();
-        for (TextPosition position : textPositions) {
-            if (position.getUnicode() != null) {
-                sb.append(position.getUnicode());
-            }
-        }
-        return sb.toString();
     }
 
     private Label majorityLabel(List<TextPosition> textPositions) {
@@ -773,7 +768,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                     super.writeParagraphEnd();
                     break;
                 case WORD:
-                    super.writeString(event.text);
+                    super.writeString(event.text, event.positions);
                     break;
                 case WORD_SEP:
                     super.writeWordSeparator();
@@ -968,6 +963,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             }
         }
         closeOpenFrom(0, null);
+        endVertTag();
         held.clear();
         emitBlocks("untagged", untagged);
         emitBlocks("artifact", artifacts);
@@ -1134,6 +1130,12 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     // ---- the text sink: block edges trimmed, separators kept outside inline elements ----
 
     private void sinkText(String text) throws SAXException {
+        sinkText(text, null);
+    }
+
+    /** Writes text inside runVertTag (sup, sub or null); held whitespace stays out of it
+     *  unless the text before had the same vertTag. */
+    private void sinkText(String text, String runVertTag) throws SAXException {
         String s = text;
         if (atBlockStart) {
             int start = 0;
@@ -1154,21 +1156,39 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             held.add(s);
             return;
         }
+        endOtherVertTag(runVertTag);
         flushHeld();
+        startVertTag(runVertTag);
         xhtml.characters(s.substring(0, end));
         if (end < s.length()) {
             held.add(s.substring(end));
         }
     }
 
-    private void sinkNewline() {
+    /** A text piece's text: a string, or a sup or sub chunk. */
+    private static String pieceText(Object piece) {
+        return piece instanceof SupSubLine.Chunk ? ((SupSubLine.Chunk) piece).text() :
+                (String) piece;
+    }
+
+    private void sinkPiece(Object piece) throws SAXException {
+        if (piece instanceof SupSubLine.Chunk) {
+            SupSubLine.Chunk chunk = (SupSubLine.Chunk) piece;
+            sinkText(chunk.text(), chunk.vertTag());
+        } else {
+            sinkText((String) piece);
+        }
+    }
+
+    private void sinkNewline() throws SAXException {
+        endVertTag();
         if (!atBlockStart) {
             held.add(NEWLINE);
         }
     }
 
     /** The edge of a block written inline: a newline, unless one is already waiting. */
-    private void sinkBoundary() {
+    private void sinkBoundary() throws SAXException {
         if (held.isEmpty() || held.get(held.size() - 1) != NEWLINE) {
             sinkNewline();
         }
@@ -1187,6 +1207,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
     private void sinkOpen(String tag, AttributesImpl attributes, boolean inline)
             throws SAXException {
+        endVertTag();
         // whitespace before a child element separates it from the text before it
         flushHeld();
         if (attributes == null) {
@@ -1200,6 +1221,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     }
 
     private void sinkClose(String tag, boolean inline) throws SAXException {
+        endVertTag();
         if (!inline) {
             held.clear();
             atBlockStart = false;
@@ -1385,9 +1407,11 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     }
 
     private List<Run> runs() {
+        SupSubLine[] lines = config.isDetectSuperscriptSubscript() ? lines() : null;
         List<Run> runs = new ArrayList<>();
         Run current = null;
-        for (Event event : events) {
+        for (int e = 0; e < events.size(); e++) {
+            Event event = events.get(e);
             switch (event.kind) {
                 case WORD:
                     for (Segment segment : event.segments) {
@@ -1395,7 +1419,14 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                             current = new Run(segment.label, runs.size());
                             runs.add(current);
                         }
-                        current.pieces.add(segment.text);
+                        if (lines == null) {
+                            current.pieces.add(segment.text);
+                        } else {
+                            for (SupSubLine.Chunk chunk :
+                                    lines[e].chunks(segment.text, segment.glyphs)) {
+                                current.pieces.add(chunk.vertTag() == null ? chunk.text() : chunk);
+                            }
+                        }
                         if (!segment.text.isBlank()) {
                             current.hasText = true;
                         }
@@ -1424,6 +1455,26 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         return runs;
     }
 
+    /** The line each word event is on, cut where PDF2XHTML cuts one. */
+    private SupSubLine[] lines() {
+        SupSubLine[] lines = new SupSubLine[events.size()];
+        List<List<TextPosition>> words = new ArrayList<>();
+        int start = 0;
+        for (int i = 0; i <= events.size(); i++) {
+            Event event = i < events.size() ? events.get(i) : Event.LINE_SEP;
+            if (event.kind == EventKind.WORD) {
+                words.add(event.positions);
+            } else if (event.kind != EventKind.WORD_SEP) {
+                if (!words.isEmpty()) {
+                    Arrays.fill(lines, start, i, new SupSubLine(words));
+                    words = new ArrayList<>();
+                }
+                start = i + 1;
+            }
+        }
+        return lines;
+    }
+
     private void writePieces(List<Object> pieces, Wrapper wrapper) throws SAXException {
         for (Object piece : pieces) {
             if (piece == PARAGRAPH_BREAK) {
@@ -1442,14 +1493,14 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                     sinkNewline();
                 }
             } else {
-                String text = (String) piece;
+                String text = pieceText(piece);
                 if (wrapper != null && !wrapper.open) {
                     if (text.isBlank()) {
                         continue;
                     }
                     openWrapper(wrapper);
                 }
-                sinkText(text);
+                sinkPiece(piece);
             }
         }
     }
@@ -1492,7 +1543,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 if (piece == NEWLINE) {
                     sinkNewline();
                 } else {
-                    sinkText((String) piece);
+                    sinkPiece(piece);
                 }
             }
         }
