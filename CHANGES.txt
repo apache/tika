@@ -146,6 +146,10 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * Superscript and subscript are kept as <sup>/<sub> in XHTML for .xls and .xlsx, from
+     rich-text runs in a cell and from the cell's own font (BIFF FONT records, xlsx
+     vertAlign) (TIKA-5071).
+
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
    
    * Comic book archives in RAR, 7z and tar (.cbr, .cb7, .cbt; application/vnd.comicbook-rar,

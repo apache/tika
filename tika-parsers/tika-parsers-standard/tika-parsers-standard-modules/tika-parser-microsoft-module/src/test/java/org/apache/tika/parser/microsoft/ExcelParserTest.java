@@ -31,9 +31,14 @@ import java.util.UUID;
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
+import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
+import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.util.LocaleUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -836,5 +841,112 @@ public class ExcelParserTest extends TikaTest {
         // falls back to General; POI 6.0.1 shows this as "1/324"
         assertContains("0.0030864198", xml);
         assertContains("after", xml);
+    }
+
+    //TIKA-5071
+    @Test
+    public void testSupSub() throws Exception {
+        for (String file : new String[]{"testEXCEL_supSub.xls", "testEXCEL_supSub.xlsx"}) {
+            String xml = getXML(file).xml;
+            assertContains("Article 5<sup>1</sup> says water is H<sub>2</sub>O", xml);
+            assertContains("<sup>34</sup>5 is the article for boron", xml);
+            assertContains("<sub>9</sub>32 is the article for hydrogen", xml);
+            assertContains("The article for bronze is 38<sup>12</sup>", xml);
+            assertContains("Article 7 says oxygen is O<sub>2</sub>", xml);
+            assertContains("<sup>3</sup>6 is the article for silver whereas gold is article 12<sup>4</sup>", xml);
+            assertContains("<sub>3</sub>7 is the article for silver whereas gold is article 13<sub>4</sub>", xml);
+            assertContains("Article 5<sup>1 2</sup> says more about water", xml);
+            assertContains("Article 7<sub>3 5</sub> says more about oxygen", xml);
+            assertContains("Article 5<sup>1&lt;5&gt;</sup> says more about water", xml);
+            assertContains("Article 7<sub>3&lt;8&gt;</sub> says more about oxygen", xml);
+            assertContains("Article 7<sub>2</sub><sup>19</sup> says more about oxygen", xml);
+            // number cells whose font is superscript or subscript
+            assertContains("<td><sup>805</sup></td>", xml);
+            assertContains("<td><sub>219</sub></td>", xml);
+            assertNotContained("Article 51 says", xml);
+
+            // the text keeps the characters, without the formatting
+            assertContains("Article 51 says water is H2O", getText(file));
+        }
+    }
+
+    //TIKA-5071 font index 5 is the fifth FONT record (there is no font 4)
+    @Test
+    public void testSupSubFontIndexAndCellFont() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (HSSFWorkbook wb = new HSSFWorkbook()) {
+            HSSFFont sup = wb.createFont();
+            sup.setTypeOffset(Font.SS_SUPER);
+            HSSFFont sub = wb.createFont();
+            sub.setTypeOffset(Font.SS_SUB);
+            HSSFCellStyle subStyle = wb.createCellStyle();
+            subStyle.setFont(sub);
+            HSSFRow row = wb.createSheet().createRow(0);
+            HSSFRichTextString rich = new HSSFRichTextString("E = mc2");
+            rich.applyFont(6, 7, sup);
+            row.createCell(0).setCellValue(rich);
+            // the cell's own font is subscript
+            HSSFCell text = row.createCell(1);
+            text.setCellValue("n");
+            text.setCellStyle(subStyle);
+            HSSFCell number = row.createCell(2);
+            number.setCellValue(219);
+            number.setCellStyle(subStyle);
+            row.createCell(3).setCellValue(5);
+            // in a subscript cell, a format run's own font replaces the cell's font
+            HSSFFont bold = wb.createFont();
+            bold.setBold(true);
+            HSSFRichTextString allBold = new HSSFRichTextString("pq");
+            allBold.applyFont(0, 2, bold);
+            HSSFCell allBoldCell = row.createCell(4);
+            allBoldCell.setCellValue(allBold);
+            allBoldCell.setCellStyle(subStyle);
+            HSSFRichTextString tailBold = new HSSFRichTextString("rs");
+            tailBold.applyFont(1, 2, bold);
+            HSSFCell tailBoldCell = row.createCell(5);
+            tailBoldCell.setCellValue(tailBold);
+            tailBoldCell.setCellStyle(subStyle);
+            wb.write(bos);
+        }
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+            xml = getXML(tis, AUTO_DETECT_PARSER, new Metadata()).xml;
+        }
+        assertContains("<td>E = mc<sup>2</sup></td>", xml);
+        assertContains("<td><sub>n</sub></td>", xml);
+        assertContains("<td><sub>219</sub></td>", xml);
+        assertContains("<td>5</td>", xml);
+        assertContains("<td>pq</td>", xml);
+        assertContains("<td><sub>r</sub>s</td>", xml);
+    }
+
+    //TIKA-5071 the phonetic reading follows a superscript cell as plain text
+    @Test
+    public void testSupSubPhonetic() throws Exception {
+        String base = "日本オラクル";
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (HSSFWorkbook wb = new HSSFWorkbook(
+                getResourceAsStream("/test-documents/testEXCEL_phonetic.xls"))) {
+            HSSFFont sup = wb.createFont();
+            sup.setTypeOffset(Font.SS_SUPER);
+            HSSFCellStyle supStyle = wb.createCellStyle();
+            supStyle.setFont(sup);
+            HSSFSheet sheet = wb.getSheetAt(0);
+            for (int r = sheet.getFirstRowNum(); r <= sheet.getLastRowNum(); r++) {
+                HSSFRow row = sheet.getRow(r);
+                for (int c = 0; row != null && c < row.getLastCellNum(); c++) {
+                    HSSFCell cell = row.getCell(c);
+                    if (cell != null && cell.toString().contains(base)) {
+                        cell.setCellStyle(supStyle);
+                    }
+                }
+            }
+            wb.write(bos);
+        }
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+            xml = getXML(tis, AUTO_DETECT_PARSER, new Metadata()).xml;
+        }
+        assertContains("<sup>" + base + "</sup> ニホン", xml);
     }
 }

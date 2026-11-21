@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.xml.sax.Attributes;
@@ -30,19 +31,25 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.FormattingUtils.Tag;
+import org.apache.tika.parser.microsoft.ScriptedTextCell;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * SAX-based shim that replaces POI's {@code StylesTable} for XLSX event-based parsing.
  * <p>
  * Parses {@code xl/styles.xml} and extracts only the information needed for text
- * extraction: the number format resolution chain (cellXfs index to format string).
+ * extraction: the number format resolution chain (cellXfs index to format string)
+ * and whether a cell style's font is superscript or subscript.
  * This avoids the XMLBeans dependency that {@code StylesTable} requires.
  */
 class XSSFStylesShim {
 
     private final Map<Short, String> numberFormats = new HashMap<>();
     private final List<Short> cellXfFormatIds = new ArrayList<>();
+    private final List<Integer> cellXfFontIds = new ArrayList<>();
+    // per <font>: SUP, SUB or null
+    private final List<Tag> fontScriptTags = new ArrayList<>();
 
     XSSFStylesShim(InputStream stylesData, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
@@ -78,6 +85,28 @@ class XSSFStylesShim {
         return fmt;
     }
 
+    /**
+     * @return {@link Tag#SUP} or {@link Tag#SUB} if the cell style's font is
+     * superscript or subscript, else {@code null}
+     */
+    Tag getScriptTag(int styleIndex) {
+        if (styleIndex < 0 || styleIndex >= cellXfFontIds.size()) {
+            return null;
+        }
+        int fontId = cellXfFontIds.get(styleIndex);
+        if (fontId < 0 || fontId >= fontScriptTags.size()) {
+            return null;
+        }
+        return fontScriptTags.get(fontId);
+    }
+
+    /**
+     * @return whether some font in {@code <fonts>} is superscript or subscript
+     */
+    boolean hasScriptFont() {
+        return fontScriptTags.stream().anyMatch(Objects::nonNull);
+    }
+
     private class StylesHandler extends DefaultHandler {
 
         private static final String NS =
@@ -85,6 +114,7 @@ class XSSFStylesShim {
 
         private boolean inCellXfs;
         private boolean inNumFmts;
+        private boolean inFonts;
 
         @Override
         public void startElement(String uri, String localName, String qName,
@@ -109,6 +139,20 @@ class XSSFStylesShim {
                         }
                     }
                     break;
+                case "fonts":
+                    inFonts = true;
+                    break;
+                case "font":
+                    if (inFonts) {
+                        fontScriptTags.add(null);
+                    }
+                    break;
+                case "vertAlign":
+                    if (inFonts && !fontScriptTags.isEmpty()) {
+                        fontScriptTags.set(fontScriptTags.size() - 1,
+                                ScriptedTextCell.fromVertAlign(attributes.getValue("val")));
+                    }
+                    break;
                 case "cellXfs":
                     inCellXfs = true;
                     break;
@@ -124,6 +168,16 @@ class XSSFStylesShim {
                             }
                         }
                         cellXfFormatIds.add(numFmtId);
+                        int fontId = 0;
+                        String fontIdStr = attributes.getValue("fontId");
+                        if (fontIdStr != null) {
+                            try {
+                                fontId = Integer.parseInt(fontIdStr);
+                            } catch (NumberFormatException e) {
+                                // default to 0
+                            }
+                        }
+                        cellXfFontIds.add(fontId);
                     }
                     break;
                 default:
@@ -140,6 +194,8 @@ class XSSFStylesShim {
                 inNumFmts = false;
             } else if ("cellXfs".equals(localName)) {
                 inCellXfs = false;
+            } else if ("fonts".equals(localName)) {
+                inFonts = false;
             }
         }
     }

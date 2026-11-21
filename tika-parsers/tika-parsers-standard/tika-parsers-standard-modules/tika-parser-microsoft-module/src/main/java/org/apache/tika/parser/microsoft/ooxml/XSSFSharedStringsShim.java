@@ -19,7 +19,9 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -27,6 +29,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.FormattingUtils.Tag;
+import org.apache.tika.parser.microsoft.ScriptedTextCell;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -36,18 +40,37 @@ import org.apache.tika.utils.XMLReaderUtils;
  * Parses {@code xl/sharedStrings.xml} and stores each shared string entry
  * as a plain {@code String}, avoiding the XMLBeans dependency that
  * {@code XSSFRichTextString} requires. Rich text runs within a single
- * {@code <si>} are concatenated into a single string.
+ * {@code <si>} are concatenated into a single string. An entry also keeps its runs,
+ * for {@code <sup>}/{@code <sub>}, if one of them is superscript or subscript, or if
+ * it has formatted runs and some cell style's font is superscript or subscript.
  */
 class XSSFSharedStringsShim {
 
-    private final List<String> strings;
-    private final boolean includePhoneticRuns;
+    /**
+     * A rich text run; one with no {@code <rPr>} is in the cell's font.
+     *
+     * @param tag {@link Tag#SUP}, {@link Tag#SUB} or {@code null}
+     */
+    record Run(String text, Tag tag, boolean hasRPr) {
+    }
 
+    private final List<String> strings;
+    private final Map<Integer, List<Run>> scriptedRuns;
+    private final boolean includePhoneticRuns;
+    private final boolean cellFontsMayBeScript;
+
+    /**
+     * @param cellFontsMayBeScript whether some cell style's font is superscript or
+     *                             subscript; if not, only entries with a superscript
+     *                             or subscript run keep their runs
+     */
     XSSFSharedStringsShim(InputStream sharedStringsData,
                            boolean includePhoneticRuns,
+                           boolean cellFontsMayBeScript,
                            ParseContext parseContext)
             throws IOException, SAXException, TikaException {
         this.includePhoneticRuns = includePhoneticRuns;
+        this.cellFontsMayBeScript = cellFontsMayBeScript;
         SharedStringsHandler handler = new SharedStringsHandler();
         if (sharedStringsData != null) {
             try {
@@ -57,10 +80,19 @@ class XSSFSharedStringsShim {
             }
         }
         this.strings = handler.strings;
+        this.scriptedRuns = handler.scriptedRuns;
     }
 
     String getItemAt(int idx) {
         return strings.get(idx);
+    }
+
+    /**
+     * @return the entry's runs, phonetic runs included as plain text if they are
+     * concatenated, if it kept them (see the class javadoc); else {@code null}
+     */
+    List<Run> getScriptedRunsAt(int idx) {
+        return scriptedRuns.get(idx);
     }
 
     int getCount() {
@@ -73,9 +105,19 @@ class XSSFSharedStringsShim {
                 "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
         final List<String> strings = new ArrayList<>();
+        final Map<Integer, List<Run>> scriptedRuns = new HashMap<>();
         private StringBuilder characters;
         private boolean tIsOpen;
         private boolean inRPh;
+        private int tStart;
+        private int rPhStart;
+        private final List<Run> runs = new ArrayList<>();
+        private final StringBuilder runText = new StringBuilder();
+        private boolean inR;
+        private boolean runHasRPr;
+        private Tag runTag;
+        private boolean entryHasRuns;
+        private boolean entryHasScript;
 
         @Override
         public void startElement(String uri, String localName, String qName,
@@ -102,12 +144,35 @@ class XSSFSharedStringsShim {
                     if (characters != null) {
                         characters.setLength(0);
                     }
+                    runs.clear();
+                    entryHasRuns = false;
+                    entryHasScript = false;
+                    break;
+                case "r":
+                    inR = true;
+                    runText.setLength(0);
+                    runHasRPr = false;
+                    runTag = null;
+                    break;
+                case "rPr":
+                    if (inR) {
+                        runHasRPr = true;
+                        entryHasRuns = true;
+                    }
+                    break;
+                case "vertAlign":
+                    if (inR) {
+                        runTag = ScriptedTextCell.fromVertAlign(attributes.getValue("val"));
+                        entryHasScript |= runTag != null;
+                    }
                     break;
                 case "t":
                     tIsOpen = true;
+                    tStart = characters != null ? characters.length() : 0;
                     break;
                 case "rPh":
                     inRPh = true;
+                    rPhStart = characters != null ? characters.length() : 0;
                     if (includePhoneticRuns && characters != null &&
                             characters.length() > 0) {
                         characters.append(" ");
@@ -126,14 +191,31 @@ class XSSFSharedStringsShim {
             switch (localName) {
                 case "si":
                     if (characters != null) {
+                        if (entryHasScript || (entryHasRuns && cellFontsMayBeScript)) {
+                            scriptedRuns.put(strings.size(), List.copyOf(runs));
+                        }
                         strings.add(characters.toString());
+                    }
+                    break;
+                case "r":
+                    if (inR) {
+                        runs.add(new Run(runText.toString(), runTag, runHasRPr));
+                        inR = false;
                     }
                     break;
                 case "t":
                     tIsOpen = false;
+                    // a <t> directly in <si>, before any <r>, is in the cell's font
+                    if (!inR && !inRPh && characters != null && characters.length() > tStart) {
+                        runs.add(new Run(characters.substring(tStart), null, false));
+                    }
                     break;
                 case "rPh":
                     inRPh = false;
+                    if (characters != null && characters.length() > rPhStart) {
+                        // the phonetic text, with its leading space, as plain text
+                        runs.add(new Run(characters.substring(rPhStart), null, true));
+                    }
                     break;
                 default:
                     break;
@@ -149,6 +231,9 @@ class XSSFSharedStringsShim {
                     }
                 } else {
                     characters.append(ch, start, length);
+                    if (inR) {
+                        runText.append(ch, start, length);
+                    }
                 }
             }
         }
