@@ -1429,6 +1429,57 @@ public class PDFParserTest extends TikaTest {
         assertContains("until a further review indicates that the infrastructure", xml);
     }
 
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscript() throws Exception {
+        String xml = getXML("testPDF_supSub.pdf", supSubContext(true)).xml;
+        assertContains("Article 5<sup>1</sup> says water is H<sub>2</sub>O", xml);
+        assertContains("<sup>34</sup>5 is the article for boron", xml);
+        assertContains("<sub>9</sub>32 is the article for hydrogen", xml);
+        assertContains("The article for bronze is 38<sup>12</sup>", xml);
+        assertContains("Article 7 says oxygen is O<sub>2</sub>", xml);
+        assertContains("<sup>3</sup>6 is the article for silver whereas gold is article 12<sup>4</sup>",
+                xml);
+        assertContains("<sub>3</sub>7 is the article for silver whereas gold is article 13<sub>4</sub>",
+                xml);
+        assertContains("Article 5<sup>1 2</sup> says more about water", xml);
+        assertContains("Article 7<sub>3 5</sub> says more about oxygen", xml);
+        assertContains("Article 5<sup>1&lt;5&gt;</sup> says more about water", xml);
+        assertContains("Article 7<sub>3&lt;8&gt;</sub> says more about oxygen", xml);
+        assertContains("Article 18<sup>3</sup> says oxygen is in article 50<sub>2</sub>", xml);
+        assertContains("Article 7<sub>2</sub>\n<sup>19</sup> says more about oxygen", xml);
+
+        // tags only: the text is what it is with detection off
+        assertEquals(getText("testPDF_supSub.pdf", new Metadata(), supSubContext(false)),
+                getText("testPDF_supSub.pdf", new Metadata(), supSubContext(true)));
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptWithAngles() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("pdf-parser",
+                "{\"detectSuperscriptSubscript\": true, \"detectAngles\": true}");
+        String xml = getXML("testPDF_supSub.pdf", context).xml;
+        assertContains("Article 5<sup>1</sup> says water is H<sub>2</sub>O", xml);
+        assertContains("Article 5<sup>1 2</sup> says more about water", xml);
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptOffByDefault() throws Exception {
+        String xml = getXML("testPDF_supSub.pdf").xml;
+        assertNotContained("<sup>", xml);
+        assertNotContained("<sub>", xml);
+        assertContains("Article 51 says water is H2O", xml);
+    }
+
+    private static ParseContext supSubContext(boolean detect) {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("pdf-parser", "{\"detectSuperscriptSubscript\": " + detect + "}");
+        return context;
+    }
+
     @Test
     public void testUnmappedUnicodeStats() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPDF_bad_page_303226.pdf", true);

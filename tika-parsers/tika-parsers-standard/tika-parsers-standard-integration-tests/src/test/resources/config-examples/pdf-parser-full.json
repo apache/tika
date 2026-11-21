@@ -14,6 +14,8 @@
         "catchIntermediateIOExceptions": true,
         // Detect and correct rotated (angled) text runs within a page.
         "detectAngles": false,
+        // Write text smaller than its line and raised or lowered as <sup>/<sub> (a layout guess).
+        "detectSuperscriptSubscript": false,
         // Line-height multiple that starts a new paragraph (PDFBox).
         "dropThreshold": 2.5,
         // Estimate where spaces belong between words (most PDFs lack explicit spaces).
