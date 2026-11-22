@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.IncludeFieldMetadataFilter;
@@ -208,7 +209,7 @@ class EmitHandler {
         m.remove(TikaCoreProperties.TIKA_CONTENT);
     }
 
-    private PipesResult emit(String taskId, EmitKey emitKey,
+    PipesResult emit(String taskId, EmitKey emitKey,
                       boolean isExtractEmbeddedBytes, MetadataListAndEmbeddedBytes parseData,
                       String parseExceptionStack, ParseContext parseContext) {
         Emitter emitter = null;
@@ -224,6 +225,11 @@ class EmitHandler {
         } catch (IOException | TikaException e) {
             LOG.warn("Couldn't initialize emitter for task id '" + taskId + "'", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_INITIALIZATION_EXCEPTION, ExceptionUtils.format(e, parseContext));
+        }
+        // a budget the parse spent refuses every later write; the emit gets its own
+        TempBytesBudget parseBudget = parseContext.get(TempBytesBudget.class);
+        if (parseBudget != null) {
+            parseContext.set(TempBytesBudget.class, new TempBytesBudget(parseBudget.getMaxBytes()));
         }
         try {
             ParseMode parseMode = parseContext.get(ParseMode.class);
@@ -243,6 +249,8 @@ class EmitHandler {
             String msg = ExceptionUtils.format(e, parseContext);
             //for now, we're hiding the parse exception if there was also an emit exception
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION, msg);
+        } finally {
+            parseContext.set(TempBytesBudget.class, parseBudget);
         }
         PassbackFilter passbackFilter = parseContext.get(PassbackFilter.class);
         if (passbackFilter != null) {

@@ -240,6 +240,26 @@ public class UnpackerResourceTest extends CXFTestBase {
         assertEquals(204, response.getStatus());
     }
 
+    @Test
+    public void testMaxUnpackBytesReachedIs422() throws Exception {
+        String configJson = """
+                {"parse-context": {"unpack-config": {"maxUnpackBytes": 10}}}
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"2pic.docx\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+        Response response = WebClient
+                .create(endPoint + UNPACKER_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(422, response.getStatus());
+        String body = response.readEntity(String.class);
+        assertTrue(body.contains("Max unpack bytes reached"), body);
+    }
+
     /** TIKA-4971: no attachments is still a package -- the manifest and rmeta.json, not a 204. */
     @Test
     public void testNoAttachmentsIsAMetadataOnlyPackage() throws Exception {

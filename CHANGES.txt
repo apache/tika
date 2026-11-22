@@ -78,6 +78,14 @@ Release 4.3.0 - ???
      or by external programs (tesseract, unrar, ...) are not counted, so it is not a
      bound on disk use (TIKA-5075).
 
+   * Reaching unpack-config's maxUnpackBytes now fails the file instead of silently
+     truncating: the parse stops with an EmbeddedLimitReachedException (new limit
+     type MAX_UNPACK_BYTES) as the container exception, no unpacked files are
+     emitted (tika-server /unpack returns a 422) and the status is a parse
+     exception. With includeOriginal, the original counts toward the limit.
+     REGULAR output without zipEmbeddedFiles emits as it goes, so files emitted
+     before the limit remain (TIKA-5075).
+
    * A pipes fork that times out, crashes or runs out of memory is killed and its temp
      directory deleted at once, not when that client's next request arrives; an idle
      server no longer keeps a stopped parse's temp files (TIKA-5074).

@@ -26,6 +26,7 @@ package org.apache.tika.pipes.core.extractor;
 public class UnpackedByteCount {
 
     private long value;
+    private boolean limitReached;
 
     public void add(long n) {
         value += n;
@@ -33,5 +34,14 @@ public class UnpackedByteCount {
 
     public long get() {
         return value;
+    }
+
+    /** An embedded file (or the original) did not fit; the file fails and nothing is handed back. */
+    public void markLimitReached() {
+        limitReached = true;
+    }
+
+    public boolean isLimitReached() {
+        return limitReached;
     }
 }

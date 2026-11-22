@@ -31,7 +31,9 @@ public class EmbeddedLimitReachedException extends RuntimeException {
         MAX_DEPTH,
         MAX_COUNT,
         /** The task's total timeout was exhausted; see {@code ParseRecord#isTaskDeadlineReached()}. */
-        DEADLINE
+        DEADLINE,
+        /** An embedded file would take the bytes handed back past {@code unpack-config.maxUnpackBytes}. */
+        MAX_UNPACK_BYTES
     }
 
     private final LimitType limitType;
@@ -55,6 +57,8 @@ public class EmbeddedLimitReachedException extends RuntimeException {
                 return "Max embedded count reached: " + limit;
             case DEADLINE:
                 return "Task deadline reached: totalTaskTimeoutMillis=" + limit;
+            case MAX_UNPACK_BYTES:
+                return "Max unpack bytes reached: maxUnpackBytes=" + limit;
             default:
                 return "Embedded limit reached: " + limit;
         }

@@ -131,11 +131,16 @@ Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, `TimeoutLimits
 
 A request to the pipes worker -- tika-server `/pipes`, `/async` and the multipart `config`
 part, tika-grpc, `PipesParser` callers -- may carry its own `embedded-limits`,
-`output-limits`, `temp-limits`, `standard-metadata-limiter-factory` and content-handler
-`writeLimit`. Each is
+`output-limits`, `temp-limits`, `standard-metadata-limiter-factory`, content-handler
+`writeLimit` and `unpack-config.maxUnpackBytes`. Each is
 clamped field by field to the operator's value (the server's `parse-context` plus any preset,
 or the class default when neither sets one), so a request can tighten a limit but not loosen
-it. A clamp is logged as a warning in the worker. A request may not replace a configured
+it. A clamp is silent to the caller: the request runs under the operator's value, and the
+only record is a warning in the worker's log, nothing in the response or the metadata. A
+field the request block leaves out takes the class default, not the operator's value, and
+is clamped the same way. This is expected to change in a later release: a request that
+asks for a looser limit will likely be rejected instead of clamped, so do not rely on the
+clamp. A request may not replace a configured
 metadata limiter with a different kind. The same holds for the render limits in a `pages` block
 (`render` and `emit.render`: `dpi`, `maxImagePixels`, `maxWidth`, `maxHeight`, including the
 deprecated `ocr` aliases), at the top level or under a parser; the ceiling is what the
@@ -292,9 +297,11 @@ embedded file is spooled to a temp file first, and that is bounded separately by
 unlimited (not advisable for untrusted input); `0` means zero bytes, not unlimited.
 |===
 
-At the limit, extraction stops for the remaining embedded documents and
-already-extracted bytes are kept. The parse still reports success: the truncation
-shows up only as a WARN in the fork's log, not in the metadata or the result status.
+Reaching the limit fails the file: the parse stops, no unpacked files are handed back,
+never a truncated one, and the file's container exception is an
+`EmbeddedLimitReachedException` ("Max unpack bytes reached") with a parse-exception
+status. tika-server's `/unpack` returns a 422. REGULAR output with `zipEmbeddedFiles` off
+emits each file as it is unpacked, so files emitted before the limit remain.
 
 [source,json]
 ----
@@ -343,6 +350,8 @@ Reaching the limit stops the file. The write is refused with a
 embedded document reached it, and the exception is reported as the file's container
 exception. What was parsed before it is kept, so the result status is a parse exception
 (`PARSE_SUCCESS_WITH_EXCEPTION`, `EMIT_SUCCESS_PARSE_EXCEPTION`), not a failure status.
+tika-server's `/unpack` is the exception: as for any container exception, it returns the
+exception as a 422 and no zip.
 A fetch that reaches it is a `FETCH_EXCEPTION`. The fork is not restarted, and the next file starts with the whole
 limit. A request may lower the limit, not raise it.
 
@@ -371,8 +380,10 @@ nothing else. It does not count, and Tika has no way to cap:
 * anything an external program writes (tesseract, unrar, readpst, pdftoppm, dwgread,
   ffmpeg): its output and its own scratch files.
 
-Embedded bytes extracted by UNPACK are not counted here either; `maxUnpackBytes` bounds
-those.
+Nor does it count the output UNPACK builds on disk before emitting it: the unpacked
+files, the zipped package and, for tika-server's `/unpack`, the zip held until it is sent.
+`maxUnpackBytes` limits only what is handed back, not this temp space; see
+xref:pipes/unpack-config.adoc#_safety_limits[UNPACK safety limits] for how much to allow.
 
 A document can still fill the volume `java.io.tmpdir` is on. The limit is also per
 task, so a server can hold up to `numClients` times it. Keep `java.io.tmpdir` on a

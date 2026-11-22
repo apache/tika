@@ -166,7 +166,11 @@ class PipesWorker implements Callable<PipesResult> {
             try {
                 // Check if we need to zip and emit embedded files
                 UnpackHandler handler = parseContext.get(UnpackHandler.class);
-                if (handler instanceof FrictionlessUnpackHandler) {
+                UnpackedByteCount unpacked = parseContext.get(UnpackedByteCount.class);
+                if (unpacked != null && unpacked.isLimitReached()) {
+                    // the file failed on maxUnpackBytes: no partial package
+                    LOG.warn("maxUnpackBytes reached, not emitting unpacked files: {}", fetchEmitTuple.getId());
+                } else if (handler instanceof FrictionlessUnpackHandler) {
                     PipesResult frictionlessResult =
                             emitFrictionlessOutput((FrictionlessUnpackHandler) handler, parseData);
                     if (frictionlessResult != null) {
@@ -465,6 +469,8 @@ class PipesWorker implements Callable<PipesResult> {
                 zos.putNextEntry(fileEntry);
                 Files.copy(fileInfo.filePath(), zos);
                 zos.closeEntry();
+                // it is in the zip now; don't hold both copies
+                Files.delete(fileInfo.filePath());
             }
         }
     }
@@ -511,6 +517,8 @@ class PipesWorker implements Callable<PipesResult> {
                 zos.putNextEntry(fileEntry);
                 Files.copy(fileInfo.filePath(), zos);
                 zos.closeEntry();
+                // it is in the zip now; don't hold both copies
+                Files.delete(fileInfo.filePath());
 
                 // Add metadata JSON if requested; a row a filter removed gets no sidecar
                 Metadata row = rowsById.get(fileInfo.id());

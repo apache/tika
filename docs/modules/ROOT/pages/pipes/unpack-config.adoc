@@ -88,8 +88,7 @@ All options below are fields of the `unpack-config` block — nest them inside
 |10 GiB
 |Maximum total embedded bytes handed back per file; not a limit on temp space (see
 <<_safety_limits>>). Set to `-1` for unlimited (not recommended). `0`
-is not unlimited -- it means zero bytes, so the first embedded file's extraction is
-immediately capped.
+is not unlimited -- it means zero bytes, so the first embedded file fails the file.
 
 |`includeOriginal`
 |boolean
@@ -249,19 +248,30 @@ These keys are REGULAR output's; a Frictionless package sits at `<containerKey>/
 `maxUnpackBytes` limits the embedded bytes handed back to you, the total emitted for one
 file, so that a zip bomb or other file that expands enormously cannot flood your output.
 The 10 GiB default suits most corpora; lower it for untrusted input.
+With `includeOriginal`, the original document is handed back too and counts toward the
+limit.
 
 It is not a limit on temp space. Each embedded file is spooled to a temp file before it is
 handed back, and that is bounded separately by `temp-limits`
-(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]). Reaching that
-limit is not silent: it fails the file.
+(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]).
 
-Hitting `maxUnpackBytes` is silent apart from a log line. The embedded file being written is
-truncated at the remaining budget, each later embedded file is skipped, and each case
-logs a WARN — but nothing is stamped on the metadata and the result status is unchanged
-(`PARSE_SUCCESS` / `EMIT_SUCCESS`). Watch the log, not the status, for truncation.
+The unpacked files and a zipped package are also built on disk before they are emitted,
+and neither limit counts them: allow temp space of about `maxUnpackBytes` per file being
+processed, and twice that for tika-server's `/unpack`, which holds the finished zip in
+temp until it is sent.
+
+Reaching `maxUnpackBytes` fails the file. A file that does not fit whole is never handed
+back truncated: the parse stops there with an `EmbeddedLimitReachedException`
+("Max unpack bytes reached") as the container exception, nothing is unpacked for that
+document, and the status is a parse exception (`EMIT_SUCCESS_PARSE_EXCEPTION`). The
+metadata list, as far as the parse got, is still emitted; tika-server's `/unpack` returns
+a 422 and no zip. The one exception is REGULAR output with
+`zipEmbeddedFiles` off, which emits each file as it is unpacked: files emitted before the
+limit stay where they were written.
 
 `maxUnpackBytes: -1` (or any negative value) disables the limit — not recommended for
-untrusted input. `0` is not "unlimited": it caps extraction at zero bytes.
+untrusted input. `0` is not "unlimited": the first embedded file with any bytes fails
+the file.
 
 == Frictionless Data Package Output
 

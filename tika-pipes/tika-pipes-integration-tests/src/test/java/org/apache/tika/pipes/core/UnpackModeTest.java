@@ -373,21 +373,20 @@ public class UnpackModeTest {
 
     @Test
     public void testMaxUnpackBytesLimit() throws Exception {
-        // Test that maxUnpackBytes limit is enforced during byte extraction
+        // room for two of the four 146-byte embedded files
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.UNPACK);
 
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setEmitter(emitterName);
-        unpackConfig.setMaxUnpackBytes(10L);
+        unpackConfig.setMaxUnpackBytes(300L);
         unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
         parseContext.set(UnpackConfig.class, unpackConfig);
 
         PipesResult pipesResult = process("limited", testDocWithEmbedded, testDocWithEmbedded + "-limited",
                 parseContext);
-        // The parse should succeed (limit exceeded just stops extraction, doesn't fail)
-        assertTrue(pipesResult.isSuccess(),
-                "UNPACK with maxUnpackBytes limit should succeed. Status: " + pipesResult.status());
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, pipesResult.status(),
+                pipesResult.message());
 
         long totalBytesWritten;
         try (Stream<Path> files = Files.walk(outputDir("limited"))) {
@@ -403,9 +402,41 @@ public class UnpackModeTest {
                     })
                     .sum();
         }
-        // testMaxUnpackBytesUnlimited shows these files otherwise total 4 x 146 bytes
-        assertTrue(totalBytesWritten <= 10,
-                "Total bytes written should be limited by maxUnpackBytes. Got: " + totalBytesWritten);
+        assertEquals(0, totalBytesWritten, "no partial output");
+        List<Metadata> metadataList = readSidecar(outputDir("limited"), testDocWithEmbedded + "-limited");
+        // the container and its four embedded files, had the parse run on
+        assertTrue(metadataList.size() < 5, "the parse did not stop: " + metadataList.size());
+        String containerException = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        assertNotNull(containerException);
+        assertTrue(containerException.contains("Max unpack bytes reached"), containerException);
+    }
+
+    @Test
+    public void testMaxUnpackBytesCountsTheOriginal() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setMaxUnpackBytes(10L);
+        unpackConfig.setIncludeOriginal(true);
+        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = process("limitedOriginal", testDocWithEmbedded,
+                testDocWithEmbedded + "-limitedOriginal", parseContext);
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, pipesResult.status(),
+                pipesResult.message());
+
+        long total;
+        try (Stream<Path> files = Files.walk(outputDir("limitedOriginal"))) {
+            total = files
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.toString().replace('\\', '/').contains("/unpacked/"))
+                    .mapToLong(p -> p.toFile().length())
+                    .sum();
+        }
+        assertEquals(0, total, "the original alone passes the limit, so nothing is handed back");
     }
 
     @Test

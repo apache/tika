@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core.server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -34,6 +35,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.Digester;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.digest.SkipContainerDocumentDigest;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
@@ -52,6 +54,7 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.pipes.core.extractor.UnpackedByteCount;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
@@ -109,8 +112,23 @@ class ParseHandler {
                     parseContext);
         }
 
+        // the original did not fit, or a parser swallowed the exception
+        if (isUnpackLimitReached(parseContext) && !metadataList.isEmpty()
+                && metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION) == null) {
+            UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
+            metadataList.get(0).add(TikaCoreProperties.CONTAINER_EXCEPTION, ExceptionUtils.format(
+                    new EmbeddedLimitReachedException(
+                            EmbeddedLimitReachedException.LimitType.MAX_UNPACK_BYTES,
+                            unpackConfig.maxUnpackBytesOrUnlimited()),
+                    parseContext));
+        }
         return new PipesWorker.ParseDataOrPipesResult(new MetadataListAndEmbeddedBytes(metadataList,
                 parseContext.get(UnpackHandler.class)), null);
+    }
+
+    private static boolean isUnpackLimitReached(ParseContext parseContext) {
+        UnpackedByteCount unpacked = parseContext.get(UnpackedByteCount.class);
+        return unpacked != null && unpacked.isLimitReached();
     }
 
     private ParseMode getParseMode(ParseContext parseContext) {
@@ -163,8 +181,23 @@ class ParseHandler {
         if (unpackConfig != null &&
                 unpackConfig.isIncludeOriginal()) {
             UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
-            try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
-                unpackHandler.add(0, metadata, is);
+            // the original is handed back too, so it counts against maxUnpackBytes
+            UnpackedByteCount byteCount = parseContext.get(UnpackedByteCount.class);
+            long max = unpackConfig.maxUnpackBytesOrUnlimited();
+            try {
+                SeekableByteChannel channel = tis.getSeekableByteChannel();
+                long size = channel.size();
+                if (byteCount != null && size > max) {
+                    LOG.warn("original of {} ({} bytes) would pass maxUnpackBytes ({})", t.getId(), size, max);
+                    byteCount.markLimitReached();
+                } else {
+                    try (InputStream is = Channels.newInputStream(channel)) {
+                        unpackHandler.add(0, metadata, is);
+                    }
+                    if (byteCount != null) {
+                        byteCount.add(size);
+                    }
+                }
             } catch (IOException | TempLimitReachedException e) {
                 LOG.warn("problem reading source file into embedded document byte store", e);
             }
@@ -208,6 +241,10 @@ class ParseHandler {
         //queue better be empty. we deserve an exception if not
         intermediateResult.add(metadata);
         countDownLatch.await();
+        if (isUnpackLimitReached(parseContext)) {
+            // the original alone passes maxUnpackBytes: the file has failed
+            return Collections.singletonList(metadata);
+        }
         try {
             recursiveParserWrapper.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
