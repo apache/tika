@@ -107,6 +107,9 @@ class PipesWorker implements Callable<PipesResult> {
 
     // Per-parse stage nanos, read by ConnectionHandler for the timing line after the
     // worker completes. -1 means the stage never ran.
+    // true once any unpacked file or package has gone to an emitter
+    private boolean unpackedOutputEmitted;
+
     private volatile long fetchNanos = -1;
     private volatile long parseNanos = -1;
     // text inference, metadata filters, user metadata
@@ -204,7 +207,8 @@ class PipesWorker implements Callable<PipesResult> {
                     }
                 } else if (handler instanceof EmittingUnpackHandler) {
                     try {
-                        ((EmittingUnpackHandler) handler).emitStaged(parseContext);
+                        unpackedOutputEmitted =
+                                ((EmittingUnpackHandler) handler).emitStaged(parseContext) > 0;
                     } catch (SecurityException e) {
                         throw e;
                     } catch (IOException | RuntimeException e) {
@@ -215,7 +219,7 @@ class PipesWorker implements Callable<PipesResult> {
                 }
                 PipesResult result =
                         emitHandler.emitParseData(fetchEmitTuple, parseData, prepared, parseContext);
-                if (handler != null
+                if (unpackedOutputEmitted
                         && result.status() == PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED) {
                     // TEMP_LIMIT_REACHED promises nothing was emitted; the unpacked output was
                     return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION, result.message());
@@ -240,7 +244,7 @@ class PipesWorker implements Callable<PipesResult> {
     }
 
 
-    private PipesResult tempLimitReached(TempLimitReachedException e) {
+    private PipesResult tempLimitReached(Exception e) {
         LOG.warn("temp limit reached building the unpack package: {}", fetchEmitTuple.getId());
         return new PipesResult(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED,
                 ExceptionUtils.format(e, parseContext));
@@ -302,6 +306,10 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (TempLimitReachedException e) {
             return tempLimitReached(e);
         } catch (IOException e) {
+            if (TempLimits.isReached(parseContext)) {
+                // Jackson wraps a refused write
+                return tempLimitReached(e);
+            }
             LOG.warn("Failed to create zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
                     "Failed to create zip file: " + ExceptionUtils.format(e, parseContext));
@@ -316,6 +324,7 @@ class PipesWorker implements Callable<PipesResult> {
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
                     "Failed to emit zip file: " + ExceptionUtils.format(e, parseContext));
         }
+        unpackedOutputEmitted = true;
         deleteEmitted(tempHandler, zipFile);
 
         LOG.debug("Successfully zipped and emitted {} embedded files to {}",
@@ -435,6 +444,10 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (TempLimitReachedException e) {
             return tempLimitReached(e);
         } catch (IOException e) {
+            if (TempLimits.isReached(parseContext)) {
+                // Jackson wraps a refused write
+                return tempLimitReached(e);
+            }
             LOG.warn("Failed to create Frictionless zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
                     "Failed to create Frictionless zip file: " + ExceptionUtils.format(e, parseContext));
@@ -449,6 +462,7 @@ class PipesWorker implements Callable<PipesResult> {
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
                     "Failed to emit Frictionless zip file: " + ExceptionUtils.format(e, parseContext));
         }
+        unpackedOutputEmitted = true;
         deleteEmitted(frictionlessHandler, zipFile);
 
         LOG.debug("Successfully emitted Frictionless package with {} resources to {}",
@@ -473,6 +487,7 @@ class PipesWorker implements Callable<PipesResult> {
                 try (InputStream is = Files.newInputStream(fileInfo.filePath())) {
                     streamEmitter.emit(fileEmitKey, is, fileInfo.metadata(), parseContext);
                 }
+                unpackedOutputEmitted = true;
                 deleteEmitted(frictionlessHandler, fileInfo.filePath());
             }
 
@@ -482,6 +497,7 @@ class PipesWorker implements Callable<PipesResult> {
             try (InputStream dpStream = new java.io.ByteArrayInputStream(dpBytes)) {
                 streamEmitter.emit(dpEmitKey, dpStream, new Metadata(), parseContext);
             }
+            unpackedOutputEmitted = true;
 
             if (metadataJson != null) {
                 try (InputStream metadataStream = new java.io.ByteArrayInputStream(metadataJson)) {

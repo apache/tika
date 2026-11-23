@@ -86,8 +86,13 @@ public class EmittingUnpackHandler extends AbstractUnpackHandler {
         staged.add(new Staged(emitKey, tempFile));
     }
 
-    /** Emits what the parse staged; call only once the file is known not to have failed. */
-    public void emitStaged(ParseContext parseContext) throws IOException {
+    /**
+     * Emits what the parse staged; call only once the file is known not to have failed.
+     *
+     * @return how many files were emitted
+     */
+    public int emitStaged(ParseContext parseContext) throws IOException {
+        int emitted = staged.size();
         for (Staged s : staged) {
             // each emit is progress, as it was when they ran between embedded parses
             ParseTimeout.checkpoint(parseContext);
@@ -99,6 +104,7 @@ public class EmittingUnpackHandler extends AbstractUnpackHandler {
             deleteStaged(s.file());
         }
         staged.clear();
+        return emitted;
     }
 
     @Override

@@ -71,7 +71,7 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         /**
          * The task reached {@code temp-limits.maxTempBytes}, in the fetch, the parse or the
          * emit. Nothing is emitted or passed back; the fork keeps running. (UNPACK reports
-         * {@link #EMIT_EXCEPTION} if the metadata emit reaches it after the unpacked output.)
+         * {@link #EMIT_EXCEPTION} if the metadata emit reaches it after unpacked output is out.)
          */
         TEMP_LIMIT_REACHED(CATEGORY.TASK_EXCEPTION),
         /**
