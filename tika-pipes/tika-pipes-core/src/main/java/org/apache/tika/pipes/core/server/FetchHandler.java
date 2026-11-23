@@ -65,7 +65,10 @@ class FetchHandler {
                 throw e;
             }
             return new TisOrResult(tis, null);
-        } catch (IOException | TikaException | TempLimitReachedException e) {
+        } catch (TempLimitReachedException e) {
+            return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED,
+                    ExceptionUtils.format(e, parseContext)));
+        } catch (IOException | TikaException e) {
             return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
                     ExceptionUtils.format(e, parseContext)));
         }

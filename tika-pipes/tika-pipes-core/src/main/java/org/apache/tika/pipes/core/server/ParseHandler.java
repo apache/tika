@@ -35,7 +35,6 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.Digester;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.digest.SkipContainerDocumentDigest;
-import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
@@ -112,16 +111,6 @@ class ParseHandler {
                     parseContext);
         }
 
-        // the original did not fit, or a parser swallowed the exception
-        if (isUnpackLimitReached(parseContext) && !metadataList.isEmpty()
-                && metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION) == null) {
-            UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
-            metadataList.get(0).add(TikaCoreProperties.CONTAINER_EXCEPTION, ExceptionUtils.format(
-                    new EmbeddedLimitReachedException(
-                            EmbeddedLimitReachedException.LimitType.MAX_UNPACK_BYTES,
-                            unpackConfig.maxUnpackBytesOrUnlimited()),
-                    parseContext));
-        }
         return new PipesWorker.ParseDataOrPipesResult(new MetadataListAndEmbeddedBytes(metadataList,
                 parseContext.get(UnpackHandler.class)), null);
     }

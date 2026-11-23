@@ -297,11 +297,12 @@ embedded file is spooled to a temp file first, and that is bounded separately by
 unlimited (not advisable for untrusted input); `0` means zero bytes, not unlimited.
 |===
 
-Reaching the limit fails the file: the parse stops, no unpacked files are handed back,
-never a truncated one, and the file's container exception is an
-`EmbeddedLimitReachedException` ("Max unpack bytes reached") with a parse-exception
-status. tika-server's `/unpack` returns a 422. REGULAR output with `zipEmbeddedFiles` off
-emits each file as it is unpacked, so files emitted before the limit remain.
+Reaching the limit fails the file: the parse stops and the result is
+`UNPACK_LIMIT_REACHED`, a task exception. Nothing is emitted or passed back, neither
+unpacked files nor the metadata list, only the cause (`EmbeddedLimitReachedException`,
+"Max unpack bytes reached"). tika-server returns a 422 with the status in the JSON body.
+The text and metadata are not returned either; to get them for such a file, send it again
+without UNPACK.
 
 [source,json]
 ----
@@ -333,7 +334,9 @@ What counts against it:
 * the document itself when a fetcher downloads it to a temp file (S3, GCS, Azure Blob,
   HTTP, Google Drive, Atlassian), so a fetched document larger than the limit fails;
 * temp files Tika's own parsers and renderers write, including the copy of a document
-  handed to an external program.
+  handed to an external program;
+* the files UNPACK stages on disk, in every output format, until they have been
+  emitted.
 
 [cols="2,1,3"]
 |===
@@ -345,14 +348,12 @@ What counts against it:
 `0` and any other negative value are rejected.
 |===
 
-Reaching the limit stops the file. The write is refused with a
-`TempLimitReachedException`, nothing more of that file is parsed or extracted, whichever
-embedded document reached it, and the exception is reported as the file's container
-exception. What was parsed before it is kept, so the result status is a parse exception
-(`PARSE_SUCCESS_WITH_EXCEPTION`, `EMIT_SUCCESS_PARSE_EXCEPTION`), not a failure status.
-tika-server's `/unpack` is the exception: as for any container exception, it returns the
-exception as a 422 and no zip.
-A fetch that reaches it is a `FETCH_EXCEPTION`. The fork is not restarted, and the next file starts with the whole
+Reaching the limit fails the file, loudly. The write is refused with a
+`TempLimitReachedException` and the result is `TEMP_LIMIT_REACHED`, a task exception, not
+a parse exception: nothing is emitted or passed back, not the metadata parsed before it
+and no unpacked files. It is the same status whether the fetch, the parse
+or the emit reached it. tika-server returns a 422 with the status in the JSON body. The
+fork is not restarted, and the next file starts with the whole
 limit. A request may lower the limit, not raise it.
 
 The default is a backstop. It is sized not to reject a large fetched document, so it does
@@ -380,10 +381,8 @@ nothing else. It does not count, and Tika has no way to cap:
 * anything an external program writes (tesseract, unrar, readpst, pdftoppm, dwgread,
   ffmpeg): its output and its own scratch files.
 
-Nor does it count the output UNPACK builds on disk before emitting it: the unpacked
-files, the zipped package and, for tika-server's `/unpack`, the zip held until it is sent.
-`maxUnpackBytes` limits only what is handed back, not this temp space; see
-xref:pipes/unpack-config.adoc#_safety_limits[UNPACK safety limits] for how much to allow.
+Nor does it count the copy of the finished zip that tika-server's `/unpack` holds until
+it is sent.
 
 A document can still fill the volume `java.io.tmpdir` is on. The limit is also per
 task, so a server can hold up to `numClients` times it. Keep `java.io.tmpdir` on a

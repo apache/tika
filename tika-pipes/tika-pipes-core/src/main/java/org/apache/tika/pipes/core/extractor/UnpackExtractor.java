@@ -182,8 +182,8 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private void storeEmbeddedBytes(Path p, Metadata metadata, ParseContext context) {
         UnpackedByteCount byteCount = context.get(UnpackedByteCount.class);
-        // past the limit the file may be cut short, and the task is failing anyway
-        if (p == null || TempLimits.isReached(context)) {
+        // past either limit the task is failing: store nothing more
+        if (p == null || TempLimits.isReached(context) || byteCount.isLimitReached()) {
             return;
         }
 

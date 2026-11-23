@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,7 +51,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.config.TempLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
@@ -385,30 +385,24 @@ public class UnpackModeTest {
 
         PipesResult pipesResult = process("limited", testDocWithEmbedded, testDocWithEmbedded + "-limited",
                 parseContext);
-        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, pipesResult.status(),
-                pipesResult.message());
+        assertUnpackLimitReached(pipesResult, outputDir("limited"));
+    }
 
-        long totalBytesWritten;
-        try (Stream<Path> files = Files.walk(outputDir("limited"))) {
-            totalBytesWritten = files
-                    .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().replace('\\', '/').contains("/unpacked/"))
-                    .mapToLong(p -> {
-                        try {
-                            return Files.size(p);
-                        } catch (IOException e) {
-                            return 0;
-                        }
-                    })
-                    .sum();
-        }
-        assertEquals(0, totalBytesWritten, "no partial output");
-        List<Metadata> metadataList = readSidecar(outputDir("limited"), testDocWithEmbedded + "-limited");
-        // the container and its four embedded files, had the parse run on
-        assertTrue(metadataList.size() < 5, "the parse did not stop: " + metadataList.size());
-        String containerException = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
-        assertNotNull(containerException);
-        assertTrue(containerException.contains("Max unpack bytes reached"), containerException);
+    @Test
+    public void testMaxUnpackBytesLimitRegularLeavesNothing() throws Exception {
+        // one emit per file: nothing may be emitted before the limit is known not to be reached
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setMaxUnpackBytes(300L);
+        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = process("limitedRegular", testDocWithEmbedded,
+                testDocWithEmbedded + "-limitedRegular", parseContext);
+        assertUnpackLimitReached(pipesResult, outputDir("limitedRegular"));
     }
 
     @Test
@@ -425,18 +419,7 @@ public class UnpackModeTest {
 
         PipesResult pipesResult = process("limitedOriginal", testDocWithEmbedded,
                 testDocWithEmbedded + "-limitedOriginal", parseContext);
-        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, pipesResult.status(),
-                pipesResult.message());
-
-        long total;
-        try (Stream<Path> files = Files.walk(outputDir("limitedOriginal"))) {
-            total = files
-                    .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().replace('\\', '/').contains("/unpacked/"))
-                    .mapToLong(p -> p.toFile().length())
-                    .sum();
-        }
-        assertEquals(0, total, "the original alone passes the limit, so nothing is handed back");
+        assertUnpackLimitReached(pipesResult, outputDir("limitedOriginal"));
     }
 
     @Test
@@ -464,32 +447,62 @@ public class UnpackModeTest {
 
         Set<Path> tempFilesBefore = forkTempFiles();
         PipesResult pipesResult = process("temp-limit", bomb, bomb, parseContext);
-        assertFalse(pipesResult.isProcessCrash(), "Status: " + pipesResult.status() +
-                ", Message: " + pipesResult.message());
+        assertTempLimitReached(pipesResult, outputDir("temp-limit"));
         assertEquals(tempFilesBefore, forkTempFiles(), "the failed file left temp files behind");
-
-        List<Metadata> metadataList = readMetadataList(outputDir("temp-limit"), bomb);
-        String containerException = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
-        assertNotNull(containerException, "no container exception in " + metadataList);
-        assertTrue(containerException.contains("TempLimitReachedException"), containerException);
-        assertFalse(containerException.contains("TIKA-198"), containerException);
-
-        // the limit ends the file: nothing is parsed or extracted from that entry on
-        Set<String> names = new HashSet<>();
-        for (Metadata m : metadataList) {
-            names.add(String.valueOf(m.get(TikaCoreProperties.RESOURCE_NAME_KEY)));
-        }
-        assertTrue(names.contains("before.txt"), names.toString());
-        assertFalse(names.contains("after.txt"), names.toString());
-        long unpacked = embeddedFiles(outputDir("temp-limit"), bomb).values().stream()
-                .mapToLong(Long::longValue).sum();
-        assertTrue(unpacked < 1024, "extracted at or past the limit: " + unpacked);
 
         // the fork survived
         ParseContext next = new ParseContext();
         next.set(ParseMode.class, ParseMode.UNPACK);
         assertTrue(process("temp-limit-next", testDocWithEmbedded, testDocWithEmbedded, next)
                 .isSuccess());
+    }
+
+    @Test
+    public void testMaxTempBytesCountsStagedFiles() throws Exception {
+        // each 1 MB entry spools within the limit; staged for the package they add up
+        byte[] noise = new byte[1024 * 1024];
+        new Random(5075).nextBytes(noise);
+        String doc = "staged.zip";
+        try (ZipOutputStream zip = new ZipOutputStream(
+                Files.newOutputStream(tmp.resolve("input").resolve(doc)))) {
+            for (int i = 0; i < 4; i++) {
+                zip.putNextEntry(new ZipEntry("noise" + i + ".bin"));
+                zip.write(noise);
+                zip.closeEntry();
+            }
+        }
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+        parseContext.set(TempLimits.class, new TempLimits(5 * 1024 * 1024 / 2));
+
+        PipesResult pipesResult = process("temp-limit-staged", doc, doc, parseContext);
+        assertTempLimitReached(pipesResult, outputDir("temp-limit-staged"));
+    }
+
+    private static void assertTempLimitReached(PipesResult pipesResult, Path outputDir)
+            throws IOException {
+        assertFailedWithNothingEmitted(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED,
+                "TempLimitReachedException", pipesResult, outputDir);
+    }
+
+    private static void assertUnpackLimitReached(PipesResult pipesResult, Path outputDir)
+            throws IOException {
+        assertFailedWithNothingEmitted(PipesResult.RESULT_STATUS.UNPACK_LIMIT_REACHED,
+                "Max unpack bytes reached", pipesResult, outputDir);
+    }
+
+    /** Nothing emitted, nothing passed back. */
+    private static void assertFailedWithNothingEmitted(PipesResult.RESULT_STATUS status, String cause,
+                                                       PipesResult pipesResult, Path outputDir)
+            throws IOException {
+        assertEquals(status, pipesResult.status(), pipesResult.message());
+        assertTrue(pipesResult.message().contains(cause), pipesResult.message());
+        assertNull(pipesResult.emitData());
+        if (Files.isDirectory(outputDir)) {
+            try (Stream<Path> files = Files.walk(outputDir)) {
+                assertEquals(List.of(), files.filter(Files::isRegularFile).toList());
+            }
+        }
     }
 
     @Test
@@ -516,14 +529,8 @@ public class UnpackModeTest {
 
         Set<Path> tempFilesBefore = forkTempFiles();
         PipesResult pipesResult = process("temp-limit-top", truncated, truncated, parseContext);
-        assertFalse(pipesResult.isProcessCrash(), "Status: " + pipesResult.status() +
-                ", Message: " + pipesResult.message());
+        assertTempLimitReached(pipesResult, outputDir("temp-limit-top"));
         assertEquals(tempFilesBefore, forkTempFiles(), "the failed file left temp files behind");
-        // RMETA passes the list back
-        List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
-        String containerException = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
-        assertNotNull(containerException, "no container exception in " + metadataList);
-        assertTrue(containerException.contains("TempLimitReachedException"), containerException);
     }
 
     @Test

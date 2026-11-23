@@ -39,10 +39,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.UnpackHandler;
+import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -147,6 +151,23 @@ class PipesWorker implements Callable<PipesResult> {
             if (parseDataResult.pipesResult != null) {
                 return parseDataResult.pipesResult;
             }
+            if (TempLimits.isReached(parseContext)) {
+                // nothing of this file is emitted or passed back
+                LOG.error("temp limit reached: {}", fetchEmitTuple.getId());
+                return new PipesResult(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED,
+                        ExceptionUtils.format(new TempLimitReachedException(
+                                parseContext.get(TempBytesBudget.class).getMaxBytes()), parseContext));
+            }
+            UnpackedByteCount unpacked = parseContext.get(UnpackedByteCount.class);
+            if (unpacked != null && unpacked.isLimitReached()) {
+                // likewise
+                LOG.error("maxUnpackBytes reached: {}", fetchEmitTuple.getId());
+                return new PipesResult(PipesResult.RESULT_STATUS.UNPACK_LIMIT_REACHED,
+                        ExceptionUtils.format(new EmbeddedLimitReachedException(
+                                EmbeddedLimitReachedException.LimitType.MAX_UNPACK_BYTES,
+                                parseContext.get(UnpackConfig.class).maxUnpackBytesOrUnlimited()),
+                                parseContext));
+            }
 
             MetadataListAndEmbeddedBytes parseData = parseDataResult.parseDataResult;
 
@@ -166,11 +187,7 @@ class PipesWorker implements Callable<PipesResult> {
             try {
                 // Check if we need to zip and emit embedded files
                 UnpackHandler handler = parseContext.get(UnpackHandler.class);
-                UnpackedByteCount unpacked = parseContext.get(UnpackedByteCount.class);
-                if (unpacked != null && unpacked.isLimitReached()) {
-                    // the file failed on maxUnpackBytes: no partial package
-                    LOG.warn("maxUnpackBytes reached, not emitting unpacked files: {}", fetchEmitTuple.getId());
-                } else if (handler instanceof FrictionlessUnpackHandler) {
+                if (handler instanceof FrictionlessUnpackHandler) {
                     PipesResult frictionlessResult =
                             emitFrictionlessOutput((FrictionlessUnpackHandler) handler, parseData);
                     if (frictionlessResult != null) {
@@ -183,6 +200,14 @@ class PipesWorker implements Callable<PipesResult> {
                     if (zipResult != null) {
                         // Zipping/emitting failed - return the error
                         return zipResult;
+                    }
+                } else if (handler instanceof EmittingUnpackHandler) {
+                    try {
+                        ((EmittingUnpackHandler) handler).emitStaged();
+                    } catch (IOException e) {
+                        LOG.warn("Failed to emit unpacked files", e);
+                        return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
+                                "Failed to emit unpacked files: " + ExceptionUtils.format(e, parseContext));
                     }
                 }
                 return emitHandler.emitParseData(fetchEmitTuple, parseData, prepared, parseContext);
@@ -469,7 +494,7 @@ class PipesWorker implements Callable<PipesResult> {
                 zos.putNextEntry(fileEntry);
                 Files.copy(fileInfo.filePath(), zos);
                 zos.closeEntry();
-                // it is in the zip now; don't hold both copies
+                // it is in the zip now; its temp charge stays, standing in for the zip entry
                 Files.delete(fileInfo.filePath());
             }
         }
@@ -517,7 +542,7 @@ class PipesWorker implements Callable<PipesResult> {
                 zos.putNextEntry(fileEntry);
                 Files.copy(fileInfo.filePath(), zos);
                 zos.closeEntry();
-                // it is in the zip now; don't hold both copies
+                // it is in the zip now; its temp charge stays, standing in for the zip entry
                 Files.delete(fileInfo.filePath());
 
                 // Add metadata JSON if requested; a row a filter removed gets no sidecar
@@ -696,17 +721,22 @@ class PipesWorker implements Callable<PipesResult> {
             if (unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS) {
                 // Frictionless Data Package format - always uses FrictionlessUnpackHandler
                 // which computes SHA256 hashes and stores files for datapackage.json generation
-                parseContext.set(UnpackHandler.class,
-                        new FrictionlessUnpackHandler(fetchEmitTuple.getEmitKey(), unpackConfig));
+                FrictionlessUnpackHandler handler =
+                        new FrictionlessUnpackHandler(fetchEmitTuple.getEmitKey(), unpackConfig);
+                handler.setTempBudget(parseContext.get(TempBytesBudget.class));
+                parseContext.set(UnpackHandler.class, handler);
             } else if (unpackConfig.isZipEmbeddedFiles()) {
                 // Regular format with zipping - use TempFileUnpackHandler
-                parseContext.set(UnpackHandler.class,
-                        new TempFileUnpackHandler(fetchEmitTuple.getEmitKey(), unpackConfig));
+                TempFileUnpackHandler handler =
+                        new TempFileUnpackHandler(fetchEmitTuple.getEmitKey(), unpackConfig);
+                handler.setTempBudget(parseContext.get(TempBytesBudget.class));
+                parseContext.set(UnpackHandler.class, handler);
             } else {
-                // Regular format, direct emission - use EmittingUnpackHandler
-                parseContext.set(UnpackHandler.class,
-                        new EmittingUnpackHandler(fetchEmitTuple,
-                                leases.emitter(unpackConfig.getEmitter()), parseContext));
+                // Regular format, one emit per file once the parse is done
+                EmittingUnpackHandler handler = new EmittingUnpackHandler(fetchEmitTuple,
+                        leases.emitter(unpackConfig.getEmitter()), parseContext);
+                handler.setTempBudget(parseContext.get(TempBytesBudget.class));
+                parseContext.set(UnpackHandler.class, handler);
             }
 
             return parseContext;

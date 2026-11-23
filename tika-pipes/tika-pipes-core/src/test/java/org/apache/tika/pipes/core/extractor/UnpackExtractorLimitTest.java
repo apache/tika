@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.EmbeddedLimitReachedException;
@@ -110,6 +111,23 @@ public class UnpackExtractorLimitTest {
         TikaInputStream[] seen = new TikaInputStream[1];
         assertThrows(EmbeddedLimitReachedException.class, () -> parseEmbedded(1, 4, seen));
         assertFalse(seen[0].hasFile(), "spooled a file that will not be handed back");
+        assertEquals(List.of(), stored);
+    }
+
+    @Test
+    public void storesNothingOnceTheLimitIsReached() throws Exception {
+        // a nested file trips the limit while this one, which would fit, is being parsed
+        context.set(Parser.class, new EmptyParser() {
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext parseContext) {
+                byteCount.markLimitReached();
+                throw new EmbeddedLimitReachedException(
+                        EmbeddedLimitReachedException.LimitType.MAX_UNPACK_BYTES, MAX_UNPACK_BYTES);
+            }
+        });
+        assertThrows(EmbeddedLimitReachedException.class,
+                () -> parseEmbedded(1, 4, new TikaInputStream[1]));
         assertEquals(List.of(), stored);
     }
 }

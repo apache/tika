@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.IncludeFieldMetadataFilter;
@@ -226,11 +225,6 @@ class EmitHandler {
             LOG.warn("Couldn't initialize emitter for task id '" + taskId + "'", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_INITIALIZATION_EXCEPTION, ExceptionUtils.format(e, parseContext));
         }
-        // a budget the parse spent refuses every later write; the emit gets its own
-        TempBytesBudget parseBudget = parseContext.get(TempBytesBudget.class);
-        if (parseBudget != null) {
-            parseContext.set(TempBytesBudget.class, new TempBytesBudget(parseBudget.getMaxBytes()));
-        }
         try {
             ParseMode parseMode = parseContext.get(ParseMode.class);
             if (parseMode == ParseMode.CONTENT_ONLY && emitter instanceof StreamEmitter) {
@@ -244,13 +238,15 @@ class EmitHandler {
             } else {
                 emitter.emit(emitKey.getEmitKey(), parseData.getMetadataList(), parseContext);
             }
-        } catch (IOException | TempLimitReachedException e) {
+        } catch (TempLimitReachedException e) {
+            LOG.error("temp limit reached in emit", e);
+            return new PipesResult(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED,
+                    ExceptionUtils.format(e, parseContext));
+        } catch (IOException e) {
             LOG.warn("emit exception", e);
             String msg = ExceptionUtils.format(e, parseContext);
             //for now, we're hiding the parse exception if there was also an emit exception
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION, msg);
-        } finally {
-            parseContext.set(TempBytesBudget.class, parseBudget);
         }
         PassbackFilter passbackFilter = parseContext.get(PassbackFilter.class);
         if (passbackFilter != null) {
@@ -314,7 +310,7 @@ class EmitHandler {
             }
         }
 
-        // UNPACK mode: bytes are already emitted during parsing
+        // UNPACK mode: PipesWorker has already emitted the bytes
         // For PASSBACK_ALL, don't emit metadata - pass it back to client instead
         // For other strategies, also emit metadata
         if (parseMode == ParseMode.UNPACK) {

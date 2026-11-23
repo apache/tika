@@ -17,9 +17,6 @@
 package org.apache.tika.pipes.core.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,7 +25,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TempLimits;
-import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
@@ -39,17 +35,19 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.plugins.ExtensionConfig;
 
-/** TIKA-5075: a parse that spent its temp budget still emits what it parsed. */
+/** TIKA-5075: the emit draws on the task's temp budget. */
 public class EmitHandlerTempBudgetTest {
 
     private static final int MAX_TEMP_BYTES = 16;
 
     /** Spools to a budgeted temp file, as S3Emitter does with spoolToTemp. */
-    private static final Emitter SPOOLING_EMITTER = new Emitter() {
+    private int spoolBytes = MAX_TEMP_BYTES;
+
+    private final Emitter spoolingEmitter = new Emitter() {
         @Override
         public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
                 throws IOException {
-            spool(parseContext, MAX_TEMP_BYTES);
+            spool(parseContext, spoolBytes);
         }
 
         @Override
@@ -73,26 +71,42 @@ public class EmitHandlerTempBudgetTest {
     }
 
     @Test
-    public void emitRunsAfterParseSpentItsBudget() throws Exception {
+    public void emitSharesTheTaskBudget() throws Exception {
         ParseContext parseContext = new ParseContext();
-        TempBytesBudget parseBudget = new TempBytesBudget(MAX_TEMP_BYTES);
-        parseContext.set(TempBytesBudget.class, parseBudget);
-        assertThrows(TempLimitReachedException.class,
-                () -> spool(parseContext, MAX_TEMP_BYTES + 1));
-        assertTrue(parseBudget.isLimitReached());
-
+        parseContext.set(TempBytesBudget.class, new TempBytesBudget(MAX_TEMP_BYTES));
         TaskLeases leases = new TaskLeases(null, null) {
             @Override
             synchronized Emitter emitter(String id) {
-                return SPOOLING_EMITTER;
+                return spoolingEmitter;
+            }
+        };
+        EmitHandler emitHandler = new EmitHandler(null, null, null, null, leases, 0);
+        // still held at emit, as the fetched file's spool is
+        try (TemporaryResources held = new TemporaryResources()) {
+            TempLimits.apply(held, parseContext);
+            try (OutputStream os = held.newOutputStream(held.createTempFile())) {
+                os.write(new byte[1]);
+            }
+            PipesResult result = emitHandler.emit("id", new EmitKey("e", "k"), false,
+                    new MetadataListAndEmbeddedBytes(List.of(new Metadata()), null), null, parseContext);
+            assertEquals(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED, result.status());
+        }
+    }
+
+    @Test
+    public void emitThatReachesTheLimitIsNotAnEmitException() throws Exception {
+        spoolBytes = MAX_TEMP_BYTES + 1;
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TempBytesBudget.class, new TempBytesBudget(MAX_TEMP_BYTES));
+        TaskLeases leases = new TaskLeases(null, null) {
+            @Override
+            synchronized Emitter emitter(String id) {
+                return spoolingEmitter;
             }
         };
         EmitHandler emitHandler = new EmitHandler(null, null, null, null, leases, 0);
         PipesResult result = emitHandler.emit("id", new EmitKey("e", "k"), false,
-                new MetadataListAndEmbeddedBytes(List.of(new Metadata()), null),
-                "TempLimitReachedException", parseContext);
-
-        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, result.status());
-        assertSame(parseBudget, parseContext.get(TempBytesBudget.class));
+                new MetadataListAndEmbeddedBytes(List.of(new Metadata()), null), null, parseContext);
+        assertEquals(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED, result.status());
     }
 }

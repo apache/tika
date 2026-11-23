@@ -396,23 +396,38 @@ public class PipesParsingHelper {
      * without parsing plain-text bodies or inspecting custom headers.
      */
     private Response buildProcessFailureResponse(PipesResult result) {
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode node = mapper.createObjectNode();
-        node.put("status", result.status().name());
-        if (result.message() != null && !result.message().isBlank()) {
-            node.put("message", result.message());
-        }
-        String json;
-        try {
-            json = mapper.writeValueAsString(node);
-        } catch (Exception e) {
-            LOG.warn("Failed to serialize PipesResult error response as JSON; falling back to status-only body", e);
-            json = "{\"status\":\"" + result.status().name() + "\"}";
-        }
         return responseBuilder(result.status(), pipesConfig.getMaxWaitForClientMillis())
-                .entity(json)
+                .entity(statusJson(result.status(), result.message()))
                 .type(MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    private static String statusJson(PipesResult.RESULT_STATUS status, String message) {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
+        node.put("status", status.name());
+        if (message != null && !message.isBlank()) {
+            node.put("message", message);
+        }
+        try {
+            return mapper.writeValueAsString(node);
+        } catch (Exception e) {
+            LOG.warn("Failed to serialize PipesResult error response as JSON; falling back to status-only body", e);
+            return "{\"status\":\"" + status.name() + "\"}";
+        }
+    }
+
+    /**
+     * /unpack's 422 for a container exception: the same JSON shape as every other failure,
+     * with the already policy-formatted exception as the message.
+     */
+    private static WebApplicationException unpackParseExceptionResponse(String containerException) {
+        // whatever the fork emitted is discarded here, so that is what the client is told
+        return new WebApplicationException(Response
+                .status(UNPROCESSABLE_ENTITY)
+                .entity(statusJson(PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT, containerException))
+                .type(MediaType.APPLICATION_JSON)
+                .build());
     }
 
     /**
@@ -468,7 +483,7 @@ public class PipesParsingHelper {
      */
     public static WebApplicationException containerExceptionResponse(String containerException) {
         return new WebApplicationException(Response
-                .status(422)
+                .status(UNPROCESSABLE_ENTITY)
                 .entity(containerException)
                 .type(MediaType.TEXT_PLAIN)
                 .build());
@@ -478,31 +493,37 @@ public class PipesParsingHelper {
      * Maps PipesResult status to HTTP response status. Private so no caller can map a
      * status without the Retry-After headers {@link #responseBuilder} attaches.
      */
-    private static Response.Status mapStatusToHttpResponse(PipesResult.RESULT_STATUS status) {
+    private static final int UNPROCESSABLE_ENTITY = 422;
+
+    private static int mapStatusToHttpResponse(PipesResult.RESULT_STATUS status) {
         return switch (status) {
             case PARSE_SUCCESS, PARSE_SUCCESS_WITH_EXCEPTION, EMPTY_OUTPUT,
                  EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_SUCCESS_PASSBACK,
                  PARSE_EXCEPTION_NO_EMIT, PARTIAL_TIMEOUT ->
-                    Response.Status.OK;
+                    Response.Status.OK.getStatusCode();
             case TIMEOUT, OOM, UNSPECIFIED_CRASH ->
-                    Response.Status.SERVICE_UNAVAILABLE;
+                    Response.Status.SERVICE_UNAVAILABLE.getStatusCode();
             // Distinct from the crash statuses above: nothing failed here, the client
             // pool was simply at capacity for longer than maxWaitForClientMillis. 429
             // lets monitoring/alerting on HTTP status alone tell "we're at capacity"
             // (scale up numClients) apart from "a worker is actually crashing" (503).
             case CLIENT_UNAVAILABLE_WITHIN_MS ->
-                    Response.Status.TOO_MANY_REQUESTS;
+                    Response.Status.TOO_MANY_REQUESTS.getStatusCode();
             // The caller named a fetcher/emitter this server does not have. Nothing failed
             // on our side, and retrying the same request will never succeed -- 500 told
             // clients to retry a request that is permanently malformed.
             case FETCHER_NOT_FOUND, EMITTER_NOT_FOUND, PRESET_NOT_FOUND ->
-                    Response.Status.BAD_REQUEST;
+                    Response.Status.BAD_REQUEST.getStatusCode();
             case PAYLOAD_LIMIT_EXCEEDED ->
-                    Response.Status.REQUEST_ENTITY_TOO_LARGE;
+                    Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode();
+            // the document, not the server, is at fault: 422 as for a parse exception
+            // (Response.Status has no constant for it)
+            case TEMP_LIMIT_REACHED, UNPACK_LIMIT_REACHED ->
+                    UNPROCESSABLE_ENTITY;
             case FETCH_EXCEPTION, EMIT_EXCEPTION,
                  FETCHER_INITIALIZATION_EXCEPTION, EMITTER_INITIALIZATION_EXCEPTION,
                  FAILED_TO_INITIALIZE ->
-                    Response.Status.INTERNAL_SERVER_ERROR;
+                    Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
         };
     }
 
@@ -516,12 +537,12 @@ public class PipesParsingHelper {
      */
     public static Response.ResponseBuilder responseBuilder(PipesResult.RESULT_STATUS status,
                                                            long maxWaitForClientMillis) {
-        Response.Status httpStatus = mapStatusToHttpResponse(status);
+        int httpStatus = mapStatusToHttpResponse(status);
         Response.ResponseBuilder builder = Response.status(httpStatus);
-        if (httpStatus == Response.Status.TOO_MANY_REQUESTS) {
+        if (httpStatus == Response.Status.TOO_MANY_REQUESTS.getStatusCode()) {
             // The pool was already full for this long, so a faster retry just re-queues.
             builder.header(HttpHeaders.RETRY_AFTER, retryAfterSeconds(maxWaitForClientMillis));
-        } else if (httpStatus == Response.Status.SERVICE_UNAVAILABLE) {
+        } else if (httpStatus == Response.Status.SERVICE_UNAVAILABLE.getStatusCode()) {
             builder.header(HttpHeaders.RETRY_AFTER, CRASH_RETRY_AFTER_SECONDS);
         }
         return builder;
@@ -724,7 +745,7 @@ public class PipesParsingHelper {
                 Metadata containerMetadata = metadataList.get(0);
                 String containerException = containerMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
                 if (containerException != null) {
-                    throw containerExceptionResponse(containerException);
+                    throw unpackParseExceptionResponse(containerException);
                 }
             }
 

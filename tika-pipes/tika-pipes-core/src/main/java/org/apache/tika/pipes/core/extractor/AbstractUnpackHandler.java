@@ -18,12 +18,16 @@ package org.apache.tika.pipes.core.extractor;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.io.TempBytesBudget;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -31,6 +35,21 @@ import org.apache.tika.utils.StringUtils;
 public abstract class AbstractUnpackHandler implements UnpackHandler {
 
     List<Integer> ids = new ArrayList<>();
+
+    // charges the files staged on disk to the task's temp budget
+    private final TemporaryResources staging = new TemporaryResources();
+
+    public void setTempBudget(TempBytesBudget tempBudget) {
+        staging.setTempBudget(tempBudget);
+    }
+
+    protected OutputStream newStagingOutputStream(Path file) throws IOException {
+        return staging.newOutputStream(file);
+    }
+
+    protected void releaseStaging() throws IOException {
+        staging.close();
+    }
 
     public String getEmitKey(String containerEmitKey, int embeddedId,
                              UnpackConfig unpackConfig,

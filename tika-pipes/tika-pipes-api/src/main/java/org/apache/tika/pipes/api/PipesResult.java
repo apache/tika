@@ -68,6 +68,16 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         EMITTER_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
         PRESET_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
         PAYLOAD_LIMIT_EXCEEDED(CATEGORY.TASK_EXCEPTION),
+        /**
+         * The task reached {@code temp-limits.maxTempBytes}, in the fetch, the parse or the
+         * emit. Nothing is emitted or passed back; the fork keeps running.
+         */
+        TEMP_LIMIT_REACHED(CATEGORY.TASK_EXCEPTION),
+        /**
+         * UNPACK reached {@code unpack-config.maxUnpackBytes}. Nothing is emitted or passed
+         * back; the fork keeps running.
+         */
+        UNPACK_LIMIT_REACHED(CATEGORY.TASK_EXCEPTION),
 
         // Process crashes - forked process died, auto-restart
         OOM(CATEGORY.PROCESS_CRASH),

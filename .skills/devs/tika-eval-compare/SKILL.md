@@ -122,7 +122,8 @@ keep the `crashes-` prefix for Compare/Profile to find it by default:
     "includes": ["OOM", "TIMEOUT", "UNSPECIFIED_CRASH", "FAILED_TO_INITIALIZE",
                  "FETCHER_INITIALIZATION_EXCEPTION", "EMITTER_INITIALIZATION_EXCEPTION",
                  "CLIENT_UNAVAILABLE_WITHIN_MS", "FETCH_EXCEPTION", "EMIT_EXCEPTION",
-                 "FETCHER_NOT_FOUND", "EMITTER_NOT_FOUND", "PAYLOAD_LIMIT_EXCEEDED"],
+                 "FETCHER_NOT_FOUND", "EMITTER_NOT_FOUND", "PAYLOAD_LIMIT_EXCEEDED", "TEMP_LIMIT_REACHED",
+                 "UNPACK_LIMIT_REACHED"],
     "onExists": "EXCEPTION",
     "maxMessageLength": 4096
   }

@@ -252,22 +252,17 @@ With `includeOriginal`, the original document is handed back too and counts towa
 limit.
 
 It is not a limit on temp space. Each embedded file is spooled to a temp file before it is
-handed back, and that is bounded separately by `temp-limits`
-(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]).
+handed back, and the unpacked files are staged on disk until the parse has finished and
+they are emitted, in every output format; `temp-limits` bounds both
+(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]). Reaching it fails
+the file with `TEMP_LIMIT_REACHED`: nothing is emitted, not even the metadata list.
 
-The unpacked files and a zipped package are also built on disk before they are emitted,
-and neither limit counts them: allow temp space of about `maxUnpackBytes` per file being
-processed, and twice that for tika-server's `/unpack`, which holds the finished zip in
-temp until it is sent.
-
-Reaching `maxUnpackBytes` fails the file. A file that does not fit whole is never handed
-back truncated: the parse stops there with an `EmbeddedLimitReachedException`
-("Max unpack bytes reached") as the container exception, nothing is unpacked for that
-document, and the status is a parse exception (`EMIT_SUCCESS_PARSE_EXCEPTION`). The
-metadata list, as far as the parse got, is still emitted; tika-server's `/unpack` returns
-a 422 and no zip. The one exception is REGULAR output with
-`zipEmbeddedFiles` off, which emits each file as it is unpacked: files emitted before the
-limit stay where they were written.
+Reaching `maxUnpackBytes` fails the file the same way, with `UNPACK_LIMIT_REACHED`. A
+file that does not fit whole is never handed back truncated: the parse stops there and
+nothing is emitted, not even the metadata list, only the cause
+(`EmbeddedLimitReachedException`, "Max unpack bytes reached"). tika-server returns a 422
+with the status in the JSON body. To get the text and metadata of such a file, send it again
+without UNPACK.
 
 `maxUnpackBytes: -1` (or any negative value) disables the limit — not recommended for
 untrusted input. `0` is not "unlimited": the first embedded file with any bytes fails
