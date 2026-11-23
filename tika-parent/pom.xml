@@ -449,7 +449,7 @@
     <protobuf.version>4.33.6</protobuf.version>
     <quartz.version>2.5.2</quartz.version>
     <reactor.core.version>3.9.0</reactor.core.version>
-    <reactor.netty.version>1.3.8</reactor.netty.version>
+    <reactor.netty.version>1.4.0</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <slf4j.version>2.0.20</slf4j.version>
     <sis.version>1.7</sis.version>
