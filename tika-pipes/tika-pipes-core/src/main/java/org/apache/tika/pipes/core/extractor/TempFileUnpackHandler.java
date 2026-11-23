@@ -69,7 +69,7 @@ public class TempFileUnpackHandler extends AbstractUnpackHandler
 
         // Write to temp file
         Path tempFile = tempDirectory.resolve(fileName);
-        try (OutputStream os = Files.newOutputStream(tempFile)) {
+        try (OutputStream os = newStagingOutputStream(tempFile)) {
             inputStream.transferTo(os);
         }
 
@@ -115,7 +115,11 @@ public class TempFileUnpackHandler extends AbstractUnpackHandler
         if (!closed) {
             closed = true;
             // Clean up temp directory - caller should have already zipped if needed
-            FileUtils.deleteDirectory(tempDirectory.toFile());
+            try {
+                FileUtils.deleteDirectory(tempDirectory.toFile());
+            } finally {
+                releaseStaging();
+            }
         }
     }
 }

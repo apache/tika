@@ -171,7 +171,10 @@ public class RedactedStackTraceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + "/unpack")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
         assertEquals(422, response.getStatus());
-        assertRedacted(getStringFromInputStream((InputStream) response.getEntity()));
+        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMediaType());
+        JsonNode body = MAPPER.readTree(getStringFromInputStream((InputStream) response.getEntity()));
+        assertEquals("PARSE_EXCEPTION_NO_EMIT", body.get("status").asText());
+        assertRedacted(body.get("message").asText());
     }
 
     @Test

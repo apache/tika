@@ -120,7 +120,7 @@ public class StackTraceTest extends CXFTestBase {
     // /rmeta and /meta embed a container exception at 200 instead of throwing 422.
     // /tika signals a partial parse with 422 but its body is content-only -- the
     // exception is never exposed there; clients needing it use /rmeta.
-    // /unpack has no content body, so its 422 carries the container exception.
+    // /unpack has no content body, so its 422 carries the container exception, as JSON.
 
     @Test
     public void testEncrypted() throws Exception {

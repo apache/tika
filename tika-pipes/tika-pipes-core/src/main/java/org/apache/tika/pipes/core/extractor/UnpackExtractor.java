@@ -33,6 +33,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.TempLimits;
 import org.apache.tika.exception.CorruptedFileException;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
@@ -40,7 +41,6 @@ import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.extractor.UnpackSelector;
-import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -75,6 +75,11 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context, boolean outputHtml)
             throws SAXException, IOException {
         TempLimits.apply(tis, context);
+        // a parser may have swallowed the first one
+        UnpackedByteCount unpacked = context.get(UnpackedByteCount.class);
+        if (unpacked != null && unpacked.isLimitReached()) {
+            throw unpackLimitReached(context);
+        }
         // Check and enforce embedded limits even if caller didn't call shouldParseEmbedded()
         // This guarantees limits are enforced for all callers
         ParseRecord parseRecord = context.get(ParseRecord.class);
@@ -176,8 +181,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
     }
 
     private void storeEmbeddedBytes(Path p, Metadata metadata, ParseContext context) {
-        // past the limit the file may be cut short, and the task is failing anyway
-        if (p == null || TempLimits.isReached(context)) {
+        UnpackedByteCount byteCount = context.get(UnpackedByteCount.class);
+        // past either limit the task is failing: store nothing more
+        if (p == null || TempLimits.isReached(context) || byteCount.isLimitReached()) {
             return;
         }
 
@@ -193,29 +199,29 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             return;
         }
         UnpackHandler unpackHandler = context.get(UnpackHandler.class);
-        UnpackedByteCount byteCount = context.get(UnpackedByteCount.class);
-        long maxEmbeddedBytesForExtraction = getMaxUnpackBytes(context);
+        long max = getMaxUnpackBytes(context);
         int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
-        try (InputStream is = Files.newInputStream(p)) {
-            long bytesExtracted = byteCount.get();
-            if (bytesExtracted >= maxEmbeddedBytesForExtraction) {
-                throw new IOException("Bytes extracted (" + bytesExtracted +
-                        ") >= max allowed (" + maxEmbeddedBytesForExtraction + ")");
+        try {
+            long size = Files.size(p);
+            // never hand back a truncated file
+            if (size > max - byteCount.get()) {
+                LOGGER.warn("embedded file {} ({} bytes) would pass maxUnpackBytes ({})", id, size, max);
+                byteCount.markLimitReached();
+                throw unpackLimitReached(context);
             }
-            long maxToRead = maxEmbeddedBytesForExtraction - bytesExtracted;
-
-            try (BoundedInputStream boundedIs = new BoundedInputStream(maxToRead, is)) {
-                unpackHandler.add(id, metadata, boundedIs);
-                byteCount.add(boundedIs.getPos());
-                if (boundedIs.hasHitBound()) {
-                    throw new IOException("Bytes extracted (" + byteCount.get() +
-                            ") >= max allowed (" + maxEmbeddedBytesForExtraction + "). Truncated " +
-                            "bytes");
-                }
+            try (InputStream is = Files.newInputStream(p)) {
+                unpackHandler.add(id, metadata, is);
             }
+            byteCount.add(size);
         } catch (IOException e) {
             LOGGER.warn("problem writing out embedded bytes", e);
         }
+    }
+
+    // unchecked and passed through by CompositeParser, so it ends the file
+    private static EmbeddedLimitReachedException unpackLimitReached(ParseContext context) {
+        return new EmbeddedLimitReachedException(
+                EmbeddedLimitReachedException.LimitType.MAX_UNPACK_BYTES, getMaxUnpackBytes(context));
     }
 
     private static long getMaxUnpackBytes(ParseContext context) {

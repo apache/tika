@@ -125,7 +125,7 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
 
         long bytes = 0;
         try (DigestInputStream dis = new DigestInputStream(inputStream, digest);
-             OutputStream os = Files.newOutputStream(tempFile)) {
+             OutputStream os = newStagingOutputStream(tempFile)) {
             byte[] buffer = new byte[8192];
             int read;
             while ((read = dis.read(buffer)) != -1) {
@@ -223,7 +223,11 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
     public void close() throws IOException {
         if (!closed) {
             closed = true;
-            FileUtils.deleteDirectory(tempDirectory.toFile());
+            try {
+                FileUtils.deleteDirectory(tempDirectory.toFile());
+            } finally {
+                releaseStaging();
+            }
         }
     }
 }

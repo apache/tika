@@ -311,7 +311,7 @@ public class UnpackConfig implements Serializable {
      * the temp space used to get them: see {@code temp-limits}
      * ({@link org.apache.tika.config.TempLimits}).
      * Set to -1 to disable the limit (not recommended). 0 is not "unlimited" -- it means
-     * zero bytes, so the very first embedded file's extraction is immediately capped.
+     * zero bytes, so the first embedded file with any bytes fails the file.
      *
      * @return max bytes to unpack, or -1 if no limit
      */

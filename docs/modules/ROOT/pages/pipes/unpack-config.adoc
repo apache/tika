@@ -88,8 +88,7 @@ All options below are fields of the `unpack-config` block — nest them inside
 |10 GiB
 |Maximum total embedded bytes handed back per file; not a limit on temp space (see
 <<_safety_limits>>). Set to `-1` for unlimited (not recommended). `0`
-is not unlimited -- it means zero bytes, so the first embedded file's extraction is
-immediately capped.
+is not unlimited -- it means zero bytes, so the first embedded file with any bytes fails the file.
 
 |`includeOriginal`
 |boolean
@@ -247,21 +246,28 @@ These keys are REGULAR output's; a Frictionless package sits at `<containerKey>/
 == Safety Limits
 
 `maxUnpackBytes` limits the embedded bytes handed back to you, the total emitted for one
-file, so that a zip bomb or other file that expands enormously cannot flood your output.
-The 10 GiB default suits most corpora; lower it for untrusted input.
+file. It is your choice of how much output to accept from one file, so that a file that
+expands enormously cannot flood your storage. The 10 GiB default suits most corpora; lower
+it for untrusted input.
+With `includeOriginal`, the original document is handed back too and counts toward the
+limit.
 
-It is not a limit on temp space. Each embedded file is spooled to a temp file before it is
-handed back, and that is bounded separately by `temp-limits`
-(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]). Reaching that
-limit is not silent: it fails the file.
+It does not protect the disk. `temp-limits`
+(xref:advanced/setting-limits.adoc#temp-file-limits[Temp file limits]) does: it is the
+backstop that stops one zip bomb or one `.gz` from filling the temp volume, and it should
+sit well above `maxUnpackBytes`. Each embedded file is spooled to a temp file, and the
+unpacked files are staged on disk until the parse has finished and they are emitted, in
+every output format; `temp-limits` bounds all of it. Reaching it fails the file with
+`TEMP_LIMIT_REACHED`: nothing is emitted, not even the metadata list.
 
-Hitting `maxUnpackBytes` is silent apart from a log line. The embedded file being written is
-truncated at the remaining budget, each later embedded file is skipped, and each case
-logs a WARN — but nothing is stamped on the metadata and the result status is unchanged
-(`PARSE_SUCCESS` / `EMIT_SUCCESS`). Watch the log, not the status, for truncation.
+Reaching `maxUnpackBytes` fails the file the same way, with `UNPACK_LIMIT_REACHED`: an
+embedded file that does not fit whole stops the parse, and nothing is emitted, never a
+truncated file. tika-server returns a 422 with the status in the JSON body. To get the
+text and metadata of such a file, send it again without UNPACK.
 
 `maxUnpackBytes: -1` (or any negative value) disables the limit — not recommended for
-untrusted input. `0` is not "unlimited": it caps extraction at zero bytes.
+untrusted input. `0` is not "unlimited": the first embedded file with any bytes fails
+the file.
 
 == Frictionless Data Package Output
 

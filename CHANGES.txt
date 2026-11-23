@@ -69,14 +69,31 @@ Release 4.3.0 - ???
      temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none;
      in-process there is no default, and AutoDetectParser applies it only when a
      TempLimits is in the ParseContext):
-     spooled streams, parsers' own temp files, and a document a fetcher downloads to
-     temp. Reaching it stops that file with a
-     TempLimitReachedException (unchecked) as its container exception, keeping what
-     was parsed before it, and the fork keeps running; a fetched document larger than
-     the limit now fails. The default is a backstop: it does not stop one document
-     from writing several gigabytes. Temp files written inside third-party libraries
-     or by external programs (tesseract, unrar, ...) are not counted, so it is not a
-     bound on disk use (TIKA-5075).
+     spooled streams, parsers' own temp files, a document a fetcher downloads to
+     temp, and the files and zip UNPACK stages on disk until it emits them. Reaching it
+     fails that file with the new status TEMP_LIMIT_REACHED (a task exception;
+     tika-server returns a 422): nothing is emitted or passed back, and the fork
+     keeps running; a fetched document larger than the limit now fails.
+     In-process it is a TempLimitReachedException (unchecked). The default is a
+     backstop: it does not stop one document from writing several gigabytes.
+     Temp files written inside third-party libraries or by external programs
+     (tesseract, unrar, ...) are not counted, so it is not a bound on disk use
+     (TIKA-5075).
+
+   * Reaching unpack-config's maxUnpackBytes now fails the file instead of
+     silently truncating, with the new status UNPACK_LIMIT_REACHED (a task
+     exception; tika-server returns a 422): nothing is emitted or passed back,
+     only the cause. With includeOriginal, the original counts toward the limit.
+     REGULAR output without zipEmbeddedFiles now stages its files in temp and
+     emits them after the parse, so a file that reaches a limit, or times out
+     or crashes in the parse, leaves nothing behind; a failed emit of one of
+     them now fails the file with EMIT_EXCEPTION, where it was logged and
+     skipped. Reporters with an includes list need the two new statuses added
+     (TIKA-5075).
+
+   * tika-server /unpack's 422 for a parse exception is now JSON, like its other
+     failures: {"status": "PARSE_EXCEPTION_NO_EMIT", "message": <the exception>}.
+     It was plain text (TIKA-5075).
 
    * A pipes fork that times out, crashes or runs out of memory is killed and its temp
      directory deleted at once, not when that client's next request arrives; an idle

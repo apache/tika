@@ -318,7 +318,7 @@ task deadline cut the parse short.
 
 |`isTaskException()`
 |`FETCH_EXCEPTION`, `EMIT_EXCEPTION`, `FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`,
-`PRESET_NOT_FOUND`, `PAYLOAD_LIMIT_EXCEEDED`
+`PRESET_NOT_FOUND`, `PAYLOAD_LIMIT_EXCEEDED`, `TEMP_LIMIT_REACHED`, `UNPACK_LIMIT_REACHED`
 |This document failed; the fork is fine. Log it and move on.
 
 |`isProcessCrash()`

@@ -269,7 +269,7 @@ Tradeoffs:
 
 Append-only per-document audit log: one JSON object per line for every result that passes the `includes`/`excludes` filter. Where the status reporter above summarizes counts, this one records *which* documents ended in which state, so a downstream process (a dead-letter queue, `tika-eval`) can act on them.
 
-With the default `emitIntermediateResults: false` (see xref:pipes/configuration.adoc[]), a crash result (`OOM`, `TIMEOUT`, `UNSPECIFIED_CRASH`) leaves nothing in the emitter's output; this file is then the only record that the document was attempted. The driver process writes it, so it survives the forked worker's death.
+With the default `emitIntermediateResults: false` (see xref:pipes/configuration.adoc[]), a crash result (`OOM`, `TIMEOUT`, `UNSPECIFIED_CRASH`) or a limit result (`TEMP_LIMIT_REACHED`, `UNPACK_LIMIT_REACHED`) leaves nothing in the emitter's output; this file is then the only record that the document was attempted. The driver process writes it, so it survives the forked worker's death.
 
 [source,json]
 ----

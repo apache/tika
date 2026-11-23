@@ -208,7 +208,7 @@ class EmitHandler {
         m.remove(TikaCoreProperties.TIKA_CONTENT);
     }
 
-    private PipesResult emit(String taskId, EmitKey emitKey,
+    PipesResult emit(String taskId, EmitKey emitKey,
                       boolean isExtractEmbeddedBytes, MetadataListAndEmbeddedBytes parseData,
                       String parseExceptionStack, ParseContext parseContext) {
         Emitter emitter = null;
@@ -238,7 +238,11 @@ class EmitHandler {
             } else {
                 emitter.emit(emitKey.getEmitKey(), parseData.getMetadataList(), parseContext);
             }
-        } catch (IOException | TempLimitReachedException e) {
+        } catch (TempLimitReachedException e) {
+            LOG.error("temp limit reached in emit", e);
+            return new PipesResult(PipesResult.RESULT_STATUS.TEMP_LIMIT_REACHED,
+                    ExceptionUtils.format(e, parseContext));
+        } catch (IOException e) {
             LOG.warn("emit exception", e);
             String msg = ExceptionUtils.format(e, parseContext);
             //for now, we're hiding the parse exception if there was also an emit exception
@@ -306,12 +310,12 @@ class EmitHandler {
             }
         }
 
-        // UNPACK mode: bytes are already emitted during parsing
+        // UNPACK mode: PipesWorker has already emitted the bytes
         // For PASSBACK_ALL, don't emit metadata - pass it back to client instead
         // For other strategies, also emit metadata
         if (parseMode == ParseMode.UNPACK) {
             if (strategy == EmitStrategy.PASSBACK_ALL) {
-                // Bytes were emitted during parsing, metadata will be passed back
+                // PipesWorker emitted the bytes, metadata will be passed back
                 return false;
             }
             return true;

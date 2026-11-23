@@ -77,8 +77,8 @@ public enum ParseMode {
      * automatically extracts and emits embedded document bytes. An emitter is
      * required for the byte extraction.
      * <p>
-     * With PASSBACK_ALL emit strategy, embedded bytes are still emitted during
-     * parsing, but metadata is passed back to the client instead of being emitted.
+     * With PASSBACK_ALL emit strategy, embedded bytes are still emitted,
+     * but metadata is passed back to the client instead of being emitted.
      * This is useful when you want bytes written to storage but need metadata
      * returned for further processing (e.g., indexing to a database).
      * <p>
