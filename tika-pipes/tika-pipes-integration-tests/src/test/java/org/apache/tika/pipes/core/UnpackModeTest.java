@@ -389,6 +389,27 @@ public class UnpackModeTest {
     }
 
     @Test
+    public void testRegularEmitsEachFileAfterTheParse() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = process("regular", testDocWithEmbedded,
+                testDocWithEmbedded + "-regular", parseContext);
+        assertTrue(pipesResult.isSuccess(), pipesResult.status() + " " + pipesResult.message());
+        try (Stream<Path> files = Files.walk(outputDir("regular"))) {
+            // four 146-byte embedded files beside the metadata list
+            assertEquals(4, files.filter(Files::isRegularFile)
+                    .filter(p -> !p.toString().endsWith(".json"))
+                    .filter(p -> p.toFile().length() == 146).count());
+        }
+    }
+
+    @Test
     public void testMaxUnpackBytesLimitRegularLeavesNothing() throws Exception {
         // one emit per file: nothing may be emitted before the limit is known not to be reached
         ParseContext parseContext = new ParseContext();
@@ -455,6 +476,44 @@ public class UnpackModeTest {
         next.set(ParseMode.class, ParseMode.UNPACK);
         assertTrue(process("temp-limit-next", testDocWithEmbedded, testDocWithEmbedded, next)
                 .isSuccess());
+    }
+
+    @Test
+    public void testMaxTempBytesCountsTheZip() throws Exception {
+        // staging peaks at 4 MB (2 MB spooled + 2 MB staged); zipping at 4.9 MB (2.9 staged + 2 zipped)
+        Random random = new Random(5075);
+        byte[] big = new byte[2 * 1024 * 1024];
+        byte[] medium = new byte[900 * 1024];
+        random.nextBytes(big);
+        random.nextBytes(medium);
+        String doc = "zipped.zip";
+        try (ZipOutputStream zip = new ZipOutputStream(
+                Files.newOutputStream(tmp.resolve("input").resolve(doc)))) {
+            zip.putNextEntry(new ZipEntry("big.bin"));
+            zip.write(big);
+            zip.closeEntry();
+            zip.putNextEntry(new ZipEntry("medium.bin"));
+            zip.write(medium);
+            zip.closeEntry();
+        }
+        TempLimits limits = new TempLimits(9 * 1024 * 1024 / 2);
+
+        // control: the same file fits when nothing is zipped
+        ParseContext directory = new ParseContext();
+        directory.set(ParseMode.class, ParseMode.UNPACK);
+        directory.set(TempLimits.class, limits);
+        UnpackConfig directoryConfig = new UnpackConfig();
+        directoryConfig.setEmitter(emitterName);
+        directoryConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
+        directory.set(UnpackConfig.class, directoryConfig);
+        PipesResult fits = process("temp-limit-unzipped", doc, doc + "-unzipped", directory);
+        assertTrue(fits.isSuccess(), fits.status() + " " + fits.message());
+
+        ParseContext zipped = new ParseContext();
+        zipped.set(ParseMode.class, ParseMode.UNPACK);
+        zipped.set(TempLimits.class, limits);
+        PipesResult pipesResult = process("temp-limit-zipped", doc, doc, zipped);
+        assertTempLimitReached(pipesResult, outputDir("temp-limit-zipped"));
     }
 
     @Test

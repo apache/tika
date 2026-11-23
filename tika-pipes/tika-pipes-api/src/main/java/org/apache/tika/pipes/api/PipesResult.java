@@ -70,7 +70,8 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         PAYLOAD_LIMIT_EXCEEDED(CATEGORY.TASK_EXCEPTION),
         /**
          * The task reached {@code temp-limits.maxTempBytes}, in the fetch, the parse or the
-         * emit. Nothing is emitted or passed back; the fork keeps running.
+         * emit. Nothing is emitted or passed back; the fork keeps running. (UNPACK reports
+         * {@link #EMIT_EXCEPTION} if the metadata emit reaches it after the unpacked output.)
          */
         TEMP_LIMIT_REACHED(CATEGORY.TASK_EXCEPTION),
         /**

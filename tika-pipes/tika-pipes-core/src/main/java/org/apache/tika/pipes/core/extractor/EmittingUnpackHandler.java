@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -86,14 +87,16 @@ public class EmittingUnpackHandler extends AbstractUnpackHandler {
     }
 
     /** Emits what the parse staged; call only once the file is known not to have failed. */
-    public void emitStaged() throws IOException {
+    public void emitStaged(ParseContext parseContext) throws IOException {
         for (Staged s : staged) {
+            // each emit is progress, as it was when they ran between embedded parses
+            ParseTimeout.checkpoint(parseContext);
             try (InputStream is = Files.newInputStream(s.file())) {
                 emitter.emit(s.emitKey(), is, METADATA, PARSE_CONTEXT);
             } catch (TikaEmitterException e) {
                 throw new IOException(e);
             }
-            Files.delete(s.file());
+            deleteStaged(s.file());
         }
         staged.clear();
     }

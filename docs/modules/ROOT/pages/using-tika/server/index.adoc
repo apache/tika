@@ -597,7 +597,9 @@ from a request *body* over `maxRequestSizeBytes`, which a request filter rejects
 |`TEMP_LIMIT_REACHED`, `UNPACK_LIMIT_REACHED`
 |The document reached `temp-limits.maxTempBytes` or `unpack-config.maxUnpackBytes`. Nothing of
 the document is returned, on any endpoint; the JSON body carries the status and the cause. The
-document is at fault, not the server, and retrying it will not help.
+document is at fault, not the server, and retrying it will not help. `/tika` and `/meta/\{field}`
+also return 422 for a parse exception, with content or plain text: tell them apart by
+`Content-Type`.
 
 |`500 Internal Server Error`
 |`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,
@@ -637,9 +639,8 @@ silently returned as if the field were simply absent.
 |`/unpack`
 |`422 Unprocessable Entity`
 |Same reasoning as the raw endpoints, but content is *not* preserved — any files already unpacked
-before the exception are discarded. Known gap. The body is JSON, as for every other `/unpack`
-failure: `status` (`PARSE_EXCEPTION_NO_EMIT`) and `message` (the
-container exception).
+before the exception are discarded. Known gap. The body is JSON:
+`{"status": "PARSE_EXCEPTION_NO_EMIT", "message": <the container exception>}`.
 |===
 
 [IMPORTANT]

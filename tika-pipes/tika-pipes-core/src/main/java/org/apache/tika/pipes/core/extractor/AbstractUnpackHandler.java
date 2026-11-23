@@ -43,8 +43,14 @@ public abstract class AbstractUnpackHandler implements UnpackHandler {
         staging.setTempBudget(tempBudget);
     }
 
-    protected OutputStream newStagingOutputStream(Path file) throws IOException {
+    /** For a file staged on disk, or the package built from them: charged to the budget. */
+    public OutputStream newStagingOutputStream(Path file) throws IOException {
         return staging.newOutputStream(file);
+    }
+
+    /** Deletes a staged file and gives its bytes back to the budget. */
+    public void deleteStaged(Path file) throws IOException {
+        staging.deleteTempFile(file);
     }
 
     protected void releaseStaging() throws IOException {

@@ -449,7 +449,7 @@ public class PipesParsingHelper {
         }
 
         if (result.isTaskException()) {
-            // Task-level exception (fetch/emit error) — 500 with JSON status body
+            // Task-level exception (fetch/emit error, a limit) — JSON status body
             LOG.warn("Parse task exception: {} - {}", result.status(), result.message());
             throw new WebApplicationException(buildProcessFailureResponse(result));
         }
@@ -489,12 +489,12 @@ public class PipesParsingHelper {
                 .build());
     }
 
+    private static final int UNPROCESSABLE_ENTITY = 422;
+
     /**
      * Maps PipesResult status to HTTP response status. Private so no caller can map a
      * status without the Retry-After headers {@link #responseBuilder} attaches.
      */
-    private static final int UNPROCESSABLE_ENTITY = 422;
-
     private static int mapStatusToHttpResponse(PipesResult.RESULT_STATUS status) {
         return switch (status) {
             case PARSE_SUCCESS, PARSE_SUCCESS_WITH_EXCEPTION, EMPTY_OUTPUT,

@@ -315,7 +315,7 @@ class EmitHandler {
         // For other strategies, also emit metadata
         if (parseMode == ParseMode.UNPACK) {
             if (strategy == EmitStrategy.PASSBACK_ALL) {
-                // Bytes were emitted during parsing, metadata will be passed back
+                // PipesWorker emitted the bytes, metadata will be passed back
                 return false;
             }
             return true;
