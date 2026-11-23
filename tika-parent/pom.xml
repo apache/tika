@@ -423,7 +423,7 @@
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.16.0</maven.plugin.annotations.version>
     <metadata.extractor.version>2.22.0</metadata.extractor.version>
-    <micrometer.version>1.17.2</micrometer.version>
+    <micrometer.version>1.18.0</micrometer.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
