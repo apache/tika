@@ -62,6 +62,10 @@ class TikaSheetXMLHandler extends DefaultHandler {
     private final TikaSheetContentsHandler output;
     private final DataFormatter formatter;
     private final boolean formulasNotResults;
+    // reads a cell's <is> the way the shared strings read <si>
+    private final XSSFSharedStringsShim.RichTextHandler inlineString;
+    // an inlineStr cell may put its text in <v> instead of <is>
+    private boolean cellHasInlineString;
 
     private boolean vIsOpen;
     private boolean fIsOpen;
@@ -89,7 +93,8 @@ class TikaSheetXMLHandler extends DefaultHandler {
                          XSSFSharedStringsShim sharedStringsShim,
                          TikaSheetContentsHandler sheetContentsHandler,
                          DataFormatter dataFormatter,
-                         boolean formulasNotResults) {
+                         boolean formulasNotResults,
+                         boolean includePhoneticRuns) {
         this.stylesShim = stylesShim;
         this.commentsShim = commentsShim;
         this.sharedStringsShim = sharedStringsShim;
@@ -97,6 +102,8 @@ class TikaSheetXMLHandler extends DefaultHandler {
         this.formatter = dataFormatter;
         this.formulasNotResults = formulasNotResults;
         this.nextDataType = XssfDataType.NUMBER;
+        this.inlineString = new XSSFSharedStringsShim.RichTextHandler("is",
+                includePhoneticRuns, stylesShim != null && stylesShim.hasScriptFont());
         initComments(commentsShim);
     }
 
@@ -104,9 +111,10 @@ class TikaSheetXMLHandler extends DefaultHandler {
                          XSSFSharedStringsShim sharedStringsShim,
                          TikaSheetContentsHandler sheetContentsHandler,
                          DataFormatter dataFormatter,
-                         boolean formulasNotResults) {
+                         boolean formulasNotResults,
+                         boolean includePhoneticRuns) {
         this(stylesShim, null, sharedStringsShim, sheetContentsHandler, dataFormatter,
-                formulasNotResults);
+                formulasNotResults, includePhoneticRuns);
     }
 
     private void initComments(XSSFCommentsShim commentsShim) {
@@ -135,6 +143,9 @@ class TikaSheetXMLHandler extends DefaultHandler {
         if (uri != null && !uri.equals(NS_SPREADSHEETML)) {
             return;
         }
+        if (isIsOpen || "is".equals(localName)) {
+            inlineString.startElement(uri, localName, qName, attributes);
+        }
 
         if (isTextTag(localName)) {
             vIsOpen = true;
@@ -143,6 +154,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
             }
         } else if ("is".equals(localName)) {
             isIsOpen = true;
+            cellHasInlineString = true;
         } else if ("f".equals(localName)) {
             formula.setLength(0);
             if (this.nextDataType == XssfDataType.NUMBER) {
@@ -174,6 +186,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
         } else if ("c".equals(localName)) {
             // Cell element — resolve style to format index/string
             this.formula.setLength(0);
+            this.cellHasInlineString = false;
             this.nextDataType = XssfDataType.NUMBER;
             this.formatIndex = -1;
             this.formatString = null;
@@ -231,6 +244,9 @@ class TikaSheetXMLHandler extends DefaultHandler {
         if (uri != null && !uri.equals(NS_SPREADSHEETML)) {
             return;
         }
+        if (isIsOpen) {
+            inlineString.endElement(uri, localName, qName);
+        }
 
         if (isTextTag(localName)) {
             vIsOpen = false;
@@ -264,6 +280,9 @@ class TikaSheetXMLHandler extends DefaultHandler {
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
+        if (isIsOpen) {
+            inlineString.characters(ch, start, length);
+        }
         if (vIsOpen) {
             value.append(ch, start, length);
         }
@@ -309,7 +328,12 @@ class TikaSheetXMLHandler extends DefaultHandler {
                     }
                     break;
                 case INLINE_STRING:
-                    thisStr = value.toString();
+                    if (cellHasInlineString) {
+                        thisStr = inlineString.getText();
+                        scripted = toScriptedText(inlineString.getRuns());
+                    } else {
+                        thisStr = value.toString();
+                    }
                     break;
                 case SST_STRING:
                     String sstIndex = value.toString().trim();
@@ -343,7 +367,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
             }
         }
 
-        if (scripted == null && cellScriptTag != null && !formulasNotResults) {
+        if (scripted == null && cellScriptTag != null) {
             scripted = new ScriptedTextCell().append(thisStr, cellScriptTag);
         }
 

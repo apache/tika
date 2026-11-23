@@ -874,7 +874,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             XSSFSheetInterestingPartsCapturer handler = new XSSFSheetInterestingPartsCapturer(
                     new TikaSheetXMLHandler(stylesShim, commentsShim, stringsShim,
-                            sheetContentsHandler, formatter, false));
+                            sheetContentsHandler, formatter, false,
+                            config.isConcatenatePhoneticRuns()));
             XMLReaderUtils.parseSAX(sheetInputStream, handler, context);
             sheetInputStream.close();
 

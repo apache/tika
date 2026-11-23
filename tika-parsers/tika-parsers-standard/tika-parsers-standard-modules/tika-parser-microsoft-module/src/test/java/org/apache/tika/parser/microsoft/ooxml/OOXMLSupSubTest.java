@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -40,6 +41,18 @@ public class OOXMLSupSubTest extends TikaTest {
 
     private static final String W =
             "xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"";
+
+    private static final String SML =
+            "xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"";
+
+    // cell style 1 is superscript, 2 is subscript
+    private static final String SUP_SUB_STYLES = "<styleSheet " + SML + "><fonts count=\"3\">"
+            + "<font><sz val=\"11\"/></font>"
+            + "<font><vertAlign val=\"superscript\"/><sz val=\"11\"/></font>"
+            + "<font><vertAlign val=\"subscript\"/><sz val=\"11\"/></font></fonts>"
+            + "<cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\"/>"
+            + "<xf numFmtId=\"0\" fontId=\"1\"/><xf numFmtId=\"0\" fontId=\"2\"/></cellXfs>"
+            + "</styleSheet>";
 
     @Test
     public void testDocx() throws Exception {
@@ -75,8 +88,7 @@ public class OOXMLSupSubTest extends TikaTest {
     //TIKA-5071
     @Test
     public void testXlsx() throws Exception {
-        String sml = "xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"";
-        String sharedStrings = "<sst " + sml + ">"
+        String sharedStrings = "<sst " + SML + ">"
                 + "<si><r><t>E = mc</t></r>"
                 + "<r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r></si>"
                 // a run with no rPr is in the cell's font; one with rPr is not
@@ -92,13 +104,7 @@ public class OOXMLSupSubTest extends TikaTest {
                 // a direct <t> before the runs is kept, in the cell's font
                 + "<si><t>abc</t><r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r>"
                 + "</si></sst>";
-        String styles = "<styleSheet " + sml + "><fonts count=\"3\"><font><sz val=\"11\"/></font>"
-                + "<font><vertAlign val=\"superscript\"/><sz val=\"11\"/></font>"
-                + "<font><vertAlign val=\"subscript\"/><sz val=\"11\"/></font></fonts>"
-                + "<cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\"/>"
-                + "<xf numFmtId=\"0\" fontId=\"1\"/><xf numFmtId=\"0\" fontId=\"2\"/></cellXfs>"
-                + "</styleSheet>";
-        String sheet = "<worksheet " + sml + "><sheetData><row r=\"1\">"
+        String sheet = "<worksheet " + SML + "><sheetData><row r=\"1\">"
                 + "<c r=\"A1\" t=\"s\"><v>0</v></c>"
                 + "<c r=\"B1\" s=\"2\" t=\"s\"><v>1</v></c>"
                 + "<c r=\"C1\" s=\"1\" t=\"s\"><v>2</v></c>"
@@ -108,7 +114,7 @@ public class OOXMLSupSubTest extends TikaTest {
                 + "<c r=\"G1\" s=\"1\" t=\"s\"><v>4</v></c>"
                 + "<c r=\"H1\" t=\"s\"><v>5</v></c>"
                 + "</row></sheetData></worksheet>";
-        String xml = parse(xlsx(sharedStrings, styles, sheet));
+        String xml = parse(xlsx(sharedStrings, SUP_SUB_STYLES, sheet));
         assertContains("<td>E = mc<sup>2</sup></td>", xml);
         assertContains("<td><sub>CO2</sub> gas</td>", xml);
         assertContains("<td><sup>n</sup></td>", xml);
@@ -122,7 +128,7 @@ public class OOXMLSupSubTest extends TikaTest {
     //TIKA-5071
     @Test
     public void testXlsxSharedStringRunsKeptOnlyForScript() throws Exception {
-        String sst = "<sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">"
+        String sst = "<sst " + SML + ">"
                 + "<si><r><t>a</t></r><r><rPr><b/></rPr><t>b</t></r></si>"
                 + "<si><r><t>x</t></r><r><rPr><vertAlign val=\"superscript\"/></rPr>"
                 + "<t>2</t></r></si></sst>";
@@ -131,6 +137,58 @@ public class OOXMLSupSubTest extends TikaTest {
         // no cell style is superscript or subscript, so a bold-only entry's runs don't matter
         assertNull(shim.getScriptedRunsAt(0));
         assertNotNull(shim.getScriptedRunsAt(1));
+    }
+
+    //TIKA-5071 empty runs aren't kept, so they cost nothing per cell
+    @Test
+    public void testXlsxSharedStringEmptyRunsDropped() throws Exception {
+        StringBuilder sst = new StringBuilder("<sst " + SML + "><si><r><t>x</t></r>");
+        for (int i = 0; i < 1000; i++) {
+            sst.append("<r><rPr><vertAlign val=\"superscript\"/></rPr><t></t></r>");
+        }
+        sst.append("<r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r></si></sst>");
+        XSSFSharedStringsShim shim = new XSSFSharedStringsShim(
+                new ByteArrayInputStream(sst.toString().getBytes(UTF_8)), false, false,
+                new ParseContext());
+        assertEquals(2, shim.getScriptedRunsAt(0).size());
+    }
+
+    //TIKA-5071 a plain entry with a phonetic reading, in a superscript cell
+    @Test
+    public void testXlsxPhoneticWithoutRuns() throws Exception {
+        String sharedStrings = "<sst " + SML + ">"
+                + "<si><t>日本</t><rPh sb=\"0\" eb=\"2\"><t>ニホン</t></rPh></si></sst>";
+        String sheet = "<worksheet " + SML + "><sheetData><row r=\"1\">"
+                + "<c r=\"A1\" s=\"1\" t=\"s\"><v>0</v></c>"
+                + "</row></sheetData></worksheet>";
+        String xml = parse(xlsx(sharedStrings, SUP_SUB_STYLES, sheet));
+        assertContains("<td><sup>日本</sup> ニホン</td>", xml);
+    }
+
+    //TIKA-5071 inline strings have the same runs as shared strings
+    @Test
+    public void testXlsxInlineStringRuns() throws Exception {
+        String sheet = "<worksheet " + SML + "><sheetData><row r=\"1\">"
+                + "<c r=\"A1\" t=\"inlineStr\"><is><r><t>E = mc</t></r>"
+                + "<r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r></is></c>"
+                // in a superscript cell, a run with rPr but no vertAlign is baseline
+                + "<c r=\"B1\" s=\"1\" t=\"inlineStr\"><is><r><t>x</t></r>"
+                + "<r><rPr><b/></rPr><t>y</t></r></is></c>"
+                + "<c r=\"C1\" s=\"2\" t=\"inlineStr\"><is><t>n</t></is></c>"
+                + "<c r=\"D1\" t=\"inlineStr\"><is><t>plain</t></is></c>"
+                // some writers put an inline string's text in <v>
+                + "<c r=\"E1\" s=\"1\" t=\"inlineStr\"><v>legacy</v></c>"
+                // the phonetic reading follows after a space, as in a shared string
+                + "<c r=\"F1\" t=\"inlineStr\"><is><t>日本</t>"
+                + "<rPh sb=\"0\" eb=\"2\"><t>ニホン</t></rPh></is></c>"
+                + "</row></sheetData></worksheet>";
+        String xml = parse(xlsx("<sst " + SML + "/>", SUP_SUB_STYLES, sheet));
+        assertContains("<td>E = mc<sup>2</sup></td>", xml);
+        assertContains("<td><sup>x</sup>y</td>", xml);
+        assertContains("<td><sub>n</sub></td>", xml);
+        assertContains("<td>plain</td>", xml);
+        assertContains("<td><sup>legacy</sup></td>", xml);
+        assertContains("<td>日本 ニホン</td>", xml);
     }
 
     private static String run(String text, String rPr) {

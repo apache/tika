@@ -146,9 +146,10 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
-   * Superscript and subscript are kept as <sup>/<sub> in XHTML for .xls and .xlsx, from
-     rich-text runs in a cell and from the cell's own font (BIFF FONT records, xlsx
-     vertAlign) (TIKA-5071).
+   * Superscript and subscript are kept as <sup>/<sub> in XHTML for .xls and .xlsx, in
+     rich text and in a cell's own font. An xlsx inline string's phonetic reading now
+     follows a space, as in shared strings, and is left out when phonetic runs are off
+     (TIKA-5071).
 
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
    

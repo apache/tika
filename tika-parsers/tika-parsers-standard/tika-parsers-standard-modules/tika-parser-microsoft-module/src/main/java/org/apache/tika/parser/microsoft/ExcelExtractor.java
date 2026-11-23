@@ -335,10 +335,12 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         private boolean hasHiddenColumn = false;
         private boolean hasHiddenRow = false;
         private boolean hasProtectedSheet = false;
-        // for <sup>/<sub>: the FONT records in order (there is no font 4, so font
-        // index 5 is the fifth record) and the XF records, which cells refer to by index
-        private final List<FontRecord> fonts = new ArrayList<>();
-        private final List<ExtendedFormatRecord> extendedFormats = new ArrayList<>();
+        // for <sup>/<sub>: each FONT record's SUP, SUB or null, in order (there is no
+        // font 4, so font index 5 is the fifth record), and each XF record's font index
+        private final List<Tag> fontScriptTags = new ArrayList<>();
+        private final List<Integer> xfFontIndexes = new ArrayList<>();
+        // sorted, de-duplicated format runs per SST index, computed once per string
+        private final Map<Integer, List<FormatRun>> sstFormatRuns = new HashMap<>();
 
         /**
          * Construct a new listener instance outputting parsed data to
@@ -569,14 +571,16 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
                 case SSTRecord.sid: // holds all the strings for LabelSSTRecords
                     sstRecord = (SSTRecord) record;
+                    sstFormatRuns.clear();
                     break;
 
                 case FontRecord.sid:
-                    fonts.add((FontRecord) record);
+                    fontScriptTags.add(ScriptedTextCell.fromSuperSubScript(
+                            ((FontRecord) record).getSuperSubScript()));
                     break;
 
                 case ExtendedFormatRecord.sid:
-                    extendedFormats.add((ExtendedFormatRecord) record);
+                    xfFontIndexes.add(((ExtendedFormatRecord) record).getFontIndex() & 0xFFFF);
                     break;
 
                 case FormulaRecord.sid: // Cell value from a formula
@@ -811,10 +815,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * Splits a shared string at its format runs. Text before the first run is in
          * the cell's own font.
          *
-         * @return the text, or {@code null} if none of it is superscript or subscript
+         * @return the text, or {@code null} if neither it nor the cell's font is
+         * superscript or subscript
          */
-        private ScriptedTextCell toScriptedText(CellValueRecordInterface cell,
-                                                UnicodeString unicode) {
+        private ScriptedTextCell toScriptedText(LabelSSTRecord cell, UnicodeString unicode) {
             if (unicode == null) {
                 return null;
             }
@@ -822,18 +826,15 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             if (unicode.getFormatRunCount() == 0 && cellTag == null) {
                 return null;
             }
-            List<FormatRun> formatRuns = new ArrayList<>();
-            for (int i = 0; i < unicode.getFormatRunCount(); i++) {
-                formatRuns.add(unicode.getFormatRun(i));
-            }
-            formatRuns.sort(Comparator.comparingInt(r -> r.getCharacterPos() & 0xFFFF));
+            List<FormatRun> formatRuns =
+                    sstFormatRuns.computeIfAbsent(cell.getSSTIndex(), i -> formatRuns(unicode));
 
             String string = unicode.getString();
             ScriptedTextCell text = new ScriptedTextCell();
             int pos = 0;
             Tag tag = cellTag;
             for (FormatRun formatRun : formatRuns) {
-                int start = Math.min(formatRun.getCharacterPos() & 0xFFFF, string.length());
+                int start = formatRun.getCharacterPos() & 0xFFFF;
                 if (start > pos) {
                     text.append(string.substring(pos, start), tag);
                     pos = start;
@@ -845,14 +846,40 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         }
 
         /**
+         * @return the format runs that start inside the string, sorted by position,
+         * keeping the last at each position, so there are no more runs than characters
+         */
+        private static List<FormatRun> formatRuns(UnicodeString unicode) {
+            int length = unicode.getString().length();
+            List<FormatRun> sorted = new ArrayList<>();
+            for (int i = 0; i < unicode.getFormatRunCount(); i++) {
+                FormatRun run = unicode.getFormatRun(i);
+                if ((run.getCharacterPos() & 0xFFFF) < length) {
+                    sorted.add(run);
+                }
+            }
+            sorted.sort(Comparator.comparingInt(r -> r.getCharacterPos() & 0xFFFF));
+            List<FormatRun> runs = new ArrayList<>();
+            for (FormatRun run : sorted) {
+                int last = runs.size() - 1;
+                if (last >= 0 && runs.get(last).getCharacterPos() == run.getCharacterPos()) {
+                    runs.set(last, run);
+                } else {
+                    runs.add(run);
+                }
+            }
+            return runs;
+        }
+
+        /**
          * @return sup or sub for the font of the cell's XF record, else {@code null}
          */
         private Tag getScriptTag(CellValueRecordInterface cell) {
             int xfIndex = cell.getXFIndex() & 0xFFFF;
-            if (xfIndex >= extendedFormats.size()) {
+            if (xfIndex >= xfFontIndexes.size()) {
                 return null;
             }
-            return getFontScriptTag(extendedFormats.get(xfIndex).getFontIndex() & 0xFFFF);
+            return getFontScriptTag(xfFontIndexes.get(xfIndex));
         }
 
         private Tag getFontScriptTag(int fontIndex) {
@@ -860,10 +887,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 return null;
             }
             int recordIndex = fontIndex > 4 ? fontIndex - 1 : fontIndex;
-            if (recordIndex >= fonts.size()) {
+            if (recordIndex >= fontScriptTags.size()) {
                 return null;
             }
-            return ScriptedTextCell.fromSuperSubScript(fonts.get(recordIndex).getSuperSubScript());
+            return fontScriptTags.get(recordIndex);
         }
 
         private void newSheet() {
