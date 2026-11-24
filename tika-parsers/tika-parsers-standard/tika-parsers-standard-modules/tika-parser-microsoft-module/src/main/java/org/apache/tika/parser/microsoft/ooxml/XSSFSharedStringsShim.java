@@ -290,11 +290,16 @@ class XSSFSharedStringsShim {
             List<Run> result = new ArrayList<>(spans.size() + 1);
             int pos = 0;
             for (Span span : spans) {
-                if (span.start > pos) {
-                    // a <t> directly in the entry is in the cell's font
-                    result.add(new Run(characters.substring(pos, span.start), null, false));
+                // nested <r>/<rPh> give overlapping spans; the runs must partition the text
+                if (span.end <= pos) {
+                    continue;
                 }
-                result.add(new Run(characters.substring(span.start, span.end), span.tag,
+                int start = Math.max(span.start, pos);
+                if (start > pos) {
+                    // a <t> directly in the entry is in the cell's font
+                    result.add(new Run(characters.substring(pos, start), null, false));
+                }
+                result.add(new Run(characters.substring(start, span.end), span.tag,
                         span.hasRPr));
                 pos = span.end;
             }

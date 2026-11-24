@@ -191,6 +191,33 @@ public class OOXMLSupSubTest extends TikaTest {
         assertContains("<td>日本 ニホン</td>", xml);
     }
 
+    //TIKA-5071 an entry's runs never hold more text than the entry, however it nests
+    @Test
+    public void testXlsxSharedStringRunsPartitionText() throws Exception {
+        int depth = 90;
+        String[] entries = {
+                "<t>a</t>" + "<rPh>".repeat(depth) + "<t>reading</t>" + "</rPh>".repeat(depth),
+                "<r><t>a</t><rPh><t>reading</t></rPh></r>",
+                "<r><t>a</t><r><t>b</t></r><t>c</t></r>"
+        };
+        StringBuilder sst = new StringBuilder("<sst " + SML + ">");
+        for (String entry : entries) {
+            sst.append("<si>").append(entry)
+                    .append("<r><rPr><vertAlign val=\"superscript\"/></rPr><t>2</t></r></si>");
+        }
+        sst.append("</sst>");
+        XSSFSharedStringsShim shim = new XSSFSharedStringsShim(
+                new ByteArrayInputStream(sst.toString().getBytes(UTF_8)), true, false,
+                new ParseContext());
+        for (int i = 0; i < entries.length; i++) {
+            StringBuilder joined = new StringBuilder();
+            for (XSSFSharedStringsShim.Run run : shim.getScriptedRunsAt(i)) {
+                joined.append(run.text());
+            }
+            assertEquals(shim.getItemAt(i), joined.toString(), entries[i].substring(0, 30));
+        }
+    }
+
     private static String run(String text, String rPr) {
         return "<w:r>" + (rPr.isEmpty() ? "" : "<w:rPr>" + rPr + "</w:rPr>")
                 + "<w:t xml:space=\"preserve\">" + text + "</w:t></w:r>";
