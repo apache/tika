@@ -31,9 +31,9 @@ import org.apache.pdfbox.text.TextPosition;
 final class SupSubLine {
 
     // smaller than this fraction of the line's body size, and off its baseline by more than
-    // MIN_SHIFT of it, is sup or sub
+    // MIN_SHIFT of it, is sup or sub; Word lowers a subscript by only ~9% of the font size
     private static final float SMALLER = 0.9f;
-    private static final float MIN_SHIFT = 0.1f;
+    private static final float MIN_SHIFT = 0.05f;
 
     /** Part of a word and its vertTag: sup, sub or null (a blank chunk always null). */
     record Chunk(String text, String vertTag) {
@@ -43,7 +43,7 @@ final class SupSubLine {
     private final float baseline;
 
     /**
-     * Body size is the most common glyph size on the line; baseline the most common baseline
+     * Body size is the most common font size on the line; baseline the most common baseline
      * of glyphs in that size.
      */
     SupSubLine(List<List<TextPosition>> words) {
@@ -51,7 +51,7 @@ final class SupSubLine {
         for (List<TextPosition> word : words) {
             for (TextPosition position : word) {
                 if (!isBlank(position)) {
-                    sizes.merge(round(position.getHeightDir()), 1, Integer::sum);
+                    sizes.merge(round(size(position)), 1, Integer::sum);
                 }
             }
         }
@@ -59,7 +59,7 @@ final class SupSubLine {
         Map<Float, Integer> baselines = new HashMap<>();
         for (List<TextPosition> word : words) {
             for (TextPosition position : word) {
-                if (!isBlank(position) && round(position.getHeightDir()) == bodySize) {
+                if (!isBlank(position) && round(size(position)) == bodySize) {
                     baselines.merge(round(position.getYDirAdj()), 1, Integer::sum);
                 }
             }
@@ -72,12 +72,18 @@ final class SupSubLine {
         List<Chunk> chunks = new ArrayList<>();
         if (!text.equals(rawText(positions))) {
             // bidi or normalization changed the text, so its glyphs no longer map onto it:
-            // the whole word takes its first glyph's vertTag
+            // the whole word takes its glyphs' vertTag only if they all have the same one
             String vertTag = null;
+            boolean first = true;
             for (TextPosition position : positions) {
                 if (!isBlank(position)) {
-                    vertTag = vertTag(position);
-                    break;
+                    String t = vertTag(position);
+                    if (!first && !Objects.equals(t, vertTag)) {
+                        vertTag = null;
+                        break;
+                    }
+                    vertTag = t;
+                    first = false;
                 }
             }
             chunks.add(new Chunk(text, vertTag));
@@ -105,7 +111,7 @@ final class SupSubLine {
     }
 
     private String vertTag(TextPosition position) {
-        if (!(position.getHeightDir() < bodySize * SMALLER)) {
+        if (!(size(position) < bodySize * SMALLER)) {
             return null;
         }
         // y grows down the page
@@ -117,6 +123,12 @@ final class SupSubLine {
             return "sub";
         }
         return null;
+    }
+
+    // font size in user space; not getHeightDir, which is the font's cap height or bbox, so a
+    // glyph at the body size in a font with shorter capitals would look smaller
+    private static float size(TextPosition position) {
+        return position.getYScale();
     }
 
     private static boolean isBlank(TextPosition position) {

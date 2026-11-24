@@ -407,8 +407,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
         @Override
         protected void processTextPosition(TextPosition text) {
-            Matrix m = text.getTextMatrix();
-            m.concatenate(text.getFont().getFontMatrix());
+            // a product, not concatenate: the glyph keeps its text matrix (SupSubLine reads it)
+            Matrix m = text.getFont().getFontMatrix().multiply(text.getTextMatrix());
             int angle = (int) Math.round(Math.toDegrees(Math.atan2(m.getShearY(), m.getScaleY())));
             if (angle == 0) {
                 super.processTextPosition(text);
