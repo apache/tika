@@ -29,6 +29,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -112,6 +114,41 @@ public class UnpackExtractorLimitTest {
         assertThrows(EmbeddedLimitReachedException.class, () -> parseEmbedded(1, 4, seen));
         assertFalse(seen[0].hasFile(), "spooled a file that will not be handed back");
         assertEquals(List.of(), stored);
+    }
+
+    //TIKA-5075: a package missing a file would look complete
+    @Test
+    public void aFailedStoreFailsTheTask() throws Exception {
+        context.set(UnpackHandler.class, new UnpackHandler() {
+            @Override
+            public void add(int id, Metadata metadata, InputStream inputStream) throws IOException {
+                if (id == 1) {
+                    throw new IOException("No space left on device");
+                }
+                stored.add(id);
+            }
+
+            @Override
+            public List<Integer> getIds() {
+                return stored;
+            }
+
+            @Override
+            public void close() {
+            }
+        });
+        // ends the parse
+        assertThrows(IOException.class, () -> parseEmbedded(1, 4, new TikaInputStream[1]));
+        assertEquals("No space left on device", byteCount.getStoreFailure().getMessage());
+        parseEmbedded(2, 4, new TikaInputStream[1]);
+        assertEquals(List.of(), stored, "nothing more is stored for a task that has failed");
+        assertEquals(0, byteCount.get());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, -2})
+    public void maxUnpackBytesMustBePositiveOrMinusOne(long max) {
+        assertThrows(IllegalArgumentException.class, () -> new UnpackConfig().setMaxUnpackBytes(max));
     }
 
     @Test

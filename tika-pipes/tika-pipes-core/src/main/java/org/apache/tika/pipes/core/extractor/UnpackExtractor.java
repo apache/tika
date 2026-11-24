@@ -180,10 +180,12 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
                 metadata, context);
     }
 
-    private void storeEmbeddedBytes(Path p, Metadata metadata, ParseContext context) {
+    private void storeEmbeddedBytes(Path p, Metadata metadata, ParseContext context)
+            throws IOException {
         UnpackedByteCount byteCount = context.get(UnpackedByteCount.class);
-        // past either limit the task is failing: store nothing more
-        if (p == null || TempLimits.isReached(context) || byteCount.isLimitReached()) {
+        // past either limit, or a failed store, the task is failing: store nothing more
+        if (p == null || TempLimits.isReached(context) || byteCount.isLimitReached()
+                || byteCount.getStoreFailure() != null) {
             return;
         }
 
@@ -215,6 +217,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             byteCount.add(size);
         } catch (IOException e) {
             LOGGER.warn("problem writing out embedded bytes", e);
+            // a package missing this file would look complete: fail the task, end the parse
+            byteCount.markStoreFailed(e);
+            throw e;
         }
     }
 

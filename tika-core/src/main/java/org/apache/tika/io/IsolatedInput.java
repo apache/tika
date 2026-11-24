@@ -18,6 +18,7 @@ package org.apache.tika.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
@@ -26,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TempLimits;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,14 +35,16 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * A document under a fixed name in a directory of its own, for handing to an external
  * program or a library that opens files by path.
  * <p>
  * The file is a hard link where the file system allows one; else a copy if the document is
- * small, a symbolic link if it is large, and a copy if neither link can be made. Closing
- * removes the directory and whatever the reader left in it; the source keeps its content.
+ * small, a symbolic link if it is large, and a copy if neither link can be made. A copy is
+ * charged to the context's {@link TempBytesBudget}. Closing removes the directory and
+ * whatever the reader left in it; the source keeps its content.
  */
 public final class IsolatedInput implements Closeable {
 
@@ -51,14 +55,17 @@ public final class IsolatedInput implements Closeable {
 
     private final Path dir;
     private final Path path;
+    // holds a copy's charge
+    private final TemporaryResources charge;
 
-    private IsolatedInput(Path dir, Path path) {
+    private IsolatedInput(Path dir, Path path, TemporaryResources charge) {
         this.dir = dir;
         this.path = path;
+        this.charge = charge;
     }
 
-    public static IsolatedInput of(Path source) throws IOException {
-        return of(source, "");
+    public static IsolatedInput of(Path source, ParseContext context) throws IOException {
+        return of(source, "", context);
     }
 
     /**
@@ -66,8 +73,9 @@ public final class IsolatedInput implements Closeable {
      * need one: the document's own extension if it is one of that type's, else the type's
      * usual one.
      */
-    public static IsolatedInput of(Path source, Metadata metadata) throws IOException {
-        return of(source, extensionFor(metadata));
+    public static IsolatedInput of(Path source, Metadata metadata, ParseContext context)
+            throws IOException {
+        return of(source, extensionFor(metadata), context);
     }
 
     static String extensionFor(Metadata metadata) {
@@ -98,25 +106,29 @@ public final class IsolatedInput implements Closeable {
     /**
      * @param extension appended to the fixed name, for a reader that needs one
      */
-    public static IsolatedInput of(Path source, String extension) throws IOException {
+    public static IsolatedInput of(Path source, String extension, ParseContext context)
+            throws IOException {
         if (!EXTENSION.matcher(extension).matches()) {
             throw new IllegalArgumentException("not a file extension: " + extension);
         }
-        return of(source, extension, Placement.values());
+        return of(source, extension, context, Placement.values());
     }
 
-    static IsolatedInput of(Path source, String extension, Placement... placements)
-            throws IOException {
+    static IsolatedInput of(Path source, String extension, ParseContext context,
+                            Placement... placements) throws IOException {
         Path dir = Files.createTempDirectory("tika-input-");
         Path target = dir.resolve("input" + extension);
+        TemporaryResources charge = new TemporaryResources();
+        TempLimits.apply(charge, context);
         try {
             // the file itself, not a link to it
-            place(source.toRealPath(), target, placements);
+            place(source.toRealPath(), target, charge, placements);
         } catch (IOException | RuntimeException e) {
             FileUtils.deleteQuietly(dir.toFile());
+            release(charge, dir);
             throw e;
         }
-        return new IsolatedInput(dir, target);
+        return new IsolatedInput(dir, target, charge);
     }
 
     /** In the order tried. */
@@ -124,8 +136,8 @@ public final class IsolatedInput implements Closeable {
         HARD_LINK, SMALL_COPY, SYMBOLIC_LINK, COPY
     }
 
-    private static void place(Path source, Path target, Placement[] placements)
-            throws IOException {
+    private static void place(Path source, Path target, TemporaryResources charge,
+                              Placement[] placements) throws IOException {
         IOException last = null;
         for (Placement placement : placements) {
             try {
@@ -137,13 +149,13 @@ public final class IsolatedInput implements Closeable {
                         if (Files.size(source) > MAX_SMALL_COPY) {
                             continue;
                         }
-                        Files.copy(source, target);
+                        copy(source, target, charge);
                         return;
                     case SYMBOLIC_LINK:
                         Files.createSymbolicLink(target, source);
                         return;
                     default:
-                        Files.copy(source, target);
+                        copy(source, target, charge);
                         return;
                 }
             } catch (IOException e) {
@@ -154,6 +166,25 @@ public final class IsolatedInput implements Closeable {
             }
         }
         throw last != null ? last : new IOException("no way to place " + source);
+    }
+
+    private static void copy(Path source, Path target, TemporaryResources charge)
+            throws IOException {
+        try (OutputStream os = charge.newOutputStream(target)) {
+            Files.copy(source, os);
+        } catch (IOException e) {
+            // leave nothing for the next placement to trip on
+            charge.deleteTempFile(target);
+            throw e;
+        }
+    }
+
+    private static void release(TemporaryResources charge, Path dir) {
+        try {
+            charge.close();
+        } catch (IOException e) {
+            LOG.warn("couldn't release the temp charge for {}", dir, e);
+        }
     }
 
     /**
@@ -170,6 +201,8 @@ public final class IsolatedInput implements Closeable {
             FileUtils.deleteDirectory(dir.toFile());
         } catch (IOException e) {
             LOG.warn("couldn't delete {}", dir, e);
+        } finally {
+            release(charge, dir);
         }
     }
 }

@@ -360,8 +360,9 @@ public class ExternalEmbedder implements Embedder {
         for (String commandSegment : origCmd) {
             if (commandSegment.contains(INPUT_FILE_TOKEN)) {
                 if (isolated == null) {
-                    isolated = metadata == null ? IsolatedInput.of(tikaInputStream.getPath())
-                            : IsolatedInput.of(tikaInputStream.getPath(), metadata);
+                    isolated = metadata == null
+                            ? IsolatedInput.of(tikaInputStream.getPath(), context)
+                            : IsolatedInput.of(tikaInputStream.getPath(), metadata, context);
                 }
                 commandSegment = commandSegment.replace(INPUT_FILE_TOKEN,
                         isolated.getPath().toString());

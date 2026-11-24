@@ -114,7 +114,7 @@ public class GeographicInformationParser implements Parser {
 
         TemporaryResources tmp = null;
         // under a fixed name, in a directory of its own
-        try (tis; IsolatedInput input = IsolatedInput.of(tis.getPath(), ".xml")) {
+        try (tis; IsolatedInput input = IsolatedInput.of(tis.getPath(), ".xml", parseContext)) {
             File file = input.getPath().toFile();
             try (DataStore dataStore = DataStores.open(file)) {
                 DefaultMetadata defaultMetadata = new DefaultMetadata(dataStore.getMetadata());

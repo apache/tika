@@ -172,6 +172,13 @@ class PipesWorker implements Callable<PipesResult> {
                                 parseContext.get(UnpackConfig.class).maxUnpackBytesOrUnlimited()),
                                 parseContext));
             }
+            if (unpacked != null && unpacked.getStoreFailure() != null) {
+                // a package missing a file would look complete
+                LOG.error("failed to store an unpacked file: {}", fetchEmitTuple.getId());
+                return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
+                        "Failed to store an unpacked file: "
+                                + ExceptionUtils.format(unpacked.getStoreFailure(), parseContext));
+            }
 
             MetadataListAndEmbeddedBytes parseData = parseDataResult.parseDataResult;
 

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.core.extractor;
 
+import java.io.IOException;
+
 /**
  * Running total of bytes {@link UnpackExtractor} has written out for the current request,
  * checked against {@link UnpackConfig#maxUnpackBytesOrUnlimited()}.
@@ -27,6 +29,7 @@ public class UnpackedByteCount {
 
     private long value;
     private boolean limitReached;
+    private IOException storeFailure;
 
     public void add(long n) {
         value += n;
@@ -43,5 +46,17 @@ public class UnpackedByteCount {
 
     public boolean isLimitReached() {
         return limitReached;
+    }
+
+    /** An embedded file (or the original) could not be stored; the file fails and nothing is handed back. */
+    public void markStoreFailed(IOException e) {
+        if (storeFailure == null) {
+            storeFailure = e;
+        }
+    }
+
+    /** The first failure to store a file, or {@code null}. */
+    public IOException getStoreFailure() {
+        return storeFailure;
     }
 }

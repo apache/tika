@@ -265,9 +265,8 @@ embedded file that does not fit whole stops the parse, and nothing is emitted, n
 truncated file. tika-server returns a 422 with the status in the JSON body. To get the
 text and metadata of such a file, send it again without UNPACK.
 
-`maxUnpackBytes: -1` (or any negative value) disables the limit — not recommended for
-untrusted input. `0` is not "unlimited": the first embedded file with any bytes fails
-the file.
+`maxUnpackBytes: -1` disables the limit — not recommended for untrusted input. `0` and
+anything below `-1` are rejected when the config is read.
 
 == Frictionless Data Package Output
 

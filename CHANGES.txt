@@ -88,8 +88,10 @@ Release 4.3.0 - ???
      emits them after the parse, so a file that reaches a limit, or times out
      or crashes in the parse, leaves nothing behind; a failed emit of one of
      them now fails the file with EMIT_EXCEPTION, where it was logged and
-     skipped. Reporters with an includes list need the two new statuses added
-     (TIKA-5075).
+     skipped, and so does a failure to stage one (a full disk). maxUnpackBytes
+     must be positive, or -1 for no limit: 0 and anything below -1 are rejected
+     when the config is read. Reporters with an includes list need the two new
+     statuses added (TIKA-5075).
 
    * tika-server /unpack's 422 for a parse exception is now JSON, like its other
      failures: {"status": "PARSE_EXCEPTION_NO_EMIT", "message": <the exception>}.

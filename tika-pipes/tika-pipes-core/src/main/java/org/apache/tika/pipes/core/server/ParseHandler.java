@@ -115,9 +115,10 @@ class ParseHandler {
                 parseContext.get(UnpackHandler.class)), null);
     }
 
-    private static boolean isUnpackLimitReached(ParseContext parseContext) {
+    private static boolean hasUnpackFailed(ParseContext parseContext) {
         UnpackedByteCount unpacked = parseContext.get(UnpackedByteCount.class);
-        return unpacked != null && unpacked.isLimitReached();
+        return unpacked != null
+                && (unpacked.isLimitReached() || unpacked.getStoreFailure() != null);
     }
 
     private ParseMode getParseMode(ParseContext parseContext) {
@@ -167,9 +168,9 @@ class ParseHandler {
             LOG.warn("problem detecting: " + t.getId(), e);
         }
         UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
-        if (unpackConfig != null &&
-                unpackConfig.isIncludeOriginal()) {
-            UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
+        UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
+        // no handler outside UNPACK
+        if (unpackConfig != null && unpackConfig.isIncludeOriginal() && unpackHandler != null) {
             // the original is handed back too, so it counts against maxUnpackBytes
             UnpackedByteCount byteCount = parseContext.get(UnpackedByteCount.class);
             long max = unpackConfig.maxUnpackBytesOrUnlimited();
@@ -187,8 +188,13 @@ class ParseHandler {
                         byteCount.add(size);
                     }
                 }
-            } catch (IOException | TempLimitReachedException e) {
+            } catch (TempLimitReachedException e) {
                 LOG.warn("problem reading source file into embedded document byte store", e);
+            } catch (IOException e) {
+                LOG.warn("problem reading source file into embedded document byte store", e);
+                if (byteCount != null) {
+                    byteCount.markStoreFailed(e);
+                }
             }
         }
     }
@@ -230,8 +236,8 @@ class ParseHandler {
         //queue better be empty. we deserve an exception if not
         intermediateResult.add(metadata);
         countDownLatch.await();
-        if (isUnpackLimitReached(parseContext)) {
-            // the original alone passes maxUnpackBytes: the file has failed
+        if (hasUnpackFailed(parseContext)) {
+            // the original alone passes maxUnpackBytes, or could not be stored: the file has failed
             return Collections.singletonList(metadata);
         }
         try {
