@@ -65,6 +65,10 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * The new tika-pipes-qdrant plugin adds a qdrant-emitter. It writes the vectors in
+     tk:chunks to a Qdrant collection as points, with one named vector per inference
+     binding, through the Qdrant REST API (TIKA-XXXX).
+
    * New temp-limits setting: tika-pipes bounds the bytes a task holds at once in the
      temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none;
      in-process there is no default, and AutoDetectParser applies it only when a

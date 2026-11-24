@@ -42,10 +42,10 @@ env:
   # silent: a module excluded from `build` but missing from the shard runs
   # nowhere, and CI stays green while the tests stop existing.
   #
-  # These six are ~15 of the build's 37 minutes -- five are testcontainers-backed
-  # (Elasticsearch/OpenSearch/Solr/Kafka/RustFS) and tika-pipes-integration-tests
+  # These seven are ~15 of the build's 37 minutes -- six are testcontainers-backed
+  # (Elasticsearch/OpenSearch/Qdrant/Solr/Kafka/RustFS) and tika-pipes-integration-tests
   # forks JVMs. Adding a slow IT module here is the intended way to rebalance.
-  IT_MODULES: ':tika-pipes-integration-tests,:tika-pipes-es-integration-tests,:tika-pipes-opensearch-integration-tests,:tika-pipes-solr-integration-tests,:tika-pipes-kafka-integration-tests,:tika-pipes-s3-integration-tests'
+  IT_MODULES: ':tika-pipes-integration-tests,:tika-pipes-es-integration-tests,:tika-pipes-opensearch-integration-tests,:tika-pipes-qdrant-integration-tests,:tika-pipes-solr-integration-tests,:tika-pipes-kafka-integration-tests,:tika-pipes-s3-integration-tests'
 
 jobs:
   build:

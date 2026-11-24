@@ -1,0 +1,18 @@
+{
+  "emitters": {
+    "qdrant": {
+      "qdrant-emitter": {
+        "qdrantUrl": "https://qdrant.example.com:6333",
+        "collection": "tika-chunks",
+        "apiKey": "REDACTED_API_KEY",
+        "metadataFields": ["dc:title", "Content-Type", "tk:embedded-resource-path"],
+        "batchSize": 64,
+        "replaceExisting": true,
+        "httpClientConfig": {
+          "connectionTimeoutMillis": 10000,
+          "socketTimeoutMillis": 60000
+        }
+      }
+    }
+  }
+}
