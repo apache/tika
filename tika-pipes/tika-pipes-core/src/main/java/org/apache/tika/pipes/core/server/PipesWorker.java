@@ -105,11 +105,11 @@ class PipesWorker implements Callable<PipesResult> {
         this.defaultParseMode = defaultParseMode;
     }
 
-    // Per-parse stage nanos, read by ConnectionHandler for the timing line after the
-    // worker completes. -1 means the stage never ran.
     // true once any unpacked file or package has gone to an emitter
     private boolean unpackedOutputEmitted;
 
+    // Per-parse stage nanos, read by ConnectionHandler for the timing line after the
+    // worker completes. -1 means the stage never ran.
     private volatile long fetchNanos = -1;
     private volatile long parseNanos = -1;
     // text inference, metadata filters, user metadata
