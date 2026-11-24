@@ -50,7 +50,6 @@ public class EmittingUnpackHandler extends AbstractUnpackHandler {
     }
 
     private static final Metadata METADATA = new Metadata();
-    private static final ParseContext PARSE_CONTEXT = new ParseContext();
 
     /**
      * @param emitter the caller keeps it open (leased) until this handler is closed
@@ -97,7 +96,7 @@ public class EmittingUnpackHandler extends AbstractUnpackHandler {
             // each emit is progress, as it was when they ran between embedded parses
             ParseTimeout.checkpoint(parseContext);
             try (InputStream is = Files.newInputStream(s.file())) {
-                emitter.emit(s.emitKey(), is, METADATA, PARSE_CONTEXT);
+                emitter.emit(s.emitKey(), is, METADATA, parseContext);
             } catch (TikaEmitterException e) {
                 throw new IOException(e);
             }

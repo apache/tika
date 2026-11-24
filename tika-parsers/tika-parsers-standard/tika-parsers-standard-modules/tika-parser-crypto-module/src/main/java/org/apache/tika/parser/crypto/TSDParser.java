@@ -54,6 +54,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -198,7 +199,7 @@ public class TSDParser implements Parser {
                     edx.parseEmbedded(inner, handler, metadata, context, true);
                 }
 
-            } catch (SecurityException e) {
+            } catch (SecurityException | TempLimitReachedException e) {
                 throw e;
             } catch (Exception ex) {
                 WriteLimitReachedException.throwIfWriteLimitReached(ex);

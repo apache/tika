@@ -190,7 +190,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
                 m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
                 results.add(renderPage(renderer, pdDocument.getPage(i - 1), id, i, m,
                         parseContext));
-            } catch (SecurityException e) {
+            } catch (SecurityException | TempLimitReachedException e) {
                 throw e;
             } catch (IOException | RuntimeException e) {
                 // a broken page tree throws from getPage/getMediaBox: one page's failure, not the parse's

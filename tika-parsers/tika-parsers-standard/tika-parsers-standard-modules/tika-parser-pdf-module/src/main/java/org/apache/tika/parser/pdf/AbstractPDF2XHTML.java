@@ -100,6 +100,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -856,7 +857,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
             try {
                 render = currentPageRender(pdPage);
-            } catch (SecurityException e) {
+            } catch (SecurityException | TempLimitReachedException e) {
                 throw e;
             } catch (IOException | TikaException | RuntimeException e) {
                 // emission's own policy, whoever asked first: an unrenderable page is a warning

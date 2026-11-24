@@ -87,6 +87,9 @@ these but `exception-reporting`, which has its own test:
       "totalTaskTimeoutMillis": 3600000,
       "progressTimeoutMillis": 60000
     },
+    "temp-limits": {
+      "maxTempBytes": 10737418240
+    },
     "standard-metadata-limiter-factory": {
       "maxTotalBytes": 1048576,
       "maxFieldSize": 102400,
@@ -297,7 +300,7 @@ well above `maxUnpackBytes` or it is reached first.
 |`maxUnpackBytes`
 |10 GiB
 |Maximum total bytes handed back from all embedded documents per file. `-1` is
-unlimited (not advisable for untrusted input); `0` means zero bytes, not unlimited.
+unlimited (not advisable for untrusted input); `0` and anything below `-1` are rejected.
 |===
 
 Reaching the limit fails the file: the parse stops and the result is
@@ -390,8 +393,9 @@ nothing else. It does not count, and Tika has no way to cap:
 * anything an external program writes (tesseract, unrar, readpst, pdftoppm, dwgread,
   ffmpeg): its output and its own scratch files.
 
-Nor does it count the copy of the finished zip that tika-server's `/unpack` holds until
-it is sent.
+Nor does it count what tika-server holds outside the fork: an uploaded document, which the
+server spools itself and `maxRequestSizeBytes` bounds, and the copy of the finished zip
+that `/unpack` holds until it is sent.
 
 A document can still fill the volume `java.io.tmpdir` is on. The limit is also per
 task, so a server can hold up to `numClients` times it. Keep `java.io.tmpdir` on a

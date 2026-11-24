@@ -232,7 +232,7 @@ public class GDALParser implements Parser {
 
         FileProcessResult result;
         // under a fixed name, in a directory of its own
-        try (IsolatedInput input = IsolatedInput.of(tis.getPath(), metadata)) {
+        try (IsolatedInput input = IsolatedInput.of(tis.getPath(), metadata, context)) {
             String[] runCommand =
                     buildCommandLine(this.command, input.getPath().toString(), allowedFormats);
             ProcessBuilder pb = new ProcessBuilder(runCommand);
