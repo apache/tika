@@ -148,11 +148,11 @@ and SHA-256 of every jar in its zip's `lib/`, so
 `tika-plugin-maven-plugin:assemble` can rebuild the zip from Maven Central
 (TIKA-5079).
 
-Mechanism: `tika-plugin-maven-plugin` in each plugin pom, configured in
+Mechanism: `tika-plugin-maven-plugin`, declared once in
 `tika-pipes-plugins/pom.xml`: `lib-manifest` writes the list into the jar
 and `zip` builds the zip from it, unattached (TIKA-4723). Because an
-unattached file is not installed, each plugin pom additionally runs
-`maven-install-plugin:install-file` during the `package` phase, writing
+unattached file is not installed, `zip` runs there with
+`installZip=true` and, during the `package` phase, writes
 the zip into the local repo at canonical coordinates
 (`<groupId>:<artifactId>:zip:<version>`). Sibling modules
 (`tika-pipes-fork-parser`, `tika-server-*`, `tika-grpc`, integration
@@ -163,7 +163,7 @@ to Central.
 The `package` binding is deliberate and must not be moved to `install`.
 A reactor `mvn package` — what the `tika-main-jdk21` and `tika-main-jdk26`
 Jenkins jobs run, and what a contributor building the tree runs — never
-reaches the `install` phase, so an `install`-bound `install-file` leaves
+reaches the `install` phase, so installing the zip only at `install` leaves
 the zip unresolvable and every consuming module fails dependency
 resolution. It builds only where a previous `mvn install`/`deploy` on the
 same machine happened to leave a matching zip in the local repo, which

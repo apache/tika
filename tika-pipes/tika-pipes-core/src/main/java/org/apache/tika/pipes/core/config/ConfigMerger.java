@@ -251,8 +251,14 @@ public class ConfigMerger {
 
         // Apply plugin roots if not already set
         if (overrides.getPluginRoots() != null && DefaultPluginsDir.needsDefault(root.get("plugin-roots"))) {
-            root.put("plugin-roots", overrides.getPluginRoots());
-            LOG.debug("Set plugin-roots: {}", overrides.getPluginRoots());
+            if (overrides.getExtraPluginRoots().isEmpty()) {
+                root.put("plugin-roots", overrides.getPluginRoots());
+            } else {
+                ArrayNode roots = root.putArray("plugin-roots");
+                roots.add(overrides.getPluginRoots());
+                overrides.getExtraPluginRoots().forEach(roots::add);
+            }
+            LOG.debug("Set plugin-roots: {}", root.get("plugin-roots"));
         }
 
         // Apply timeout limits to parse-context section

@@ -50,6 +50,9 @@ public class LibManifestMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if ("pom".equals(project.getPackaging())) {
+            return;
+        }
         List<PluginLib.Entry> entries = new ArrayList<>();
         try {
             for (Artifact a : project.getArtifacts()) {

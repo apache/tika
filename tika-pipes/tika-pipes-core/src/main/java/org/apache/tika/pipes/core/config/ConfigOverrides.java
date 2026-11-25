@@ -50,6 +50,7 @@ public class ConfigOverrides {
     private final List<EmitterOverride> emitters;
     private final PipesConfigOverride pipesConfig;
     private final String pluginRoots;
+    private final List<String> extraPluginRoots;
     private final EmitStrategy emitStrategy;
     private final TimeoutLimits timeoutLimits;
     private final EmbeddedLimits embeddedLimits;
@@ -63,6 +64,7 @@ public class ConfigOverrides {
         this.emitters = Collections.unmodifiableList(new ArrayList<>(builder.emitters));
         this.pipesConfig = builder.pipesConfig;
         this.pluginRoots = builder.pluginRoots;
+        this.extraPluginRoots = List.copyOf(builder.extraPluginRoots);
         this.emitStrategy = builder.emitStrategy;
         this.timeoutLimits = builder.timeoutLimits;
         this.embeddedLimits = builder.embeddedLimits;
@@ -90,6 +92,10 @@ public class ConfigOverrides {
 
     public String getPluginRoots() {
         return pluginRoots;
+    }
+
+    public List<String> getExtraPluginRoots() {
+        return extraPluginRoots;
     }
 
     public EmitStrategy getEmitStrategy() {
@@ -239,6 +245,7 @@ public class ConfigOverrides {
         private final List<EmitterOverride> emitters = new ArrayList<>();
         private PipesConfigOverride pipesConfig;
         private String pluginRoots;
+        private final List<String> extraPluginRoots = new ArrayList<>();
         private EmitStrategy emitStrategy;
         private TimeoutLimits timeoutLimits;
         private EmbeddedLimits embeddedLimits;
@@ -393,6 +400,15 @@ public class ConfigOverrides {
          */
         public Builder setPluginRoots(String pluginRoots) {
             this.pluginRoots = pluginRoots;
+            return this;
+        }
+
+        /**
+         * Add a plugin root that goes in after {@link #setPluginRoots(String)}. Like it, used
+         * only when the config names no {@code plugin-roots} of its own.
+         */
+        public Builder addPluginRoot(String pluginRoot) {
+            this.extraPluginRoots.add(pluginRoot);
             return this;
         }
 

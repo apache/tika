@@ -68,19 +68,10 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessors>
-            <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
-          </annotationProcessors>
-        </configuration>
-      </plugin>
       <!-- Build the plugin ZIP before tests so that tests can load it from
            target/plugins via PF4J in the standard DEPLOYMENT mode, matching
            how tika-server-core and tika-async-cli set up their test plugins.
-           Plugin declaration order matters: jar first, then deps, then assembly. -->
+           The parent pom orders the jar before the zip. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -123,7 +114,7 @@
       </plugin>
       <!-- The plugin zip is built into target/ (the release artifact, like every other plugin).
            Copy it into target/plugins/ so the self-test can load it via PF4J
-           (plugin-roots=target/plugins). Bound after make-assembly (process-test-resources). -->
+           (plugin-roots=target/plugins). Bound after the zip (process-test-resources). -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -161,34 +152,6 @@
             <tika.plugin.dev.mode>true</tika.plugin.dev.mode>
           </systemPropertyVariables>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <executions>
-          <!--
-            The assembly builds the zip with <attach>false</attach> (TIKA-4723) so it
-            stays out of the Maven artifact set and off Maven Central. Sibling modules
-            declare it as a test-scope zip dep, so install-file puts it in the local
-            repo instead. Bound to package, not install: CI and contributors run
-            `mvn package`, which has to resolve it too.
-          -->
-          <execution>
-            <id>install-plugin-zip-locally</id>
-            <phase>package</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
-              <groupId>${project.groupId}</groupId>
-              <artifactId>${project.artifactId}</artifactId>
-              <version>${project.version}</version>
-              <packaging>zip</packaging>
-              <generatePom>false</generatePom>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

@@ -796,6 +796,7 @@ public class TikaServerProcess {
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
                 // Set plugin roots
                 .setPluginRoots(DefaultPluginsDir.resolve(TikaServerProcess.class));
+        DefaultPluginsDir.extraRoots().forEach(builder::addPluginRoot);
         presets.forEach(builder::addPreset);
 
         // Only set default pipes config if there's no existing config

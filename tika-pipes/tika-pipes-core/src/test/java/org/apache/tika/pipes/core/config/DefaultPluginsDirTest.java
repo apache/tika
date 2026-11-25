@@ -22,12 +22,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 public class DefaultPluginsDirTest {
+
+    @Test
+    public void extraRootsKeepsOnlyExistingDirectories(@TempDir Path dir) throws Exception {
+        Path extra = Files.createDirectories(dir.resolve("extra"));
+        Path file = Files.createFile(dir.resolve("file"));
+        assertEquals(List.of(extra.toAbsolutePath().toString()), DefaultPluginsDir.extraRoots(
+                " " + extra + " ,," + dir.resolve("missing") + "," + file));
+        assertTrue(DefaultPluginsDir.extraRoots(null).isEmpty());
+    }
 
     @Test
     public void pluginsDirNextToTheCodeSourceJar(@TempDir Path install) throws Exception {

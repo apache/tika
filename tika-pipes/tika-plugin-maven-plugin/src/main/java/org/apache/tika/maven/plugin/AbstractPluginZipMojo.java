@@ -30,6 +30,8 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.installation.InstallRequest;
+import org.eclipse.aether.installation.InstallationException;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
@@ -52,6 +54,14 @@ abstract class AbstractPluginZipMojo extends AbstractMojo {
                     .getArtifact().getFile().toPath();
         } catch (ArtifactResolutionException e) {
             throw new MojoExecutionException("could not resolve " + artifact, e);
+        }
+    }
+
+    void installLocally(Artifact artifact) throws MojoExecutionException {
+        try {
+            repositorySystem.install(repositorySession, new InstallRequest().addArtifact(artifact));
+        } catch (InstallationException e) {
+            throw new MojoExecutionException("could not install " + artifact, e);
         }
     }
 

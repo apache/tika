@@ -36,7 +36,8 @@ Maven Central: a zip is mostly third-party jars that Central already has.
 
 From 4.3.0 a build gets the zips through Maven instead. Each plugin jar on Central lists the
 jars its zip holds, with checksums, and `tika-plugin-maven-plugin` fetches exactly those jars
-and writes the zip:
+and writes the zip. Both are new in 4.3.0: plugin jars from 4.2.0 and earlier have no list,
+and for those the zips come only from the download page or a distribution.
 
 [source,xml,subs="+attributes"]
 ----

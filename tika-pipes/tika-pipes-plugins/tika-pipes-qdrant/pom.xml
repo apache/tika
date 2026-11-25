@@ -69,41 +69,6 @@
           </archive>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-plugin-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <annotationProcessors>
-            <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
-          </annotationProcessors>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <executions>
-          <!-- The zip is not attached (TIKA-4723); install it locally for sibling test deps. -->
-          <execution>
-            <id>install-plugin-zip-locally</id>
-            <phase>package</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
-              <groupId>${project.groupId}</groupId>
-              <artifactId>${project.artifactId}</artifactId>
-              <version>${project.version}</version>
-              <packaging>zip</packaging>
-              <generatePom>false</generatePom>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 </project>

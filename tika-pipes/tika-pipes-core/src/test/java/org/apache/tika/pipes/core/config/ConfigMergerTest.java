@@ -341,6 +341,29 @@ public class ConfigMergerTest {
     }
 
     @Test
+    public void testExtraPluginRootsFollowTheDefault() throws IOException {
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setPluginRoots("default-plugins")
+                .addPluginRoot("extra-plugins")
+                .build();
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
+        JsonNode root = new ObjectMapper().readTree(result.configPath().toFile());
+        assertEquals(2, root.get("plugin-roots").size());
+        assertEquals("default-plugins", root.get("plugin-roots").get(0).asText());
+        assertEquals("extra-plugins", root.get("plugin-roots").get(1).asText());
+        Files.deleteIfExists(result.configPath());
+
+        // a config's own plugin-roots replaces the default and the extras alike
+        Path existingPath = tempDir.resolve("config-with-roots.json");
+        Files.writeString(existingPath, "{ \"plugin-roots\": \"mine\" }");
+        result = ConfigMerger.mergeOrCreate(existingPath, overrides);
+        root = new ObjectMapper().readTree(result.configPath().toFile());
+        assertEquals("mine", root.get("plugin-roots").asText());
+        Files.deleteIfExists(result.configPath());
+    }
+
+    @Test
     public void testPluginRootsNotOverriddenIfExists() throws IOException {
         // Create config with existing plugin-roots
         String existingConfig = """

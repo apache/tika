@@ -80,6 +80,8 @@ ENV TIKA_VERSION=$TIKA_VERSION
 ENV OMP_THREAD_LIMIT=1
 
 COPY --from=fetch_tika /opt/tika-server /opt/tika-server
+# plugin zips a user mounts or copies here are unzipped in place, so the server must own it
+RUN mkdir /tika-plugins && chown $UID_GID /tika-plugins
 WORKDIR /opt/tika-server
 USER $UID_GID
 
@@ -88,8 +90,9 @@ EXPOSE 9998
 # /opt/tika-server/* matches the single versioned tika-server-standard-<version>.jar
 # at that level (Java's classpath wildcard only expands *.jar), so the entrypoint
 # needs no edit when the version changes.
-# tika-server auto-discovers pf4j plugins from /opt/tika-server/plugins/.
-ENTRYPOINT [ "/bin/sh", "-c", "exec java -cp \"/opt/tika-server/*:/opt/tika-server/lib/*:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $0 $@"]
+# tika-server auto-discovers pf4j plugins from /opt/tika-server/plugins/ and, through
+# tika.plugins.extraRoots, from zips in /tika-plugins/.
+ENTRYPOINT [ "/bin/sh", "-c", "exec java -Dtika.plugins.extraRoots=/tika-plugins -cp \"/opt/tika-server/*:/opt/tika-server/lib/*:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $0 $@"]
 
 ARG REVISION
 ARG CREATED

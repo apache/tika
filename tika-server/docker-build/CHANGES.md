@@ -29,6 +29,9 @@ The legacy 3.x patch flow in the external `apache/tika-docker` repo still uses
 the `.N` convention until 4.0.0 GA.
 
 * Unreleased
+  * Added `/tika-plugins`, a plugin root owned by the server user: pipes plugin
+    zips mounted or copied there are unzipped and loaded at startup, with no
+    need to unzip them first (TIKA-5079).
   * `-full` and `tika-grpc`: dropped `ttf-mscorefonts-installer` and `cabextract`.
     The installer downloaded Microsoft's fonts from SourceForge at build time (a
     mirror outage failed a multi-arch push), and the images redistributed fonts
