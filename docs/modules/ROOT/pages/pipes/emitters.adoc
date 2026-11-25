@@ -29,6 +29,7 @@ The emit key is supplied by the iterator on each `FetchEmitTuple` and tells the 
 
 * file-system / S3 / GCS / Azure Blob — a key/path relative to `basePath` or `prefix`.
 * OpenSearch / Elasticsearch / Solr — the document ID. For OpenSearch and Elasticsearch it becomes `_id` directly; for Solr it is written into the field named by `idField`. Attachments get the emit key plus a random suffix.
+* Qdrant — the value of the `container_id` payload key on each point. Point IDs are UUIDs made from the emit key.
 * JDBC — the value bound to the first `?` placeholder in the `insert` template.
 * Kafka — the Kafka record key.
 
@@ -92,6 +93,10 @@ A pipeline may declare multiple emitters and choose between them at iterator-con
 |xref:pipes/plugins/elasticsearch.adoc[Elasticsearch]
 |`es-emitter`
 |REST-based bulk indexing; ApiKey or basic auth.
+
+|xref:pipes/plugins/qdrant.adoc[Qdrant]
+|`qdrant-emitter`
+|Writes `tk:chunks` vectors as points with named vectors.
 
 |xref:pipes/plugins/solr.adoc[Apache Solr]
 |`solr-emitter`

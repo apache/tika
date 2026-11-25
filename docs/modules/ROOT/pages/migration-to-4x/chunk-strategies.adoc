@@ -290,6 +290,15 @@ NOTE: Inline, each `vector` is a base64-encoded big-endian float32 array and the
 writes it as-is. Elasticsearch 9.3+ accepts that encoding for `dense_vector`; earlier
 versions need an ingest pipeline to decode it, or `chunkStrategy: DOCUMENTS`, which decodes.
 
+== Qdrant
+
+The xref:pipes/plugins/qdrant.adoc[Qdrant emitter] writes one point for each unit. Chunks
+that share a `correlator` become one point, and each `producer` becomes a named vector on that
+point. A second vector from the same producer in one unit becomes a point of its own, where
+`chunkStrategy: DOCUMENTS` keeps only the last one. The locators become payload keys, and the
+metadata keys listed in `metadataFields` go into a `metadata` payload object. See
+xref:pipes/plugins/qdrant.adoc#points[From chunks to points].
+
 == Alternatives Considered
 
 [cols="1,2,3"]

@@ -164,8 +164,8 @@ public class ExternalParser implements Parser {
         // under a fixed name, in a directory of its own
         try (TemporaryResources tmp = new TemporaryResources();
              IsolatedInput input = config.getInputFileExtension() == null
-                     ? IsolatedInput.of(tis.getPath(), metadata)
-                     : IsolatedInput.of(tis.getPath(), config.getInputFileExtension())) {
+                     ? IsolatedInput.of(tis.getPath(), metadata, context)
+                     : IsolatedInput.of(tis.getPath(), config.getInputFileExtension(), context)) {
             Path outFile = null;
             Path p = input.getPath();
             List<String> thisCommandLine = new ArrayList<>();

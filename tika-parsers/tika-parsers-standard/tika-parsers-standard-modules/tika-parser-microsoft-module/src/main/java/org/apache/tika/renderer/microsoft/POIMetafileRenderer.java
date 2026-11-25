@@ -41,6 +41,7 @@ import org.apache.poi.hwmf.usermodel.HwmfPicture;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.TempLimits;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -140,7 +141,12 @@ public class POIMetafileRenderer implements Renderer {
             renderingMetadata.set(HttpHeaders.CONTENT_TYPE, "image/" + imageFormatName);
             results.add(new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile,
                     renderingMetadata));
-        } catch (SecurityException e) {
+        } catch (SecurityException | TempLimitReachedException e) {
+            try {
+                results.close();
+            } catch (IOException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
             throw e;
         } catch (Exception e) {
             //record the cause, as PDFBoxRenderer does, so the failure is diagnosable

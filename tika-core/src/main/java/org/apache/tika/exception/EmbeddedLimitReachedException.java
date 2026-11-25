@@ -17,8 +17,9 @@
 package org.apache.tika.exception;
 
 /**
- * Runtime exception thrown when an embedded document limit is reached
- * and the configuration specifies that parsing should stop with an exception.
+ * Runtime exception thrown when an embedded document limit is reached and the
+ * configuration specifies that parsing should stop with an exception;
+ * {@link LimitType#MAX_UNPACK_BYTES} always stops it.
  * <p>
  * This is a runtime exception to avoid polluting the {@code EmbeddedDocumentExtractor}
  * interface with checked exceptions, since most implementations don't need limit checking.

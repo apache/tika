@@ -45,9 +45,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.io.TempBytesBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -448,6 +450,37 @@ public class PDFPagesEmitTest extends TikaTest {
                 }
             });
             assertContains("Denmark bookmark is here", text);
+        }
+    }
+
+    //TIKA-5075: a page that reaches the temp limit is the last page drawn
+    @Test
+    public void testTempLimitStopsTheRendering() throws Exception {
+        PDFParserConfig own = emitting();
+        own.pages().emit().render().setDpi(72);
+        for (PDFParserConfig config : List.of(emitting(), own)) {
+            List<Integer> drawn = new ArrayList<>();
+            PDFParser parser = new PDFParser();
+            parser.setRenderer(new PDFBoxRenderer() {
+                @Override
+                protected RenderResult renderPage(PDFRenderer renderer, PDPage page, int id,
+                                                  int pageNumber, Metadata metadata,
+                                                  ParseContext parseContext) throws IOException {
+                    drawn.add(pageNumber);
+                    return super.renderPage(renderer, page, id, pageNumber, metadata, parseContext);
+                }
+            });
+            ParseContext context = new ParseContext();
+            context.set(PDFParserConfig.class, config);
+            context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+            // no page image fits
+            context.set(TempBytesBudget.class, new TempBytesBudget(16));
+            try (TikaInputStream tis = TikaInputStream.get(
+                    getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+                assertThrows(TempLimitReachedException.class, () -> parser.parse(tis,
+                        new ToXMLContentHandler(), new Metadata(), context));
+            }
+            assertEquals(List.of(1), drawn);
         }
     }
 

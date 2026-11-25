@@ -65,6 +65,10 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * The new tika-pipes-qdrant plugin adds a qdrant-emitter. It writes the vectors in
+     tk:chunks to a Qdrant collection as points, with one named vector per inference
+     binding, through the Qdrant REST API (TIKA-XXXX).
+
    * New temp-limits setting: tika-pipes bounds the bytes a task holds at once in the
      temp files Tika itself writes (maxTempBytes, 50 GiB by default, -1 for none;
      in-process there is no default, and AutoDetectParser applies it only when a
@@ -88,8 +92,10 @@ Release 4.3.0 - ???
      emits them after the parse, so a file that reaches a limit, or times out
      or crashes in the parse, leaves nothing behind; a failed emit of one of
      them now fails the file with EMIT_EXCEPTION, where it was logged and
-     skipped. Reporters with an includes list need the two new statuses added
-     (TIKA-5075).
+     skipped, and so does a failure to stage one (a full disk). maxUnpackBytes
+     must be positive, or -1 for no limit: 0 and anything below -1 are rejected
+     when the config is read. Reporters with an includes list need the two new
+     statuses added (TIKA-5075).
 
    * tika-server /unpack's 422 for a parse exception is now JSON, like its other
      failures: {"status": "PARSE_EXCEPTION_NO_EMIT", "message": <the exception>}.
@@ -167,6 +173,11 @@ Release 4.3.0 - ???
      (PidTagNativeBody). It is metadata only: the body extracted is still the first of
      html, rtf, text. OfficeParserConfig.extractAllAlternativesFromMSG (default false)
      extracts every body present (TIKA-5076).
+     
+   * Superscript and subscript are kept as <sup>/<sub> in XHTML for .xls and .xlsx, in
+     rich text and in a cell's own font. An xlsx inline string's phonetic reading now
+     follows a space, as in shared strings, and is left out when phonetic runs are off
+     (TIKA-5071).
 
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
    

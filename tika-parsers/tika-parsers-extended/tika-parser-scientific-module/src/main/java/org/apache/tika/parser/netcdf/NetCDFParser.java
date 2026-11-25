@@ -89,7 +89,7 @@ public class NetCDFParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        try (IsolatedInput input = IsolatedInput.of(tis.getPath());
+        try (IsolatedInput input = IsolatedInput.of(tis.getPath(), context);
              NetcdfFile ncFile = NetcdfReaders.open(input.getPath(), NetcdfReaders.NETCDF3)) {
             metadata.set(FILE_TYPE_DESCRIPTION, ncFile.getFileTypeDescription());
             // first parse out the set of global attributes

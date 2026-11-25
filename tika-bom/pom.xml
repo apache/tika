@@ -396,6 +396,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-pipes-qdrant</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-pipes-s3</artifactId>
         <version>${project.version}</version>
       </dependency>

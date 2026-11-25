@@ -599,7 +599,7 @@ from a request *body* over `maxRequestSizeBytes`, which a request filter rejects
 the document is returned, on any endpoint; the JSON body carries the status and the cause. The
 document is at fault, not the server, and retrying it will not help. `/tika` and `/meta/\{field}`
 also return 422 for a parse exception, with content or plain text: tell them apart by
-`Content-Type`.
+`Content-Type`. `/unpack` returns JSON for both: tell them apart by `status`.
 
 |`500 Internal Server Error`
 |`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,

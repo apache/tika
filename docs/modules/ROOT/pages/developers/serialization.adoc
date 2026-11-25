@@ -279,8 +279,8 @@ the allowlist constrains. Two things still bound it. A property marked
 `@OperatorOnly` (a path, executable, class name, URL, credential or
 operator-sized limit; see <<_operator_only_properties,Operator-only properties>>)
 is refused in a per-request block. And the pipes worker clamps request-supplied
-output, embedded-document, metadata and timeout limits so they can tighten the
-operator's but not loosen them (`ServerProtocolIO.clampRequestLimits`).
+output, embedded-document, metadata, timeout, temp-file and unpack-byte limits so they
+can tighten the operator's but not loosen them (`ServerProtocolIO.clampRequestLimits`).
 ====
 
 [source,json]

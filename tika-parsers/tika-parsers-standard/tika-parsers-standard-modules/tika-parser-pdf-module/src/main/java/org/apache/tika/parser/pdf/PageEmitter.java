@@ -23,6 +23,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.EmbeddedLimitReachedException;
+import org.apache.tika.exception.TempLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -157,7 +158,8 @@ final class PageEmitter {
                     }
                 }
             }
-        } catch (SecurityException | EmbeddedLimitReachedException e) {
+        } catch (SecurityException | EmbeddedLimitReachedException
+                 | TempLimitReachedException e) {
             throw e;
         } catch (Exception e) {
             if (WriteLimitReachedException.isWriteLimitReached(e)) {
@@ -175,6 +177,7 @@ final class PageEmitter {
     void emitUnfinished(ContentHandler handler, Throwable failure) {
         if (failure == null || failure instanceof SecurityException
                 || failure instanceof EmbeddedLimitReachedException
+                || failure instanceof TempLimitReachedException
                 || WriteLimitReachedException.isWriteLimitReached(failure)
                 || startedThrough <= emittedThrough) {
             return;

@@ -207,7 +207,7 @@ These settings control how parsed results are batched before sending to emitters
 
 |`emitIntermediateResults`
 |`false`
-|When `false`, only successfully-parsed tuples reach the emitter — files that crash, time out, or otherwise fail are dropped from the output. When `true`, every tuple is emitted, including failures (the metadata carries the exception). Turn this on if you need a complete record of what was attempted (audit, retry logic, chaos-monkey tests).
+|When `false`, only successfully-parsed tuples reach the emitter — files that crash, time out, or otherwise fail are dropped from the output. When `true`, failures are emitted too (the metadata carries the exception), except a file that reached `temp-limits.maxTempBytes` or `unpack-config.maxUnpackBytes`: nothing of it is emitted in either setting. Turn this on if you need a complete record of what was attempted (audit, retry logic, chaos-monkey tests).
 |===
 
 [#payload-limits]

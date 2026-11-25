@@ -79,7 +79,7 @@ public class RarParser implements Parser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         Archive rar = null;
         // under a fixed name, in a directory of its own
-        IsolatedInput input = IsolatedInput.of(tis.getPath(), ".rar");
+        IsolatedInput input = IsolatedInput.of(tis.getPath(), ".rar", context);
         try {
             rar = new Archive(input.getPath().toFile(),
                     ArchiveOptions.builder().maxDictionarySize(MAX_DICTIONARY_SIZE).build());

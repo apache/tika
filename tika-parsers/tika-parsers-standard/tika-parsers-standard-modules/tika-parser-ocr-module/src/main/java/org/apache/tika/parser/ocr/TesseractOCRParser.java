@@ -471,7 +471,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
         }
         // a tiff named on stdin yields only its first page
         boolean nameOnStdin = defaultConfig.isInputNameOnStdin() && !TesseractInput.TIFF.equals(format);
-        try (IsolatedInput isolated = IsolatedInput.of(input.toPath())) {
+        try (IsolatedInput isolated = IsolatedInput.of(input.toPath(), parseContext)) {
             runTesseract(isolated.getPath(), nameOnStdin, output, config, parseContext);
         }
     }

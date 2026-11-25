@@ -63,6 +63,7 @@ import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.apache.tika.parser.microsoft.ScriptedTextCell;
 import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
@@ -171,7 +172,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
         try {
             stringsShim = new XSSFSharedStringsShim(xssfReader.getSharedStringsData(),
-                    config.isConcatenatePhoneticRuns(), context);
+                    config.isConcatenatePhoneticRuns(),
+                    stylesShim != null && stylesShim.hasScriptFont(), context);
         } catch (Exception e) {
             EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
@@ -872,7 +874,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             XSSFSheetInterestingPartsCapturer handler = new XSSFSheetInterestingPartsCapturer(
                     new TikaSheetXMLHandler(stylesShim, commentsShim, stringsShim,
-                            sheetContentsHandler, formatter, false));
+                            sheetContentsHandler, formatter, false,
+                            config.isConcatenatePhoneticRuns()));
             XMLReaderUtils.parseSAX(sheetInputStream, handler, context);
             sheetInputStream.close();
 
@@ -1052,6 +1055,17 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         @Override
         public void cell(String cellRef, String formattedValue,
                           XSSFCommentsShim.CommentData comment) {
+            writeCell(cellRef, formattedValue, null, comment);
+        }
+
+        @Override
+        public void scriptedCell(String cellRef, ScriptedTextCell text,
+                                 XSSFCommentsShim.CommentData comment) {
+            writeCell(cellRef, null, text, comment);
+        }
+
+        private void writeCell(String cellRef, String formattedValue, ScriptedTextCell scripted,
+                               XSSFCommentsShim.CommentData comment) {
             try {
                 // Handle any missing cells
                 int colNum =
@@ -1069,7 +1083,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 cellOpen = true;
 
                 // Main cell contents
-                if (formattedValue != null) {
+                if (scripted != null) {
+                    scripted.render(xhtml);
+                } else if (formattedValue != null) {
                     xhtml.characters(formattedValue);
                 }
 

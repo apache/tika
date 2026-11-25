@@ -45,6 +45,7 @@
     <module>tika-pipes-microsoft-graph</module>
     <module>tika-pipes-es</module>
     <module>tika-pipes-opensearch</module>
+    <module>tika-pipes-qdrant</module>
     <module>tika-pipes-s3</module>
     <module>tika-pipes-solr</module>
   </modules>
