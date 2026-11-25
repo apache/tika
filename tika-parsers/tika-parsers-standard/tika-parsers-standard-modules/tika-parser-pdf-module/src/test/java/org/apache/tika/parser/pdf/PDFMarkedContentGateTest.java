@@ -1208,6 +1208,32 @@ public class PDFMarkedContentGateTest extends TikaTest {
         assertEquals(MarkedContentConfig.Strategy.NONE, config.getMarkedContent().getStrategy());
     }
 
+    //TIKA-5077
+    @Test
+    public void testArtifactInParagraphLeavesOneSpace() throws Exception {
+        // the paragraph's own space, before or after the artifact, is the only one written
+        for (String[] halves : new String[][]{{"Article ", "B"}, {"Article", " B"}}) {
+            try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+                PDPage page = b.page();
+                b.leaf("P", b.document, page, 0).appendKid(1);
+                PDPageContentStream cs = b.text(page);
+                cs.beginMarkedContent(COSName.P, mcid(0));
+                cs.showText(halves[0]);
+                cs.endMarkedContent();
+                cs.beginMarkedContent(COSName.ARTIFACT);
+                cs.showText("Chapter 3");
+                cs.endMarkedContent();
+                cs.beginMarkedContent(COSName.P, mcid(1));
+                cs.showText(halves[1]);
+                cs.endMarkedContent();
+                finish(cs);
+
+                assertContains("<p>Article B</p>",
+                        parse(b.bytes(), config(MarkedContentConfig.Strategy.AUTO)).xml);
+            }
+        }
+    }
+
     // ---- helpers ----
 
     private static PDFParserConfig config(MarkedContentConfig.Strategy strategy) {
