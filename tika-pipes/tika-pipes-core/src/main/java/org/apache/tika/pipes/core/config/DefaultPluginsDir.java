@@ -18,6 +18,8 @@ package org.apache.tika.pipes.core.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -54,6 +56,40 @@ public final class DefaultPluginsDir {
     private static final Set<String> PLACEHOLDERS = Set.of("PLUGINS_PATHS", "PLUGIN_ROOTS");
 
     private DefaultPluginsDir() {
+    }
+
+    /**
+     * System property naming more default plugin roots, comma-separated: directories an
+     * install sets aside for plugins added after the fact (the Docker image's
+     * {@code /tika-plugins}).
+     */
+    public static final String EXTRA_ROOTS_PROPERTY = "tika.plugins.extraRoots";
+
+    /**
+     * @return the directories {@value #EXTRA_ROOTS_PROPERTY} names that exist, as absolute paths
+     */
+    public static List<String> extraRoots() {
+        return extraRoots(System.getProperty(EXTRA_ROOTS_PROPERTY));
+    }
+
+    static List<String> extraRoots(String property) {
+        List<String> roots = new ArrayList<>();
+        if (property == null) {
+            return roots;
+        }
+        for (String root : property.split(",")) {
+            if (root.isBlank()) {
+                continue;
+            }
+            Path path = Path.of(root.strip()).toAbsolutePath();
+            if (Files.isDirectory(path)) {
+                roots.add(path.toString());
+            } else {
+                LOG.warn("{} names {}, which is not a directory; skipping it",
+                        EXTRA_ROOTS_PROPERTY, path);
+            }
+        }
+        return roots;
     }
 
     /**

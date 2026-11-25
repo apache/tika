@@ -138,9 +138,11 @@ Pipes-mode endpoints (`/pipes`, `/async`) require pf4j plugins. The
 `tika-pipes-file-system` plugin is **bundled** under
 `/opt/tika-server/plugins/tika-pipes-file-system/` (it ships inside the
 upstream `tika-server-standard-<version>.zip`). Other pipes plugins
-(`tika-pipes-http`, `tika-pipes-s3`, etc.) are not currently bundled in the
-preview image; mount them into `/opt/tika-server/plugins/` if you need them.
-Bundling additional common plugins is planned for `4.0.0-beta-1.0`.
+(`tika-pipes-http`, `tika-pipes-s3`, etc.) are not bundled. From 4.3.0, mount
+or `COPY` their zips into `/tika-plugins/`; the server unzips them there at
+startup. `tika-plugin-maven-plugin:assemble` builds the zips from Maven
+Central. Before 4.3.0, unzip a plugin and mount the directory into
+`/opt/tika-server/plugins/`.
 
 ## Supported Platforms
 

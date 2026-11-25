@@ -71,6 +71,14 @@ public class ThreadSafeUnzipper {
             return;
         }
 
+        Path root = destination.toAbsolutePath().getParent();
+        if (!Files.isWritable(root)) {
+            throw new IOException("cannot unzip " + source.getFileName() + ": plugin root "
+                    + root + " is not writable by this process, and a plugin zip is "
+                    + "unzipped beside itself. Make the directory writable, or unzip the "
+                    + "plugin into it yourself and remove the zip");
+        }
+
         // Destination exists but has no completion marker. Possible causes:
         // a previous extraction was killed mid-stream, the marker was deleted
         // out from under us, or something other than our extractor put files

@@ -26,6 +26,130 @@ Tika Pipes is extensible through plugins. Each plugin lives in its own Maven mod
 
 Many plugins implement more than one (e.g., the S3 plugin provides fetcher, emitter, and iterator). The pages below document each plugin once, with one section per implemented interface.
 
+[#getting-the-zips]
+== Getting the plugin zips
+
+Tika loads a plugin from a zip in a xref:pipes/plugins/writing-a-plugin.adoc#plugin-roots[`plugin-roots`]
+directory. The `tika-app` and `tika-server` distributions carry the zips in `plugins/`, and
+they are on the https://tika.apache.org/download.html[Apache download page]. They are not on
+Maven Central: a zip is mostly third-party jars that Central already has.
+
+From 4.3.0 a build gets the zips through Maven instead. Each plugin jar on Central lists the
+jars its zip holds, with checksums, and `tika-plugin-maven-plugin` fetches exactly those jars
+and writes the zip. Both are new in 4.3.0: plugin jars from 4.2.0 and earlier have no list,
+and for those the zips come only from the download page or a distribution.
+
+[source,xml,subs="+attributes"]
+----
+<plugin>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika-plugin-maven-plugin</artifactId>
+  <version>{tika-version}</version>
+  <executions>
+    <execution>
+      <goals>
+        <goal>assemble</goal>
+      </goals>
+      <configuration>
+        <pipesPlugins>
+          <pipesPlugin>tika-pipes-s3</pipesPlugin>
+          <pipesPlugin>tika-pipes-es</pipesPlugin>
+        </pipesPlugins>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+----
+
+That writes `tika-pipes-s3-{tika-version}.zip` and `tika-pipes-es-{tika-version}.zip` to
+`target/tika-plugins`; point `plugin-roots` there, or copy them where you deploy. List plugins,
+not components: `tika-pipes-s3` holds the S3 fetcher, emitter and iterator (see the matrix
+below). The plugin version defaults to the Maven plugin's own version, and the library versions
+come from the plugin jar, so none of them depends on your project's dependency management.
+
+`<outputDirectory>` changes where the zips go, and `<tikaVersion>` builds the zips of a
+different release than the Maven plugin's own. A plugin of your own is named in full,
+`groupId:artifactId:version`, and needs a jar built with the
+xref:pipes/plugins/writing-a-plugin.adoc#_the_lib_list_and_the_zip[`lib-manifest` goal].
+
+Without a pom (a Dockerfile, a shell script), given `mvn`:
+
+[source,bash,subs="+attributes"]
+----
+mvn org.apache.tika:tika-plugin-maven-plugin:{tika-version}:assemble \
+  -Dtika.pipesPlugins=tika-pipes-s3,tika-pipes-es \
+  -Dtika.plugins.outputDirectory=plugins
+----
+
+Every jar comes through Maven, so a repository manager caches it, and the build fails if a
+released jar does not match the checksum in the plugin jar.
+
+For the tika-server Docker images, see
+xref:using-tika/docker.adoc#_pipes_plugins[Docker: Pipes plugins].
+
+=== Gradle
+
+There is no Gradle plugin, and none is needed: the list in the plugin jar is exact, so a build
+script fetches each line as a single artifact and zips the result. Each line of
+`META-INF/tika/plugin-lib.txt` is `groupId:artifactId:extension[:classifier]:version sha256`.
+
+[source,groovy,subs="+attributes"]
+----
+import java.security.MessageDigest
+
+def tikaVersion = '{tika-version}'
+def pipesPlugins = ['tika-pipes-s3', 'tika-pipes-es']
+
+// one artifact, no transitive resolution: the '@ext' notation
+def fetch = { String notation ->
+    configurations.detachedConfiguration(dependencies.create(notation)).singleFile
+}
+
+def pluginLib = { File pluginJar ->
+    def list = zipTree(pluginJar).matching { include 'META-INF/tika/plugin-lib.txt' }.singleFile
+    list.readLines().findAll { it && !it.startsWith('#') }.collect { line ->
+        def (coords, sha256) = line.split(' ')
+        def c = coords.split(':')
+        def file = c.size() == 5
+                ? fetch("${c[0]}:${c[1]}:${c[4]}:${c[3]}@${c[2]}")
+                : fetch("${c[0]}:${c[1]}:${c[3]}@${c[2]}")
+        def actual = MessageDigest.getInstance('SHA-256').digest(file.bytes).encodeHex().toString()
+        if (!c.last().endsWith('-SNAPSHOT') && actual != sha256) {
+            throw new GradleException("${coords} does not match the sha256 in ${pluginJar.name}")
+        }
+        file
+    }
+}
+
+def tikaPluginZips = pipesPlugins.collect { plugin ->
+    tasks.register("${plugin}Zip", Zip) {
+        archiveFileName = "${plugin}-${tikaVersion}.zip"
+        destinationDirectory = layout.buildDirectory.dir('tika-plugins')
+        def pluginJar = { fetch("org.apache.tika:${plugin}:${tikaVersion}@jar") }
+        from({ zipTree(pluginJar()) }) {
+            include 'plugin.properties'
+        }
+        from({ zipTree(pluginJar()) }) {
+            include 'META-INF/LICENSE', 'META-INF/NOTICE'
+            eachFile { path = name }
+            includeEmptyDirs = false
+        }
+        into('lib') {
+            from(pluginJar)
+            from({ pluginLib(pluginJar()) })
+        }
+    }
+}
+
+tasks.register('tikaPlugins') {
+    dependsOn tikaPluginZips
+}
+----
+
+`gradle tikaPlugins` writes the zips to `build/tika-plugins`. They hold the same files as the
+Maven-built zips but are not byte-for-byte the same file, so they do not match the `.sha512` of
+the zips on the download page; the Maven-built ones are meant to.
+
 == Plugin / Interface Matrix
 
 [cols="2,1,1,1,1"]

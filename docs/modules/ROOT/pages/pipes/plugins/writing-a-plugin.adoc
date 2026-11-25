@@ -174,7 +174,7 @@ that config examples keep their literal `${...}`:
 
 == The build
 
-Packaging stays `jar`; the zip is an assembly built alongside it.
+Packaging stays `jar`; the zip is built alongside it.
 
 === Dependency scopes
 
@@ -226,48 +226,59 @@ org.apache.tika.pipes.reporter.fs.FileSystemReporterFactory
 
 If that file is missing or empty, the plugin loads and contributes nothing.
 
-=== Collecting runtime dependencies
+=== The lib list and the zip
 
-`maven-dependency-plugin` copies runtime dependencies to `target/lib`. There is no
-exclusion list to maintain: every boundary artifact is declared `provided`, and
-`includeScope=runtime` excludes `provided` by definition. A boundary artifact can
-only end up in `lib/` if a pom re-declares it at compile scope -- do not.
+`tika-plugin-maven-plugin`, new in 4.3.0, builds the zip. Its `lib-manifest` goal writes the module's
+runtime-scope dependencies, each with a SHA-256, to `META-INF/tika/plugin-lib.txt` inside the
+jar; its `zip` goal then builds the zip from that list. There is no exclusion list to maintain:
+every boundary artifact is declared `provided`, and runtime scope excludes `provided` by
+definition. A boundary artifact can only end up in `lib/` if a pom re-declares it at compile
+scope -- do not.
 
 [source,xml]
 ----
 <plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-dependency-plugin</artifactId>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika-plugin-maven-plugin</artifactId>
+  <version>${tika.version}</version>
   <executions>
     <execution>
-      <id>copy-dependencies</id>
-      <phase>package</phase>
-      <goals><goal>copy-dependencies</goal></goals>
-      <configuration>
-        <outputDirectory>${project.build.directory}/lib</outputDirectory>
-        <includeScope>runtime</includeScope>
-      </configuration>
+      <goals>
+        <goal>lib-manifest</goal>
+        <goal>zip</goal>
+      </goals>
     </execution>
   </executions>
 </plugin>
 ----
 
-=== The zip
-
-`maven-assembly-plugin` with a descriptor that sets `includeBaseDirectory=false` and produces
-exactly this layout:
+`target/my-pipes-plugin-1.0.0.zip` has this layout:
 
 ----
 plugin.properties                 <1>
-classes/META-INF/extensions.idx   <2>
-lib/my-pipes-plugin-1.0.0.jar     <3>
+lib/my-pipes-plugin-1.0.0.jar     <2>
 lib/<runtime dependencies>.jar
-LICENSE
+LICENSE                           <3>
 NOTICE
 ----
-<1> At the zip root. PF4J reads it from there.
-<2> Under `classes/`, which is where PF4J looks for a plugin's class directory.
-<3> Your own jar goes in `lib/` with everything else.
+<1> At the zip root, copied from the jar. PF4J reads it from there.
+<2> Your own jar goes in `lib/` with everything else; its `META-INF/extensions.idx` is read
+from there.
+<3> `META-INF/LICENSE` and `META-INF/NOTICE` from the jar, when it has them.
+
+The zip is not attached to the project, so `mvn install` and `mvn deploy` leave it in
+`target/`. If another module of the same build needs it as a dependency
+(`<type>zip</type>`), add `<installZip>true</installZip>` to the plugin's `<configuration>`:
+the `zip` goal then also writes it to the local repository as
+`groupId:artifactId:zip:version`.
+
+Before 4.3.0 the zip was built with `maven-dependency-plugin` and a `maven-assembly-plugin`
+descriptor. A zip built that way still loads, but its jar has no lib list, so it cannot be
+rebuilt from the jar.
+
+Because the jar carries its own lib list, anyone can rebuild the same zip from the jar alone:
+see xref:pipes/plugins/index.adoc#getting-the-zips[Getting the plugin zips]. That holds for
+your plugin too once its jar and its dependencies are in a Maven repository.
 
 [#classloading]
 == Classloading: what you must not bundle
@@ -314,17 +325,26 @@ Everything else — your own transitive libraries — belongs in `lib/`.
 ----
 
 Tika unzips each one to a sibling directory named after the zip, writing a completion marker when
-it finishes. A directory without that marker is treated as a failed extraction and deleted, so
-unpacking a plugin there by hand does not work.
+it finishes, so the Tika process must be able to write to the directory; if it cannot, startup
+fails with `plugin root ... is not writable by this process`. A directory beside its zip without
+that marker is treated as a failed extraction, deleted and unzipped again, so do not unpack a zip
+by hand next to it. An unpacked plugin with no zip beside it is loaded as it is, which is how
+the tika-server distribution ships `tika-pipes-file-system` and the way to use a read-only
+directory.
 
 `plugin-roots` accepts a single path or an array. tika-server, `tika-app` and `PipesForkParser`
 all fill it in when you do not: a `plugins` directory beside the running jar, else one in the
 working directory. Loading through `TikaPluginManager` directly with no `plugin-roots` fails with
 `plugin-roots must be specified`.
 
+From 4.3.0 tika-server adds to its default the existing directories named by the
+`tika.plugins.extraRoots` system property (comma-separated). The Docker image sets it to
+`/tika-plugins`; see xref:using-tika/docker.adoc#_pipes_plugins[Docker].
+
 A `plugin-roots` you set replaces that default rather than adding to it. If it names a directory
-with none of the needed zips, loading fails with `Unknown type: <component>. Available: []`; the
-empty list is the sign that no plugins were found.
+with none of the needed zips, loading fails with `Unknown fetcher type: '<type>' ... Available
+types: []` followed by the plugin roots that were searched; the empty list is the sign that no
+plugins were found.
 
 Zips in `plugin-roots` are the only source of plugins. A plugin jar on the application classpath
 is not scanned, even though it carries the same `META-INF/extensions.idx`, unless the JVM runs
