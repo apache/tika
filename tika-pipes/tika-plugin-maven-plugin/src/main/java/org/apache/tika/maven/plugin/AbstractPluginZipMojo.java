@@ -77,12 +77,7 @@ abstract class AbstractPluginZipMojo extends AbstractMojo {
             for (PluginLib.Entry entry : PluginZip.readLib(pluginJar)) {
                 Path file = resolve(new DefaultArtifact(entry.groupId(), entry.artifactId(),
                         entry.classifier(), entry.extension(), entry.version()));
-                // a snapshot is rebuilt between the plugin's build and this one
-                if (!entry.isSnapshot() && !entry.sha256().equals(PluginZip.sha256(file))) {
-                    throw new MojoExecutionException(entry.coordinates() + " at " + file
-                            + " does not match the sha256 in " + pluginJar.getFileName()
-                            + " (" + entry.sha256() + ")");
-                }
+                PluginZip.verify(entry, file);
                 if (libs.put(entry.fileName(), file) != null) {
                     throw new MojoExecutionException("two lib entries named "
                             + entry.fileName() + " in " + pluginJar.getFileName());
@@ -91,7 +86,7 @@ abstract class AbstractPluginZipMojo extends AbstractMojo {
             PluginZip.write(pluginJar, PluginLib.libFileName(artifactId, version, "", "jar"),
                     libs, zip);
         } catch (IOException e) {
-            throw new MojoExecutionException("could not build " + zip, e);
+            throw new MojoExecutionException("could not build " + zip + ": " + e.getMessage(), e);
         }
         getLog().info("Built " + zip);
         return zip;

@@ -78,6 +78,20 @@ public class PluginZipTest {
     }
 
     @Test
+    public void jarThatDoesNotMatchItsChecksumIsRejected() throws IOException {
+        Path jar = Files.write(tmp.resolve("dep.jar"), new byte[]{1, 2, 3});
+        String actual = PluginZip.sha256(jar);
+        PluginZip.verify(new PluginLib.Entry("g", "dep", "jar", "", "2.0", actual), jar);
+
+        IOException e = assertThrows(IOException.class, () -> PluginZip.verify(
+                new PluginLib.Entry("g", "dep", "jar", "", "2.0", SHA), jar));
+        assertTrue(e.getMessage().contains("g:dep:jar:2.0") && e.getMessage().contains(actual)
+                && e.getMessage().contains(SHA), e.getMessage());
+
+        PluginZip.verify(new PluginLib.Entry("g", "dep", "jar", "", "2.0-SNAPSHOT", SHA), jar);
+    }
+
+    @Test
     public void zipHoldsDescriptorNoticesAndLib() throws IOException {
         Path jar = pluginJar("p.jar", true);
         Path dep = Files.write(tmp.resolve("dep"), new byte[]{1, 2, 3});

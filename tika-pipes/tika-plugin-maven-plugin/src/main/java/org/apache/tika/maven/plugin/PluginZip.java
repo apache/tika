@@ -129,6 +129,21 @@ public final class PluginZip {
         }
     }
 
+    /**
+     * @throws IOException if {@code file} is not the jar the lib list recorded. A snapshot is
+     * not checked: it is rebuilt between the plugin's build and this one.
+     */
+    public static void verify(PluginLib.Entry entry, Path file) throws IOException {
+        if (entry.isSnapshot()) {
+            return;
+        }
+        String actual = sha256(file);
+        if (!entry.sha256().equals(actual)) {
+            throw new IOException(entry.coordinates() + " at " + file + " has sha256 " + actual
+                    + ", but the plugin's lib list expects " + entry.sha256());
+        }
+    }
+
     public static String sha256(Path file) throws IOException {
         MessageDigest digest;
         try {
