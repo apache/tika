@@ -82,6 +82,16 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
         assertFalse(xml.contains("<body>") && xml.indexOf("<body>") != xml.lastIndexOf("<body>"));
     }
 
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptInWordExport() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("pdf-parser", "{\"detectSuperscriptSubscript\": true}");
+        XMLResult r = getXML("testPDFVarious.pdf", context);
+        assertContains("<p>Footnote appears here<sup>1</sup></p>", r.xml);
+        assertEquals(0, r.metadata.getInt(PDF.MARKED_CONTENT_PAGES_FALLBACK));
+    }
+
     @Test
     public void testChildAttachments() throws Exception {
         List<Metadata> metadataList =

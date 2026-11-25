@@ -171,6 +171,12 @@ Release 4.3.0 - ???
      (TIKA-5071).
 
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
+
+   * PDFParser can write superscript and subscript as <sup>/<sub> in XHTML (experimental),
+     guessed from text smaller than its line and raised or lowered from the line's baseline,
+     in runs of three characters or fewer. Off by default: set detectSuperscriptSubscript.
+     Tagged PDFs are covered too: sup and sub sit inside the
+     elements the structure tree gives (TIKA-5073).
    
    * Comic book archives in RAR, 7z and tar (.cbr, .cb7, .cbt; application/vnd.comicbook-rar,
      application/x-cb7, application/x-cbt, all new) have their first page in name order

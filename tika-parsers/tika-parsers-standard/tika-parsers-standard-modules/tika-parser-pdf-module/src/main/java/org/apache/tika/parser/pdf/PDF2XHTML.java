@@ -18,10 +18,12 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,6 +67,15 @@ class PDF2XHTML extends AbstractPDF2XHTML {
      */
     private Map<COSStream, Integer> processedInlineImages = new HashMap<>();
     private AtomicInteger inlineImageCounter = new AtomicInteger(0);
+
+    /**
+     * The current line's words, held when {@link PDFParserConfig#isDetectSuperscriptSubscript()}
+     * is on: a glyph is sup or sub only against the whole line's body text.
+     */
+    private final List<LineWord> line = new ArrayList<>();
+
+    // "sup", "sub" or null; innermost, never spans a line or an element edge
+    private String vertTag = null;
 
     PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
               PDFParserConfig config, PagesConfig pages, PageEmitter emitter,
@@ -179,6 +190,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
     @Override
     protected void writeParagraphStart() throws IOException {
+        flushLine();
         super.writeParagraphStart();
         try {
             xhtml.startElement("p");
@@ -189,11 +201,22 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
     @Override
     protected void writeParagraphEnd() throws IOException {
+        flushLine();
         super.writeParagraphEnd();
         try {
             xhtml.endElement("p");
         } catch (SAXException e) {
             throw new IOException("Unable to end a paragraph", e);
+        }
+    }
+
+    @Override
+    protected void writeString(String text, List<TextPosition> textPositions)
+            throws IOException {
+        if (config.isDetectSuperscriptSubscript()) {
+            line.add(new LineWord(text, textPositions));
+        } else {
+            super.writeString(text, textPositions);
         }
     }
 
@@ -217,6 +240,10 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
     @Override
     protected void writeWordSeparator() throws IOException {
+        if (!line.isEmpty()) {
+            line.get(line.size() - 1).separatorAfter = true;
+            return;
+        }
         try {
             xhtml.characters(getWordSeparator());
         } catch (SAXException e) {
@@ -226,10 +253,83 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
     @Override
     protected void writeLineSeparator() throws IOException {
+        flushLine();
         try {
             xhtml.newline();
         } catch (SAXException e) {
             throw new IOException("Unable to write a newline character", e);
+        }
+    }
+
+    /**
+     * Writes the held line, sup and sub as {@link SupSubLine} finds them; spaces between two
+     * chunks with the same vertTag stay inside it, other spaces fall outside.
+     */
+    private void flushLine() throws IOException {
+        if (line.isEmpty()) {
+            return;
+        }
+        List<List<TextPosition>> words = new ArrayList<>(line.size());
+        for (LineWord word : line) {
+            words.add(word.positions);
+        }
+        SupSubLine supSub = new SupSubLine(words);
+        StringBuilder spaces = new StringBuilder();
+        try {
+            for (LineWord word : line) {
+                for (SupSubLine.Chunk chunk : supSub.chunks(word.text, word.positions)) {
+                    if (chunk.text().isBlank()) {
+                        spaces.append(chunk.text());
+                        continue;
+                    }
+                    endOtherVertTag(chunk.vertTag());
+                    xhtml.characters(spaces.toString());
+                    spaces.setLength(0);
+                    startVertTag(chunk.vertTag());
+                    xhtml.characters(chunk.text());
+                }
+                if (word.separatorAfter) {
+                    spaces.append(getWordSeparator());
+                }
+            }
+            endVertTag();
+            xhtml.characters(spaces.toString());
+        } catch (SAXException e) {
+            throw new IOException("Unable to write a line", e);
+        } finally {
+            line.clear();
+        }
+    }
+
+    void startVertTag(String runVertTag) throws SAXException {
+        if (runVertTag != null && vertTag == null) {
+            xhtml.startElement(runVertTag);
+            vertTag = runVertTag;
+        }
+    }
+
+    /** Closes the open sup or sub unless it is {@code runVertTag}. */
+    void endOtherVertTag(String runVertTag) throws SAXException {
+        if (!Objects.equals(vertTag, runVertTag)) {
+            endVertTag();
+        }
+    }
+
+    void endVertTag() throws SAXException {
+        if (vertTag != null) {
+            xhtml.endElement(vertTag);
+            vertTag = null;
+        }
+    }
+
+    private static final class LineWord {
+        private final String text;
+        private final List<TextPosition> positions;
+        private boolean separatorAfter;
+
+        private LineWord(String text, List<TextPosition> positions) {
+            this.text = text;
+            this.positions = positions == null ? List.of() : positions;
         }
     }
 
@@ -307,8 +407,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
         @Override
         protected void processTextPosition(TextPosition text) {
-            Matrix m = text.getTextMatrix();
-            m.concatenate(text.getFont().getFontMatrix());
+            // a product, not concatenate: the glyph keeps its text matrix (SupSubLine reads it)
+            Matrix m = text.getFont().getFontMatrix().multiply(text.getTextMatrix());
             int angle = (int) Math.round(Math.toDegrees(Math.atan2(m.getShearY(), m.getScaleY())));
             if (angle == 0) {
                 super.processTextPosition(text);

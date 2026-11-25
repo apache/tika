@@ -64,6 +64,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.parser.pages.TextPolicy;
+import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -1208,7 +1209,144 @@ public class PDFMarkedContentGateTest extends TikaTest {
         assertEquals(MarkedContentConfig.Strategy.NONE, config.getMarkedContent().getStrategy());
     }
 
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptOnTaggedPage() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            b.leaf("H1", b.document, page, 0);
+            PDStructureElement p = b.leaf("P", b.document, page, 1);
+            b.leaf("Span", p, page, 2).setLanguage("en");
+            p.appendKid(3);
+            PDPageContentStream cs = b.text(page);
+            cs.beginMarkedContent(COSName.getPDFName("H1"), mcid(0));
+            cs.showText("Water is H");
+            script(b, cs, -3, "2");
+            cs.showText("O");
+            cs.endMarkedContent();
+            cs.newLine();
+            cs.beginMarkedContent(COSName.P, mcid(1));
+            cs.showText("Article 5");
+            script(b, cs, 4, "1 2");
+            cs.showText(" says, see ");
+            cs.endMarkedContent();
+            cs.beginMarkedContent(COSName.getPDFName("Span"), mcid(2));
+            cs.showText("note");
+            script(b, cs, 4, "3");
+            cs.endMarkedContent();
+            cs.beginMarkedContent(COSName.P, mcid(3));
+            script(b, cs, 4, "4");
+            cs.showText(" here");
+            cs.endMarkedContent();
+            finish(cs);
+            byte[] pdf = b.bytes();
+
+            PDFParserConfig on = config(MarkedContentConfig.Strategy.AUTO);
+            on.setDetectSuperscriptSubscript(true);
+            Result tagged = parse(pdf, on);
+            assertEquals(1, tagged.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+            assertContains("<h1>Water is H<sub>2</sub>O</h1>", tagged.xml);
+            // a sup run cut by the span's edge closes with it and opens again after it
+            assertContains("<p>Article 5<sup>1 2</sup> says, see <span lang=\"en\">note<sup>3</sup>"
+                    + "</span><sup>4</sup> here</p>", tagged.xml);
+            assertWellFormed(tagged.xml);
+
+            Result off = parse(pdf, config(MarkedContentConfig.Strategy.AUTO));
+            assertContains("<h1>Water is H2O</h1>", off.xml);
+            assertContains("<p>Article 51 2 says, see <span lang=\"en\">note3</span>4 here</p>",
+                    off.xml);
+            assertEquals(text(pdf, config(MarkedContentConfig.Strategy.AUTO)), text(pdf, on));
+        }
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptOnFallbackPage() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            b.leaf("P", b.document, page, 0);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.P, 0, "Tag");
+            cs.showText("Article 5");
+            script(b, cs, 4, "1");
+            cs.showText(" says water is H");
+            script(b, cs, -3, "2");
+            cs.showText("O, which is untagged text");
+            finish(cs);
+            byte[] pdf = b.bytes();
+
+            PDFParserConfig auto = config(MarkedContentConfig.Strategy.AUTO);
+            auto.setDetectSuperscriptSubscript(true);
+            PDFParserConfig none = config(MarkedContentConfig.Strategy.NONE);
+            none.setDetectSuperscriptSubscript(true);
+            Result fallback = parse(pdf, auto);
+            assertEquals(1, fallback.metadata.getInt(PDF.MARKED_CONTENT_PAGES_FALLBACK));
+            assertContains("Article 5<sup>1</sup> says water is H<sub>2</sub>O", fallback.xml);
+            assertEquals(parse(pdf, none).body(), fallback.body());
+
+            Result off = parse(pdf, config(MarkedContentConfig.Strategy.AUTO));
+            assertEquals(parse(pdf, config(MarkedContentConfig.Strategy.NONE)).body(), off.body());
+            assertContains("Article 51 says water is H2O", off.xml);
+            assertEquals(text(pdf, config(MarkedContentConfig.Strategy.AUTO)), text(pdf, auto));
+        }
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptAtArtifactEdge() throws Exception {
+        // a sup ends the run before an artifact, then starts the run after one
+        String[][] cases = {{"Article ", "1", "", "B"}, {"Article", "", "2", " B"}};
+        for (String[] c : cases) {
+            try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+                PDPage page = b.page();
+                b.leaf("P", b.document, page, 0).appendKid(1);
+                PDPageContentStream cs = b.text(page);
+                cs.beginMarkedContent(COSName.P, mcid(0));
+                cs.showText(c[0]);
+                if (!c[1].isEmpty()) {
+                    script(b, cs, 4, c[1]);
+                }
+                cs.endMarkedContent();
+                cs.beginMarkedContent(COSName.ARTIFACT);
+                cs.showText("x y");
+                cs.endMarkedContent();
+                cs.beginMarkedContent(COSName.P, mcid(1));
+                if (!c[2].isEmpty()) {
+                    script(b, cs, 4, c[2]);
+                }
+                cs.showText(c[3]);
+                cs.endMarkedContent();
+                finish(cs);
+
+                PDFParserConfig on = config(MarkedContentConfig.Strategy.AUTO);
+                on.setDetectSuperscriptSubscript(true);
+                assertContains("<p>Article <sup>" + c[1] + c[2] + "</sup> B</p>",
+                        parse(b.bytes(), on).xml);
+            }
+        }
+    }
+
     // ---- helpers ----
+
+    /** Text in 7pt raised (or lowered, below zero) by {@code rise}, then back to 12pt. */
+    private static void script(TaggedPdfBuilder b, PDPageContentStream cs, float rise,
+                               String text) throws IOException {
+        cs.setFont(b.font, 7);
+        cs.setTextRise(rise);
+        cs.showText(text);
+        cs.setTextRise(0);
+        cs.setFont(b.font, 12);
+    }
+
+    private static String text(byte[] pdf, PDFParserConfig config) throws Exception {
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        ToTextContentHandler handler = new ToTextContentHandler();
+        try (TikaInputStream tis = TikaInputStream.get(pdf)) {
+            new PDFParser().parse(tis, handler, new Metadata(), context);
+        }
+        return handler.toString();
+    }
 
     private static PDFParserConfig config(MarkedContentConfig.Strategy strategy) {
         PDFParserConfig config = new PDFParserConfig();

@@ -47,10 +47,14 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode;
+import org.apache.pdfbox.util.Matrix;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -1427,6 +1431,91 @@ public class PDFParserTest extends TikaTest {
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
         String xml = getXML("testPDF_rotated.pdf", parseContext).xml;
         assertContains("until a further review indicates that the infrastructure", xml);
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscript() throws Exception {
+        String xml = getXML("testPDF_supSub.pdf", supSubContext(true)).xml;
+        assertContains("Article 5<sup>1</sup> says water is H<sub>2</sub>O", xml);
+        assertContains("<sup>34</sup>5 is the article for boron", xml);
+        assertContains("<sub>9</sub>32 is the article for hydrogen", xml);
+        assertContains("The article for bronze is 38<sup>12</sup>", xml);
+        assertContains("Article 7 says oxygen is O<sub>2</sub>", xml);
+        assertContains("<sup>3</sup>6 is the article for silver whereas gold is article 12<sup>4</sup>",
+                xml);
+        assertContains("<sub>3</sub>7 is the article for silver whereas gold is article 13<sub>4</sub>",
+                xml);
+        assertContains("Article 5<sup>1 2</sup> says more about water", xml);
+        assertContains("Article 7<sub>3 5</sub> says more about oxygen", xml);
+        // four characters is over the cap: left untagged
+        assertContains("Article 51&lt;5&gt; says more about water", xml);
+        assertContains("Article 73&lt;8&gt; says more about oxygen", xml);
+        assertContains("Article 18<sup>3</sup> says oxygen is in article 50<sub>2</sub>", xml);
+        assertContains("Article 7<sub>2</sub>\n<sup>19</sup> says more about oxygen", xml);
+
+        // tags only: the text is what it is with detection off
+        assertEquals(getText("testPDF_supSub.pdf", new Metadata(), supSubContext(false)),
+                getText("testPDF_supSub.pdf", new Metadata(), supSubContext(true)));
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptWithAngles() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("pdf-parser",
+                "{\"detectSuperscriptSubscript\": true, \"detectAngles\": true}");
+        String xml = getXML("testPDF_supSub.pdf", context).xml;
+        assertContains("Article 5<sup>1</sup> says water is H<sub>2</sub>O", xml);
+        assertContains("Article 5<sup>1 2</sup> says more about water", xml);
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptOffByDefault() throws Exception {
+        String xml = getXML("testPDF_supSub.pdf").xml;
+        assertNotContained("<sup>", xml);
+        assertNotContained("<sub>", xml);
+        assertContains("Article 51 says water is H2O", xml);
+    }
+
+    //TIKA-5073
+    @Test
+    public void testSuperscriptSubscriptUpsideDown() throws Exception {
+        // a page drawn turned 180 degrees has a negative text matrix scale
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage();
+            doc.addPage(page);
+            PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                cs.transform(Matrix.getRotateInstance(Math.PI, 612, 792));
+                cs.beginText();
+                cs.setFont(font, 12);
+                cs.newLineAtOffset(72, 700);
+                cs.showText("Yes");
+                cs.newLineAtOffset(0, -20);
+                cs.showText("Water is H");
+                cs.setFont(font, 7);
+                cs.setTextRise(-3);
+                cs.showText("2");
+                cs.setTextRise(0);
+                cs.setFont(font, 12);
+                cs.showText("O");
+                cs.endText();
+            }
+            doc.save(bos);
+        }
+        String xml = getXML(TikaInputStream.get(bos.toByteArray()), AUTO_DETECT_PARSER,
+                new Metadata(), supSubContext(true)).xml;
+        assertContains("Water is H<sub>2</sub>O", xml);
+        assertNotContained("<sup>", xml);
+    }
+
+    private static ParseContext supSubContext(boolean detect) {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("pdf-parser", "{\"detectSuperscriptSubscript\": " + detect + "}");
+        return context;
     }
 
     @Test
