@@ -213,7 +213,24 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 return false;
             }
             Object last = pieces.get(pieces.size() - 1);
-            return last == NEWLINE || last == PARAGRAPH_BREAK || ((String) last).isBlank();
+            if (last == NEWLINE || last == PARAGRAPH_BREAK) {
+                return true;
+            }
+            // a space glyph at the end of a word counts, not only a piece that is all space
+            String s = (String) last;
+            return s.isEmpty() || Character.isWhitespace(s.charAt(s.length() - 1));
+        }
+
+        boolean startsWithSeparator() {
+            if (pieces.isEmpty()) {
+                return false;
+            }
+            Object first = pieces.get(0);
+            if (first == NEWLINE || first == PARAGRAPH_BREAK) {
+                return true;
+            }
+            String s = (String) first;
+            return !s.isEmpty() && Character.isWhitespace(s.charAt(0));
         }
 
         boolean hasWhitespace() {
@@ -980,7 +997,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      * nothing.
      */
     private boolean separatedByOthers(Run previous, Run run) {
-        if (run.ordinal == previous.ordinal + 1 || previous.endsWithSeparator()) {
+        if (run.ordinal == previous.ordinal + 1 || previous.endsWithSeparator()
+                || run.startsWithSeparator()) {
             return false;
         }
         for (int i = previous.ordinal + 1; i < run.ordinal && i < pageRuns.size(); i++) {

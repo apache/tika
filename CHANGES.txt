@@ -171,6 +171,9 @@ Release 4.3.0 - ???
      (TIKA-5071).
 
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
+
+   * A tagged PDF paragraph with an artifact (a running header, a page number) drawn inside it
+     no longer gets a second space where the artifact was cut out (TIKA-5077).
    
    * Comic book archives in RAR, 7z and tar (.cbr, .cb7, .cbt; application/vnd.comicbook-rar,
      application/x-cb7, application/x-cbt, all new) have their first page in name order
