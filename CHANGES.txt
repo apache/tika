@@ -65,6 +65,10 @@ Release 4.3.0 - ???
      BoilerpipeContentHandler (tika-handler-boilerpipe) is deprecated (TIKA-5054).
 
   SERVER, PIPES AND OPERATIONS
+   * Forked pipes JVMs default to the parent's own Java (java.home) instead of java on
+     the PATH, so tika-app, tika-server and PipesForkParser run from a bundled or jlink
+     runtime with no Java installed. pipes.javaPath still overrides (TIKA-5080).
+
    * The new tika-pipes-qdrant plugin adds a qdrant-emitter. It writes the vectors in
      tk:chunks to a Qdrant collection as points, with one named vector per inference
      binding, through the Qdrant REST API (TIKA-XXXX).
@@ -802,10 +806,6 @@ Release 4.2.0 - 10/25/2026
      with the reason (TIKA-4994).
 
   SERVER, PIPES AND OPERATIONS
-
-   * Forked pipes JVMs default to the parent's own Java (java.home) instead of java on
-     the PATH, so tika-app, tika-server and PipesForkParser run from a bundled or jlink
-     runtime with no Java installed. pipes.javaPath still overrides (TIKA-5080).
 
    * The file-system emitter can gzip its output ("compression": "GZIP"); tika-eval reads
      .json.gz extracts and measures them uncompressed (TIKA-4989).
