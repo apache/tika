@@ -36,6 +36,8 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean writeSelectHeadersInBody = false;
 
+    private boolean extractAllAlternativesFromMSG = false;
+
     private boolean extractThumbnail = true;
 
     /**
@@ -219,6 +221,26 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setIncludeCharacterStyleClasses(boolean includeCharacterStyleClasses) {
         this.includeCharacterStyleClasses = includeCharacterStyleClasses;
+    }
+
+    public boolean isExtractAllAlternativesFromMSG() {
+        return extractAllAlternativesFromMSG;
+    }
+
+    /**
+     * A .msg file can carry its body as html, rtf and/or text.  By default only
+     * the first available of those (in that order) is extracted.  Set this to
+     * <code>true</code> to extract every body that is present; the content is
+     * usually duplicative, and embedded objects in the rtf body are extracted
+     * even when an html body is present.  Each body extracted is recorded in
+     * {@link org.apache.tika.metadata.MAPI#BODY_TYPES_PROCESSED}.
+     * <p/>
+     * Default: <code>false</code>
+     *
+     * @param extractAllAlternativesFromMSG whether to extract every body
+     */
+    public void setExtractAllAlternativesFromMSG(boolean extractAllAlternativesFromMSG) {
+        this.extractAllAlternativesFromMSG = extractAllAlternativesFromMSG;
     }
 
     public boolean isIncludeMissingRows() {

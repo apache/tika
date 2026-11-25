@@ -101,6 +101,15 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         HTML, RTF, TEXT;
     }
 
+    /**
+     * Values of PidTagNativeBody (MS-OXCMSG 2.2.1.56.2), in wire order.
+     */
+    public enum NATIVE_BODY {
+        UNDEFINED, TEXT, RTF, HTML, CLEAR_SIGNED;
+    }
+
+    private static final int NATIVE_BODY_ID = 0x1016;
+
     private static final Metadata EMPTY_METADATA = new Metadata();
     private static final MAPIProperty[] LITERAL_TIME_MAPI_PROPERTIES = new MAPIProperty[] {
             MAPIProperty.CLIENT_SUBMIT_TIME,
@@ -293,6 +302,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             }
         }
 
+        handleNativeBody(msg);
         Set<String> contentIdNames = new HashSet<>();
         handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml, contentIdNames);
 
@@ -576,56 +586,106 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                                   XHTMLContentHandler xhtml, Set<String> contentIdNames)
             throws SAXException, IOException, TikaException {
         // Priority: a) HTML chunk, b) HTML extracted from RTF, c) raw RTF, d) text
-        if (htmlChunk != null) {
-            byte[] data = getValue(htmlChunk);
-            if (data != null) {
-                parseHtmlBody(data, xhtml, contentIdNames);
-                parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.HTML.name());
-                return;
-            }
+        boolean all = officeParserConfig.isExtractAllAlternativesFromMSG();
+        if (handleHtmlChunk(htmlChunk, xhtml, contentIdNames) && !all) {
+            return;
         }
-        if (rtfChunk != null) {
-            ByteChunk chunk = (ByteChunk) rtfChunk;
-            //avoid buffer underflow TIKA-2530
-            if (chunk.getValue() != null && chunk.getValue().length > 0) {
-                MAPIRtfAttribute rtf =
-                        new MAPIRtfAttribute(MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(),
-                                chunk.getValue());
-                byte[] rtfData = rtf.getData();
-                // Try to extract encapsulated HTML + embedded objects in one pass
-                RTFHtmlDecapsulator decapsulator =
-                        new RTFHtmlDecapsulator(xhtml, parseContext,
-                                officeParserConfig.getRtfEmbeddedMaxBytesInKb());
-                String html = decapsulator.extract(rtfData);
-                if (html != null) {
-                    parseHtmlString(html, xhtml, contentIdNames);
-                    parentMetadata.add(MAPI.BODY_TYPES_PROCESSED,
-                            BODY_TYPES_PROCESSED.RTF.name());
-                    parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML, "true");
+        if (handleRtfChunk(rtfChunk, xhtml, contentIdNames) && !all) {
+            return;
+        }
+        handleTextChunk(textChunk, xhtml, contentIdNames);
+    }
+
+    private boolean handleHtmlChunk(Chunk htmlChunk, XHTMLContentHandler xhtml,
+                                    Set<String> contentIdNames)
+            throws SAXException, IOException, TikaException {
+        if (htmlChunk == null) {
+            return false;
+        }
+        byte[] data = getValue(htmlChunk);
+        if (data == null) {
+            return false;
+        }
+        parseHtmlBody(data, xhtml, contentIdNames);
+        parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.HTML.name());
+        return true;
+    }
+
+    private boolean handleRtfChunk(Chunk rtfChunk, XHTMLContentHandler xhtml,
+                                   Set<String> contentIdNames)
+            throws SAXException, IOException, TikaException {
+        if (rtfChunk == null) {
+            return false;
+        }
+        ByteChunk chunk = (ByteChunk) rtfChunk;
+        //avoid buffer underflow TIKA-2530
+        if (chunk.getValue() == null || chunk.getValue().length == 0) {
+            return false;
+        }
+        MAPIRtfAttribute rtf =
+                new MAPIRtfAttribute(MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(),
+                        chunk.getValue());
+        byte[] rtfData = rtf.getData();
+        // Try to extract encapsulated HTML + embedded objects in one pass
+        RTFHtmlDecapsulator decapsulator =
+                new RTFHtmlDecapsulator(xhtml, parseContext,
+                        officeParserConfig.getRtfEmbeddedMaxBytesInKb());
+        String html = decapsulator.extract(rtfData);
+        if (html != null) {
+            parseHtmlString(html, xhtml, contentIdNames);
+            parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.RTF.name());
+            parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML, "true");
+            return true;
+        }
+        // Fall back to parsing as raw RTF
+        RTFParser rtfParser = (RTFParser) EmbeddedDocumentUtil
+                .tryToFindExistingLeafParser(RTFParser.class, parseContext);
+        if (rtfParser == null) {
+            rtfParser = new RTFParser();
+        }
+        Metadata rtfMetadata = Metadata.newInstance(context);
+        try (TikaInputStream tis = TikaInputStream.get(rtfData)) {
+            rtfParser.parseInline(tis, xhtml, rtfMetadata, parseContext);
+        }
+        // Scan raw RTF bytes for cid: references
+        extractContentIdNames(rtfData, contentIdNames);
+        parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.RTF.name());
+        parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML, "false");
+        return true;
+    }
+
+    private void handleTextChunk(Chunk textChunk, XHTMLContentHandler xhtml,
+                                 Set<String> contentIdNames) throws SAXException {
+        if (textChunk == null) {
+            return;
+        }
+        String s = ((StringChunk) textChunk).getValue();
+        xhtml.element("p", s);
+        extractContentIdNamesFromText(s, contentIdNames);
+        parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.TEXT.name());
+    }
+
+    // Reported only: never used to choose which body is extracted.
+    private void handleNativeBody(MAPIMessage msg) {
+        Map<MAPIProperty, List<PropertyValue>> props = msg.getMainChunks().getProperties();
+        if (props == null) {
+            return;
+        }
+        for (Map.Entry<MAPIProperty, List<PropertyValue>> e : props.entrySet()) {
+            // POI has no constant for PidTagNativeBody
+            if (e.getKey().id != NATIVE_BODY_ID || e.getValue() == null) {
+                continue;
+            }
+            for (PropertyValue v : e.getValue()) {
+                if (v instanceof PropertyValue.LongPropertyValue) {
+                    int val = ((PropertyValue.LongPropertyValue) v).getValue();
+                    NATIVE_BODY[] types = NATIVE_BODY.values();
+                    parentMetadata.set(MAPI.NATIVE_BODY,
+                            val >= 0 && val < types.length ? types[val].name() :
+                                    Integer.toString(val));
                     return;
                 }
-                // Fall back to parsing as raw RTF
-                RTFParser rtfParser = (RTFParser) EmbeddedDocumentUtil
-                        .tryToFindExistingLeafParser(RTFParser.class, parseContext);
-                if (rtfParser == null) {
-                    rtfParser = new RTFParser();
-                }
-                Metadata rtfMetadata = Metadata.newInstance(context);
-                try (TikaInputStream tis = TikaInputStream.get(rtfData)) {
-                    rtfParser.parseInline(tis, xhtml, rtfMetadata, parseContext);
-                }
-                // Scan raw RTF bytes for cid: references
-                extractContentIdNames(rtfData, contentIdNames);
-                parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.RTF.name());
-                parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML, "false");
-                return;
             }
-        }
-        if (textChunk != null) {
-            String s = ((StringChunk) textChunk).getValue();
-            xhtml.element("p", s);
-            extractContentIdNamesFromText(s, contentIdNames);
-            parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.TEXT.name());
         }
     }
 

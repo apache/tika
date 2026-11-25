@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -443,4 +444,32 @@ public class OutlookParserTest extends TikaTest {
         }
     }
 
+
+    @Test
+    public void testNativeBodyIsMetadataOnly() throws Exception {
+        //TIKA-5076: declares RTF as native; each body has different text
+        Metadata metadata = new Metadata();
+        String content = getText("testMSG_nativeBodyRtf.msg", metadata);
+        assertEquals("RTF", metadata.get(MAPI.NATIVE_BODY));
+        assertArrayEquals(new String[]{"HTML"}, metadata.getValues(MAPI.BODY_TYPES_PROCESSED));
+        assertContains("Native HTML body", content);
+        assertNotContained("Converted RTF body", content);
+
+        assertNull(getXML("test-outlook.msg").metadata.get(MAPI.NATIVE_BODY));
+    }
+
+    @Test
+    public void testExtractAllAlternatives() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractAllAlternativesFromMSG(true);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        Metadata metadata = new Metadata();
+        String content = getText("testMSG_nativeBodyRtf.msg", metadata, parseContext);
+        assertArrayEquals(new String[]{"HTML", "RTF", "TEXT"},
+                metadata.getValues(MAPI.BODY_TYPES_PROCESSED));
+        assertContains("Native HTML body", content);
+        assertContains("Converted RTF body", content);
+        assertContains("Original plain body", content);
+    }
 }
