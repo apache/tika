@@ -1,0 +1,214 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+= Qdrant Plugin
+:toc:
+:toclevels: 3
+
+The Qdrant plugin (`tika-pipes-qdrant`) provides an emitter that writes the vectors in `tk:chunks` to a https://qdrant.tech/documentation/[Qdrant] collection as points. It calls the Qdrant REST API with Apache HttpClient.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Emitter
+|`qdrant-emitter`
+|`QdrantEmitter`
+|===
+
+[#qdrant-emitter]
+== Qdrant Emitter (`qdrant-emitter`)
+
+[source,json]
+----
+include::example$pipes-qdrant-emitter.json[]
+----
+
+[#before-you-start]
+=== Before You Start
+
+. Configure xref:configuration/inference.adoc[inference] so that each document gets `tk:chunks`. The `id` of each binding becomes the name of a Qdrant named vector.
+. Create the collection with one named vector for each binding. Set `size` to the dimension that the binding's model returns. Chunks without a `producer`, such as chunks from the 4.0 filters, use the vector name `default`, so add a `default` named vector for them. See https://qdrant.tech/documentation/concepts/vectors/#named-vectors[Named vectors].
++
+[source,bash]
+----
+curl -X PUT http://localhost:6333/collections/tika-chunks \
+  -H 'Content-Type: application/json' \
+  -d '{"vectors": {
+        "text-vectors": {"size": 1024, "distance": "Cosine"},
+        "page-vectors": {"size": 768, "distance": "Cosine"}}}'
+----
+. Create a `keyword` payload index on `container_id`. The emitter filters on `container_id` to find a container's earlier points. A collection in strict mode rejects that filter without the index, and in other collections the index keeps the filter fast. See https://qdrant.tech/documentation/concepts/indexing/#payload-index[Payload index].
++
+[source,bash]
+----
+curl -X PUT 'http://localhost:6333/collections/tika-chunks/index?wait=true' \
+  -H 'Content-Type: application/json' \
+  -d '{"field_name": "container_id", "field_schema": "keyword"}'
+----
+
+Create the collection before the first emit. A missing collection, an unknown vector name, or a wrong vector size makes Qdrant reject the request, and the emit fails with the Qdrant error message.
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`qdrantUrl`
+|_required_
+|Base URL of the Qdrant REST API, for example `http://localhost:6333`. It needs `http://` or `https://` and a host, and can have a path prefix but no query or fragment.
+
+|`collection`
+|_required_
+|Name of an existing collection. A name with `/` fails the config check.
+
+|`apiKey`
+|_none_
+|Sent as `Authorization: Bearer <apiKey>`. Set `apiKey` or `httpClientConfig.userName`, not both. `${env:QDRANT_API_KEY}` reads it from the environment (xref:configuration/index.adoc#env[Secrets from the environment]). See https://qdrant.tech/documentation/guides/security/[Security].
+
+|`metadataFields`
+|_none_
+|Metadata keys to copy into the `metadata` object of each point's payload, for example `["dc:title", "Content-Type"]`. Every point of a file carries its own copy, so list only the keys you filter on or show. `tk:chunks` is never copied.
+
+|`batchSize`
+|`64`
+|Maximum number of points in one upsert request, 1 or more. Lower it when large vectors take a request over the Qdrant request size limit (32 MB by default).
+
+|`replaceExisting`
+|`true`
+|After the upserts of a container, delete its points that the upserts did not write. See <<write-sequence>>.
+
+|`httpClientConfig`
+|_none_
+|Basic auth, timeouts, proxy, and `verifySsl`. The fields are the same as the xref:pipes/plugins/elasticsearch.adoc#http-client-config[Elasticsearch HTTP client settings].
+|===
+
+[#points]
+=== From Chunks to Points
+
+The emitter writes one point for each unit of `tk:chunks`. Chunks that share a `correlator` are one unit, for example the sound and picture of one video segment. Each other chunk is a unit of its own. A second chunk from the same `producer` in one unit also becomes a unit of its own, so that each point keeps the text that matches its vector.
+
+* **Vectors.** Each chunk's vector goes into the point as a named vector, under the chunk's `producer`. A chunk without a `producer` uses the name `default`. A unit with vectors from two bindings becomes one point with two named vectors.
+* **Point ID.** The emitter makes a UUID from the emit key, the file's position in the metadata list, and the unit's position. A re-emit of the same file writes the same IDs.
+* **Skipped units.** The emitter skips a unit without a usable vector. It drops a vector that is not base64 big-endian float32 or that holds NaN or Infinity, and logs a WARN.
+* **Files without chunks.** The emitter skips a file without `tk:chunks`.
+* **Locators.** Each payload key takes its value from the first locator of its kind. The vector name identifies the binding, and with it the modality.
+
+Each point carries this payload:
+
+[cols="1,3"]
+|===
+|Key |Value
+
+|`container_id`
+|The emit key.
+
+|`file_index`
+|Position of the file in the metadata list. The container is `0` and its attachments follow.
+
+|`chunk_index`
+|Position of the unit among the file's units. Chunks that share a `correlator` count once.
+
+|`correlator`
+|The unit's correlator, if it has one.
+
+|`text`
+|The chunk text, for text chunks.
+
+|`page`, `bbox`, `label`
+|From the `paginated` or `spatial` locator.
+
+|`start_offset`, `end_offset`
+|From the `text` locator.
+
+|`start_ms`, `end_ms`
+|From the `temporal` locator.
+
+|`embedded_id_path`, `embedded_name`
+|From the `embedded` locator.
+
+|`metadata`
+|The keys listed in `metadataFields`. Absent when the list is empty.
+|===
+
+With `"metadataFields": ["dc:title", "Content-Type"]`, a text chunk from the first page of `report.pdf` becomes this point:
+
+[source,json]
+----
+{
+  "id": "6f1c0b0e-3d4b-3a5e-9a51-0f4f3c5f9a12",
+  "vector": { "text-vectors": [0.012, -0.044, ...] },
+  "payload": {
+    "container_id": "report.pdf",
+    "file_index": 0,
+    "chunk_index": 0,
+    "text": "Revenue grew 15% year-over-year...",
+    "start_offset": 0,
+    "end_offset": 120,
+    "page": 1,
+    "metadata": { "dc:title": "Q4 report", "Content-Type": "application/pdf" }
+  }
+}
+----
+
+[#write-sequence]
+=== Write Sequence
+
+The emitter writes each container on its own, in this order:
+
+. Upserts of the new points, `batchSize` points at a time.
+. When `replaceExisting` is `true`, a scroll through the IDs of the container's points, 256 per request, then deletes of the points that the upserts did not write, 1,000 IDs per request. This removes the points of chunks that the new parse no longer produces. When nothing is stale, the emitter sends no delete.
+
+An emit with no points leaves the container's earlier points unchanged. A failed embedding request is the usual cause: Tika still parses the file, but writes no `tk:chunks`. To remove the points of a file, delete them by a filter on `container_id`.
+
+Each request uses `wait=true`, so the emit completes only after Qdrant applies the change. While an emit runs, a search can find a mix of new points and earlier points for that container.
+
+Qdrant rejects a whole upsert request when one point is invalid, for example when it has an unknown vector name. The emitter then stops that container and skips the stale-point delete. The batches that Qdrant applied before the rejection hold new points, and the container's other points keep their earlier version. In a batch emit, the emitter continues with the other containers. After the last container, the emit fails with the keys of the rejected containers and the first Qdrant error. An empty emit key fails before any request.
+
+Set `"emitStrategy": {"type": "EMIT_ALL"}` in the `pipes` section, as in <<qdrant-pipeline>>. With the default `DYNAMIC` strategy, Tika passes small files back to the parent process and emits them in batches. Tika logs a failed batch as a WARN, but the report keeps those files at `PARSE_SUCCESS` and Tika does not retry them. With `EMIT_ALL`, each failed file gets an `EMIT_EXCEPTION` entry in the report. See xref:pipes/configuration.adoc[Pipes configuration].
+
+Set `replaceExisting` to `false` to keep the earlier points. Then a re-emit overwrites points with the same ID, and surplus points from an earlier run stay in the collection.
+
+=== Search
+
+Use the https://qdrant.tech/documentation/concepts/search/[Query API] with `using` to pick the named vector:
+
+[source,bash]
+----
+curl -X POST http://localhost:6333/collections/tika-chunks/points/query \
+  -H 'Content-Type: application/json' \
+  -d '{"query": [0.012, -0.044, ...], "using": "text-vectors",
+       "limit": 10, "with_payload": true}'
+----
+
+Add a `filter` on `container_id` or on a `metadata` key to search inside one document or one file type. See https://qdrant.tech/documentation/concepts/filtering/[Filtering].
+
+[#qdrant-pipeline]
+== Complete Pipeline Example
+
+A file system iterator and fetcher feed the Qdrant emitter. `EMIT_ALL` makes the report list each file that Qdrant rejects. Add the `engines` and `inference` sections from xref:configuration/inference-recipes.adoc[Inference recipes] to produce the chunks.
+
+[source,json]
+----
+include::example$pipes-qdrant-pipeline.json[]
+----
+
+[#notes]
+== Notes
+
+* `tika-inference` is experimental. The `tk:chunks` layout can change in a minor release. See xref:migration-to-4x/chunk-strategies.adoc[Chunk strategies].
+* Keep real API keys out of source control. The `apiKey` value in the example is a placeholder.

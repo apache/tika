@@ -48,6 +48,7 @@
 *** xref:pipes/plugins/azblob.adoc[Azure Blob Storage]
 *** xref:pipes/plugins/opensearch.adoc[OpenSearch]
 *** xref:pipes/plugins/elasticsearch.adoc[Elasticsearch]
+*** xref:pipes/plugins/qdrant.adoc[Qdrant]
 *** xref:pipes/plugins/solr.adoc[Apache Solr]
 *** xref:pipes/plugins/jdbc.adoc[JDBC]
 *** xref:pipes/plugins/kafka.adoc[Apache Kafka]

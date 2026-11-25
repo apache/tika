@@ -1,0 +1,34 @@
+{
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "qdrant": {
+      "qdrant-emitter": {
+        "qdrantUrl": "http://localhost:6333",
+        "collection": "tika-chunks"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "qdrant"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "emitStrategy": {
+      "type": "EMIT_ALL"
+    },
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}
