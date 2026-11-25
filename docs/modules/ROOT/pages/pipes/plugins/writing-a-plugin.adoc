@@ -325,8 +325,12 @@ Everything else — your own transitive libraries — belongs in `lib/`.
 ----
 
 Tika unzips each one to a sibling directory named after the zip, writing a completion marker when
-it finishes. A directory without that marker is treated as a failed extraction and deleted, so
-unpacking a plugin there by hand does not work.
+it finishes, so the Tika process must be able to write to the directory; if it cannot, startup
+fails with `plugin root ... is not writable by this process`. A directory beside its zip without
+that marker is treated as a failed extraction, deleted and unzipped again, so do not unpack a zip
+by hand next to it. An unpacked plugin with no zip beside it is loaded as it is, which is how
+the tika-server distribution ships `tika-pipes-file-system` and the way to use a read-only
+directory.
 
 `plugin-roots` accepts a single path or an array. tika-server, `tika-app` and `PipesForkParser`
 all fill it in when you do not: a `plugins` directory beside the running jar, else one in the
@@ -338,8 +342,9 @@ From 4.3.0 tika-server adds to its default the existing directories named by the
 `/tika-plugins`; see xref:using-tika/docker.adoc#_pipes_plugins[Docker].
 
 A `plugin-roots` you set replaces that default rather than adding to it. If it names a directory
-with none of the needed zips, loading fails with `Unknown type: <component>. Available: []`; the
-empty list is the sign that no plugins were found.
+with none of the needed zips, loading fails with `Unknown fetcher type: '<type>' ... Available
+types: []` followed by the plugin roots that were searched; the empty list is the sign that no
+plugins were found.
 
 Zips in `plugin-roots` are the only source of plugins. A plugin jar on the application classpath
 is not scanned, even though it carries the same `META-INF/extensions.idx`, unless the JVM runs

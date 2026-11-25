@@ -17,8 +17,11 @@
 package org.apache.tika.plugins;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,6 +87,28 @@ public class ThreadSafeUnzipperTest {
                 "marker should still be present");
         assertFalse(Files.exists(destination.resolve("inside.txt")),
                 "no-op extraction should NOT extract zip contents over the existing dir");
+    }
+
+    @Test
+    public void testReadOnlyRootFailsNamingTheRoot(@TempDir Path tmp) throws Exception {
+        Path root = Files.createDirectories(tmp.resolve("root"));
+        Path zip = writeTrivialZip(root.resolve("plugin.zip"));
+        assumeTrue(root.toFile().setWritable(false) && !Files.isWritable(root),
+                "cannot make a directory read-only here (Windows, or running as root)");
+        try {
+            IOException e = assertThrows(IOException.class,
+                    () -> ThreadSafeUnzipper.unzipPlugin(zip));
+            assertTrue(e.getMessage().contains("not writable")
+                    && e.getMessage().contains(root.toString()), e.getMessage());
+
+            // an already-unzipped plugin in a read-only root still loads
+            root.toFile().setWritable(true);
+            ThreadSafeUnzipper.unzipPlugin(zip);
+            root.toFile().setWritable(false);
+            ThreadSafeUnzipper.unzipPlugin(zip);
+        } finally {
+            root.toFile().setWritable(true);
+        }
     }
 
     private static Path writeTrivialZip(Path zipPath) throws Exception {

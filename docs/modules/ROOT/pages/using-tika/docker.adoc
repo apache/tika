@@ -208,11 +208,18 @@ Three things to know about `/tika-plugins`:
 
 * The server unzips each zip beside it, which is why the directory belongs to UID 35002.
   Mounting a whole host directory over `/tika-plugins` works only if that UID can write to
-  the host directory; mounting single zip files, as above, always does.
+  the host directory, and otherwise the server stops at startup with `plugin root
+  /tika-plugins is not writable by this process`. Mounting single zip files, as above, always
+  works, and so does a named volume (`-v tika-plugins:/tika-plugins`), which takes the
+  directory's ownership from the image.
 * It is added to the default plugin roots. A `plugin-roots` in your own config replaces the
   defaults, so it must then name `/opt/tika-server/plugins` and `/tika-plugins` itself.
 * Treat it as a trusted code location, like `/tika-extras`: whatever zip is in it when the
   server starts is loaded, and the server process can write there.
+
+If the server stops with `Unknown fetcher type: '<type>' ... No plugin in plugin-roots
+[/opt/tika-server/plugins, /tika-plugins] provides it`, the zip for that fetcher or emitter is
+not in either directory.
 
 Before 4.3.0 there is no `/tika-plugins`: unzip the plugin and mount the resulting directory
 into `/opt/tika-server/plugins/`, one subdirectory per plugin. That still works.

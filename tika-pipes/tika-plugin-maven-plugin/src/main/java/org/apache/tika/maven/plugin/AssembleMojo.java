@@ -74,7 +74,15 @@ public class AssembleMojo extends AbstractPluginZipMojo {
             String groupId = c.length == 1 ? TIKA_GROUP : c[0];
             String artifactId = c.length == 1 ? c[0] : c[1];
             String version = c.length == 3 ? c[2] : defaultVersion;
-            Path jar = resolve(new DefaultArtifact(groupId, artifactId, "jar", version));
+            Path jar;
+            try {
+                jar = resolve(new DefaultArtifact(groupId, artifactId, "jar", version));
+            } catch (MojoExecutionException e) {
+                throw new MojoExecutionException("no plugin jar " + groupId + ":" + artifactId
+                        + ":" + version + " (from '" + spec + "'); check the plugin's "
+                        + "artifactId, for example tika-pipes-s3, and that the version exists",
+                        e.getCause());
+            }
             buildZip(jar, artifactId, version, out);
         }
     }

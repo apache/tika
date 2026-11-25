@@ -210,7 +210,9 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
                     throw new TikaConfigException(
                             "Unknown " + getComponentName() + " type: '" + typeName +
                             "' for instance id '" + instanceId + "'. Available types: " +
-                            factories.keySet());
+                            factories.keySet() + ". No plugin in plugin-roots " +
+                            pluginManager.getPluginsRoots() + " provides it; add that " +
+                            "plugin's zip to one of them");
                 }
 
                 configs.put(instanceId, new ExtensionConfig(instanceId, typeName,

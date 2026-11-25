@@ -67,6 +67,11 @@ not components: `tika-pipes-s3` holds the S3 fetcher, emitter and iterator (see 
 below). The plugin version defaults to the Maven plugin's own version, and the library versions
 come from the plugin jar, so none of them depends on your project's dependency management.
 
+`<outputDirectory>` changes where the zips go, and `<tikaVersion>` builds the zips of a
+different release than the Maven plugin's own. A plugin of your own is named in full,
+`groupId:artifactId:version`, and needs a jar built with the
+xref:pipes/plugins/writing-a-plugin.adoc#_the_lib_list_and_the_zip[`lib-manifest` goal].
+
 Without a pom (a Dockerfile, a shell script), given `mvn`:
 
 [source,bash,subs="+attributes"]
@@ -78,6 +83,9 @@ mvn org.apache.tika:tika-plugin-maven-plugin:{tika-version}:assemble \
 
 Every jar comes through Maven, so a repository manager caches it, and the build fails if a
 released jar does not match the checksum in the plugin jar.
+
+For the tika-server Docker images, see
+xref:using-tika/docker.adoc#_pipes_plugins[Docker: Pipes plugins].
 
 === Gradle
 
