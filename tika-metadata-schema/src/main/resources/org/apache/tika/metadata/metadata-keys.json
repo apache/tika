@@ -300,6 +300,7 @@
   {"key":"mapi:msg-client-submit-time","namespace":"mapi","valueType":"DATE","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"mapi:msg-submission-accepted-at-time","namespace":"mapi","valueType":"DATE","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"mapi:msg-submission-id","namespace":"mapi","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
+  {"key":"mapi:native-body","namespace":"mapi","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"mapi:original-delivery-time","namespace":"mapi","valueType":"DATE","cardinality":"SIMPLE","module":""},
   {"key":"mapi:original-submit-time","namespace":"mapi","valueType":"DATE","cardinality":"SIMPLE","module":""},
   {"key":"mapi:priority","namespace":"mapi","valueType":"INTEGER","cardinality":"SIMPLE","module":"tika-core"},

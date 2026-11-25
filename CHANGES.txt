@@ -163,6 +163,11 @@ Release 4.3.0 - ???
 
   EXTRACTION AND FORMATS
 
+   * .msg files report the body format they declare as native in mapi:native-body
+     (PidTagNativeBody). It is metadata only: the body extracted is still the first of
+     html, rtf, text. OfficeParserConfig.extractAllAlternativesFromMSG (default false)
+     extracts every body present (TIKA-5076).
+
    * Superscript and subscript are kept as <sup>/<sub> in XHTML for .ppt (TIKA-5072).
    
    * Comic book archives in RAR, 7z and tar (.cbr, .cb7, .cbt; application/vnd.comicbook-rar,

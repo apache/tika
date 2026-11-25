@@ -78,6 +78,14 @@ public interface MAPI {
 
     Property BODY_TYPES_PROCESSED = Property.internalTextBag(PREFIX_MAPI_META + "body-types-processed");
 
+    /**
+     * The body format the message declares as native (PidTagNativeBody):
+     * UNDEFINED, TEXT, RTF, HTML or CLEAR_SIGNED, or the raw number if unrecognized.
+     * Metadata only: Tika does not use it to choose which body to extract;
+     * compare with {@link #BODY_TYPES_PROCESSED}.
+     */
+    Property NATIVE_BODY = Property.internalText(PREFIX_MAPI_META + "native-body");
+
     Property ATTACH_LONG_PATH_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "long-path-name");
     Property ATTACH_LONG_FILE_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "long-file-name");
     Property ATTACH_FILE_NAME = Property.internalText(PREFIX_MAPI_ATTACH_META + "file-name");

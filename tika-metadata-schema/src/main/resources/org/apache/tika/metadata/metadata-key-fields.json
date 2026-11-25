@@ -267,6 +267,7 @@
   {"class":"org.apache.tika.metadata.MAPI","field":"MESSAGE_CLASS","key":"mapi:message-class"},
   {"class":"org.apache.tika.metadata.MAPI","field":"MESSAGE_CLASS_RAW","key":"mapi:message-class-raw"},
   {"class":"org.apache.tika.metadata.MAPI","field":"MESSAGE_DELIVERY_TIME","key":"mapi:message-delivery-time"},
+  {"class":"org.apache.tika.metadata.MAPI","field":"NATIVE_BODY","key":"mapi:native-body"},
   {"class":"org.apache.tika.metadata.MAPI","field":"PRIORTY","key":"mapi:priority"},
   {"class":"org.apache.tika.metadata.MAPI","field":"RECIPIENTS_STRING","key":"mapi:recipients-string"},
   {"class":"org.apache.tika.metadata.MAPI","field":"SENT_BY_SERVER_TYPE","key":"mapi:sent-by-server-type"},
