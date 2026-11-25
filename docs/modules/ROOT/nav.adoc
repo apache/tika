@@ -95,6 +95,7 @@
 ** xref:advanced/embedded-documents.adoc[Embedded Document Metadata]
 ** xref:advanced/date-handling.adoc[Date Handling]
 ** xref:advanced/local-vlm-server.adoc[Running a Local VLM Server]
+** xref:advanced/jlink-runtime.adoc[Bundling a Java Runtime (Draft)]
 ** Integration Testing
 *** xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App]
 *** xref:advanced/integration-testing/tika-server.adoc[Testing with Tika Server]
