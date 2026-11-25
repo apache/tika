@@ -1291,6 +1291,41 @@ public class PDFMarkedContentGateTest extends TikaTest {
         }
     }
 
+    //TIKA-5073
+    @Test
+    public void testSuperscriptAtArtifactEdge() throws Exception {
+        // a sup ends the run before an artifact, then starts the run after one
+        String[][] cases = {{"Article ", "1", "", "B"}, {"Article", "", "2", " B"}};
+        for (String[] c : cases) {
+            try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+                PDPage page = b.page();
+                b.leaf("P", b.document, page, 0).appendKid(1);
+                PDPageContentStream cs = b.text(page);
+                cs.beginMarkedContent(COSName.P, mcid(0));
+                cs.showText(c[0]);
+                if (!c[1].isEmpty()) {
+                    script(b, cs, 4, c[1]);
+                }
+                cs.endMarkedContent();
+                cs.beginMarkedContent(COSName.ARTIFACT);
+                cs.showText("x y");
+                cs.endMarkedContent();
+                cs.beginMarkedContent(COSName.P, mcid(1));
+                if (!c[2].isEmpty()) {
+                    script(b, cs, 4, c[2]);
+                }
+                cs.showText(c[3]);
+                cs.endMarkedContent();
+                finish(cs);
+
+                PDFParserConfig on = config(MarkedContentConfig.Strategy.AUTO);
+                on.setDetectSuperscriptSubscript(true);
+                assertContains("<p>Article <sup>" + c[1] + c[2] + "</sup> B</p>",
+                        parse(b.bytes(), on).xml);
+            }
+        }
+    }
+
     // ---- helpers ----
 
     /** Text in 7pt raised (or lowered, below zero) by {@code rise}, then back to 12pt. */

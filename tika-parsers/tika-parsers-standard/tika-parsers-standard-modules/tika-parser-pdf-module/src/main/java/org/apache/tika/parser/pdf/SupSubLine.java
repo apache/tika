@@ -17,10 +17,13 @@
 package org.apache.tika.parser.pdf;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.pdfbox.text.TextPosition;
 
@@ -34,6 +37,8 @@ final class SupSubLine {
     // MIN_SHIFT of it, is sup or sub; Word lowers a subscript by only ~9% of the font size
     private static final float SMALLER = 0.9f;
     private static final float MIN_SHIFT = 0.05f;
+    // a longer run is far more often a table label or a line of small print than a superscript
+    private static final int MAX_RUN_CHARS = 3;
 
     /** Part of a word and its vertTag: sup, sub or null (a blank chunk always null). */
     record Chunk(String text, String vertTag) {
@@ -41,10 +46,13 @@ final class SupSubLine {
 
     private final float bodySize;
     private final float baseline;
+    // glyphs of a sup or sub run longer than MAX_RUN_CHARS, left untagged
+    private final Set<TextPosition> tooLong = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /**
      * Body size is the most common font size on the line; baseline the most common baseline
-     * of glyphs in that size.
+     * of glyphs in that size. A run of sup or sub longer than {@value #MAX_RUN_CHARS} characters,
+     * spaces not counted, is not tagged.
      */
     SupSubLine(List<List<TextPosition>> words) {
         Map<Float, Integer> sizes = new HashMap<>();
@@ -65,6 +73,31 @@ final class SupSubLine {
             }
         }
         baseline = mostCommon(baselines);
+        List<TextPosition> run = new ArrayList<>();
+        String runVertTag = null;
+        for (List<TextPosition> word : words) {
+            for (TextPosition position : word) {
+                if (isBlank(position)) {
+                    continue;
+                }
+                String t = shift(position);
+                if (!Objects.equals(t, runVertTag)) {
+                    markIfTooLong(run);
+                    runVertTag = t;
+                }
+                if (t != null) {
+                    run.add(position);
+                }
+            }
+        }
+        markIfTooLong(run);
+    }
+
+    private void markIfTooLong(List<TextPosition> run) {
+        if (rawText(run).length() > MAX_RUN_CHARS) {
+            tooLong.addAll(run);
+        }
+        run.clear();
     }
 
     /** The word cut where its vertTag changes. */
@@ -111,6 +144,11 @@ final class SupSubLine {
     }
 
     private String vertTag(TextPosition position) {
+        return tooLong.contains(position) ? null : shift(position);
+    }
+
+    /** sup or sub by size and baseline alone. */
+    private String shift(TextPosition position) {
         if (!(size(position) < bodySize * SMALLER)) {
             return null;
         }
@@ -126,9 +164,10 @@ final class SupSubLine {
     }
 
     // font size in user space; not getHeightDir, which is the font's cap height or bbox, so a
-    // glyph at the body size in a font with shorter capitals would look smaller
+    // glyph at the body size in a font with shorter capitals would look smaller; abs, since
+    // text turned 180 degrees has a negative scale
     private static float size(TextPosition position) {
-        return position.getYScale();
+        return Math.abs(position.getYScale());
     }
 
     private static boolean isBlank(TextPosition position) {

@@ -57,6 +57,26 @@ public class SupSubLineTest {
         assertEquals(List.of(new SupSubLine.Chunk("code", null)), line.chunks("code", code));
     }
 
+    //TIKA-5073
+    @Test
+    public void testRunOverThreeCharsIsNotTagged() {
+        List<TextPosition> body = word("Article", 12, 0);
+        List<TextPosition> three = word("123", 7, 4);
+        SupSubLine line = new SupSubLine(List.of(body, three));
+        assertEquals(List.of(new SupSubLine.Chunk("123", "sup")), line.chunks("123", three));
+
+        // "Lot Number:" in a smaller, raised cell: the run crosses the space between words
+        List<TextPosition> lot = word("Lot", 7, 4);
+        List<TextPosition> number = word("Number:", 7, 4);
+        line = new SupSubLine(List.of(body, lot, number));
+        assertEquals(List.of(new SupSubLine.Chunk("Lot", null)), line.chunks("Lot", lot));
+
+        // a body glyph ends a run: two short ones on a line are each tagged
+        List<TextPosition> second = word("45", 7, 4);
+        line = new SupSubLine(List.of(three, body, second));
+        assertEquals(List.of(new SupSubLine.Chunk("45", "sup")), line.chunks("45", second));
+    }
+
     private static List<TextPosition> word(String text, float size, float rise) {
         return word(text, size, size, rise);
     }

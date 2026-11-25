@@ -89,12 +89,19 @@ A page that `pages.ocr.maxPages` kept from an engine adds `skipped:max-pages` to
 
 == Superscript and subscript (`detectSuperscriptSubscript`)
 
+NOTE: `detectSuperscriptSubscript` is experimental: how it guesses may change in a minor release.
+
 PDFs do not record superscript or subscript, so with `detectSuperscriptSubscript` on (it is off
 by default) the parser guesses from the layout: on each line, text smaller than the line's most
 common size and above or below that text's baseline is written as `<sup>` or `<sub>`, so
 "Article 5¹" is `Article 5<sup>1</sup>` instead of `Article 51`. Only the XHTML gains elements; the
-plain text is unchanged. A line made only of smaller text has nothing to compare against and is
-left alone, and so is a line with more smaller text than body text. On a tagged PDF the elements
+plain text is unchanged. A run of more than three characters (not counting spaces) is left
+alone: one that long is far more often a label or small print than a superscript.
+
+The line is the one the text extractor builds, which can run across the cells of a table row, so
+a short cell in a smaller font, set higher or lower than its neighbours, can still be tagged.
+Text is compared against the line's most common size, so a line made mostly of the smaller text
+gains no tags. On a tagged PDF the elements
 nest inside those the structure tree gives (`<a>`, `<td>`, ...), closing and reopening at their
 edges.
 
