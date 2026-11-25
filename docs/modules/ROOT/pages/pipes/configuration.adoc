@@ -48,8 +48,8 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 |JVM arguments for forked processes (e.g., `["-Xmx512m", "-Xms256m"]`). Unless you supply your own, Tika auto-injects `-XX:ActiveProcessorCount` to right-size each fork's GC and JIT thread pools, and `-XX:MaxRAMPercentage` to keep the forks' combined heap ceiling under the host's memory; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]. This is also where the fork's system properties go, e.g. `-Dtika.pipes.cacheMemoryBudgetBytes` below -- setting them on the parent JVM has no effect on the forks.
 
 |`javaPath`
-|`java`
-|Path to the Java executable for forked processes.
+|the running JVM's `java`
+|Path to the Java executable for forked processes. Unset, the forks use the same Java installation as the parent (`java.home`), so a bundled or `jlink` runtime needs no `java` on the `PATH`; if that runtime has no `bin/java`, `java` on the `PATH` is used.
 
 |`maxFilesProcessedPerProcess`
 |`100000`

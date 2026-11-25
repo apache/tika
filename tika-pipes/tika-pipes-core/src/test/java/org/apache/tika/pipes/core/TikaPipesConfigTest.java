@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -54,6 +55,17 @@ public class TikaPipesConfigTest extends TikaTest {
         Path made = config.createTempDirectory("tika-pipes-config-test-");
         assertEquals(configured, made.getParent());
         assertTrue(Files.isDirectory(made));
+    }
+
+    @Test
+    void testJavaPathDefaultsToRunningJvm() {
+        PipesConfig config = new PipesConfig();
+        Path resolved = Paths.get(config.resolveJavaPath());
+        assertEquals(Paths.get(System.getProperty("java.home"), "bin"), resolved.getParent());
+        assertTrue(Files.isRegularFile(resolved), resolved.toString());
+
+        config.setJavaPath("/opt/jdk/bin/java");
+        assertEquals("/opt/jdk/bin/java", config.resolveJavaPath());
     }
 
     @Test

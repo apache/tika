@@ -1,0 +1,150 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+= Bundling Tika with Its Own Java Runtime (Draft)
+
+WARNING: This page is a draft. The recipe has been run on Linux x64 with one JDK and a
+handful of files; see <<status>> for exactly what has and has not been checked. Treat the
+module list as a starting point, not a guarantee, and please report what you find.
+
+Tika needs Java 17 or later, but the people using your application do not have to
+install it. `jlink`, which ships with every JDK, builds a trimmed Java runtime holding
+only the parts Tika uses. Put that runtime next to the Tika jars and you have one
+self-contained directory to ship inside a desktop application or an installer.
+
+This needs Tika 4.3.0 or later. From 4.3.0, the forked JVMs that Tika Pipes starts use
+the same Java as the parent by default, so they run from the bundled runtime with no
+`java` on the `PATH` (see `javaPath` in xref:pipes/configuration.adoc[Pipeline Configuration]).
+
+== Recipe
+
+Start from the `tika-app` zip and a JDK for the platform you are building for.
+
+[source,bash]
+----
+unzip tika-app-<version>.zip -d tika
+
+jlink \
+  --add-modules java.base,java.compiler,java.desktop,java.logging,java.management,java.naming,java.net.http,java.rmi,java.scripting,java.security.jgss,java.sql,java.xml,java.xml.crypto,jdk.unsupported,jdk.charsets,jdk.crypto.ec,jdk.localedata,jdk.zipfs \
+  --strip-debug --no-header-files --no-man-pages --compress zip-6 \
+  --output tika/runtime
+----
+
+Run Tika with the bundled runtime:
+
+[source,bash]
+----
+# one file
+tika/runtime/bin/java -jar tika/tika-app-<version>.jar -t my-file.docx
+
+# a directory, each file parsed in a forked JVM
+tika/runtime/bin/java -jar tika/tika-app-<version>.jar -i <inputDir> -o <outputDir>
+----
+
+Starting a JVM costs about a second, so for many files use the directory form or
+xref:using-tika/server/index.adoc[Tika Server], not one invocation per file.
+
+== The module list
+
+The first fourteen modules are what `jdeps` reports for the jars in the `tika-app` zip.
+The last four are added by hand, because `jdeps` only sees direct code references and
+misses what Java loads by name at run time:
+
+[cols="1,3"]
+|===
+|Module |Why
+
+|`jdk.charsets`
+|Legacy encodings beyond the basic set, such as Shift_JIS, GBK, Big5 and EUC-KR.
+
+|`jdk.crypto.ec`
+|Elliptic-curve cryptography. Folded into `java.base` in recent JDKs, where naming it is harmless.
+
+|`jdk.localedata`
+|Locale data for languages other than English, used when parsing and formatting dates and numbers.
+
+|`jdk.zipfs`
+|The zip file system provider.
+|===
+
+To recompute the first part of the list for a different Tika version or a different set
+of jars:
+
+[source,bash]
+----
+for jar in tika/lib/*.jar tika/tika-app-<version>.jar; do
+  jdeps --ignore-missing-deps --multi-release 17 --print-module-deps -q -cp 'tika/lib/*' "$jar"
+done | tr ',' '\n' | grep -E '^(java|jdk)\.' | sort -u
+----
+
+If you leave a needed module out, the failure is usually silent: text in an unsupported
+encoding comes out wrong, or a date in another language is not recognized. When in doubt,
+keep the module.
+
+== Size
+
+Measured on Linux x64 with Temurin 25 and Tika 4.3.0-SNAPSHOT:
+
+[cols="2,1"]
+|===
+|Piece |Size on disk
+
+|Runtime, the eighteen modules above
+|76 MB
+
+|Tika jars and plugins
+|63 MB
+|===
+
+A full JDK is about 300 MB. `java.desktop` (AWT, which the PDF and image code needs) and
+`jdk.localedata` are the largest pieces of the runtime.
+
+== Platforms
+
+A `jlink` runtime only runs on the operating system and CPU it was built for. Build one
+per target, either on that platform or by pointing `--module-path` at the `jmods`
+directory of a JDK downloaded for it. On Windows the launcher is `runtime\bin\java.exe`.
+
+If you sign or notarize your application, the native libraries inside the runtime need
+signing too.
+
+A runtime that `jpackage` builds for itself has no `bin/java`. Tika Pipes then falls back
+to `java` on the `PATH`. To keep forked parsing self-contained, build the runtime with
+`jlink` as above and hand it to `jpackage` with `--runtime-image`.
+
+== Licensing
+
+The Tika jars are Apache License 2.0. An OpenJDK runtime is GPLv2 with the Classpath
+Exception; ship the `legal` directory that `jlink` writes into the runtime.
+
+[#status]
+== What has been checked
+
+Checked, on Linux x64, with no other Java on the machine's `PATH`:
+
+* Text extraction from `.doc`, `.docx`, `.xls`, `.ppt`, `.pdf`, `.msg`, `.pst` and TNEF
+  (`winmail.dat`) test files.
+* Directory mode with one forked JVM: a file that runs the fork out of memory and a file
+  that times out each caused a restart, and every other file in the directory was still
+  extracted.
+
+Not yet checked:
+
+* macOS and Windows.
+* Output compared against a full JDK over a large and varied set of files, including
+  non-English text and legacy encodings. This is the check that would show a missing module.
+* Tika Server, shared server mode, OCR and other external tools.
+* JDK versions other than 25.

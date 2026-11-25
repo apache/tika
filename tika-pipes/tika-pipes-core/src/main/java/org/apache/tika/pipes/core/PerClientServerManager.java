@@ -815,7 +815,7 @@ public class PerClientServerManager implements ServerManager {
         }
 
         List<String> commandLine = new ArrayList<>();
-        String javaPath = pipesConfig.getJavaPath();
+        String javaPath = pipesConfig.resolveJavaPath();
         commandLine.add(ProcessUtils.escapeCommandLine(javaPath));
 
         if (!hasClassPath) {

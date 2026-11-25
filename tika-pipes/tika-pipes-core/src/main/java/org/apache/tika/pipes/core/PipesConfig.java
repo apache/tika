@@ -169,7 +169,7 @@ public class PipesConfig {
     private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
 
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
-    private String javaPath = "java";
+    private String javaPath = null;
 
     /** @deprecated since 4.1, removal planned for 5.0; see {@link #setTempDirectory(String)} */
     @Deprecated
@@ -380,6 +380,23 @@ public class PipesConfig {
 
     public void setJavaPath(String javaPath) {
         this.javaPath = javaPath;
+    }
+
+    /** The configured javaPath, else the running JVM's own java, else {@code java} on the PATH. */
+    public String resolveJavaPath() {
+        if (!StringUtils.isBlank(javaPath)) {
+            return javaPath;
+        }
+        String home = System.getProperty("java.home");
+        if (home != null) {
+            for (String name : new String[]{"java", "java.exe"}) {
+                Path java = Paths.get(home, "bin", name);
+                if (Files.isRegularFile(java)) {
+                    return java.toString();
+                }
+            }
+        }
+        return "java";
     }
 
     /**
