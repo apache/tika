@@ -232,7 +232,7 @@ public class PipesForkParserConfig {
     /**
      * Set the Java executable path.
      *
-     * Unset by default: the user config file's {@code javaPath}, else {@code java}, applies.
+     * Unset by default: the user config file's {@code javaPath}, else the running JVM's java, applies.
      *
      * @param javaPath path to the java executable
      * @return this config for chaining

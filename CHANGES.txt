@@ -803,6 +803,10 @@ Release 4.2.0 - 10/25/2026
 
   SERVER, PIPES AND OPERATIONS
 
+   * Forked pipes JVMs default to the parent's own Java (java.home) instead of java on
+     the PATH, so tika-app, tika-server and PipesForkParser run from a bundled or jlink
+     runtime with no Java installed. pipes.javaPath still overrides (TIKA-5080).
+
    * The file-system emitter can gzip its output ("compression": "GZIP"); tika-eval reads
      .json.gz extracts and measures them uncompressed (TIKA-4989).
 
