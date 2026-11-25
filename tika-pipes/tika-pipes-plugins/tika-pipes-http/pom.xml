@@ -108,38 +108,16 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-plugin-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>copy-dependencies</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>target/lib</outputDirectory>
-              <includeScope>runtime</includeScope>
-            </configuration>
+            <id>lib-manifest</id>
+            <phase>process-classes</phase>
           </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <descriptors>
-            <descriptor>src/main/assembly/assembly.xml</descriptor>
-          </descriptors>
-          <appendAssemblyId>false</appendAssemblyId>
-              <attach>false</attach>
-        </configuration>
-        <executions>
           <execution>
-            <id>make-assembly</id>
+            <id>zip</id>
             <phase>process-test-resources</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>

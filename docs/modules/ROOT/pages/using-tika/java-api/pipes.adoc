@@ -53,7 +53,9 @@ API; use the classes above.
 Fetchers, emitters, iterators and reporters are xref:pipes/plugins/index.adoc[PF4J plugins], and
 Tika loads them from **zip files in the directories named by `plugin-roots`**. A plugin jar on
 your application's classpath is not scanned; the only thing a Maven dependency on a plugin gives
-you is its classes to call directly. The zips are distributed from the
+you is its classes to call directly. A Maven build makes the zips from Maven Central with
+`tika-plugin-maven-plugin`: see
+xref:pipes/plugins/index.adoc#getting-the-zips[Getting the plugin zips]. They are also on the
 https://tika.apache.org/download.html[Apache download page], and the `tika-app` and `tika-server`
 distributions carry them in `plugins/`.
 

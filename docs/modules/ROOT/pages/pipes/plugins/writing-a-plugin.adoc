@@ -174,7 +174,7 @@ that config examples keep their literal `${...}`:
 
 == The build
 
-Packaging stays `jar`; the zip is an assembly built alongside it.
+Packaging stays `jar`; the zip is built alongside it.
 
 === Dependency scopes
 
@@ -226,48 +226,49 @@ org.apache.tika.pipes.reporter.fs.FileSystemReporterFactory
 
 If that file is missing or empty, the plugin loads and contributes nothing.
 
-=== Collecting runtime dependencies
+=== The lib list and the zip
 
-`maven-dependency-plugin` copies runtime dependencies to `target/lib`. There is no
-exclusion list to maintain: every boundary artifact is declared `provided`, and
-`includeScope=runtime` excludes `provided` by definition. A boundary artifact can
-only end up in `lib/` if a pom re-declares it at compile scope -- do not.
+`tika-plugin-maven-plugin` builds the zip. Its `lib-manifest` goal writes the module's
+runtime-scope dependencies, each with a SHA-256, to `META-INF/tika/plugin-lib.txt` inside the
+jar; its `zip` goal then builds the zip from that list. There is no exclusion list to maintain:
+every boundary artifact is declared `provided`, and runtime scope excludes `provided` by
+definition. A boundary artifact can only end up in `lib/` if a pom re-declares it at compile
+scope -- do not.
 
 [source,xml]
 ----
 <plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-dependency-plugin</artifactId>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika-plugin-maven-plugin</artifactId>
+  <version>${tika.version}</version>
   <executions>
     <execution>
-      <id>copy-dependencies</id>
-      <phase>package</phase>
-      <goals><goal>copy-dependencies</goal></goals>
-      <configuration>
-        <outputDirectory>${project.build.directory}/lib</outputDirectory>
-        <includeScope>runtime</includeScope>
-      </configuration>
+      <goals>
+        <goal>lib-manifest</goal>
+        <goal>zip</goal>
+      </goals>
     </execution>
   </executions>
 </plugin>
 ----
 
-=== The zip
-
-`maven-assembly-plugin` with a descriptor that sets `includeBaseDirectory=false` and produces
-exactly this layout:
+`target/my-pipes-plugin-1.0.0.zip` has this layout:
 
 ----
 plugin.properties                 <1>
-classes/META-INF/extensions.idx   <2>
-lib/my-pipes-plugin-1.0.0.jar     <3>
+lib/my-pipes-plugin-1.0.0.jar     <2>
 lib/<runtime dependencies>.jar
-LICENSE
+LICENSE                           <3>
 NOTICE
 ----
-<1> At the zip root. PF4J reads it from there.
-<2> Under `classes/`, which is where PF4J looks for a plugin's class directory.
-<3> Your own jar goes in `lib/` with everything else.
+<1> At the zip root, copied from the jar. PF4J reads it from there.
+<2> Your own jar goes in `lib/` with everything else; its `META-INF/extensions.idx` is read
+from there.
+<3> `META-INF/LICENSE` and `META-INF/NOTICE` from the jar, when it has them.
+
+Because the jar carries its own lib list, anyone can rebuild the same zip from the jar alone:
+see xref:pipes/plugins/index.adoc#getting-the-zips[Getting the plugin zips]. That holds for
+your plugin too once its jar and its dependencies are in a Maven repository.
 
 [#classloading]
 == Classloading: what you must not bundle

@@ -94,7 +94,7 @@
       <type>pom</type>
       <scope>test</scope>
     </dependency>
-    <!-- The zip deps are what force reactor ordering; the zips are consumed by dependency-plugin below. -->
+    <!-- The zip deps are what force reactor ordering; tika-plugin-maven-plugin below builds the zip it loads. -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-pipes-file-system</artifactId>
@@ -137,27 +137,23 @@
           </inputExcludes>
         </configuration>
       </plugin>
+      <!-- the goal a downstream build uses to get plugin zips; run here so every build exercises it -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-plugin-maven-plugin</artifactId>
+        <version>${project.version}</version>
         <executions>
           <execution>
-            <id>copy-plugins</id>
+            <id>assemble-plugins</id>
             <phase>process-test-resources</phase>
             <goals>
-              <goal>copy</goal>
+              <goal>assemble</goal>
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/plugins</outputDirectory>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-pipes-file-system</artifactId>
-                  <version>${project.version}</version>
-                  <type>zip</type>
-                  <overWrite>true</overWrite>
-                </artifactItem>
-              </artifactItems>
+              <pipesPlugins>
+                <pipesPlugin>tika-pipes-file-system</pipesPlugin>
+              </pipesPlugins>
             </configuration>
           </execution>
         </executions>

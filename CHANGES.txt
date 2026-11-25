@@ -641,6 +641,11 @@ Release 4.3.0 - ???
 
   OTHER CHANGES
 
+   * Pipes plugin zips can be built from Maven Central: each plugin jar lists the jars its
+     zip holds, with checksums, and tika-plugin-maven-plugin:assemble fetches them and
+     writes the zip. The zips no longer carry classes/META-INF; a plugin's extensions.idx
+     is read from its jar in lib/ (TIKA-5079).
+
    * The file-to-markdown-docker agent skill turns OCR off with an empty text-recognizers
      list and a server block (its tesseract-ocr-parser config failed to load since 4.2.0),
      and checks tk:parsed-by-full-set, not pdf:ocr-page-count, to confirm OCR ran. A test

@@ -143,9 +143,15 @@ an Apache dist artifact, not a Maven artifact.
 The plugin's *jar* is on Maven Central for users building atop the plugin
 API or embedding it programmatically.
 
-Mechanism: `maven-assembly-plugin` with `<attach>false</attach>` in each
-plugin pom (TIKA-4723). Because `<attach>false</attach>` also skips the
-local-repo install, each plugin pom additionally runs
+The plugin jar also carries `META-INF/tika/plugin-lib.txt`, the coordinates
+and SHA-256 of every jar in its zip's `lib/`, so
+`tika-plugin-maven-plugin:assemble` can rebuild the zip from Maven Central
+(TIKA-5079).
+
+Mechanism: `tika-plugin-maven-plugin` in each plugin pom, configured in
+`tika-pipes-plugins/pom.xml`: `lib-manifest` writes the list into the jar
+and `zip` builds the zip from it, unattached (TIKA-4723). Because an
+unattached file is not installed, each plugin pom additionally runs
 `maven-install-plugin:install-file` during the `package` phase, writing
 the zip into the local repo at canonical coordinates
 (`<groupId>:<artifactId>:zip:<version>`). Sibling modules
@@ -222,8 +228,8 @@ generates the `.sha512` and `.asc` files and fails the build on a missing or
 unsigned artifact.
 
 *Per-module shaping:* each module's pom decides what shape its `target/`
-produces (assembly with `<attach>false</attach>` for plugin zips and
-app zips; shade with `outputFile` + `<shadedArtifactAttached>false</shadedArtifactAttached>`
+produces (`tika-plugin-maven-plugin:zip` for plugin zips; assembly with
+`<attach>false</attach>` for app zips; shade with `outputFile` + `<shadedArtifactAttached>false</shadedArtifactAttached>`
 for parser packages).
 
 *Maven Central deployment:* happens via `mvn deploy` (or

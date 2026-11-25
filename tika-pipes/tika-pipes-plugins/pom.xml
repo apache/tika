@@ -167,6 +167,31 @@
         </excludes>
       </resource>
     </resources>
+    <pluginManagement>
+      <plugins>
+        <!-- lists the jar's lib/ inside the jar, then builds the plugin zip from that list:
+             the same goal a consumer runs to build the zip from Maven Central -->
+        <plugin>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-plugin-maven-plugin</artifactId>
+          <version>${project.version}</version>
+          <executions>
+            <execution>
+              <id>lib-manifest</id>
+              <goals>
+                <goal>lib-manifest</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>zip</id>
+              <goals>
+                <goal>zip</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <!-- A plugin's lib/ is its runtime-scope dependencies; a logging jar there puts a
            second SLF4J binding on the plugin classloader. Anything from these groups that

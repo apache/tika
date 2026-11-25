@@ -183,16 +183,16 @@
                     <!--
                       pipes plugin zips are staged via a glob, so assert the
                       staged count equals the number of plugin modules that have
-                      an assembly descriptor. This catches a single plugin whose
+                      a plugin.properties. This catches a single plugin whose
                       zip silently dropped out without hard-coding the plugin set.
                     -->
                     <resourcecount property="staged.plugin.zip.count">
                       <fileset dir="${basedir}/target/${project.version}" includes="tika-pipes-*-${project.version}.zip" />
                     </resourcecount>
                     <resourcecount property="source.plugin.count">
-                      <fileset dir="${basedir}/tika-pipes/tika-pipes-plugins" includes="*/src/main/assembly/assembly.xml" />
+                      <fileset dir="${basedir}/tika-pipes/tika-pipes-plugins" includes="*/src/main/resources/plugin.properties" />
                     </resourcecount>
-                    <fail message="Release staging has ${staged.plugin.zip.count} tika-pipes plugin zip(s) but there are ${source.plugin.count} plugin module(s) with an assembly descriptor; a plugin zip was dropped from dist staging.">
+                    <fail message="Release staging has ${staged.plugin.zip.count} tika-pipes plugin zip(s) but there are ${source.plugin.count} plugin module(s) with a plugin.properties; a plugin zip was dropped from dist staging.">
                       <condition><not><equals arg1="${staged.plugin.zip.count}" arg2="${source.plugin.count}" /></not></condition>
                     </fail>
                     <checksum algorithm="SHA-512" fileext=".sha512">
