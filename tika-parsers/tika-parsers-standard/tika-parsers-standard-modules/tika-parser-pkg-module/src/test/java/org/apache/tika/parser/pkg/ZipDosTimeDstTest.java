@@ -28,6 +28,7 @@ import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
@@ -43,6 +44,8 @@ import org.apache.tika.metadata.Metadata;
  */
 @Isolated
 @ResourceLock(Resources.TIME_ZONE)
+// commons-compress ZipUtil.dosToJavaDate uses Calendar.getInstance() (TIKA-4920)
+@DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
 public class ZipDosTimeDstTest extends TikaTest {
 
     private static TimeZone saved;
