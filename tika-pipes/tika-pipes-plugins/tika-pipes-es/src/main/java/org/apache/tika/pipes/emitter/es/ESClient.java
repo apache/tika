@@ -501,7 +501,10 @@ public class ESClient {
             if (vals.length == 1) {
                 if (isJsonField(n) && isValidJson(vals[0])) {
                     jsonGenerator.writeFieldName(n);
-                    jsonGenerator.writeRawValue(vals[0]);
+                    // re-serialize compact rather than passing vals[0] through raw: an embedded
+                    // newline in an otherwise valid value would split the NDJSON _bulk body into
+                    // extra action lines
+                    jsonGenerator.writeRawValue(CHUNK_MAPPER.readTree(vals[0]).toString());
                 } else {
                     jsonGenerator.writeStringField(n, vals[0]);
                 }
